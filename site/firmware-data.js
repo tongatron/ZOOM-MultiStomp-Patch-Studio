@@ -1,10 +1,10 @@
-// Dati firmware MS-60B+ per effetto, stesso ordine di EFFECTS_DATA.
-// Fonte: mungewell/zoom-zt2 (MIT), zoom_fx_ms-plus/ms-60bp/effects_sort.txt — valori letti dai file .ZD2 del firmware.
-// Non sono pubblicati da ZOOM: il carico DSP è una stima della quota di capacità del pedale (100%).
-// Formato: [DSP %, nome sul display, ID effetto, file ZD2, versione]
+// MS-60B+ firmware data per effect, same order as EFFECTS_DATA.
+// Source: mungewell/zoom-zt2 (MIT), zoom_fx_ms-plus/ms-60bp/effects_sort.txt — values read from the firmware .ZD2 files.
+// Not published by ZOOM: DSP load is an estimate of the share of the pedal's capacity (100%).
+// Format: [DSP %, display name, effect ID, ZD2 file, version]
 
-// Fattore che porta i valori zoom-zt2 alla scala "Processor %" di Handy Guitar Lab.
-// Calibrato su 4 patch reali (somma zt2 → app): 5,66 → 5 · 66,27 → 61 · 92,88 → 86 · 103,74 → 96.
+// Factor that maps zoom-zt2 values to the Handy Guitar Lab "Processor %" scale.
+// Calibrated on 4 real patches (zt2 sum → app): 5.66 → 5 · 66.27 → 61 · 92.88 → 86 · 103.74 → 96.
 const DSP_SCALE = 0.925;
 
 const FIRMWARE_DATA = [

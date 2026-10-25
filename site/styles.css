@@ -358,7 +358,7 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 /* Footer */
 .gh-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-top: 24px; padding-bottom: 32px; border-top: 1px solid var(--border-muted); font-size: 12px; color: var(--fg-muted); }
 
-/* ---- Navigazione a schede (UnderlineNav) ---- */
+/* ---- Tab navigation (UnderlineNav) ---- */
 .gh-spacer { flex: 1; }
 .repo-head--tabs { padding-bottom: 0; }
 .repo-head--tabs .lang-bar { margin-bottom: 16px; }
@@ -374,7 +374,7 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: #f78166; border-radius: 6px;
 }
 
-/* ---- Pulsanti e form ---- */
+/* ---- Buttons and forms ---- */
 .btn-primary { background: #238636; border-color: rgba(240, 246, 252, .1); color: #fff; font-weight: 600; }
 .btn-primary:hover { background: #2ea043; border-color: rgba(240, 246, 252, .1); }
 .btn:disabled, .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
@@ -396,7 +396,7 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .field-label--row { display: flex; justify-content: space-between; align-items: baseline; }
 .field-hint { font-size: 12px; color: var(--fg-muted); }
 
-/* ---- Layout builder ---- */
+/* ---- Builder layout ---- */
 .builder { display: grid; grid-template-columns: 1fr; gap: 24px; padding-top: 24px; padding-bottom: 40px; }
 @media (min-width: 1012px) { .builder { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
 .builder-side { display: flex; flex-direction: column; gap: 16px; }
@@ -448,7 +448,7 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
 .switch b { font: 600 11px var(--mono); color: var(--fg-muted); width: 24px; }
 
-/* Parametri */
+/* Parameters */
 .param-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 16px 16px 52px; }
 @media (max-width: 640px) { .param-grid { padding: 0 12px 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .param { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--bg-subtle); border: 1px solid var(--border-muted); border-radius: var(--radius); }
@@ -460,7 +460,7 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .param-foot .Label { height: 18px; font-size: 11px; font-family: var(--font); }
 .slider { width: 100%; height: 20px; margin: 0; accent-color: var(--accent); background: transparent; cursor: pointer; }
 
-/* Riepilogo DSP */
+/* DSP summary */
 #dsp-total { font: 600 20px var(--mono); color: #3fb950; }
 #dsp-total[data-level="near"] { color: #d29922; }
 #dsp-total[data-level="over"] { color: #f85149; }
@@ -508,10 +508,10 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .picker-dsp.is-over small { color: #f85149; }
 #picker[open] { height: min(80vh, 760px); }
 
-/* Dettaglio effetto: link al builder */
+/* Effect detail: link to the builder */
 .detail-foot .btn-primary { margin-right: auto; }
 
-/* ---- Salvataggio e libreria patch ---- */
+/* ---- Saving and patch library ---- */
 .save-row { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
 .save-row .btn { justify-content: center; }
 .save-status:empty { display: none; }

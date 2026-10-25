@@ -1,12 +1,12 @@
-// Codec dei file patch .zptc (PTCF) dello Zoom MS-60B+, condiviso tra sito (builder.js) e CLI (tools/zptc.mjs).
-// Richiede EFFECTS_DATA, FIRMWARE_DATA e DSP_SCALE già caricati.
+// Codec for Zoom MS-60B+ .zptc (PTCF) patch files, shared by the site (builder.js) and the CLI (tools/zptc.mjs).
+// Requires EFFECTS_DATA, FIRMWARE_DATA and DSP_SCALE to be loaded first.
 //
-// Struttura ricavata dalle patch esportate in patches/ e da mungewell/zoom-zt2 (decode_preset.py):
-//   "PTCF" u32 size, u32 version(2), u32 slotCount, 10 byte (00 00 08 00 …), nome 10 char, slotCount × u32 ID effetto
-//   "TXJ1" u32 len + testo, "TXE1" u32 len + descrizione
-//   "EDTB" u32 len, slotCount × 24 byte: bit 0 = ON, bit 1–29 = ID, poi parametri 5×12 / 3×8 / 4×12 bit (little endian)
-//   "PRM2" u32 len(32) + dati di patch (parzialmente noti), "NAME" u32 len(32) + nome 28 char + 4 byte a zero
-// Lo slot 0 è il BLANK mostrato da Handy Guitar Lab all'inizio della catena (ID 0, ON): lo replichiamo.
+// Structure derived from the exported patches in patches/ and from mungewell/zoom-zt2 (decode_preset.py):
+//   "PTCF" u32 size, u32 version(2), u32 slotCount, 10 bytes (00 00 08 00 …), 10-char name, slotCount × u32 effect ID
+//   "TXJ1" u32 len + text, "TXE1" u32 len + description
+//   "EDTB" u32 len, slotCount × 24 byte: bit 0 = ON, bit 1–29 = ID, then parameters 5×12 / 3×8 / 4×12 bits (little endian)
+//   "PRM2" u32 len(32) + patch data (partly known), "NAME" u32 len(32) + 28-char name + 4 zero bytes
+// Slot 0 is the BLANK that Handy Guitar Lab shows at the start of the chain (ID 0, ON): we reproduce it.
 
 const ZPTC = (() => {
   const effects = EFFECTS_DATA.map(([name, category, , , , params], i) => {
@@ -19,41 +19,41 @@ const ZPTC = (() => {
   const WIDTHS = [12, 12, 12, 12, 12, 8, 8, 8, 12, 12, 12, 12];
   const ENTRY = 24;
   const MAX_EFFECTS = 6;
-  const NAME_CHARS = /^[!%&'+,\-.=_ A-Za-z0-9]*$/; // caratteri ammessi da Handy Guitar Lab
+  const NAME_CHARS = /^[!%&'+,\-.=_ A-Za-z0-9]*$/; // characters accepted by Handy Guitar Lab
   const hex = s => Uint8Array.from(s.match(/../g), b => parseInt(b, 16));
   const toHex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
   const HEADER_MAGIC = '00000800000000000000';
-  // PRM2 di una patch esportata con un solo effetto e nessun ampli (patches/01base.zptc).
+  // PRM2 of an exported patch with a single effect and no amp (patches/01base.zptc).
   const PRM2_TEMPLATE = '000000000000000000802c000000000000000000000000000000000000008007';
-  // Parametri nascosti (oltre quelli documentati) osservati nelle esportazioni.
+  // Hidden parameters (beyond the documented ones) seen in exports.
   const HIDDEN_DEFAULTS = { 'BASS AMP': { 8: 2 } };
-  // Range decimali la cui codifica è stata confermata importando patch generate in Handy Guitar Lab.
+  // Decimal ranges whose encoding was confirmed by importing generated patches into Handy Guitar Lab.
   const VERIFIED_DECIMAL = new Set(['-12.0 – 12.0', '-20.0 – 20.0']);
 
-  // ---- valore visualizzato ⇄ valore memorizzato -------------------------------------------------
-  // verified: regola confermata sulle esportazioni; altrimenti dedotta per analogia (da controllare sul pedale).
-  // Ritorna null quando il formato non è ancora decifrato: serve il valore grezzo.
+  // ---- displayed value ⇄ stored value -----------------------------------------------------------
+  // verified: rule confirmed on exports; otherwise inferred by analogy (check on the pedal).
+  // Returns null when the format is not decoded yet: the raw value is needed.
   function codec(range, pname = '') {
     const r = range.replace(/\s+/g, ' ').trim();
     const num = r.match(/^(-?\d+(?:\.\d+)?) – (-?\d+(?:\.\d+)?)$/);
     if (num) {
       const [min, max] = [parseFloat(num[1]), parseFloat(num[2])];
       const decimal = num[1].includes('.');
-      if (decimal && !(/\.0$/.test(num[1]) && Math.abs(min) >= 10)) return null; // es. Q 0.5 – 16.0: passo ignoto
+      if (decimal && !(/\.0$/.test(num[1]) && Math.abs(min) >= 10)) return null; // e.g. Q 0.5 – 16.0: unknown step
       const step = decimal ? 0.5 : 1;
       const fallback = min < 0 && max > 0 ? 0 : /^(VOL|OUTPUT)$/.test(pname) ? Math.min(80, max) : min + Math.round((max - min) / 2 / step) * step;
       return {
         kind: 'number', min, max, step, verified: !decimal || VERIFIED_DECIMAL.has(r), fallback,
-        encode: v => { const n = Number(v); if (!(n >= min && n <= max)) throw new Error(`${pname} ${v} fuori da ${r}`); return Math.round((n - min) / step); },
+        encode: v => { const n = Number(v); if (!(n >= min && n <= max)) throw new Error(`${pname} ${v} is outside ${r}`); return Math.round((n - min) / step); },
         decode: s => +(min + s * step).toFixed(decimal ? 1 : 0)
       };
     }
-    const offRange = r.match(/^OFF(?:,| –) (\d+)(?: – (\d+))?$/); // "OFF, 1 – 6" o "OFF – 100"
+    const offRange = r.match(/^OFF(?:,| –) (\d+)(?: – (\d+))?$/); // "OFF, 1 – 6" or "OFF – 100"
     if (offRange) {
       const [min, max] = offRange[2] ? [+offRange[1], +offRange[2]] : [1, +offRange[1]];
       return {
         kind: 'off-number', min, max, step: 1, verified: false, fallback: 'OFF',
-        encode: v => { if (String(v).toUpperCase() === 'OFF') return 0; const n = Number(v); if (!(n >= min && n <= max)) throw new Error(`${pname} ${v} fuori da ${r}`); return n - min + 1; },
+        encode: v => { if (String(v).toUpperCase() === 'OFF') return 0; const n = Number(v); if (!(n >= min && n <= max)) throw new Error(`${pname} ${v} is outside ${r}`); return n - min + 1; },
         decode: s => s === 0 ? 'OFF' : s + min - 1
       };
     }
@@ -61,7 +61,7 @@ const ZPTC = (() => {
       const options = r.split(',').map(o => o.trim());
       return {
         kind: 'enum', options, verified: !r.includes('♩'), fallback: options[0],
-        encode: v => { const i = options.findIndex(o => o.toLowerCase() === String(v).toLowerCase()); if (i < 0) throw new Error(`${pname} ${v} non è tra ${options.join(', ')}`); return i; },
+        encode: v => { const i = options.findIndex(o => o.toLowerCase() === String(v).toLowerCase()); if (i < 0) throw new Error(`${pname} ${v} is not one of ${options.join(', ')}`); return i; },
         decode: s => options[s] ?? { raw: s, range: r }
       };
     }
@@ -76,13 +76,13 @@ const ZPTC = (() => {
     const id = Number((e >> 1n) & ((1n << 29n) - 1n));
     let pos = 30n;
     const raw = WIDTHS.map(w => { const v = Number((e >> pos) & ((1n << BigInt(w)) - 1n)); pos += BigInt(w); return v; });
-    return { on, id, raw, tail: Number(e >> pos) }; // tail: bit residui oltre i 12 parametri
+    return { on, id, raw, tail: Number(e >> pos) }; // tail: leftover bits after the 12 parameters
   }
   function packEntry({ on, id, raw, tail = 0 }) {
     let e = BigInt(tail);
     for (let i = WIDTHS.length - 1; i >= 0; i--) {
       const w = BigInt(WIDTHS[i]); const v = BigInt(raw[i] ?? 0);
-      if (v >= 1n << w) throw new Error(`parametro ${i + 1} = ${v} non entra in ${w} bit`);
+      if (v >= 1n << w) throw new Error(`parameter ${i + 1} = ${v} does not fit in ${w} bits`);
       e = (e << w) | v;
     }
     e = (e << 29n) | BigInt(id);
@@ -104,9 +104,9 @@ const ZPTC = (() => {
   // ---- decode -------------------------------------------------------------------------------------
   function decode(input) {
     const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-    if (latin1(bytes, 0, 4) !== 'PTCF') throw new Error('Non è un file PTCF');
+    if (latin1(bytes, 0, 4) !== 'PTCF') throw new Error('Not a PTCF file');
     const size = u32(bytes, 4), version = u32(bytes, 8), slots = u32(bytes, 12);
-    if (size !== bytes.length) throw new Error(`Dimensione dichiarata ${size} ≠ ${bytes.length}`);
+    if (size !== bytes.length) throw new Error(`Declared size ${size} ≠ ${bytes.length}`);
     const header = bytes.subarray(16, 26);
     const shortName = latin1(bytes, 26, 36);
     let off = 36;
@@ -118,7 +118,7 @@ const ZPTC = (() => {
     }
     const entries = [];
     for (let i = 0; i < slots; i++) entries.push(unpackEntry(chunks.EDTB.subarray(i * ENTRY, (i + 1) * ENTRY)));
-    entries.forEach((e, i) => { if (e.id !== ids[i]) throw new Error(`ID slot ${i} incoerente tra intestazione e EDTB`); });
+    entries.forEach((e, i) => { if (e.id !== ids[i]) throw new Error(`Slot ${i} ID differs between header and EDTB`); });
     const slot0 = entries[0];
     return {
       name: latin1(chunks.NAME, 0, 28).trimEnd(),
@@ -152,18 +152,18 @@ const ZPTC = (() => {
   }
 
   // ---- encode -------------------------------------------------------------------------------------
-  // spec: { name, selected?, effects: [{ effect | id, on?, params?: { NOME: valore | { raw } }, raw?: [12] }] }
+  // spec: { name, selected?, effects: [{ effect | id, on?, params?: { NAME: value | { raw } }, raw?: [12] }] }
   function encode(spec) {
     const name = String(spec.name ?? '').trim();
-    if (!name) throw new Error('Serve un nome per la patch');
-    if (!NAME_CHARS.test(name)) throw new Error('Il nome contiene caratteri non ammessi dal pedale');
+    if (!name) throw new Error('The patch needs a name');
+    if (!NAME_CHARS.test(name)) throw new Error('The name contains characters the pedal does not accept');
     const list = spec.effects ?? [];
-    if (list.length < 1 || list.length > MAX_EFFECTS) throw new Error(`Una patch contiene da 1 a ${MAX_EFFECTS} effetti`);
+    if (list.length < 1 || list.length > MAX_EFFECTS) throw new Error(`A patch holds 1 to ${MAX_EFFECTS} effects`);
     const warnings = [];
     const entries = [spec._slot0 ?? { on: true, id: 0, raw: [] }];
     for (const item of list) {
       const fx = item.id ? byId.get(parseInt(item.id, 16)) : byName.get(String(item.effect).toLowerCase());
-      if (!fx) throw new Error(`Effetto sconosciuto: ${item.effect ?? item.id}`);
+      if (!fx) throw new Error(`Unknown effect: ${item.effect ?? item.id}`);
       const raw = item.raw ? [...item.raw] : new Array(12).fill(0);
       if (!item.raw) Object.entries(HIDDEN_DEFAULTS[fx.category] ?? {}).forEach(([i, v]) => { raw[i] = v; });
       fx.params.forEach(([pname, , range], p) => {
@@ -171,22 +171,22 @@ const ZPTC = (() => {
         const given = item.params && pname in item.params;
         if (!given && item.raw) return;
         const value = given ? item.params[pname] : c ? c.fallback : { raw: 0 };
-        if (!given) warnings.push(`${fx.name}: ${pname} non indicato, uso ${typeof value === 'object' ? 'il valore grezzo 0' : value}`);
+        if (!given) warnings.push(`${fx.name}: ${pname} not set, using ${typeof value === 'object' ? 'raw value 0' : value}`);
         if (value && typeof value === 'object') { raw[p] = value.raw; return; }
-        if (!c) throw new Error(`${fx.name} ${pname}: range "${range}" non ancora decifrato, usa { "raw": n }`);
+        if (!c) throw new Error(`${fx.name} ${pname}: range "${range}" is not decoded yet, use { "raw": n }`);
         raw[p] = c.encode(value);
       });
       entries.push({ on: item.on !== false, id: fx.id, raw, tail: item.tail ?? 0 });
     }
     const dsp = entries.reduce((s, e) => s + (byId.get(e.id)?.dsp ?? 0), 0);
-    if (dsp > 100) warnings.push(`Carico DSP stimato ${dsp.toFixed(1)}%: il pedale mostrerà PROCESS OVERFLOW`);
+    if (dsp > 100) warnings.push(`Estimated DSP load ${dsp.toFixed(1)}%: the pedal will show PROCESS OVERFLOW`);
 
     const prm2 = hex(spec._prm2 ?? PRM2_TEMPLATE);
     if (!spec._prm2) {
-      // byte 20: un bit per ogni slot con un ampli (bit = slot + 1); byte 10, bit 5–7: slot selezionato in modifica
+      // byte 20: one bit per slot holding an amp (bit = slot + 1); byte 10, bits 5–7: slot selected for editing
       entries.forEach((e, i) => { if (byId.get(e.id)?.category === 'BASS AMP') prm2[20] |= 1 << (i + 1); });
       const selected = spec.selected ?? 1;
-      if (!(selected >= 1 && selected <= list.length)) throw new Error(`"selected" deve essere tra 1 e ${list.length}`);
+      if (!(selected >= 1 && selected <= list.length)) throw new Error(`"selected" must be between 1 and ${list.length}`);
       prm2[10] = (prm2[10] & 0x1f) | (selected << 5);
     }
 
@@ -206,7 +206,7 @@ const ZPTC = (() => {
     return { file, warnings, dsp };
   }
 
-  // Rigenera una patch decodificata usando i valori grezzi: deve risultare identica byte per byte.
+  // Re-encodes a decoded patch from its raw values: the result must be byte-for-byte identical.
   function roundtrip(input) {
     const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
     const spec = decode(bytes);

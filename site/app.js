@@ -1,11 +1,11 @@
 const FEATURES = {
-  fs: { label: 'Footswitch', hint: 'Controllo dal footswitch' },
-  sync: { label: 'Tempo sync', hint: 'Sincronizzabile al tempo' },
-  st: { label: 'Stereo', hint: 'Uscita stereo' },
-  dry: { label: 'Mix dry/wet', hint: 'Segnale pulito miscelabile' }
+  fs: { label: 'Footswitch', hint: 'Controlled by the footswitch' },
+  sync: { label: 'Tempo sync', hint: 'Can sync to tempo' },
+  st: { label: 'Stereo', hint: 'Stereo output' },
+  dry: { label: 'Mix dry/wet', hint: 'Dry signal can be blended in' }
 };
 const PDF_URL = 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf';
-const MANUAL_URL = 'https://zoomcorp.com/manuals/ms-60bplus-it/#unique_41';
+const MANUAL_URL = 'https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41';
 const FW_SOURCE_URL = 'https://github.com/mungewell/zoom-zt2/blob/master/zoom_fx_ms-plus/ms-60bp/effects_sort.txt';
 const KNOBS = 4;
 const SLOTS = 6;
@@ -22,10 +22,10 @@ const effects = EFFECTS_DATA.map(([name, category, model, description, tags, par
   };
 });
 
-const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Nome sul display">${text}</code>`;
+const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Name on the pedal display">${text}</code>`;
 const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
-const dspText = dsp => `${dsp.toFixed(1).replace('.', ',')}%`;
-const dspMeter = (dsp, wide = false) => `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Carico DSP stimato: ${dspText(dsp)} della capacità"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
+const dspText = dsp => `${dsp.toFixed(1)}%`;
+const dspMeter = (dsp, wide = false) => `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
 const state = { query: '', category: null, features: new Set(), sort: 'zoom', view: 'list', visible: [] };
 try { state.view = localStorage.getItem('ms60b-view') === 'grid' ? 'grid' : 'list'; } catch {}
@@ -60,8 +60,8 @@ function renderStats() {
   const models = effects.filter(effect => effect.model && effect.model !== 'ZOOM original').length;
   const dsps = effects.map(effect => effect.dsp);
   $('#repo-stats').innerHTML = [
-    [effects.length, 'effetti'], [Object.keys(CATEGORIES).length, 'categorie'], [params, 'parametri documentati'], [models, 'ispirati a hardware reale'],
-    [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'carico DSP per effetto']
+    [effects.length, 'effects'], [Object.keys(CATEGORIES).length, 'categories'], [params, 'documented parameters'], [models, 'modeled on real hardware'],
+    [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'DSP load per effect']
   ].map(([n, label]) => `<li><strong>${n}</strong> ${label}</li>`).join('');
   const bar = document.createElement('div');
   bar.className = 'lang-bar';
@@ -75,7 +75,7 @@ function renderStats() {
 
 function renderFilters() {
   const base = effects.filter(effect => matches(effect, { ignoreCategory: true }));
-  const categories = [[null, 'Tutte', null, base.length], ...Object.entries(CATEGORIES).map(([key, { label, color }]) => [key, label, color, base.filter(effect => effect.category === key).length])];
+  const categories = [[null, 'All', null, base.length], ...Object.entries(CATEGORIES).map(([key, { label, color }]) => [key, label, color, base.filter(effect => effect.category === key).length])];
   $('#category-list').innerHTML = categories.map(([key, label, color, count]) => `<li><button class="filter-item" data-category="${key ?? ''}" aria-pressed="${state.category === key}" ${count || state.category === key ? '' : 'disabled'}>${color ? `<span class="dot" style="--c:${color}"></span>` : ''}<span class="name">${label}</span><span class="Counter">${count}</span></button></li>`).join('');
   const scoped = effects.filter(effect => (!state.category || effect.category === state.category) && (!state.query || effect.haystack.includes(state.query)));
   $('#feature-list').classList.add('feature-list');
@@ -97,17 +97,17 @@ function renderList() {
   state.visible = sorted(effects.filter(effect => matches(effect)));
   const list = $('#fx-list');
   list.dataset.view = state.view;
-  $('#result-count').textContent = `${state.visible.length} ${state.visible.length === 1 ? 'effetto' : 'effetti'}`;
+  $('#result-count').textContent = `${state.visible.length} ${state.visible.length === 1 ? 'effect' : 'effects'}`;
 
   const chips = [];
   if (state.query) chips.push(`<button class="chip" data-clear="query">“${escapeHtml(state.query)}” ${icon(ICON_X, 12)}</button>`);
   if (state.category) chips.push(`<button class="chip" data-clear="category">${CATEGORIES[state.category].label} ${icon(ICON_X, 12)}</button>`);
   state.features.forEach(key => chips.push(`<button class="chip" data-clear="feature" data-key="${key}">${FEATURES[key].label} ${icon(ICON_X, 12)}</button>`));
-  if (chips.length > 1) chips.push('<button class="clear-link" data-clear="all">Azzera filtri</button>');
+  if (chips.length > 1) chips.push('<button class="clear-link" data-clear="all">Clear filters</button>');
   $('#active-filters').innerHTML = chips.join('');
 
   if (!state.visible.length) {
-    list.innerHTML = `<li class="blankslate">${icon(ICON_SEARCH, 24)}<h3>Nessun effetto trovato</h3><p>Prova un altro termine o rimuovi qualche filtro.</p><button class="btn btn-sm" data-clear="all">Azzera filtri</button></li>`;
+    list.innerHTML = `<li class="blankslate">${icon(ICON_SEARCH, 24)}<h3>No effects found</h3><p>Try another term or remove some filters.</p><button class="btn btn-sm" data-clear="all">Clear filters</button></li>`;
     return;
   }
   list.innerHTML = state.visible.map(effect => {
@@ -116,14 +116,14 @@ function renderList() {
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
         <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
-        ${effect.model ? `<div class="fx-model">Modello: <b>${highlight(effect.model)}</b></div>` : ''}
+        ${effect.model ? `<div class="fx-model">Model: <b>${highlight(effect.model)}</b></div>` : ''}
         <p class="fx-desc" lang="en">${highlight(effect.description)}</p>
-        <div class="fx-params" aria-label="Parametri">${paramChips}</div>
+        <div class="fx-params" aria-label="Parameters">${paramChips}</div>
       </div>
       <div class="fx-side">
         <span class="fx-num">#${String(effect.index + 1).padStart(2, '0')}</span>
         ${dspMeter(effect.dsp)}
-        <span class="fx-pcount">${effect.params.length} parametri</span>
+        <span class="fx-pcount">${effect.params.length} parameters</span>
         <span class="fx-tags">${effect.tags.map(featureLabel).join('')}</span>
       </div>
     </a></li>`;
@@ -132,7 +132,7 @@ function renderList() {
 
 function render() { renderFilters(); renderList(); }
 
-// Dettaglio effetto
+// Effect detail
 const dialog = $('#fx-dialog');
 let current = null;
 
@@ -140,52 +140,52 @@ function openEffect(effect) {
   current = effect;
   const pos = state.visible.indexOf(effect);
   const pages = Math.ceil(effect.params.length / KNOBS);
-  $('#dialog-pos').textContent = pos >= 0 ? `${pos + 1} di ${state.visible.length}` : `#${effect.index + 1}`;
+  $('#dialog-pos').textContent = pos >= 0 ? `${pos + 1} of ${state.visible.length}` : `#${effect.index + 1}`;
   $('#dialog-prev').disabled = pos <= 0;
   $('#dialog-next').disabled = pos < 0 || pos >= state.visible.length - 1;
   $('#dialog-body').innerHTML = `
     <div class="detail-head">
-      <img class="fx-thumb" src="${effect.image}" alt="Icona di ${escapeHtml(effect.name)} sul display del pedale" width="96" height="120" />
+      <img class="fx-thumb" src="${effect.image}" alt="${escapeHtml(effect.name)} icon on the pedal display" width="96" height="120" />
       <div>
         <h2 id="dialog-title">${escapeHtml(effect.name)}</h2>
         <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
         <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
-        ${effect.model ? `<p class="detail-model">Modello di riferimento: <b>${escapeHtml(effect.model)}</b></p>` : ''}
+        ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b></p>` : ''}
       </div>
     </div>
     <section class="detail-section">
-      <h3>Carico DSP</h3>
+      <h3>DSP load</h3>
       <div class="dsp-card">
         ${dspMeter(effect.dsp, true)}
-        <p>Occupa circa <b>${dspText(effect.dsp)}</b> della capacità di elaborazione. Restano <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> per gli altri ${SLOTS - 1} slot della patch${effect.dsp > 100 / SLOTS ? '' : `; ne entrerebbero fino a ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copie`}. Oltre il 100% il pedale mostra <code>PROCESS OVERFLOW</code> e bypassa gli effetti.</p>
-        <p class="dsp-source">Stima non ufficiale: valori letti dai file del firmware (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) e calibrati sull'indicatore "Processor" di Handy Guitar Lab (scarto ±1% sulle patch verificate). La somma degli effetti di una patch corrisponde a quell'indicatore.</p>
+        <p>Uses about <b>${dspText(effect.dsp)}</b> of the processing capacity, leaving <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> for the other ${SLOTS - 1} slots of the patch${effect.dsp > 100 / SLOTS ? '' : `; up to ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copies would fit`}. Above 100% the pedal shows <code>PROCESS OVERFLOW</code> and bypasses the effects.</p>
+        <p class="dsp-source">Unofficial estimate: values read from the firmware files (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) and calibrated against the Handy Guitar Lab "Processor" meter (within ±1% on tested patches). The sum of a patch's effects matches that meter.</p>
       </div>
     </section>
     <section class="detail-section">
-      <h3>${icon(ICON_SLIDERS)} Parametri <span class="Counter">${effect.params.length}</span></h3>
+      <h3>${icon(ICON_SLIDERS)} Parameters <span class="Counter">${effect.params.length}</span></h3>
       <table class="ptable">
-        <thead><tr><th class="pknob" title="Pagina · manopola">Pos.</th><th>Parametro</th><th class="pdesc-col">Descrizione</th><th>Range</th></tr></thead>
+        <thead><tr><th class="pknob" title="Page · knob">Pos.</th><th>Parameter</th><th class="pdesc-col">Description</th><th>Range</th></tr></thead>
         <tbody>${effect.params.map(([name, desc, range], i) => `<tr>
           <td class="pknob">${pages > 1 ? `P${Math.floor(i / KNOBS) + 1}·` : ''}${(i % KNOBS) + 1}</td>
           <td class="pname">${escapeHtml(name)}<small lang="en">${escapeHtml(desc)}</small></td>
           <td class="pdesc" lang="en">${escapeHtml(desc)}</td>
           <td class="prange">${escapeHtml(range)}</td></tr>`).join('')}</tbody>
       </table>
-      <p class="page-hint">${pages > 1 ? `Sul pedale i parametri sono distribuiti su ${pages} pagine da ${KNOBS} manopole.` : `Tutti i parametri stanno sulle ${KNOBS} manopole della prima pagina.`}${effect.tags.includes('sync') ? ' Il simbolo ♩ indica la sincronizzazione al tempo.' : ''}</p>
+      <p class="page-hint">${pages > 1 ? `On the pedal the parameters span ${pages} pages of ${KNOBS} knobs.` : `All parameters fit on the ${KNOBS} knobs of the first page.`}${effect.tags.includes('sync') ? ' The ♩ symbol means the value is synced to the tempo.' : ''}</p>
     </section>
     <section class="detail-section">
-      <h3>Dettagli firmware</h3>
+      <h3>Firmware details</h3>
       <dl class="fw-list">
-        <div><dt>Nome sul display</dt><dd><code>${escapeHtml(effect.lcd)}</code></dd></div>
-        <div><dt>ID effetto</dt><dd><code>${effect.fxId}</code></dd></div>
+        <div><dt>Display name</dt><dd><code>${escapeHtml(effect.lcd)}</code></dd></div>
+        <div><dt>Effect ID</dt><dd><code>${effect.fxId}</code></dd></div>
         <div><dt>File</dt><dd><code>${escapeHtml(effect.zd2)}</code></dd></div>
-        <div><dt>Versione</dt><dd><code>v${effect.version}</code></dd></div>
+        <div><dt>Version</dt><dd><code>v${effect.version}</code></dd></div>
       </dl>
     </section>
     <div class="detail-foot">
-      <a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Aggiungi alla patch</a>
+      <a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>
       <a class="btn btn-sm" href="${PDF_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Effects List PDF</a>
-      <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Come si usa sul pedale</a>
+      <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Using it on the pedal</a>
     </div>`;
   $('#dialog-body').scrollTop = 0;
   if (!dialog.open) dialog.showModal();
@@ -206,7 +206,7 @@ const step = delta => {
 $('#dialog-prev').addEventListener('click', () => step(-1));
 $('#dialog-next').addEventListener('click', () => step(1));
 
-// Filtri e controlli
+// Filters and controls
 const search = $('#search');
 search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); render(); });
 

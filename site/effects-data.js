@@ -1,10 +1,10 @@
-// Catalogo effetti Zoom MS-60B+ — testi originali dalla Effects List ufficiale ZOOM (Z2I-5216-01, 2024).
-// Ordine = ordine della Effects List; l'indice corrisponde a assets/effects/fx-NNN.png.
-// Formato: [nome, categoria, modello di riferimento, descrizione, tag, parametri]
-// Parametri: [nome sul display, descrizione, range]
-// Tag: fs = controllato da footswitch, st = uscita stereo, sync = tempo sync (metronomo), dry = mix con segnale pulito
+// Zoom MS-60B+ effects catalog — original text from the official ZOOM Effects List (Z2I-5216-01, 2024).
+// Order = Effects List order; the index matches assets/effects/fx-NNN.png.
+// Format: [name, category, reference model, description, tags, parameters]
+// Parameters: [display name, description, range]
+// Tags: fs = footswitch controlled, st = stereo output, sync = tempo sync (metronome), dry = dry signal blend
 
-// Categorie: etichetta e colore usati da catalogo e patch builder.
+// Categories: label and color used by the catalog and the patch builder.
 const CATEGORIES = {
   DYNAMICS: { label: 'Dynamics', color: '#3fb950' },
   FILTER: { label: 'Filter', color: '#39c5cf' },

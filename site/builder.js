@@ -1,4 +1,4 @@
-// Patch builder: compone una catena di effetti e scarica il file .zptc (codec in zptc.js).
+// Patch builder: composes an effect chain and downloads the .zptc file (codec in zptc.js).
 
 const STORAGE_KEY = 'ms60b-builder';
 const PARAM_BITS = [12, 12, 12, 12, 12, 8, 8, 8, 12, 12, 12, 12];
@@ -12,7 +12,7 @@ const ICON_TRASH = '<path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 
 const ICON_CHEVRON = '<path fill="currentColor" d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
 
-// Metadati effetto: dati di catalogo + codec dei parametri
+// Effect metadata: catalog data + parameter codecs
 const catalog = EFFECTS_DATA.map(([name, category, , description, , params], index) => ({
   index, name, category, description,
   params: params.map(([pname, desc, range], p) => ({ name: pname, desc, range, bits: PARAM_BITS[p], codec: ZPTC.codec(range, pname) })),
@@ -23,12 +23,12 @@ const catalog = EFFECTS_DATA.map(([name, category, , description, , params], ind
 }));
 const color = fx => CATEGORIES[fx.category].color;
 const categoryLabel = fx => `<span class="Label Label--cat" style="--c:${color(fx)}">${CATEGORIES[fx.category].label}</span>`;
-const pct = n => `${n.toFixed(1).replace('.', ',')}%`;
+const pct = n => `${n.toFixed(1)}%`;
 const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
 const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index].dsp, 0);
 
-// ---- stato ------------------------------------------------------------------------------------
-// Bozza corrente (STORAGE_KEY) e libreria di patch salvate (LIBRARY_KEY), entrambe nel localStorage del browser.
+// ---- state ------------------------------------------------------------------------------------
+// Current draft (STORAGE_KEY) and saved patch library (LIBRARY_KEY), both in the browser's localStorage.
 const LIBRARY_KEY = 'ms60b-library';
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
@@ -38,7 +38,7 @@ function slotFor(index, values = null) {
   const defaults = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? p.codec.fallback : 0]));
   return { uid: ++uid, index, on: true, values: { ...defaults, ...values }, open: true };
 }
-// Forma serializzabile di una patch: { name, effects: [{ index, on, values }] }
+// Serializable patch shape: { name, effects: [{ index, on, values }] }
 const serialize = source => ({ name: source.name, effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })) });
 const sameContent = (a, b) => JSON.stringify(serialize(a)) === JSON.stringify(serialize(b));
 function hydrate(patch) {
@@ -58,7 +58,7 @@ function load() {
   } catch {}
 }
 
-// ---- libreria ---------------------------------------------------------------------------------
+// ---- library ----------------------------------------------------------------------------------
 let storageOk = true;
 function readLibrary() {
   try { const list = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); return Array.isArray(list) ? list : []; }
@@ -66,7 +66,7 @@ function readLibrary() {
 }
 function writeLibrary(list) {
   try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); storageOk = true; return true; }
-  catch { storageOk = false; notify('danger', 'Impossibile salvare: il browser non permette di memorizzare dati su questo sito.'); return false; }
+  catch { storageOk = false; notify('danger', 'Cannot save: this browser does not allow this site to store data.'); return false; }
 }
 const newId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const findEntry = id => readLibrary().find(entry => entry.id === id);
@@ -90,7 +90,7 @@ function isDirty() {
   return !entry || !sameContent(state, entry);
 }
 
-// ---- catena -----------------------------------------------------------------------------------
+// ---- chain ------------------------------------------------------------------------------------
 function paramControl(slot, p) {
   const value = slot.values[p.name];
   const id = `p-${slot.uid}-${p.name.replace(/[^a-z0-9]/gi, '')}`;
@@ -99,7 +99,7 @@ function paramControl(slot, p) {
   let shown = value;
   if (!c) {
     control = `<input class="form-control form-control--sm" type="number" id="${id}" min="0" max="${2 ** p.bits - 1}" step="1" value="${value}" data-raw="1" />`;
-    shown = `grezzo ${value}`;
+    shown = `raw ${value}`;
   } else if (c.kind === 'enum') {
     control = `<select class="form-control form-control--sm" id="${id}">${c.options.map(o => `<option${o === value ? ' selected' : ''}>${escapeHtml(o)}</option>`).join('')}</select>`;
   } else {
@@ -109,8 +109,8 @@ function paramControl(slot, p) {
     control = `<input type="range" class="slider" id="${id}" min="${min}" max="${c.max}" step="${c.step}" value="${current}" ${isOff ? 'data-off="1"' : ''} />`;
     shown = isOff && value === 'OFF' ? 'OFF' : c.step < 1 ? Number(value).toFixed(1) : value;
   }
-  const badge = !c ? '<span class="Label Label--attention" title="Formato non ancora decifrato: inserisci il valore memorizzato">grezzo</span>'
-    : !c.verified ? '<span class="Label Label--attention" title="Codifica dedotta per analogia: controlla il valore sul pedale">da verificare</span>' : '';
+  const badge = !c ? '<span class="Label Label--attention" title="Format not decoded yet: enter the stored value">raw</span>'
+    : !c.verified ? '<span class="Label Label--attention" title="Encoding inferred by analogy: check the value on the pedal">unverified</span>' : '';
   return `<div class="param" title="${escapeHtml(p.desc)}">
     <label class="param-head" for="${id}"><code>${escapeHtml(p.name)}</code><span class="param-val">${escapeHtml(shown)}</span></label>
     ${control}
@@ -125,7 +125,7 @@ function renderChain() {
   $('#tab-count').textContent = n;
   $('#add-effect').disabled = n >= ZPTC.MAX_EFFECTS;
   if (!n) {
-    list.innerHTML = `<li class="blankslate"><h3>Patch vuota</h3><p>Aggiungi il primo effetto: il segnale va dall'alto (INPUT) verso il basso (OUTPUT).</p><button class="btn btn-sm" data-action="open-picker">${icon(ICON_PLUS)} Aggiungi effetto</button></li>`;
+    list.innerHTML = `<li class="blankslate"><h3>Empty patch</h3><p>Add the first effect: the signal flows from the top (INPUT) to the bottom (OUTPUT).</p><button class="btn btn-sm" data-action="open-picker">${icon(ICON_PLUS)} Add effect</button></li>`;
     return;
   }
   list.innerHTML = state.effects.map((slot, i) => {
@@ -139,11 +139,11 @@ function renderChain() {
           <span class="chain-meta">${categoryLabel(fx)}<span class="dsp-inline" data-level="${dspLevel(fx.dsp)}">DSP ${pct(fx.dsp)}</span></span>
         </button>
         <div class="chain-actions">
-          <label class="switch" title="Effetto ${slot.on ? 'acceso' : 'spento'}"><input type="checkbox" data-action="toggle-on" ${slot.on ? 'checked' : ''} /><span></span><b>${slot.on ? 'ON' : 'OFF'}</b></label>
-          <button class="btn btn-sm btn-icon" data-action="up" ${i === 0 ? 'disabled' : ''} aria-label="Sposta verso l'ingresso" title="Sposta su">${icon(ICON_UP)}</button>
-          <button class="btn btn-sm btn-icon" data-action="down" ${i === n - 1 ? 'disabled' : ''} aria-label="Sposta verso l'uscita" title="Sposta giù">${icon(ICON_DOWN)}</button>
-          <button class="btn btn-sm btn-icon btn-danger" data-action="remove" aria-label="Rimuovi ${escapeHtml(fx.name)}" title="Rimuovi">${icon(ICON_TRASH)}</button>
-          <button class="btn btn-sm btn-icon btn-invisible chain-chevron" data-action="toggle-open" aria-expanded="${slot.open}" aria-label="Mostra parametri">${icon(ICON_CHEVRON)}</button>
+          <label class="switch" title="Effect ${slot.on ? 'on' : 'off'}"><input type="checkbox" data-action="toggle-on" ${slot.on ? 'checked' : ''} /><span></span><b>${slot.on ? 'ON' : 'OFF'}</b></label>
+          <button class="btn btn-sm btn-icon" data-action="up" ${i === 0 ? 'disabled' : ''} aria-label="Move towards the input" title="Move up">${icon(ICON_UP)}</button>
+          <button class="btn btn-sm btn-icon" data-action="down" ${i === n - 1 ? 'disabled' : ''} aria-label="Move towards the output" title="Move down">${icon(ICON_DOWN)}</button>
+          <button class="btn btn-sm btn-icon btn-danger" data-action="remove" aria-label="Remove ${escapeHtml(fx.name)}" title="Remove">${icon(ICON_TRASH)}</button>
+          <button class="btn btn-sm btn-icon btn-invisible chain-chevron" data-action="toggle-open" aria-expanded="${slot.open}" aria-label="Show parameters">${icon(ICON_CHEVRON)}</button>
         </div>
       </div>
       ${slot.open ? `<div class="param-grid">${fx.params.map(p => paramControl(slot, p)).join('')}</div>` : ''}
@@ -151,7 +151,7 @@ function renderChain() {
   }).join('');
 }
 
-// ---- riepilogo --------------------------------------------------------------------------------
+// ---- summary ----------------------------------------------------------------------------------
 function buildSpec(source = state) {
   return {
     name: source.name,
@@ -176,30 +176,30 @@ function renderSummary() {
   $('#dsp-legend').innerHTML = state.effects.map(slot => {
     const fx = catalog[slot.index];
     return `<li><span class="dot" style="--c:${color(fx)}"></span><span class="name">${escapeHtml(fx.lcd)}</span><span class="val">${pct(fx.dsp)}</span></li>`;
-  }).join('') + (state.effects.length ? `<li class="free"><span class="dot"></span><span class="name">Libero</span><span class="val">${pct(Math.max(0, 100 - total))}</span></li>` : '');
+  }).join('') + (state.effects.length ? `<li class="free"><span class="dot"></span><span class="name">Free</span><span class="val">${pct(Math.max(0, 100 - total))}</span></li>` : '');
 
   const notices = [];
   const nameOk = state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
-  if (!state.effects.length) notices.push(['muted', 'Aggiungi almeno un effetto.']);
-  if (!state.name.trim()) notices.push(['muted', 'Dai un nome alla patch.']);
-  else if (!ZPTC.NAME_CHARS.test(state.name)) notices.push(['danger', 'Il nome contiene caratteri non ammessi dal pedale.']);
-  if (total > 100) notices.push(['danger', `Carico stimato ${pct(total)}: oltre il 100% il pedale mostra PROCESS OVERFLOW. Togli o sostituisci un effetto.`]);
-  else if (total > 95) notices.push(['attention', 'Vicino al limite: la stima ha un margine di circa ±1%.']);
+  if (!state.effects.length) notices.push(['muted', 'Add at least one effect.']);
+  if (!state.name.trim()) notices.push(['muted', 'Give the patch a name.']);
+  else if (!ZPTC.NAME_CHARS.test(state.name)) notices.push(['danger', 'The name contains characters the pedal does not accept.']);
+  if (total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
+  else if (total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
   const unverified = [];
   const raw = [];
   state.effects.forEach(slot => catalog[slot.index].params.forEach(p => {
     if (!p.codec) raw.push(`${catalog[slot.index].lcd} ${p.name}`);
     else if (!p.codec.verified) unverified.push(`${catalog[slot.index].lcd} ${p.name}`);
   }));
-  if (unverified.length) notices.push(['attention', `Da verificare sul pedale: ${unverified.join(', ')}.`]);
-  if (raw.length) notices.push(['attention', `Valori grezzi (formato non decifrato): ${raw.join(', ')}.`]);
+  if (unverified.length) notices.push(['attention', `Check on the pedal: ${unverified.join(', ')}.`]);
+  if (raw.length) notices.push(['attention', `Raw values (format not decoded): ${raw.join(', ')}.`]);
   $('#notices').innerHTML = notices.map(([kind, text]) => `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`).join('');
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
   renderSaveState();
 }
 
-const formatDate = iso => new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const formatDate = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 function renderSaveState() {
   const entry = state.currentId ? findEntry(state.currentId) : null;
   if (state.currentId && !entry) state.currentId = null;
@@ -207,10 +207,10 @@ function renderSaveState() {
   const canSave = state.effects.length > 0 && state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
   $('#save-patch').disabled = !canSave || (entry && !dirty);
   $('#save-as-new').hidden = !entry;
-  $('#save-label').textContent = entry ? (dirty ? 'Salva modifiche' : 'Salvata') : 'Salva';
-  $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Salvataggio non disponibile in questo browser</span>'
-    : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Modifiche non salvate' : `Salvata ${formatDate(entry.updatedAt)}`}</span>`
-    : state.effects.length ? '<span class="status status--attention">Patch non ancora salvata</span>' : '';
+  $('#save-label').textContent = entry ? (dirty ? 'Save changes' : 'Saved') : 'Save';
+  $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Saving is not available in this browser</span>'
+    : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Unsaved changes' : `Saved ${formatDate(entry.updatedAt)}`}</span>`
+    : state.effects.length ? '<span class="status status--attention">Patch not saved yet</span>' : '';
 }
 
 function renderLibrary() {
@@ -221,25 +221,25 @@ function renderLibrary() {
     const dsp = effects.reduce((s, e) => s + catalog[e.index].dsp, 0);
     const chain = effects.map(e => catalog[e.index].lcd).join(' → ');
     return `<li class="library-item${entry.id === state.currentId ? ' is-current' : ''}" data-id="${entry.id}">
-      <button class="library-open" data-lib="open" title="Apri nel builder">
+      <button class="library-open" data-lib="open" title="Open in the builder">
         <span class="library-name">${escapeHtml(entry.name)}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
-        <span class="library-meta">${effects.length} effetti · DSP ${pct(dsp)} · ${formatDate(entry.updatedAt)}</span>
+        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)} · ${formatDate(entry.updatedAt)}</span>
       </button>
       <div class="library-tools">
-        <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Scarica .zptc" aria-label="Scarica ${escapeHtml(entry.name)} come .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
-        <button class="btn btn-sm btn-icon btn-invisible" data-lib="duplicate" title="Duplica" aria-label="Duplica ${escapeHtml(entry.name)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
-        <button class="btn btn-sm btn-icon btn-invisible btn-danger" data-lib="delete" title="Elimina" aria-label="Elimina ${escapeHtml(entry.name)}">${icon(ICON_TRASH)}</button>
+        <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Download .zptc" aria-label="Download ${escapeHtml(entry.name)} as .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
+        <button class="btn btn-sm btn-icon btn-invisible" data-lib="duplicate" title="Duplicate" aria-label="Duplicate ${escapeHtml(entry.name)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
+        <button class="btn btn-sm btn-icon btn-invisible btn-danger" data-lib="delete" title="Delete" aria-label="Delete ${escapeHtml(entry.name)}">${icon(ICON_TRASH)}</button>
       </div>
     </li>`;
-  }).join('') : '<li class="library-empty">Nessuna patch salvata. Componi una catena e premi <b>Salva</b>, oppure importa dei file <code>.zptc</code>.</li>';
+  }).join('') : '<li class="library-empty">No saved patches yet. Build a chain and press <b>Save</b>, or import some <code>.zptc</code> files.</li>';
   $('#export-library').disabled = !list.length;
 }
 
 function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
 const notify = (kind, text) => $('#notices').insertAdjacentHTML('afterbegin', `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`);
 
-// ---- interazioni catena -----------------------------------------------------------------------
+// ---- chain interactions -----------------------------------------------------------------------
 $('#chain-list').addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
   if (!button || button.dataset.action === 'toggle-on') return;
@@ -273,7 +273,7 @@ $('#chain-list').addEventListener('input', event => {
   const p = catalog[slot.index].params.find(param => param.name === name);
   let value = input.value;
   let shown = value;
-  if (input.dataset.raw) { value = Math.max(0, Math.min(2 ** p.bits - 1, Math.round(Number(value) || 0))); shown = `grezzo ${value}`; }
+  if (input.dataset.raw) { value = Math.max(0, Math.min(2 ** p.bits - 1, Math.round(Number(value) || 0))); shown = `raw ${value}`; }
   else if (input.type === 'range') {
     value = Number(value);
     if (input.dataset.off && value < p.codec.min) { value = 'OFF'; shown = 'OFF'; }
@@ -286,7 +286,7 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
-const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('La patch corrente ha modifiche non salvate. Continuare e perderle?');
+const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('The current patch has unsaved changes. Continue and lose them?');
 function loadPatch(patch, currentId = null) {
   state.name = patch.name;
   state.effects = hydrate(patch);
@@ -299,7 +299,7 @@ $('#clear-chain').addEventListener('click', () => {
   loadPatch({ name: '', effects: [] });
 });
 
-// ---- salvataggio ------------------------------------------------------------------------------
+// ---- saving -----------------------------------------------------------------------------------
 function saveCurrent(asNew = false) {
   if (!state.effects.length || !state.name.trim() || !ZPTC.NAME_CHARS.test(state.name)) return;
   const list = readLibrary();
@@ -357,11 +357,11 @@ $('#library-list').addEventListener('click', event => {
       break;
     case 'duplicate': {
       const copy = addToLibrary({ ...entry, name: `${entry.name.slice(0, 24)} COPY` }, list);
-      if (writeLibrary(list)) { renderLibrary(); notify('muted', `Creata "${copy.name}".`); }
+      if (writeLibrary(list)) { renderLibrary(); notify('muted', `Created "${copy.name}".`); }
       break;
     }
     case 'delete':
-      if (!confirm(`Eliminare "${entry.name}" dalle tue patch?`)) return;
+      if (!confirm(`Delete "${entry.name}" from My patches?`)) return;
       if (!writeLibrary(list.filter(e => e.id !== id))) return;
       if (id === state.currentId) state.currentId = null;
       render();
@@ -377,7 +377,7 @@ $('#export-library').addEventListener('click', () => {
 });
 
 // ---- import -----------------------------------------------------------------------------------
-// .zptc (anche più file insieme) → nuove patch in libreria; .json → backup della libreria (unione per id).
+// .zptc (one or more files) → new library patches; .json → library backup (merged by id).
 function patchFromZptc(bytes) {
   const decoded = ZPTC.decode(bytes);
   const skipped = [];
@@ -398,7 +398,7 @@ function patchFromZptc(bytes) {
 function patchesFromBackup(text) {
   const data = JSON.parse(text);
   const patches = Array.isArray(data) ? data : data?.patches;
-  if (!Array.isArray(patches)) throw new Error('non è un backup delle patch');
+  if (!Array.isArray(patches)) throw new Error('not a patch backup');
   return patches.filter(p => p && typeof p.name === 'string' && Array.isArray(p.effects))
     .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), effects: p.effects.filter(e => catalog[e?.index]).slice(0, ZPTC.MAX_EFFECTS) }));
 }
@@ -421,25 +421,25 @@ async function importFiles(files) {
             fresh.push({ ...serialize(p), id: p.id || newId(), name: uniqueName(p.name, [...list, ...fresh]), updatedAt: p.updatedAt || new Date().toISOString() });
           }
         }
-        list.unshift(...fresh); // mantiene l'ordine del backup
+        list.unshift(...fresh); // keeps the backup order
         added.push(...fresh);
       } else {
         const { patch, skipped } = patchFromZptc(new Uint8Array(await file.arrayBuffer()));
-        if (skipped.length) problems.push(`${file.name}: effetti non riconosciuti saltati (${skipped.join(', ')})`);
+        if (skipped.length) problems.push(`${file.name}: skipped unrecognized effects (${skipped.join(', ')})`);
         if (patch.effects.length) added.push(addToLibrary(patch, list));
-        else problems.push(`${file.name}: nessun effetto riconosciuto`);
+        else problems.push(`${file.name}: no recognized effects`);
       }
     } catch (error) {
       problems.push(`${file.name}: ${error.message}`);
     }
   }
   if ((added.length || updated) && !writeLibrary(list)) return;
-  // Un solo .zptc importato: aprilo subito nel builder
+  // A single imported .zptc opens straight in the builder
   const single = files.length === 1 && added.length === 1 && !/\.json$/i.test(files[0].name);
   if (single && confirmDiscard()) loadPatch(added[0], added[0].id);
   else render();
   problems.forEach(p => notify('attention', p));
-  if (added.length || updated) notify('muted', `Importate ${added.length} patch${updated ? `, ${updated} aggiornate` : ''}.`);
+  if (added.length || updated) notify('muted', `Imported ${added.length} patch${added.length === 1 ? '' : 'es'}${updated ? `, updated ${updated}` : ''}.`);
 }
 $('#import-files').addEventListener('change', event => {
   const files = [...event.target.files];
@@ -447,7 +447,7 @@ $('#import-files').addEventListener('change', event => {
   importFiles(files);
 });
 
-// Drag & drop di file sulla pagina
+// Drag & drop files onto the page
 let dragDepth = 0;
 const hasFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
 document.addEventListener('dragenter', event => { if (!hasFiles(event)) return; dragDepth++; document.body.classList.add('is-dropping'); });
@@ -461,13 +461,13 @@ document.addEventListener('drop', event => {
   importFiles([...event.dataTransfer.files].filter(f => /\.(zptc|json)$/i.test(f.name)));
 });
 
-// ---- picker effetti ---------------------------------------------------------------------------
+// ---- effect picker ----------------------------------------------------------------------------
 const picker = $('#picker');
 const pickerState = { query: '', category: null };
 
 function renderPicker() {
   const total = totalDsp();
-  $('#picker-cats').innerHTML = [[null, 'Tutte'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
+  $('#picker-cats').innerHTML = [[null, 'All'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
     .map(([key, label]) => `<button class="chip-filter" data-cat="${key ?? ''}" aria-pressed="${pickerState.category === key}">${key ? `<span class="dot" style="--c:${CATEGORIES[key].color}"></span>` : ''}${label}</button>`).join('');
   const items = catalog.filter(fx => (!pickerState.category || fx.category === pickerState.category)
     && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category}`.toLowerCase().includes(pickerState.query)));
@@ -476,9 +476,9 @@ function renderPicker() {
     return `<li><button class="picker-item" data-index="${fx.index}">
       <img class="fx-thumb" src="${fx.image}" alt="" loading="lazy" width="36" height="45" />
       <span class="picker-main"><span class="picker-name">${escapeHtml(fx.name)} ${categoryLabel(fx)}</span><span class="picker-desc" lang="en">${escapeHtml(fx.description)}</span></span>
-      <span class="picker-dsp${over ? ' is-over' : ''}" title="${over ? 'Con questo effetto la patch supera il 100%' : 'Carico DSP e totale risultante'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}</small></span>
+      <span class="picker-dsp${over ? ' is-over' : ''}" title="${over ? 'With this effect the patch goes over 100%' : 'DSP load and resulting total'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}</small></span>
     </button></li>`;
-  }).join('') : '<li class="blankslate"><p>Nessun effetto trovato.</p></li>';
+  }).join('') : '<li class="blankslate"><p>No effects found.</p></li>';
 }
 function openPicker() {
   if (state.effects.length >= ZPTC.MAX_EFFECTS) return;
@@ -502,7 +502,7 @@ picker.addEventListener('click', event => {
 });
 $('#picker-query').addEventListener('input', event => { pickerState.query = event.target.value.trim().toLowerCase(); renderPicker(); });
 
-// ---- avvio ------------------------------------------------------------------------------------
+// ---- startup ----------------------------------------------------------------------------------
 load();
 const addSlug = new URLSearchParams(location.search).get('add');
 if (addSlug) {
