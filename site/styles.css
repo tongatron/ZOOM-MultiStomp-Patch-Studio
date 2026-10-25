@@ -674,3 +674,5 @@ body.is-dropping .drop-overlay { display: grid; }
 /* Output selector (builder advice panel) */
 .advice-output { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 12px; padding: 0 16px; }
 .advice-output-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); margin-right: 2px; }
+
+.cmp-head .btn { align-self: flex-start; margin-top: 6px; }

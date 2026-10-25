@@ -439,7 +439,7 @@ $('#clear-chain').addEventListener('click', () => {
     });
     const same = rows.every(r => r.includes('cmp-same'));
     $('#compare-body').innerHTML = `
-      <div class="cmp-head"><div><b>${escapeHtml(a.label)}</b><span>${a.effects.length} effects · DSP ${pct(dspOf(a.effects))}</span></div><div><b>${escapeHtml(b.label)}</b><span>${b.effects.length} effects · DSP ${pct(dspOf(b.effects))}</span></div></div>
+      <div class="cmp-head">${[a, b].map(side => `<div><b>${escapeHtml(side.label)}</b><span>${side.effects.length} effects · DSP ${pct(dspOf(side.effects))}</span>${side.key === '__editor' ? '' : `<button class="btn btn-sm" data-cmp-open="${side.key}">Open in editor</button>`}</div>`).join('')}</div>
       ${same && rows.length ? '<p class="cmp-note">The two patches are identical.</p>' : ''}${rows.join('') || '<p class="muted">Both patches are empty.</p>'}`;
   }
   function openCompare() {
@@ -453,6 +453,16 @@ $('#clear-chain').addEventListener('click', () => {
   }
   $('#compare-open').addEventListener('click', openCompare);
   $('#compare-close').addEventListener('click', () => dialog.close());
+  $('#compare-body').addEventListener('click', event => {
+    const button = event.target.closest('[data-cmp-open]');
+    if (!button) return;
+    const entry = findEntry(button.dataset.cmpOpen);
+    if (!entry || !confirmDiscard()) return;
+    dialog.close();
+    loadPatch(entry, entry.id);
+    if (validOutput(entry.output)) { adviceSettings.output = entry.output; saveAdvice(); renderAdvice(); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   $('#compare-a').addEventListener('change', renderCompare);
   $('#compare-b').addEventListener('change', renderCompare);
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
