@@ -123,6 +123,35 @@ const ADVICE = (() => {
   };
   const addSources = map => { Object.assign(sources, map); };
 
+  // ---- style suggestions ------------------------------------------------------------------------------
+  // A style "wants" the effect roles of its starter chain and "avoids" the roles listed in style.avoids
+  // (taken from the style's own sourced rules, e.g. reggae.drive). Fit is the share of wanted roles present,
+  // minus 25 points per avoided role found. Preamps and amps stand in for each other, octavers for synths.
+  const STANDS_IN = { preamp: ['preamp', 'amp'], amp: ['amp', 'preamp'], synth: ['synth', 'octave'] };
+  const satisfies = (have, want) => (STANDS_IN[want] || [want]).includes(have);
+  function styleFit(patch, style) {
+    const used = (patch.effects || []).filter(e => e.on !== false).map(e => effects[e.index]);
+    const wants = [...new Set(style.starter.effects.map(e => byName.get(e.effect).role))];
+    const present = wants.filter(role => used.some(fx => satisfies(fx.role, role)));
+    const missing = wants.filter(role => !present.includes(role)).map(role => ({ role, entry: style.starter.effects.find(e => byName.get(e.effect).role === role) }));
+    const conflicts = (style.avoids || []).filter(role => used.some(fx => fx.role === role));
+    const fit = Math.max(0, Math.round(100 * present.length / wants.length - 25 * conflicts.length));
+    return { style, fit, wants, present, missing, conflicts };
+  }
+  // active: fit of the selected style (null for "general"); others: the remaining styles, best fit first
+  function suggestStyles(patch, activeId) {
+    const all = styles.filter(s => s.starter).map(s => styleFit(patch, s));
+    return { active: all.find(f => f.style.id === activeId) || null, others: all.filter(f => f.style.id !== activeId).sort((a, b) => b.fit - a.fit) };
+  }
+  // Where a missing role belongs: after the last effect that comes earlier in the style's own chain order
+  function insertPosition(patch, fit, role) {
+    const rank = fx => fit.wants.findIndex(w => satisfies(fx.role, w));
+    const target = fit.wants.indexOf(role);
+    let pos = 0;
+    (patch.effects || []).forEach((e, i) => { const r = rank(effects[e.index]); if (r !== -1 && r < target) pos = i + 1; });
+    return pos;
+  }
+
   // Placement guidance for one effect, used by the catalog.
   const roleTips = {};
   const addRoleTips = map => { Object.assign(roleTips, map); };
@@ -133,7 +162,7 @@ const ADVICE = (() => {
 
   return {
     SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
-    analyze, addRules, addStyles, addPreferences, addSources, addRoleTips, effectTips,
+    analyze, addRules, addStyles, addPreferences, styleFit, suggestStyles, insertPosition, addSources, addRoleTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();

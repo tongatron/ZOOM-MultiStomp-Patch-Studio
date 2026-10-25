@@ -633,6 +633,35 @@ const adviceSettings = (() => {
 const saveAdvice = () => { try { localStorage.setItem('ms60b-advice', JSON.stringify(adviceSettings)); } catch {} };
 let findings = [];
 
+// Style ideas: how close the chain is to the selected style (and what is missing), plus the closest other styles.
+const ROLE_LABEL = { comp: 'compressor', drive: 'drive', preamp: 'preamp', amp: 'amp model', envfilter: 'envelope filter', gate: 'noise reduction', eq: 'EQ', synth: 'synth or octaver', delay: 'delay', reverb: 'reverb', mod: 'modulation' };
+const roleName = role => ROLE_LABEL[role] || role;
+function renderIdeas() {
+  const box = $('#advice-ideas');
+  if (!state.effects.length) { box.innerHTML = ''; return; }
+  const { active, others } = ADVICE.suggestStyles(serialize(state), adviceSettings.style);
+  const full = state.effects.length >= ZPTC.MAX_EFFECTS;
+  const parts = [];
+  if (active) {
+    const { style, fit, missing, conflicts } = active;
+    parts.push(`<div class="idea">
+      <div class="idea-head"><strong>${escapeHtml(style.name)}</strong><span class="fit" data-fit="${fit >= 75 ? 'high' : fit >= 40 ? 'mid' : 'low'}">${fit}% match</span></div>
+      ${conflicts.length ? `<p class="idea-note">Works against this style: ${conflicts.map(roleName).join(', ')}.</p>` : ''}
+      ${missing.length ? `<p class="idea-note">${escapeHtml(style.name)} usually has a ${missing.map(m => roleName(m.role)).join(', ')}:</p>
+        <div class="idea-actions">${missing.map(m => `<button class="btn btn-sm" data-advice="add-role" data-style="${style.id}" data-role="${m.role}" ${full ? 'disabled title="The chain is full"' : ''}>+ ${escapeHtml(m.entry.effect)}</button>`).join('')}</div>`
+        : '<p class="idea-note">The chain covers every part of this style\'s starter chain.</p>'}
+    </div>`);
+  }
+  const close = others.filter(f => f.fit > 0).slice(0, 2);
+  if (close.length) {
+    parts.push(`<div class="idea-alt"><div class="idea-title">${active ? 'Other styles this chain is close to' : 'Closest styles for this chain'}</div>
+      ${close.map(f => `<div class="idea-row"><span><b>${escapeHtml(f.style.name)}</b> <span class="fit" data-fit="${f.fit >= 75 ? 'high' : f.fit >= 40 ? 'mid' : 'low'}">${f.fit}%</span>
+        <small>${[...f.missing.map(m => `+ ${roleName(m.role)}`), ...f.conflicts.map(c => `− ${roleName(c)}`)].join(', ') || 'nothing to change'}</small></span>
+        <button class="btn btn-sm btn-invisible" data-advice="use-style" data-id="${f.style.id}">Use style</button></div>`).join('')}</div>`);
+  }
+  box.innerHTML = parts.join('');
+}
+
 function renderAdvice() {
   const on = adviceSettings.enabled;
   $('#advice-toggle').checked = on;
@@ -655,6 +684,7 @@ function renderAdvice() {
 
   $('#advice-prefs-count').textContent = adviceSettings.preferences.length;
   $('#advice-prefs-list').innerHTML = ADVICE.preferences.map(pref => `<label class="pref-row" title="${escapeHtml(pref.hint)}"><input type="checkbox" data-advice="pref" data-id="${pref.id}"${adviceSettings.preferences.includes(pref.id) ? ' checked' : ''} /> <span>${escapeHtml(pref.label)}</span></label>`).join('');
+  renderIdeas();
   findings = ADVICE.analyze(serialize(state), { style: style.id, ignored: adviceSettings.ignored, preferences: adviceSettings.preferences });
   const counts = Object.fromEntries(ADVICE.SEVERITIES.map(sev => [sev, findings.filter(f => f.severity === sev).length]));
   $('#advice-count').textContent = findings.length;
@@ -703,6 +733,19 @@ $('#advice').addEventListener('click', event => {
     }
     case 'ignore': adviceSettings.ignored = [...new Set([...adviceSettings.ignored, finding.ruleId])]; break;
     case 'restore': adviceSettings.ignored = []; break;
+    case 'use-style': adviceSettings.style = button.dataset.id; break;
+    case 'add-role': {
+      const style = ADVICE.styles.find(s => s.id === button.dataset.style);
+      const patch = serialize(state);
+      const fit = ADVICE.styleFit(patch, style);
+      const entry = fit.missing.find(m => m.role === button.dataset.role)?.entry;
+      if (!entry || state.effects.length >= ZPTC.MAX_EFFECTS) return;
+      const index = catalog.find(fx => fx.name === entry.effect).index;
+      state.effects.forEach(slot => { slot.open = false; });
+      state.effects.splice(ADVICE.insertPosition(patch, fit, button.dataset.role), 0, slotFor(index, entry.values));
+      render();
+      return;
+    }
     case 'pref': {
       const id = button.dataset.id;
       adviceSettings.preferences = button.checked ? [...new Set([...adviceSettings.preferences, id])] : adviceSettings.preferences.filter(p => p !== id);

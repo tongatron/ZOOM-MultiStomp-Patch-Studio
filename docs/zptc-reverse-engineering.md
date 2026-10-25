@@ -139,7 +139,7 @@ Amps have a **ninth parameter**, undocumented, which is always 2 in the exports 
 
 1. **Byte-for-byte round-trip.** `node tools/zptc.mjs roundtrip patches/*` decodes every export and re-encodes it: all 7 files are identical to the originals.
 2. **Encoder from readable values.** Starting from the displayed values alone (e.g. TONE 50, ATTACK FAST), the encoder reproduces `01base.zptc` and `06FLIP.zptc` exactly.
-3. **Test on the pedal.** Two generated patches (GEN TEST1 with a compressor; GEN TEST2 with compressor, overdrive, graphic EQ and FLIPTOP) were imported into Handy Guitar Lab and copied to the pedal. All 28 values match, including decimals, negative values and switches.
+3. **Test on the pedal.** Two generated patches (GEN TEST1 with a compressor; GEN TEST2 with compressor, overdrive, graphic EQ and FLIPTOP) were imported into Handy Guitar Lab and copied to a pedal running firmware 1.20. All 28 values match, including decimals, negative values and switches.
 4. **Site builder.** The GEN TEST2 patch composed from the interface produces the same bytes as the file already tested; an imported and re-exported `.zptc` stays identical.
 
 ## The DSP load

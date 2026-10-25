@@ -647,3 +647,23 @@ body.is-dropping .drop-overlay { display: grid; }
 .cmp-chg b { color: var(--accent-fg); font-weight: 600; }
 .cmp-note { margin: 0 0 6px; color: var(--accent-fg); }
 @media (max-width: 640px) { .cmp-head, .cmp-row { gap: 6px; } .cmp-cell { padding: 6px; } .cmp-cell .fx-thumb { display: none; } }
+
+/* Style ideas (builder advice panel) */
+.advice-ideas:empty { display: none; }
+.advice-ideas { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; }
+.idea, .idea-alt { padding: 12px 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; }
+.idea-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.idea-note { margin: 6px 0 0; color: var(--fg-muted); font-size: 13px; }
+.idea-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.idea-title { margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+.idea-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border-muted); }
+.idea-row:first-of-type { border-top: 0; }
+.idea-row small { display: block; color: var(--fg-muted); font-size: 12px; }
+.fit { font: 12px var(--mono); padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--fg-muted); }
+.fit[data-fit="high"] { color: #3fb950; border-color: rgba(63, 185, 80, .4); }
+.fit[data-fit="mid"] { color: #d29922; border-color: rgba(187, 128, 9, .4); }
+
+/* Let the builder columns shrink below their content so small screens never scroll sideways */
+.builder > * { min-width: 0; }
+.Box-header { flex-wrap: wrap; }
+.library-head, .library-actions { flex-wrap: wrap; }

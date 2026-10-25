@@ -44,6 +44,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 ## 4. Advice engine
 
+- **Style ideas** are done (fit per style from the starter roles, "+ effect" buttons, closest other styles). Possible next step: more starters (e.g. a second chain per style) and per-style parameter hints.
 - **Test the starter chains on the pedal** (6 styles with a starter) and adjust their values by ear.
 - **More rules**, each with a source: stereo output, patch level / unity gain, tuner and mute usage. (Footswitch effects and tempo-synced delays are done.)
 - **Rule packs (v3)**: import and export rule sets as `.json` to share them.

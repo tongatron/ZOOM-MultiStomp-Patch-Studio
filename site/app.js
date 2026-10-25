@@ -202,7 +202,7 @@ function openEffect(effect) {
         <div><dt>Display name</dt><dd><code>${escapeHtml(effect.lcd)}</code></dd></div>
         <div><dt>Effect ID</dt><dd><code>${effect.fxId}</code></dd></div>
         <div><dt>File</dt><dd><code>${escapeHtml(effect.zd2)}</code></dd></div>
-        <div><dt>Version</dt><dd><code>v${effect.version}</code></dd></div>
+        <div><dt>Module version</dt><dd><code>v${effect.version}</code></dd></div>
       </dl>
     </section>
     <div class="detail-foot">

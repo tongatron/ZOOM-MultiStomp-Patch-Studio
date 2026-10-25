@@ -395,6 +395,7 @@
 
   // ---- style profiles ---------------------------------------------------------------------------------
   // severity: per-rule overrides while the style is active. starter: a chain to load (values in display units).
+  // avoids: effect roles that work against the style (backed by that style's own rules); used by the style suggestions.
   ADVICE.addStyles([
     { id: 'general', name: 'General', summary: 'Neutral advice for any style.', severity: {}, sources: ['boss', 'yamaha'], starter: null },
     {
@@ -427,7 +428,7 @@
     },
     {
       id: 'reggae', name: 'Reggae & Dub', summary: 'Deep, warm and round: lows up, treble rolled off, no distortion.',
-      severity: {}, sources: ['soundfingers', 'premierReggae', 'fenderRumble'],
+      severity: {}, avoids: ['drive'], sources: ['soundfingers', 'premierReggae', 'fenderRumble'],
       starter: { name: 'DUB DEEP', effects: [
         { effect: 'OPTICAL COMPRESSOR', values: { DRIVE: 4, LO: 60, HI: 30, VOL: 80 } },
         { effect: 'SUPER LOW PREAMP', values: { GAIN: 30, ENHANCE: 60, SUB: 40, LO: 70, MID: 40, HI: 20, BALANCE: 60, VOL: 70 } },
@@ -436,7 +437,7 @@
     },
     {
       id: 'jazz', name: 'Jazz & Fretless', summary: 'Warm and round, light compression, a touch of room.',
-      severity: {}, sources: ['talkbassJazz', 'soundbridge'],
+      severity: {}, avoids: ['drive'], sources: ['talkbassJazz', 'soundbridge'],
       starter: { name: 'JAZZ WARM', effects: [
         { effect: 'OPTICAL COMPRESSOR', values: { DRIVE: 3, LO: 50, HI: 40, VOL: 80 } },
         { effect: 'FLIPTOP', values: { GAIN: 20, VOL: 70, CABINET: 50, ULTRA: 'OFF', BRIGHT: 'OFF', BASS: 2, MID: 0, TREBLE: -4 } },

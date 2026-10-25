@@ -169,4 +169,42 @@ test('every preference silences existing rules only', () => {
   ADVICE.preferences.forEach(pref => pref.silences.forEach(id => assert.ok(ADVICE.rules.some(r => r.id === id), `${pref.id}: ${id}`)));
 });
 
+const starterPatch = style => patch(...style.starter.effects.map(e => [e.effect, e.values]));
+
+test('every starter chain fits its own style at 100%', () => {
+  ADVICE.styles.filter(s => s.starter).forEach(style => {
+    const fit = ADVICE.styleFit(starterPatch(style), style);
+    assert.equal(fit.fit, 100, `${style.id}: ${fit.fit}`);
+    assert.equal(fit.missing.length, 0);
+    assert.equal(fit.conflicts.length, 0);
+  });
+});
+
+test('a drive lowers the reggae fit and is reported as a conflict', () => {
+  const reggae = ADVICE.styles.find(s => s.id === 'reggae');
+  const clean = ADVICE.styleFit(starterPatch(reggae), reggae);
+  const driven = ADVICE.styleFit(patch(...reggae.starter.effects.map(e => [e.effect, e.values]), ['DARK OVERDRIVE', {}]), reggae);
+  assert.ok(driven.fit < clean.fit);
+  same(driven.conflicts, ['drive']);
+});
+
+test('suggestions: active style is separate, the others are sorted by fit', () => {
+  const funk = ADVICE.styles.find(s => s.id === 'funk');
+  const { active, others } = ADVICE.suggestStyles(starterPatch(funk), 'funk');
+  assert.equal(active.style.id, 'funk');
+  assert.ok(!others.some(f => f.style.id === 'funk'));
+  others.slice(1).forEach((f, i) => assert.ok(others[i].fit >= f.fit));
+  assert.equal(ADVICE.suggestStyles(starterPatch(funk), 'general').active, null);
+});
+
+test('missing roles come with a starter effect and a sensible position', () => {
+  const funk = ADVICE.styles.find(s => s.id === 'funk');
+  const p = patch(['ENVELOPE FILTER', {}], ['BASS DRIVER PREAMP', {}]);
+  const fit = ADVICE.styleFit(p, funk);
+  const comp = fit.missing.find(m => m.role === 'comp');
+  assert.equal(comp.entry.effect, 'DYNAMIC COMPRESSOR');
+  assert.equal(ADVICE.insertPosition(p, fit, 'comp'), 1);
+  assert.equal(ADVICE.insertPosition(patch(['BASS DRIVER PREAMP', {}]), fit, 'comp'), 0);
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
