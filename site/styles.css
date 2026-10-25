@@ -612,3 +612,9 @@ body.is-dropping .drop-overlay { display: grid; }
 .choice:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-subtle); }
 .choice:disabled { opacity: .5; cursor: not-allowed; }
 .choice span { font-size: 12px; color: var(--fg-muted); }
+
+/* Advice preferences */
+.advice-prefs { margin: 8px 0; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+.advice-prefs summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.pref-row { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+.pref-row input { margin-top: 3px; }

@@ -148,4 +148,25 @@ for (const style of ADVICE.styles.filter(s => s.starter)) {
   });
 }
 
+test('footswitch effects get a usage tip', () => {
+  assert.ok(find(patch(['HOLD DELAY', {}]), 'usage.footswitch'));
+  assert.ok(!find(patch(['DELAY', {}]), 'usage.footswitch'));
+});
+
+test('tempo-synced delay gets a tip, free-time delay does not', () => {
+  assert.ok(find(patch(['DELAY', { MODE: '♩' }]), 'usage.tempo-sync'));
+  assert.ok(!find(patch(['DELAY', { MODE: 'SHORT' }]), 'usage.tempo-sync'));
+});
+
+test('a pinned preference silences its rules', () => {
+  const p = patch(['HALL REVERB', { MIX: 20 }], ['ANALOG DELAY', { MIX: 20 }]);
+  assert.ok(ids(p).includes('order.reverb-before-delay'));
+  assert.ok(!ADVICE.analyze(p, { preferences: ['reverb-before-delay'] }).some(f => f.ruleId === 'order.reverb-before-delay'));
+});
+
+test('every preference silences existing rules only', () => {
+  assert.ok(ADVICE.preferences.length > 0);
+  ADVICE.preferences.forEach(pref => pref.silences.forEach(id => assert.ok(ADVICE.rules.some(r => r.id === id), `${pref.id}: ${id}`)));
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

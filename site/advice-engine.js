@@ -14,6 +14,7 @@ const ADVICE = (() => {
   const rules = [];
   const styles = [];
   const sources = {};
+  const preferences = [];
 
   // ---- effect roles -------------------------------------------------------------------------------
   const ROLE_BY_NAME = {
@@ -85,6 +86,8 @@ const ADVICE = (() => {
   function analyze(patch, options = {}) {
     const style = styles.find(s => s.id === options.style) || null;
     const ignored = new Set(options.ignored || []);
+    // Personal preferences silence the rules they list (see addPreferences)
+    preferences.filter(p => (options.preferences || []).includes(p.id)).forEach(p => p.silences.forEach(id => ignored.add(id)));
     const ctx = context(patch, style);
     if (!ctx.slots.length) return [];
     const findings = [];
@@ -111,6 +114,13 @@ const ADVICE = (() => {
     });
   }
   const addStyles = list => { styles.push(...list); };
+  // Preference shape: { id, label, hint, silences: [ruleId] } — a pinned choice that hides the matching rules.
+  const addPreferences = list => {
+    list.forEach(pref => {
+      pref.silences.forEach(id => { if (!rules.some(r => r.id === id)) throw new Error(`Preference ${pref.id}: unknown rule ${id}`); });
+      preferences.push(pref);
+    });
+  };
   const addSources = map => { Object.assign(sources, map); };
 
   // Placement guidance for one effect, used by the catalog.
@@ -122,8 +132,8 @@ const ADVICE = (() => {
   }
 
   return {
-    SEVERITIES, rules, styles, sources, effects, byName, GROUPS, inGroup,
-    analyze, addRules, addStyles, addSources, addRoleTips, effectTips,
+    SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
+    analyze, addRules, addStyles, addPreferences, addSources, addRoleTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();

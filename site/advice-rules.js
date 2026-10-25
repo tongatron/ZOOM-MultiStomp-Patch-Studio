@@ -282,6 +282,23 @@
       }
     },
 
+    {
+      id: 'usage.footswitch', severity: 'tip', topic: 'usage', title: 'Footswitch-controlled effect',
+      why: 'This effect is operated with the footswitch (see its description in the Effects List), so its sound depends on how you press it. Try it on the pedal before relying on it.',
+      sources: ['zoomFxList'],
+      check: ctx => ctx.active.filter(s => ['HOLD DELAY', 'LOOP ROLL', 'KICK FLANGER', 'BOMBER'].includes(s.fx.name)).map(s => ({
+        slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
+      }))
+    },
+    {
+      id: 'usage.tempo-sync', severity: 'tip', topic: 'usage', title: 'Delay synced to the tempo',
+      why: 'When the delay MODE is set to the metronome symbol, the delay time follows the tempo, so the result depends on the tempo of the patch.',
+      sources: ['zoomFxList'],
+      check: ctx => ctx.active.filter(s => s.has('MODE') && String(s.v('MODE')).includes('♩')).map(s => ({
+        slots: [s.i], message: `${s.fx.name}: the delay time follows the tempo. Set the tempo of this patch on the pedal.`
+      }))
+    },
+
     // ---- style-specific ----
     {
       id: 'funk.comp-attack', severity: 'tip', topic: 'style', styles: ['funk'], title: 'Fast attack for slap',
@@ -340,6 +357,18 @@
         return tracker && first && tracker.i !== first.i ? [{ slots: [tracker.i], message: `${tracker.fx.name} is not the first effect.`, fix: { label: 'Move to the start', apply: p => move(p, tracker.i, 0) } }] : [];
       }
     }
+  ]);
+
+  // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------
+  ADVICE.addPreferences([
+    { id: 'gate-first', label: 'Noise reduction goes where I put it', hint: 'No tip about placing noise reduction before the drive.', silences: ['order.gate-before-gain'] },
+    { id: 'time-before-gain', label: 'Delay or reverb before the drive is deliberate', hint: 'Hides the warning about time effects ahead of a drive or amp.', silences: ['order.time-before-gain'] },
+    { id: 'mod-before-gain', label: 'Modulation before the drive is deliberate', hint: 'Hides the tip about modulation ahead of a drive or amp.', silences: ['order.mod-before-gain'] },
+    { id: 'reverb-before-delay', label: 'Reverb before delay is deliberate', hint: 'Hides the tip about swapping reverb and delay.', silences: ['order.reverb-before-delay'] },
+    { id: 'envfilter-after-drive', label: 'Envelope filter after the drive is deliberate', hint: 'Hides the tip about envelope filters after a drive.', silences: ['order.envfilter-after-drive'] },
+    { id: 'comp-after-envfilter', label: 'Compressor after the envelope filter is deliberate', hint: 'Hides the tip about compression ahead of an envelope filter.', silences: ['order.comp-before-envfilter'] },
+    { id: 'wet-drive', label: 'I like fully wet drives', hint: 'Hides the low-end warnings about drives with no clean signal.', silences: ['lowend.drive-no-dry', 'lowend.drive-blend'] },
+    { id: 'wet-reverb', label: 'I like a very wet reverb', hint: 'Hides the warning about a high reverb mix.', silences: ['reverb.mix-high'] }
   ]);
 
   // ---- placement tips shown in the catalog, by effect role -------------------------------------------

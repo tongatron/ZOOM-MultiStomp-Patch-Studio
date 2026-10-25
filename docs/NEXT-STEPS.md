@@ -45,9 +45,8 @@ Close each one with a generated patch checked on the pedal, then add the range t
 ## 4. Advice engine
 
 - **Test the starter chains on the pedal** (6 styles with a starter) and adjust their values by ear.
-- **More rules**, each with a source: tempo sync for delays and modulation, footswitch-controlled effects (HOLD DELAY, LOOP ROLL, KICK FLANGER, BOMBER), stereo output, patch level / unity gain, tuner and mute usage.
+- **More rules**, each with a source: stereo output, patch level / unity gain, tuner and mute usage. (Footswitch effects and tempo-synced delays are done.)
 - **Rule packs (v3)**: import and export rule sets as `.json` to share them.
-- **Personal preferences**: let the player pin choices (e.g. "compressor always first") that silence the matching rules.
 - **Source health**: some links (TalkBass, Perfect Circuit) sit behind Cloudflare; re-check all sources periodically.
 
 ## 5. Patch builder
