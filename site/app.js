@@ -63,14 +63,6 @@ function renderStats() {
     [effects.length, 'effects'], [Object.keys(CATEGORIES).length, 'categories'], [params, 'documented parameters'], [models, 'modeled on real hardware'],
     [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'DSP load per effect']
   ].map(([n, label]) => `<li><strong>${n}</strong> ${label}</li>`).join('');
-  const bar = document.createElement('div');
-  bar.className = 'lang-bar';
-  bar.setAttribute('aria-hidden', 'true');
-  bar.innerHTML = Object.entries(CATEGORIES).map(([key, { label, color }]) => {
-    const count = effects.filter(effect => effect.category === key).length;
-    return `<span style="--c:${color};flex:${count}" title="${label}: ${count}"></span>`;
-  }).join('');
-  $('#repo-stats').after(bar);
 }
 
 function renderFilters() {

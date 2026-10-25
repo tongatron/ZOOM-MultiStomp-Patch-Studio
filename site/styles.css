@@ -129,8 +129,6 @@ svg { flex: none; }
 .repo-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; color: var(--fg-muted); font-size: 12px; }
 .repo-stats li { display: inline-flex; align-items: center; gap: 6px; }
 .repo-stats strong { color: var(--fg); font-weight: 600; }
-.lang-bar { display: flex; gap: 2px; height: 8px; margin-top: 16px; border-radius: 6px; overflow: hidden; background: var(--bg-muted); }
-.lang-bar span { display: block; min-width: 2px; background: var(--c); }
 
 /* Layout */
 .layout { display: grid; grid-template-columns: 1fr; gap: 24px; padding-top: 24px; padding-bottom: 40px; }
@@ -360,7 +358,7 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 /* ---- Tab navigation (UnderlineNav) ---- */
 .gh-spacer { flex: 1; }
 .repo-head--tabs { padding-bottom: 0; }
-.repo-head--tabs .lang-bar { margin-bottom: 16px; }
+.repo-head--tabs .repo-stats { margin-bottom: 16px; }
 .repo-desc code, .gh-footer code, .import-help code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
 .UnderlineNav { display: flex; gap: 8px; margin-top: 4px; overflow-x: auto; scrollbar-width: none; }
 .UnderlineNav-item {

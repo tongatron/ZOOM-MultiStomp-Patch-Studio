@@ -53,6 +53,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 ## 5. Patch builder
 
 - Patch description (`TXE1`) and patch level fields.
+- Undo/redo is done (history of the editor in memory, Ctrl/⌘+Z, Shift+Ctrl/⌘+Z; slider and name edits collapse into one step). Possible extension: keep the history across page reloads.
 - Drag-and-drop reordering is done (grip handle, pointer events). Not yet tried on a real touch screen.
 - Compare two patches: done ("Compare" in My patches; also accepts the editor). Possible extension: copy a changed value from one patch to the other.
 - Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
@@ -61,8 +62,8 @@ Close each one with a generated patch checked on the pedal, then add the range t
 ## 6. Project hygiene
 
 - Done: CI (`.github/workflows/ci.yml`, round-trip + advice tests on every push) and English text outside `site/`. Push the repository to GitHub to activate the workflow.
-- Accessibility pass (keyboard flow in the builder, contrast of the severity colours) and a performance check on mobile.
+- Accessibility: text contrast checked with a script on the catalog (list, grid, detail) and the builder (chain, compare, picker): everything meets WCAG AA after raising `--fg-subtle`. Still to do: a real screen-reader and keyboard-only pass (the drag handle is pointer-only; the arrow buttons are the keyboard way to reorder) and a performance check on mobile.
 
 ## 7. UI
 
-- The "Stage" theme (`site/stage.css`) is applied on top of `styles.css`; the builder chain is still vertical. A horizontal pedalboard layout with signal cables was prototyped in a demo (removed; see commit e645b06, `site/demos/pedal.css`).
+- The "Stage" theme (`site/stage.css`) is applied on top of `styles.css`. The builder chain is a vertical list on every width: a horizontal pedalboard (cards left to right with signal cables) was tried and rejected as too awkward to scroll; it is in commit history if ever needed.

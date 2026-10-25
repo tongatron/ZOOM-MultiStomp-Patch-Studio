@@ -46,8 +46,47 @@ function hydrate(patch) {
     .map(e => ({ ...slotFor(e.index, e.values), on: e.on !== false, open: false }));
 }
 function save() {
+  recordHistory();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...serialize(state), currentId: state.currentId })); } catch {}
 }
+
+// ---- undo / redo ------------------------------------------------------------------------------
+// Every change goes through save(). Each distinct patch content is kept as a snapshot together with the saved
+// patch it belonged to (so undoing never makes "Save" overwrite another patch). Changes less than 700 ms apart,
+// like dragging a slider or typing a name, collapse into one undo step. History lives in memory only.
+const patchHistory = { undo: [], redo: [], last: null, lastChangeAt: 0, restoring: false };
+function updateHistoryButtons() {
+  $('#undo').disabled = !patchHistory.undo.length;
+  $('#redo').disabled = !patchHistory.redo.length;
+}
+function recordHistory() {
+  if (patchHistory.restoring) return;
+  const content = JSON.stringify(serialize(state));
+  if (patchHistory.last && patchHistory.last.content === content) { patchHistory.last.id = state.currentId; return; }
+  const now = Date.now();
+  if (patchHistory.last) {
+    if (now - patchHistory.lastChangeAt > 700) { patchHistory.undo.push(patchHistory.last); if (patchHistory.undo.length > 100) patchHistory.undo.shift(); }
+    patchHistory.redo = [];
+  }
+  patchHistory.last = { content, id: state.currentId };
+  patchHistory.lastChangeAt = now;
+  updateHistoryButtons();
+}
+function restoreSnapshot(snap) {
+  const patch = JSON.parse(snap.content);
+  patchHistory.restoring = true;
+  state.name = patch.name;
+  state.effects = hydrate(patch);
+  state.currentId = snap.id;
+  $('#patch-name').value = state.name;
+  render();
+  patchHistory.restoring = false;
+  patchHistory.last = snap;
+  patchHistory.lastChangeAt = 0;
+  updateHistoryButtons();
+}
+function undo() { if (patchHistory.undo.length) { patchHistory.redo.push(patchHistory.last); restoreSnapshot(patchHistory.undo.pop()); } }
+function redo() { if (patchHistory.redo.length) { patchHistory.undo.push(patchHistory.last); restoreSnapshot(patchHistory.redo.pop()); } }
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -309,24 +348,26 @@ $('#clear-chain').addEventListener('click', () => {
 {
   const list = $('#chain-list');
   let drag = null;
-  const targetIndex = y => {
+  // The chain is a row on wide screens (pedalboard) and a column on narrow ones: follow the layout direction
+  const isRow = () => { const style = getComputedStyle(list); return style.display === 'flex' && style.flexDirection === 'row'; };
+  const targetIndex = event => {
     const others = [...list.querySelectorAll('.chain-item')].filter(item => item !== drag.item);
-    return others.filter(item => { const r = item.getBoundingClientRect(); return y > r.top + r.height / 2; }).length;
+    return others.filter(item => { const r = item.getBoundingClientRect(); return drag.row ? event.clientX > r.left + r.width / 2 : event.clientY > r.top + r.height / 2; }).length;
   };
   const clearMarks = () => list.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
   list.addEventListener('pointerdown', event => {
     const grip = event.target.closest('[data-grip]');
     if (!grip || event.button > 0) return;
     const item = grip.closest('.chain-item');
-    drag = { item, from: state.effects.findIndex(s => String(s.uid) === item.dataset.uid), startY: event.clientY, to: null };
+    drag = { item, from: state.effects.findIndex(s => String(s.uid) === item.dataset.uid), startX: event.clientX, startY: event.clientY, row: isRow(), to: null };
     grip.setPointerCapture(event.pointerId);
     item.classList.add('is-dragging');
     event.preventDefault();
   });
   list.addEventListener('pointermove', event => {
     if (!drag) return;
-    drag.item.style.transform = `translateY(${event.clientY - drag.startY}px)`;
-    drag.to = targetIndex(event.clientY);
+    drag.item.style.transform = drag.row ? `translateX(${event.clientX - drag.startX}px)` : `translateY(${event.clientY - drag.startY}px)`;
+    drag.to = targetIndex(event);
     clearMarks();
     const others = [...list.querySelectorAll('.chain-item')].filter(item => item !== drag.item);
     if (drag.to < others.length) others[drag.to].classList.add('drop-before'); else others.at(-1)?.classList.add('drop-after');
@@ -434,6 +475,17 @@ function saveCurrent(asNew = false) {
 }
 $('#save-patch').addEventListener('click', () => saveCurrent());
 $('#save-as-new').addEventListener('click', () => saveCurrent(true));
+$('#undo').addEventListener('click', undo);
+$('#redo').addEventListener('click', redo);
+document.addEventListener('keydown', event => {
+  const key = event.key.toLowerCase();
+  if ((event.metaKey || event.ctrlKey) && (key === 'z' || key === 'y')) {
+    // Text fields keep their own undo; everywhere else Ctrl/⌘+Z steps through the patch history
+    if (event.target.matches?.('textarea, input:not([type="range"]):not([type="checkbox"])')) return;
+    event.preventDefault();
+    if (key === 'y' || event.shiftKey) redo(); else undo();
+  }
+});
 document.addEventListener('keydown', event => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (!$('#save-patch').disabled) saveCurrent(); }
 });

@@ -1,7 +1,7 @@
 /* "Stage" theme: lime LCD accent, artwork-first cards, pill tabs. Loaded after styles.css and only overrides it. */
 :root {
   --bg: #0a0c0c; --bg-inset: #0a0c0c; --bg-subtle: #121615; --bg-muted: #1b211f; --bg-hover: #181d1c;
-  --border: #232a28; --border-muted: #1c2220; --fg: #e8efe6; --fg-muted: #8a978d; --fg-subtle: #6b786f;
+  --border: #232a28; --border-muted: #1c2220; --fg: #e8efe6; --fg-muted: #8a978d; --fg-subtle: #7d8a80;
   --accent: #d2f95a; --accent-fg: #d2f95a; --accent-subtle: rgba(210, 249, 90, .1); --accent-muted: rgba(210, 249, 90, .4);
   --btn-bg: #181d1c; --btn-hover: #222a27; --radius: 12px;
 }
@@ -72,3 +72,6 @@ dialog.Overlay { border-radius: 20px; }
 .gh-manual a { color: var(--accent); font-weight: 600; }
 .gh-manual > span[aria-hidden] { color: var(--fg-subtle); margin: 0 -2px; }
 @media (max-width: 520px) { .gh-manual-label { display: none; } }
+
+/* Redo icon is the undo arrow mirrored */
+.flip { transform: scaleX(-1); }
