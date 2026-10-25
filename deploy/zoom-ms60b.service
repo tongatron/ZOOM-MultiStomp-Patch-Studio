@@ -1,0 +1,17 @@
+[Unit]
+Description=Zoom MS-60B+ Patch Lab static site
+After=network.target
+
+[Service]
+Type=simple
+User=giovanni
+WorkingDirectory=/srv/apps/zoom-ms60b
+ExecStart=/usr/bin/python3 -m http.server 8097 --bind 127.0.0.1 --directory /srv/apps/zoom-ms60b
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/srv/apps/zoom-ms60b
+
+[Install]
+WantedBy=multi-user.target
