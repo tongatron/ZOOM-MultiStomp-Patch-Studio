@@ -28,25 +28,66 @@ const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' 
 const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index].dsp, 0);
 
 // ---- stato ------------------------------------------------------------------------------------
+// Bozza corrente (STORAGE_KEY) e libreria di patch salvate (LIBRARY_KEY), entrambe nel localStorage del browser.
+const LIBRARY_KEY = 'ms60b-library';
 let uid = 0;
-const state = { name: '', effects: [] }; // effects: [{ uid, index, on, values, open }]
+const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
 function slotFor(index, values = null) {
   const fx = catalog[index];
   const defaults = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? p.codec.fallback : 0]));
   return { uid: ++uid, index, on: true, values: { ...defaults, ...values }, open: true };
 }
+// Forma serializzabile di una patch: { name, effects: [{ index, on, values }] }
+const serialize = source => ({ name: source.name, effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })) });
+const sameContent = (a, b) => JSON.stringify(serialize(a)) === JSON.stringify(serialize(b));
+function hydrate(patch) {
+  return (patch.effects || []).filter(e => catalog[e.index]).slice(0, ZPTC.MAX_EFFECTS)
+    .map(e => ({ ...slotFor(e.index, e.values), on: e.on !== false, open: false }));
+}
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: state.name, effects: state.effects.map(({ index, on, values }) => ({ index, on, values })) })); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...serialize(state), currentId: state.currentId })); } catch {}
 }
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (!saved) return;
     state.name = typeof saved.name === 'string' ? saved.name : '';
-    state.effects = (saved.effects || []).filter(e => catalog[e.index]).slice(0, ZPTC.MAX_EFFECTS)
-      .map(e => ({ ...slotFor(e.index, e.values), on: e.on !== false, open: false }));
+    state.effects = hydrate(saved);
+    state.currentId = saved.currentId ?? null;
   } catch {}
+}
+
+// ---- libreria ---------------------------------------------------------------------------------
+let storageOk = true;
+function readLibrary() {
+  try { const list = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); return Array.isArray(list) ? list : []; }
+  catch { storageOk = false; return []; }
+}
+function writeLibrary(list) {
+  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); storageOk = true; return true; }
+  catch { storageOk = false; notify('danger', 'Impossibile salvare: il browser non permette di memorizzare dati su questo sito.'); return false; }
+}
+const newId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const findEntry = id => readLibrary().find(entry => entry.id === id);
+function uniqueName(name, list, ignoreId = null) {
+  const taken = new Set(list.filter(e => e.id !== ignoreId).map(e => e.name.toLowerCase()));
+  if (!taken.has(name.toLowerCase())) return name;
+  for (let i = 2; ; i++) {
+    const suffix = ` ${i}`;
+    const candidate = name.slice(0, 28 - suffix.length) + suffix;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+function addToLibrary(patch, list = readLibrary()) {
+  const entry = { id: newId(), ...serialize(patch), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
+  list.unshift(entry);
+  return entry;
+}
+function isDirty() {
+  if (!state.currentId) return state.effects.length > 0;
+  const entry = findEntry(state.currentId);
+  return !entry || !sameContent(state, entry);
 }
 
 // ---- catena -----------------------------------------------------------------------------------
@@ -111,10 +152,10 @@ function renderChain() {
 }
 
 // ---- riepilogo --------------------------------------------------------------------------------
-function buildSpec() {
+function buildSpec(source = state) {
   return {
-    name: state.name,
-    effects: state.effects.map(slot => {
+    name: source.name,
+    effects: source.effects.map(slot => {
       const fx = catalog[slot.index];
       const params = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? slot.values[p.name] : { raw: Number(slot.values[p.name]) || 0 }]));
       return { effect: fx.name, on: slot.on, params };
@@ -155,9 +196,47 @@ function renderSummary() {
   $('#notices').innerHTML = notices.map(([kind, text]) => `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`).join('');
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
+  renderSaveState();
 }
 
-function render() { renderChain(); renderSummary(); save(); }
+const formatDate = iso => new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function renderSaveState() {
+  const entry = state.currentId ? findEntry(state.currentId) : null;
+  if (state.currentId && !entry) state.currentId = null;
+  const dirty = isDirty();
+  const canSave = state.effects.length > 0 && state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
+  $('#save-patch').disabled = !canSave || (entry && !dirty);
+  $('#save-as-new').hidden = !entry;
+  $('#save-label').textContent = entry ? (dirty ? 'Salva modifiche' : 'Salvata') : 'Salva';
+  $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Salvataggio non disponibile in questo browser</span>'
+    : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Modifiche non salvate' : `Salvata ${formatDate(entry.updatedAt)}`}</span>`
+    : state.effects.length ? '<span class="status status--attention">Patch non ancora salvata</span>' : '';
+}
+
+function renderLibrary() {
+  const list = readLibrary();
+  $('#library-count').textContent = list.length;
+  $('#library-list').innerHTML = list.length ? list.map(entry => {
+    const effects = entry.effects.filter(e => catalog[e.index]);
+    const dsp = effects.reduce((s, e) => s + catalog[e.index].dsp, 0);
+    const chain = effects.map(e => catalog[e.index].lcd).join(' → ');
+    return `<li class="library-item${entry.id === state.currentId ? ' is-current' : ''}" data-id="${entry.id}">
+      <button class="library-open" data-lib="open" title="Apri nel builder">
+        <span class="library-name">${escapeHtml(entry.name)}</span>
+        <span class="library-chain">${escapeHtml(chain || '—')}</span>
+        <span class="library-meta">${effects.length} effetti · DSP ${pct(dsp)} · ${formatDate(entry.updatedAt)}</span>
+      </button>
+      <div class="library-tools">
+        <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Scarica .zptc" aria-label="Scarica ${escapeHtml(entry.name)} come .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
+        <button class="btn btn-sm btn-icon btn-invisible" data-lib="duplicate" title="Duplica" aria-label="Duplica ${escapeHtml(entry.name)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
+        <button class="btn btn-sm btn-icon btn-invisible btn-danger" data-lib="delete" title="Elimina" aria-label="Elimina ${escapeHtml(entry.name)}">${icon(ICON_TRASH)}</button>
+      </div>
+    </li>`;
+  }).join('') : '<li class="library-empty">Nessuna patch salvata. Componi una catena e premi <b>Salva</b>, oppure importa dei file <code>.zptc</code>.</li>';
+  $('#export-library').disabled = !list.length;
+}
+
+function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
 const notify = (kind, text) => $('#notices').insertAdjacentHTML('afterbegin', `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`);
 
 // ---- interazioni catena -----------------------------------------------------------------------
@@ -207,56 +286,179 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
-$('#clear-chain').addEventListener('click', () => {
-  if (state.effects.length && !confirm('Svuotare la patch?')) return;
-  state.effects = [];
-  state.name = '';
-  $('#patch-name').value = '';
+const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('La patch corrente ha modifiche non salvate. Continuare e perderle?');
+function loadPatch(patch, currentId = null) {
+  state.name = patch.name;
+  state.effects = hydrate(patch);
+  state.currentId = currentId;
+  $('#patch-name').value = patch.name;
   render();
+}
+$('#clear-chain').addEventListener('click', () => {
+  if (!confirmDiscard()) return;
+  loadPatch({ name: '', effects: [] });
 });
 
-// ---- download / apertura file -----------------------------------------------------------------
-$('#download').addEventListener('click', () => {
-  try {
-    const { file } = ZPTC.encode(buildSpec());
-    const url = URL.createObjectURL(new Blob([file], { type: 'application/octet-stream' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${state.name.trim().replace(/[^A-Za-z0-9_-]+/g, '_') || 'patch'}.zptc`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (error) {
-    notify('danger', error.message);
+// ---- salvataggio ------------------------------------------------------------------------------
+function saveCurrent(asNew = false) {
+  if (!state.effects.length || !state.name.trim() || !ZPTC.NAME_CHARS.test(state.name)) return;
+  const list = readLibrary();
+  const existing = !asNew && state.currentId ? list.find(e => e.id === state.currentId) : null;
+  if (existing) {
+    Object.assign(existing, serialize(state), { name: uniqueName(state.name.trim(), list, existing.id), updatedAt: new Date().toISOString() });
+    state.name = existing.name;
+  } else {
+    const entry = addToLibrary({ ...state, name: state.name.trim() }, list);
+    state.currentId = entry.id;
+    state.name = entry.name;
+  }
+  if (!writeLibrary(list)) return;
+  $('#patch-name').value = state.name;
+  render();
+}
+$('#save-patch').addEventListener('click', () => saveCurrent());
+$('#save-as-new').addEventListener('click', () => saveCurrent(true));
+document.addEventListener('keydown', event => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (!$('#save-patch').disabled) saveCurrent(); }
+});
+
+function downloadBytes(bytes, filename, type = 'application/octet-stream') {
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+const fileName = name => `${name.trim().replace(/[^A-Za-z0-9_-]+/g, '_') || 'patch'}.zptc`;
+function downloadPatch(source) {
+  try { downloadBytes(ZPTC.encode(buildSpec(source)).file, fileName(source.name)); }
+  catch (error) { notify('danger', error.message); }
+}
+$('#download').addEventListener('click', () => downloadPatch(state));
+
+$('#library-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-lib]');
+  if (!button) return;
+  const id = button.closest('.library-item').dataset.id;
+  const list = readLibrary();
+  const entry = list.find(e => e.id === id);
+  if (!entry) return;
+  switch (button.dataset.lib) {
+    case 'open':
+      if (id === state.currentId || !confirmDiscard()) return;
+      loadPatch(entry, id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      break;
+    case 'download':
+      downloadPatch({ name: entry.name, effects: hydrate(entry) });
+      break;
+    case 'duplicate': {
+      const copy = addToLibrary({ ...entry, name: `${entry.name.slice(0, 24)} COPY` }, list);
+      if (writeLibrary(list)) { renderLibrary(); notify('muted', `Creata "${copy.name}".`); }
+      break;
+    }
+    case 'delete':
+      if (!confirm(`Eliminare "${entry.name}" dalle tue patch?`)) return;
+      if (!writeLibrary(list.filter(e => e.id !== id))) return;
+      if (id === state.currentId) state.currentId = null;
+      render();
+      break;
   }
 });
 
-$('#open-file').addEventListener('change', async event => {
-  const file = event.target.files[0];
-  event.target.value = '';
-  if (!file) return;
-  try {
-    const patch = ZPTC.decode(new Uint8Array(await file.arrayBuffer()));
-    const skipped = [];
-    state.effects = patch.effects.flatMap(e => {
-      const fx = catalog.find(item => item.name === e.effect);
-      if (!fx) { skipped.push(e.effect); return []; }
-      const values = {};
-      fx.params.forEach(p => {
-        const v = e.params[p.name];
-        if (!p.codec) values[p.name] = v && typeof v === 'object' ? v.raw : 0;
-        else if (v !== undefined && typeof v !== 'object') values[p.name] = v;
-      });
-      return [{ ...slotFor(fx.index, values), on: e.on, open: false }];
+$('#export-library').addEventListener('click', () => {
+  const list = readLibrary();
+  if (!list.length) return;
+  const backup = { format: 'ms60b-patch-library', version: 1, exportedAt: new Date().toISOString(), patches: list };
+  downloadBytes(JSON.stringify(backup, null, 2), `ms60b-patch-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+});
+
+// ---- import -----------------------------------------------------------------------------------
+// .zptc (anche più file insieme) → nuove patch in libreria; .json → backup della libreria (unione per id).
+function patchFromZptc(bytes) {
+  const decoded = ZPTC.decode(bytes);
+  const skipped = [];
+  const effects = decoded.effects.flatMap(e => {
+    const fx = catalog.find(item => item.name === e.effect);
+    if (!fx) { skipped.push(e.effect); return []; }
+    const values = {};
+    fx.params.forEach(p => {
+      const v = e.params[p.name];
+      if (!p.codec) values[p.name] = v && typeof v === 'object' ? v.raw : 0;
+      else if (v !== undefined && typeof v !== 'object') values[p.name] = v;
     });
-    state.name = patch.name;
-    $('#patch-name').value = patch.name;
-    render();
-    if (skipped.length) notify('attention', `Effetti non riconosciuti saltati: ${skipped.join(', ')}.`);
-  } catch (error) {
-    notify('danger', `File non valido: ${error.message}`);
+    return [{ index: fx.index, on: e.on, values }];
+  });
+  const name = decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim() || 'IMPORT';
+  return { patch: { name, effects }, skipped };
+}
+function patchesFromBackup(text) {
+  const data = JSON.parse(text);
+  const patches = Array.isArray(data) ? data : data?.patches;
+  if (!Array.isArray(patches)) throw new Error('non è un backup delle patch');
+  return patches.filter(p => p && typeof p.name === 'string' && Array.isArray(p.effects))
+    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), effects: p.effects.filter(e => catalog[e?.index]).slice(0, ZPTC.MAX_EFFECTS) }));
+}
+
+async function importFiles(files) {
+  if (!files.length) return;
+  const list = readLibrary();
+  const added = [];
+  const problems = [];
+  let updated = 0;
+  for (const file of files) {
+    try {
+      if (/\.json$/i.test(file.name) || file.type === 'application/json') {
+        const fresh = [];
+        for (const p of patchesFromBackup(await file.text())) {
+          const existing = p.id && list.find(e => e.id === p.id);
+          if (existing) {
+            if (!sameContent(existing, p) || existing.name !== p.name) { Object.assign(existing, serialize(p), { updatedAt: p.updatedAt || new Date().toISOString() }); updated++; }
+          } else {
+            fresh.push({ ...serialize(p), id: p.id || newId(), name: uniqueName(p.name, [...list, ...fresh]), updatedAt: p.updatedAt || new Date().toISOString() });
+          }
+        }
+        list.unshift(...fresh); // mantiene l'ordine del backup
+        added.push(...fresh);
+      } else {
+        const { patch, skipped } = patchFromZptc(new Uint8Array(await file.arrayBuffer()));
+        if (skipped.length) problems.push(`${file.name}: effetti non riconosciuti saltati (${skipped.join(', ')})`);
+        if (patch.effects.length) added.push(addToLibrary(patch, list));
+        else problems.push(`${file.name}: nessun effetto riconosciuto`);
+      }
+    } catch (error) {
+      problems.push(`${file.name}: ${error.message}`);
+    }
   }
+  if ((added.length || updated) && !writeLibrary(list)) return;
+  // Un solo .zptc importato: aprilo subito nel builder
+  const single = files.length === 1 && added.length === 1 && !/\.json$/i.test(files[0].name);
+  if (single && confirmDiscard()) loadPatch(added[0], added[0].id);
+  else render();
+  problems.forEach(p => notify('attention', p));
+  if (added.length || updated) notify('muted', `Importate ${added.length} patch${updated ? `, ${updated} aggiornate` : ''}.`);
+}
+$('#import-files').addEventListener('change', event => {
+  const files = [...event.target.files];
+  event.target.value = '';
+  importFiles(files);
+});
+
+// Drag & drop di file sulla pagina
+let dragDepth = 0;
+const hasFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
+document.addEventListener('dragenter', event => { if (!hasFiles(event)) return; dragDepth++; document.body.classList.add('is-dropping'); });
+document.addEventListener('dragleave', event => { if (!hasFiles(event)) return; dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) document.body.classList.remove('is-dropping'); });
+document.addEventListener('dragover', event => { if (hasFiles(event)) event.preventDefault(); });
+document.addEventListener('drop', event => {
+  if (!hasFiles(event)) return;
+  event.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove('is-dropping');
+  importFiles([...event.dataTransfer.files].filter(f => /\.(zptc|json)$/i.test(f.name)));
 });
 
 // ---- picker effetti ---------------------------------------------------------------------------
