@@ -1,180 +1,180 @@
-# Come è stato ricostruito il formato `.zptc` dello Zoom MS-60B+
+# How the ZOOM MS-60B+ `.zptc` format was reconstructed
 
-Questo documento spiega come è nato il generatore di patch (`site/zptc.js`, usato dal Patch Builder e da `tools/zptc.mjs`): da dove arrivano le informazioni, come è stato decifrato il formato e come è stato verificato.
+This document explains how the patch generator (`site/zptc.js`, used by the Patch Builder and by `tools/zptc.mjs`) came about: where the information comes from, how the format was deciphered and how it was verified.
 
-## In breve: nessun file compilato è stato decompilato
+## In short: no compiled file was decompiled
 
-Il generatore **non** è stato ottenuto disassemblando o decompilando software: né il firmware del pedale, né l'app Handy Guitar Lab.
+The generator was **not** obtained by disassembling or decompiling software: neither the pedal firmware nor the Handy Guitar Lab app.
 
-Il metodo è il **reverse engineering di un formato dati**, a "scatola nera":
+The method is **black-box reverse engineering of a data format**:
 
-1. si fanno esportare all'app delle patch che differiscono per **una sola** modifica nota;
-2. si confrontano i byte dei file e si individua cosa cambia;
-3. si scrive un decoder, poi un encoder, e si verifica che rigeneri gli originali **byte per byte**;
-4. la prova finale è sul campo: le patch generate vengono importate in Handy Guitar Lab e i valori controllati sul pedale.
+1. have the app export patches that differ by **one** known change;
+2. compare the bytes of the files and find what changes;
+3. write a decoder, then an encoder, and check that it regenerates the originals **byte for byte**;
+4. the final test is in the field: the generated patches are imported into Handy Guitar Lab and the values are checked on the pedal.
 
-L'unico punto di contatto con file compilati è indiretto: i **valori di carico DSP** e gli **ID degli effetti** provengono da [mungewell/zoom-zt2](https://github.com/mungewell/zoom-zt2) (licenza MIT). Quel progetto legge le intestazioni dei moduli effetto `.ZD2` contenuti nel firmware. Qui abbiamo usato solo la tabella pubblicata (`zoom_fx_ms-plus/ms-60bp/effects_sort.txt`), senza toccare il firmware.
+The only indirect contact with compiled files is that the **DSP load values** and the **effect IDs** come from [mungewell/zoom-zt2](https://github.com/mungewell/zoom-zt2) (MIT licence). That project reads the headers of the `.ZD2` effect modules contained in the firmware. Here only the published table (`zoom_fx_ms-plus/ms-60bp/effects_sort.txt`) was used, without touching the firmware.
 
-## Le fonti e cosa ha fornito ciascuna
+## The sources and what each one provided
 
-| Fonte | Tipo | Cosa ci ha dato |
+| Source | Type | What it gave us |
 |---|---|---|
-| Effects List ufficiale ZOOM (`documentazione/E_MS-60Bplus_FX-list.pdf`) | Documentazione | Nome, ordine e range di ogni parametro dei 97 effetti. **Nulla sul formato file.** |
-| Guida Handy Guitar Lab (`documentazione/E_HandyGuitarLab_for_MS-60Bplus.pdf`) | Documentazione | Conferma che l'app importa ed esporta file `.zptc` (pag. 20–21), Pool, Copy to Device. |
-| [zoom-zt2](https://github.com/mungewell/zoom-zt2) `decode_preset.py` | Codice open source | Ipotesi di partenza sulla struttura PTCF dei pedali G1Four (blocchi `TXJ1`/`TXE1`/`EDTB`/`PPRM`, layout dei bit). |
-| zoom-zt2 `effects_sort.txt` (MS-60B+) | Dati open source | ID a 32 bit, nome breve sul display, file ZD2, versione e % DSP dei 97 effetti. |
-| Export di prova in `patches/` | Dati sperimentali | Conferma di ogni campo per l'MS-60B+ (la struttura differisce da quella G1Four). |
-| Screenshot di Handy Guitar Lab | Verifica | Valori letti dall'app dopo l'import e indicatore "Processor %". |
+| Official ZOOM Effects List (`documentazione/E_MS-60Bplus_FX-list.pdf`) | Documentation | Name, order and range of every parameter of the 97 effects. **Nothing about the file format.** |
+| Handy Guitar Lab guide (`documentazione/E_HandyGuitarLab_for_MS-60Bplus.pdf`) | Documentation | Confirms that the app imports and exports `.zptc` files (pp. 20–21), Pool, Copy to Device. |
+| [zoom-zt2](https://github.com/mungewell/zoom-zt2) `decode_preset.py` | Open-source code | Starting hypothesis for the PTCF structure of the G1Four pedals (`TXJ1`/`TXE1`/`EDTB`/`PPRM` blocks, bit layout). |
+| zoom-zt2 `effects_sort.txt` (MS-60B+) | Open-source data | 32-bit ID, short display name, ZD2 file, version and DSP % of the 97 effects. |
+| Test exports in `patches/` | Experimental data | Confirmation of every field for the MS-60B+ (the structure differs from the G1Four). |
+| Handy Guitar Lab screenshots | Verification | Values read back from the app after import and the "Processor %" indicator. |
 
-La documentazione tecnica ZOOM descrive gli **effetti**, non il **formato**: il formato è stato ricostruito.
+The ZOOM technical documentation describes the **effects**, not the **format**: the format was reconstructed.
 
-## Metodo: analisi differenziale
+## Method: differential analysis
 
-Sono state esportate da Handy Guitar Lab sette patch, costruite apposta:
+Seven patches, built on purpose, were exported from Handy Guitar Lab:
 
-| File | Contenuto | Differenza rispetto al precedente |
+| File | Content | Difference from the previous one |
 |---|---|---|
-| `01base.zptc` | DYNAMIC COMPRESSOR: SENSE 5, ATTACK FAST, TONE 50, VOL 80 | — (riferimento) |
-| `02tone51` | TONE 51 | un solo parametro, +1 |
-| `03vol100` | VOL 100 | un altro parametro |
-| `04effettooff` | effetto OFF | stato on/off |
-| `05TESTA.zptc` | nome "TEST A" | nome patch |
-| `06FLIP.zptc` | + FLIPTOP | secondo effetto, un ampli |
-| `07Big Black .zptc` | patch reale con 5 effetti | controllo su un caso reale |
+| `01base.zptc` | DYNAMIC COMPRESSOR: SENSE 5, ATTACK FAST, TONE 50, VOL 80 | — (reference) |
+| `02tone51` | TONE 51 | one parameter, +1 |
+| `03vol100` | VOL 100 | another parameter |
+| `04effettooff` | effect OFF | on/off state |
+| `05TESTA.zptc` | name "TEST A" | patch name |
+| `06FLIP.zptc` | + FLIPTOP | second effect, an amp |
+| `07Big Black .zptc` | real patch with 5 effects | check on a real case |
 
-Confrontando i dump esadecimali (`xxd`) a coppie, ogni modifica tocca pochissimi byte:
+Comparing the hex dumps (`xxd`) in pairs, each change touches very few bytes:
 
-| Confronto | Offset | Prima → dopo | Interpretazione |
+| Comparison | Offset | Before → after | Interpretation |
 |---|---|---|---|
-| 01 → 02 (TONE 50→51) | `0x62` | `80` → `c0` | si accende 1 bit: il LSB di TONE |
-| 02 → 03 (VOL 80→100) | `0x64` | `40` → `90` | cambiano i bit di VOL |
-| 03 → 04 (effetto OFF) | `0x5c` | `21` → `20` | bit 0 del blocco effetto = ON/OFF |
-| 04 → 05 (nome) | `0xa4…` | `TEST ` → `TEST A` | blocco `NAME` in chiaro |
-| 05 → 06 (+FLIPTOP) | dimensione e conteggio | `0xc4`→`0xe0`, `2`→`3` | un blocco effetto in più (24 byte) |
+| 01 → 02 (TONE 50→51) | `0x62` | `80` → `c0` | one bit turns on: the LSB of TONE |
+| 02 → 03 (VOL 80→100) | `0x64` | `40` → `90` | the bits of VOL change |
+| 03 → 04 (effect OFF) | `0x5c` | `21` → `20` | bit 0 of the effect block = ON/OFF |
+| 04 → 05 (name) | `0xa4…` | `TEST ` → `TEST A` | `NAME` block in plain text |
+| 05 → 06 (+FLIPTOP) | size and count | `0xc4`→`0xe0`, `2`→`3` | one more effect block (24 bytes) |
 
-Il fatto che TONE+1 accenda un bit **in mezzo a un byte** (`0x80`→`0xc0`) indica subito che i parametri sono **impacchettati a bit**, non allineati ai byte.
+The fact that TONE+1 turns on a bit **in the middle of a byte** (`0x80`→`0xc0`) immediately shows that the parameters are **bit-packed**, not byte-aligned.
 
-## La struttura del file
+## The file structure
 
-Tutti gli interi sono little-endian.
+All integers are little-endian.
 
 ```
-offset  contenuto
+offset  content
 0x00    "PTCF"                         magic
-0x04    u32  dimensione totale del file
-0x08    u32  versione (2)
-0x0C    u32  numero di slot (effetti + 1)
-0x10    10 byte  00 00 08 00 00 00 00 00 00 00   (costanti in tutte le esportazioni)
-0x1A    10 char  nome breve, ASCII, completato con spazi
-0x24    slot × u32  ID effetto per slot (lo slot 0 vale 0)
+0x04    u32  total file size
+0x08    u32  version (2)
+0x0C    u32  number of slots (effects + 1)
+0x10    10 bytes  00 00 08 00 00 00 00 00 00 00   (constant in all exports)
+0x1A    10 chars  short name, ASCII, padded with spaces
+0x24    slots × u32  effect ID per slot (slot 0 is 0)
 
-poi una sequenza di blocchi  [tag 4 char][u32 lunghezza][dati]:
-  "TXJ1"  testo (vuoto)
-  "TXE1"  descrizione (vuota)
-  "EDTB"  slot × 24 byte, un blocco per effetto
-  "PRM2"  32 byte di parametri della patch
-  "NAME"  32 byte: nome completo (28 char + 4 byte a zero)
+then a sequence of blocks  [4-char tag][u32 length][data]:
+  "TXJ1"  text (empty)
+  "TXE1"  description (empty)
+  "EDTB"  slots × 24 bytes, one block per effect
+  "PRM2"  32 bytes of patch parameters
+  "NAME"  32 bytes: full name (28 chars + 4 zero bytes)
 ```
 
-**Lo slot 0.** Ogni file contiene uno slot in più del numero di effetti: ID 0, acceso, parametri a zero. Gli screenshot di Handy Guitar Lab hanno chiarito cos'è: il riquadro **BLANK** che l'app mostra all'inizio della catena. Il generatore lo riproduce identico.
+**Slot 0.** Every file contains one more slot than the number of effects: ID 0, on, parameters at zero. The Handy Guitar Lab screenshots made clear what it is: the **BLANK** tile the app shows at the start of the chain. The generator reproduces it identically.
 
-### Il blocco effetto (EDTB, 24 byte)
+### The effect block (EDTB, 24 bytes)
 
-I 24 byte vanno letti come **un unico intero little-endian a 192 bit**. Dal bit meno significativo:
+The 24 bytes are read as **a single 192-bit little-endian integer**. From the least significant bit:
 
-| Bit | Campo |
+| Bits | Field |
 |---|---|
 | 0 | ON/OFF |
-| 1–29 | ID effetto (29 bit, es. `0x01000010` = DYNAMIC COMPRESSOR) |
-| 30–89 | parametri 1–5, **12 bit** ciascuno |
-| 90–113 | parametri 6–8, **8 bit** ciascuno |
-| 114–161 | parametri 9–12, 12 bit ciascuno |
-| 162–191 | non usati (sempre 0 negli export) |
+| 1–29 | effect ID (29 bits, e.g. `0x01000010` = DYNAMIC COMPRESSOR) |
+| 30–89 | parameters 1–5, **12 bits** each |
+| 90–113 | parameters 6–8, **8 bits** each |
+| 114–161 | parameters 9–12, 12 bits each |
+| 162–191 | unused (always 0 in the exports) |
 
-Le larghezze 5×12 / 3×8 / 4×12 arrivano dall'ipotesi zoom-zt2 per i G1Four. Sono state confermate qui: con quel layout, tutti gli effetti di tutti gli export si decodificano nei valori attesi, ad esempio il Graphic EQ a 8 parametri.
+The 5×12 / 3×8 / 4×12 widths come from the zoom-zt2 hypothesis for the G1Four. They were confirmed here: with that layout, all the effects in all the exports decode to the expected values, for example the 8-parameter Graphic EQ.
 
-Esempio con `01base`, blocco all'offset `0x5c`:
+Example with `01base`, block at offset `0x5c`:
 
 ```
 21 00 00 42 01 04 80 0c 40 01 00 …
 bit 0        = 1              → ON
-bit 1–29     = 0x01000010     → DYNAMIC COMPRESSOR (ID dalla tabella zoom-zt2)
+bit 1–29     = 0x01000010     → DYNAMIC COMPRESSOR (ID from the zoom-zt2 table)
 param 1 (12) = 5              → SENSE 5
-param 2 (12) = 1              → ATTACK = FAST (indice 1 di "SLOW, FAST")
+param 2 (12) = 1              → ATTACK = FAST (index 1 of "SLOW, FAST")
 param 3 (12) = 50             → TONE 50
 param 4 (12) = 80             → VOL 80
 ```
 
-TONE inizia al bit 54, cioè al bit 6 del byte 6 del blocco (offset `0x62`). Passando da 50 a 51 si accende proprio quel bit: `0x80 | 0x40 = 0xc0`, esattamente quanto osservato nel confronto.
+TONE starts at bit 54, that is bit 6 of byte 6 of the block (offset `0x62`). Going from 50 to 51 turns on exactly that bit: `0x80 | 0x40 = 0xc0`, exactly what the comparison showed.
 
-### Da valore visualizzato a valore memorizzato
+### From displayed value to stored value
 
-Il formato memorizza interi senza segno. La conversione dipende dal range documentato nella Effects List:
+The format stores unsigned integers. The conversion depends on the range documented in the Effects List:
 
-| Range | Regola | Esempio | Stato |
+| Range | Rule | Example | Status |
 |---|---|---|---|
-| Lista di opzioni (`SLOW, FAST`) | indice | FAST → 1 | verificato |
-| Intero `a – b` | `valore − a` | TONE 50 → 50 | verificato |
-| `-12.0 – 12.0`, `-20.0 – 20.0` | passi da 0,5: `(valore − min) / 0,5` | EQ +1,5 dB → 27; BASS +4,0 → 48 | verificato |
-| `±15.0`, `±10.0` (altri ampli) | stessa regola, per analogia | — | **da verificare** |
-| `OFF, 1 – 6`, `OFF – 100` | OFF = 0, poi `n − min + 1` | — | **da verificare** |
-| Frequenze continue, Q, `-10 – -1, 1 – 10` | sconosciuta | — | si inserisce il valore grezzo |
+| List of options (`SLOW, FAST`) | index | FAST → 1 | verified |
+| Integer `a – b` | `value − a` | TONE 50 → 50 | verified |
+| `-12.0 – 12.0`, `-20.0 – 20.0` | 0.5 steps: `(value − min) / 0.5` | EQ +1.5 dB → 27; BASS +4.0 → 48 | verified |
+| `±15.0`, `±10.0` (other amps) | same rule, by analogy | — | **unverified** |
+| `OFF, 1 – 6`, `OFF – 100` | OFF = 0, then `n − min + 1` | — | **unverified** |
+| Continuous frequencies, Q, `-10 – -1, 1 – 10` | unknown | — | the raw value is entered |
 
-La regola dei passi da 0,5 è stata dedotta dal Graphic EQ della patch "Big Black". I valori memorizzati 16, 28, 33, 36 e 24 diventano −4, +2, +4,5, +6 e 0 dB solo se 24 corrisponde a 0 dB e il passo è 0,5. È stata poi confermata importando GEN TEST2 sul pedale.
+The 0.5 step rule was deduced from the Graphic EQ of the "Big Black" patch. The stored values 16, 28, 33, 36 and 24 become −4, +2, +4.5, +6 and 0 dB only if 24 corresponds to 0 dB and the step is 0.5. It was then confirmed by importing GEN TEST2 on the pedal.
 
-### Il blocco PRM2
+### The PRM2 block
 
-Non è decifrato del tutto. Due campi sono stati identificati per confronto:
+It is not fully deciphered. Two fields were identified by comparison:
 
-- **byte 10, bit 5–7**: lo slot selezionato in modifica. In `06FLIP` vale `0x4c` invece di `0x2c` perché era selezionato FLIPTOP (slot 2).
-- **byte 20**: un bit per ogni slot che contiene un ampli. In `06FLIP` vale `0x08` (bit 3 = slot 2 + 1); in "Big Black" vale `0x40` (AMPG SVT nello slot 5).
+- **byte 10, bits 5–7**: the slot selected for editing. In `06FLIP` it is `0x4c` instead of `0x2c` because FLIPTOP (slot 2) was selected.
+- **byte 20**: one bit for every slot that contains an amp. In `06FLIP` it is `0x08` (bit 3 = slot 2 + 1); in "Big Black" it is `0x40` (AMPG SVT in slot 5).
 
-Il resto viene copiato da `01base` (template). Alcuni campi di "Big Black" non sono ancora spiegati: il byte 0 e i byte 11–12.
+The rest is copied from `01base` (template). Some fields of "Big Black" are still unexplained: byte 0 and bytes 11–12.
 
-### Parametri nascosti
+### Hidden parameters
 
-Gli ampli hanno un **nono parametro**, non documentato, che vale sempre 2 negli export (FLIPTOP, AMPG SVT). Il generatore lo imposta allo stesso valore.
+Amps have a **ninth parameter**, undocumented, which is always 2 in the exports (FLIPTOP, AMPG SVT). The generator sets it to the same value.
 
-## Verifica
+## Verification
 
-1. **Round-trip byte per byte.** `node tools/zptc.mjs roundtrip patches/*` decodifica ogni export e lo ricodifica: tutti e 7 i file sono identici agli originali.
-2. **Encoder da valori leggibili.** Partendo dai soli valori visualizzati (es. TONE 50, ATTACK FAST), l'encoder riproduce esattamente `01base.zptc` e `06FLIP.zptc`.
-3. **Prova sul pedale.** Due patch generate (GEN TEST1 con un compressore; GEN TEST2 con compressore, overdrive, EQ grafico e FLIPTOP) sono state importate in Handy Guitar Lab e copiate nel pedale. Tutti i 28 valori corrispondono, compresi decimali, valori negativi e interruttori.
-4. **Builder del sito.** La patch GEN TEST2 composta dall'interfaccia produce gli stessi byte del file già testato; un `.zptc` importato e riesportato resta identico.
+1. **Byte-for-byte round-trip.** `node tools/zptc.mjs roundtrip patches/*` decodes every export and re-encodes it: all 7 files are identical to the originals.
+2. **Encoder from readable values.** Starting from the displayed values alone (e.g. TONE 50, ATTACK FAST), the encoder reproduces `01base.zptc` and `06FLIP.zptc` exactly.
+3. **Test on the pedal.** Two generated patches (GEN TEST1 with a compressor; GEN TEST2 with compressor, overdrive, graphic EQ and FLIPTOP) were imported into Handy Guitar Lab and copied to the pedal. All 28 values match, including decimals, negative values and switches.
+4. **Site builder.** The GEN TEST2 patch composed from the interface produces the same bytes as the file already tested; an imported and re-exported `.zptc` stays identical.
 
-## Il carico DSP
+## The DSP load
 
-ZOOM non pubblica il "peso" degli effetti. La tabella di zoom-zt2 contiene una percentuale per effetto, letta dai file ZD2. Confrontata con l'indicatore **Processor** di Handy Guitar Lab, risulta sistematicamente più alta di circa l'8%:
+ZOOM does not publish the "weight" of the effects. The zoom-zt2 table contains a percentage per effect, read from the ZD2 files. Compared with the **Processor** indicator of Handy Guitar Lab, it is consistently about 8% higher:
 
-| Patch | Somma zoom-zt2 | Handy Guitar Lab |
+| Patch | zoom-zt2 sum | Handy Guitar Lab |
 |---|---|---|
-| GEN TEST1 | 5,66 | 5% |
-| GEN TEST2 | 66,27 | 61% |
-| Big Black (esportata) | 92,88 | 86% |
-| Big Black (originale) | 103,74 | 96% |
+| GEN TEST1 | 5.66 | 5% |
+| GEN TEST2 | 66.27 | 61% |
+| Big Black (exported) | 92.88 | 86% |
+| Big Black (original) | 103.74 | 96% |
 
-Il rapporto è costante (≈ 0,925). Il sito moltiplica quindi i valori per `DSP_SCALE = 0.925` (in `site/firmware-data.js`): con questa correzione la somma degli effetti coincide con l'indicatore dell'app entro ±1%. Il builder blocca il download sopra il 100%, dove il pedale mostrerebbe PROCESS OVERFLOW.
+The ratio is constant (≈ 0.925). The site therefore multiplies the values by `DSP_SCALE = 0.925` (in `site/firmware-data.js`): with this correction the sum of the effects matches the app indicator within ±1%. The builder blocks the download above 100%, where the pedal would show PROCESS OVERFLOW.
 
-## Anomalie note
+## Known anomalies
 
-- **Export "Big Black".** Nella patch originale il primo effetto è BLACK OPTICAL COMPRESSOR (ID `0x01000020`). Il file esportato contiene invece `0x09000020`, con parametri a zero, e reimportato l'app stessa lo mostra come effetto sconosciuto (⚠). I due ID differiscono di un solo bit (bit 27): potrebbe essere un flag, oppure un difetto dell'export di Handy Guitar Lab. Va verificato con un nuovo export.
+- **"Big Black" export.** In the original patch the first effect is BLACK OPTICAL COMPRESSOR (ID `0x01000020`). The exported file contains `0x09000020` instead, with parameters at zero, and when re-imported the app itself shows it as an unknown effect (⚠). The two IDs differ by a single bit (bit 27): it could be a flag, or a defect in the Handy Guitar Lab export. It needs checking with a new export.
 
-## Come estendere la decodifica
+## How to extend the decoding
 
-Per decifrare un parametro ancora "grezzo" o "da verificare":
+To decipher a parameter that is still "raw" or "unverified":
 
-1. esporta la stessa patch due o tre volte, cambiando **solo** quel parametro e annotando i valori sul display;
-2. `node tools/zptc.mjs decode file.zptc` mostra il valore grezzo (`raw`) di ogni parametro;
-3. ricava la regola da valore visualizzato a valore grezzo e aggiungila alla funzione `codec()` in `site/zptc.js`;
-4. rilancia il round-trip, genera una patch di prova e verificala sul pedale prima di togliere l'etichetta "da verificare".
+1. export the same patch two or three times, changing **only** that parameter and noting the values on the display;
+2. `node tools/zptc.mjs decode file.zptc` shows the raw value (`raw`) of every parameter;
+3. work out the rule from displayed value to raw value and add it to the `codec()` function in `site/zptc.js`;
+4. re-run the round-trip, generate a test patch and check it on the pedal before removing the "unverified" label.
 
-## File del progetto
+## Project files
 
-| File | Ruolo |
+| File | Role |
 |---|---|
-| `site/zptc.js` | Codec condiviso: decode, encode, round-trip, conversione dei valori |
-| `site/builder.html`, `site/builder.js` | Patch Builder: catena, parametri, DSP, salvataggio, import, download |
-| `site/effects-data.js` | Effetti e parametri dalla Effects List (testi originali in inglese) |
-| `site/firmware-data.js` | ID, nome sul display, DSP (zoom-zt2) e `DSP_SCALE` |
+| `site/zptc.js` | Shared codec: decode, encode, round-trip, value conversion |
+| `site/builder.html`, `site/builder.js` | Patch Builder: chain, parameters, DSP, saving, import, download |
+| `site/effects-data.js` | Effects and parameters from the Effects List (original English texts) |
+| `site/firmware-data.js` | IDs, display name, DSP (zoom-zt2) and `DSP_SCALE` |
 | `tools/zptc.mjs` | CLI: `decode`, `encode`, `roundtrip` |
-| `patches/` | Export di riferimento e patch generate usate per le verifiche |
+| `patches/` | Reference exports and generated patches used for the checks |

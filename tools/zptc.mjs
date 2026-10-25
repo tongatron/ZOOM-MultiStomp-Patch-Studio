@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// CLI per i file patch .zptc dello Zoom MS-60B+ (Handy Guitar Lab).
-// Il codec vive in site/zptc.js, condiviso con il patch builder del sito.
+// CLI for the ZOOM MS-60B+ .zptc patch files (Handy Guitar Lab).
+// The codec lives in site/zptc.js, shared with the site's patch builder.
 //
-//   node tools/zptc.mjs decode <file.zptc>            → JSON leggibile su stdout
-//   node tools/zptc.mjs encode <spec.json> <out.zptc> → genera una patch
-//   node tools/zptc.mjs roundtrip <file.zptc>...      → decode + encode, verifica byte per byte
+//   node tools/zptc.mjs decode <file.zptc>            → readable JSON on stdout
+//   node tools/zptc.mjs encode <spec.json> <out.zptc> → generates a patch
+//   node tools/zptc.mjs roundtrip <file.zptc>...      → decode + encode, checks byte for byte
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -27,7 +27,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const { file, warnings } = encode(JSON.parse(readFileSync(args[0], 'utf8')));
     writeFileSync(args[1], file);
     warnings.forEach(w => console.error('⚠', w));
-    console.log(`Scritto ${args[1]} (${file.length} byte)`);
+    console.log(`Wrote ${args[1]} (${file.length} bytes)`);
   } else if (cmd === 'roundtrip') {
     let failed = 0;
     for (const path of args) {
@@ -37,6 +37,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
     process.exitCode = failed ? 1 : 0;
   } else {
-    console.log('Uso: zptc.mjs decode <file> | encode <spec.json> <out.zptc> | roundtrip <file>...');
+    console.log('Usage: zptc.mjs decode <file> | encode <spec.json> <out.zptc> | roundtrip <file>...');
   }
 }

@@ -60,6 +60,5 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 ## 6. Project hygiene
 
-- Continuous integration: run `node tools/zptc.mjs roundtrip …` and `node tools/advice-test.mjs` on every push (GitHub Actions).
-- Translate the remaining Italian outside `site/` for consistency: `tools/zptc.mjs` messages, `docs/zptc-reverse-engineering.md`, `patches/note.txt`.
+- Done: CI (`.github/workflows/ci.yml`, round-trip + advice tests on every push) and English text outside `site/`. Push the repository to GitHub to activate the workflow.
 - Accessibility pass (keyboard flow in the builder, contrast of the severity colours) and a performance check on mobile.

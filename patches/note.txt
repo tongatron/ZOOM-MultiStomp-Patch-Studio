@@ -1,7 +1,7 @@
 1	DYNAMIC COMPRESSOR SENSE 5, ATTACK FAST, TONE 50, VOL 80.
 2	SENSE 5, ATTACK FAST, TONE 51, VOL 80.
 3	SENSE 5, ATTACK FAST, TONE 51, VOL 100.
-4	Effetto off	
-5	Rinomina in TEST A
-6	Con FLIPTOP
-7	Patch reale
+4	Effect off	
+5	Rename to TEST A
+6	With FLIPTOP
+7	Real patch
