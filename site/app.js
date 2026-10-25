@@ -1,16 +1,3 @@
-const CATEGORIES = {
-  DYNAMICS: { label: 'Dynamics', color: '#3fb950' },
-  FILTER: { label: 'Filter', color: '#39c5cf' },
-  DRIVE: { label: 'Drive', color: '#f0883e' },
-  PREAMP: { label: 'Preamp', color: '#db61a2' },
-  MODULATION: { label: 'Modulation', color: '#a371f7' },
-  'PITCH SHIFT': { label: 'Pitch Shift', color: '#d29922' },
-  SYNTH: { label: 'Synth', color: '#ff7b72' },
-  DELAY: { label: 'Delay', color: '#58a6ff' },
-  REVERB: { label: 'Reverb', color: '#7ee2b8' },
-  SFX: { label: 'SFX', color: '#8b949e' },
-  'BASS AMP': { label: 'Bass Amp', color: '#e3b341' }
-};
 const FEATURES = {
   fs: { label: 'Footswitch', hint: 'Controllo dal footswitch' },
   sync: { label: 'Tempo sync', hint: 'Sincronizzabile al tempo' },
@@ -50,6 +37,7 @@ const ICON_X = '<path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.
 const ICON_CHECK = '<path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_SLIDERS = '<path fill="currentColor" d="M5.75 7.5a.75.75 0 0 1 .75.75v1.5h1a.75.75 0 0 1 0 1.5h-1v3a.75.75 0 0 1-1.5 0v-3h-1a.75.75 0 0 1 0-1.5h1v-1.5a.75.75 0 0 1 .75-.75Zm4.5-6a.75.75 0 0 1 .75.75v3h1a.75.75 0 0 1 0 1.5h-1v7.5a.75.75 0 0 1-1.5 0v-7.5h-1a.75.75 0 0 1 0-1.5h1v-3a.75.75 0 0 1 .75-.75Z"/>';
 const ICON_SEARCH = '<path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.06ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/>';
+const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
 const ICON_LINK = '<path fill="currentColor" d="M3.75 2h3.5a.75.75 0 0 1 0 1.5h-3.5a.25.25 0 0 0-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3.5a.75.75 0 0 1 1.5 0v3.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.784 2.784 2 3.75 2Zm6.854-1h4.146a.25.25 0 0 1 .25.25v4.146a.25.25 0 0 1-.427.177L13.03 4.03 9.28 7.78a.75.75 0 0 1-1.06-1.06l3.75-3.75-1.543-1.543A.25.25 0 0 1 10.604 1Z"/>';
 
 function highlight(text) {
@@ -195,6 +183,7 @@ function openEffect(effect) {
       </dl>
     </section>
     <div class="detail-foot">
+      <a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Aggiungi alla patch</a>
       <a class="btn btn-sm" href="${PDF_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Effects List PDF</a>
       <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Come si usa sul pedale</a>
     </div>`;

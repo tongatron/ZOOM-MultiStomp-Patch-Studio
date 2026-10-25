@@ -4,6 +4,21 @@
 // Parametri: [nome sul display, descrizione, range]
 // Tag: fs = controllato da footswitch, st = uscita stereo, sync = tempo sync (metronomo), dry = mix con segnale pulito
 
+// Categorie: etichetta e colore usati da catalogo e patch builder.
+const CATEGORIES = {
+  DYNAMICS: { label: 'Dynamics', color: '#3fb950' },
+  FILTER: { label: 'Filter', color: '#39c5cf' },
+  DRIVE: { label: 'Drive', color: '#f0883e' },
+  PREAMP: { label: 'Preamp', color: '#db61a2' },
+  MODULATION: { label: 'Modulation', color: '#a371f7' },
+  'PITCH SHIFT': { label: 'Pitch Shift', color: '#d29922' },
+  SYNTH: { label: 'Synth', color: '#ff7b72' },
+  DELAY: { label: 'Delay', color: '#58a6ff' },
+  REVERB: { label: 'Reverb', color: '#7ee2b8' },
+  SFX: { label: 'SFX', color: '#8b949e' },
+  'BASS AMP': { label: 'Bass Amp', color: '#e3b341' }
+};
+
 const VOL = ['VOL', 'Adjusts the volume.', '0 – 100'];
 const MIX = ['MIX', 'Adjusts the amount of effected sound that is mixed with the original sound.', '0 – 100'];
 const DRY = ['DRY', 'Adjusts the volume of the unaffected sound.', '0 – 100'];
