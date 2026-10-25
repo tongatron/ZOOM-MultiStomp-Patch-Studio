@@ -14,8 +14,8 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=notice3-20261025" />
-    <link rel="stylesheet" href="stage.css?v=notice3-20261025" />
+    <link rel="stylesheet" href="styles.css?v=compare-20261025" />
+    <link rel="stylesheet" href="stage.css?v=compare-20261025" />
   </head>
   <body>
     <header class="gh-header">
@@ -126,6 +126,7 @@
             <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span></h2>
             <div class="library-actions">
               <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
+              <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
               <label class="btn btn-sm" for="import-files">Import</label>
               <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
             </div>
@@ -181,12 +182,26 @@
       <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=notice3-20261025"></script>
-    <script src="firmware-data.js?v=notice3-20261025"></script>
-    <script src="zptc.js?v=notice3-20261025"></script>
-    <script src="advice-engine.js?v=notice3-20261025"></script>
-    <script src="advice-rules.js?v=notice3-20261025"></script>
-    <script src="builder.js?v=notice3-20261025"></script>
-    <script src="pwa.js?v=notice3-20261025"></script>
+    <dialog class="Overlay compare-dialog" id="compare" aria-labelledby="compare-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="compare-title">Compare patches</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" id="compare-close" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="compare-pick">
+        <label>A <select id="compare-a" class="btn"></select></label>
+        <label>B <select id="compare-b" class="btn"></select></label>
+      </div>
+      <div class="Overlay-body compare-body" id="compare-body"></div>
+    </dialog>
+
+    <script src="effects-data.js?v=compare-20261025"></script>
+    <script src="firmware-data.js?v=compare-20261025"></script>
+    <script src="zptc.js?v=compare-20261025"></script>
+    <script src="advice-engine.js?v=compare-20261025"></script>
+    <script src="advice-rules.js?v=compare-20261025"></script>
+    <script src="builder.js?v=compare-20261025"></script>
+    <script src="pwa.js?v=compare-20261025"></script>
   </body>
 </html>

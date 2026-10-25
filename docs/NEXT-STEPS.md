@@ -53,7 +53,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 - Patch description (`TXE1`) and patch level fields.
 - Drag-and-drop reordering is done (grip handle, pointer events). Not yet tried on a real touch screen.
-- Compare two saved patches side by side.
+- Compare two patches: done ("Compare" in My patches; also accepts the editor). Possible extension: copy a changed value from one patch to the other.
 - Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
 - PWA: done (`manifest.webmanifest`, `sw.js`). The worker is stale-while-revalidate: after a deploy the visitor sees a "new version available" bar (always bump the `?v=` in the HTML, or the CDN keeps serving the old files). PNG icons are in place.
 

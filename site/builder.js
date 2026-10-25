@@ -237,6 +237,7 @@ function renderLibrary() {
     </li>`;
   }).join('') : '<li class="library-empty">No saved patches yet. Build a chain and press <b>Save</b>, or import some <code>.zptc</code> files.</li>';
   $('#export-library').disabled = !list.length;
+  $('#compare-open').disabled = list.length + (state.effects.length ? 1 : 0) < 2;
 }
 
 function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
@@ -343,6 +344,75 @@ $('#clear-chain').addEventListener('click', () => {
   };
   list.addEventListener('pointerup', finish);
   list.addEventListener('pointercancel', finish);
+}
+
+// ---- compare two patches ------------------------------------------------------------------------
+{
+  const dialog = $('#compare');
+  const sources = () => {
+    const list = readLibrary().map(entry => ({ key: entry.id, label: entry.name, effects: entry.effects.filter(e => catalog[e.index]) }));
+    if (state.effects.length) list.unshift({ key: '__editor', label: `${state.name.trim() || 'Untitled'} (editor)`, effects: serialize(state).effects });
+    return list;
+  };
+  // Longest common subsequence of effect indexes keeps the same effects on one row, even when others move around it
+  function align(a, b) {
+    const t = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+    for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) t[i][j] = a[i].index === b[j].index ? t[i + 1][j + 1] + 1 : Math.max(t[i + 1][j], t[i][j + 1]);
+    const rows = [];
+    let i = 0, j = 0;
+    while (i < a.length || j < b.length) {
+      if (i < a.length && j < b.length && a[i].index === b[j].index) rows.push({ a: a[i++], b: b[j++] });
+      else if (j >= b.length || (i < a.length && t[i + 1][j] >= t[i][j + 1])) rows.push({ a: a[i++] });
+      else rows.push({ b: b[j++] });
+    }
+    return rows;
+  }
+  const fmt = v => (v === undefined || v === null || v === '') ? '—' : String(v);
+  function diffs(row) {
+    const fx = catalog[(row.a || row.b).index];
+    const list = [];
+    if ((row.a.on !== false) !== (row.b.on !== false)) list.push({ name: 'State', a: row.a.on !== false ? 'ON' : 'OFF', b: row.b.on !== false ? 'ON' : 'OFF' });
+    fx.params.forEach(p => { const x = row.a.values?.[p.name], y = row.b.values?.[p.name]; if (fmt(x) !== fmt(y)) list.push({ name: p.name, a: fmt(x), b: fmt(y) }); });
+    return list;
+  }
+  const cell = (slot, changes, side) => {
+    if (!slot) return '<div class="cmp-cell cmp-empty">—</div>';
+    const fx = catalog[slot.index];
+    return `<div class="cmp-cell" style="--c:${color(fx)}">
+      <img class="fx-thumb" src="${fx.image}" alt="" width="32" height="40" />
+      <div class="cmp-main"><strong>${escapeHtml(fx.name)}</strong>${slot.on === false ? ' <span class="Label">OFF</span>' : ''}
+        ${changes ? changes.map(c => `<div class="cmp-chg"><span>${escapeHtml(c.name)}</span> <b>${escapeHtml(c[side])}</b></div>`).join('') : ''}</div>
+    </div>`;
+  };
+  const dspOf = effects => effects.reduce((sum, e) => sum + catalog[e.index].dsp, 0);
+  function renderCompare() {
+    const list = sources();
+    const a = list.find(s => s.key === $('#compare-a').value), b = list.find(s => s.key === $('#compare-b').value);
+    if (!a || !b) { $('#compare-body').innerHTML = '<p class="muted">Pick two patches.</p>'; return; }
+    const rows = align(a.effects, b.effects).map(row => {
+      if (!row.a || !row.b) return `<div class="cmp-row cmp-only-${row.a ? 'a' : 'b'}">${cell(row.a, null, 'a')}${cell(row.b, null, 'b')}</div>`;
+      const changes = diffs(row);
+      return `<div class="cmp-row ${changes.length ? 'cmp-diff' : 'cmp-same'}">${cell(row.a, changes.length ? changes : null, 'a')}${cell(row.b, changes.length ? changes : null, 'b')}</div>`;
+    });
+    const same = rows.every(r => r.includes('cmp-same'));
+    $('#compare-body').innerHTML = `
+      <div class="cmp-head"><div><b>${escapeHtml(a.label)}</b><span>${a.effects.length} effects · DSP ${pct(dspOf(a.effects))}</span></div><div><b>${escapeHtml(b.label)}</b><span>${b.effects.length} effects · DSP ${pct(dspOf(b.effects))}</span></div></div>
+      ${same && rows.length ? '<p class="cmp-note">The two patches are identical.</p>' : ''}${rows.join('') || '<p class="muted">Both patches are empty.</p>'}`;
+  }
+  function openCompare() {
+    const list = sources();
+    const options = list.map(s => `<option value="${s.key}">${escapeHtml(s.label)}</option>`).join('');
+    $('#compare-a').innerHTML = options; $('#compare-b').innerHTML = options;
+    $('#compare-a').value = list[0].key;
+    $('#compare-b').value = list[1].key;
+    renderCompare();
+    dialog.showModal();
+  }
+  $('#compare-open').addEventListener('click', openCompare);
+  $('#compare-close').addEventListener('click', () => dialog.close());
+  $('#compare-a').addEventListener('change', renderCompare);
+  $('#compare-b').addEventListener('change', renderCompare);
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
 }
 
 // ---- saving -----------------------------------------------------------------------------------
