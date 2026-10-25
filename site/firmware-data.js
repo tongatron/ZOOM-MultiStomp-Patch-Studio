@@ -3,6 +3,10 @@
 // Non sono pubblicati da ZOOM: il carico DSP è una stima della quota di capacità del pedale (100%).
 // Formato: [DSP %, nome sul display, ID effetto, file ZD2, versione]
 
+// Fattore che porta i valori zoom-zt2 alla scala "Processor %" di Handy Guitar Lab.
+// Calibrato su 4 patch reali (somma zt2 → app): 5,66 → 5 · 66,27 → 61 · 92,88 → 86 · 103,74 → 96.
+const DSP_SCALE = 0.925;
+
 const FIRMWARE_DATA = [
   [5.66, "DYN Comp", "0x01000010", "DCOMP.ZD2", "1.10"],
   [10.86, "BlackOpt", "0x01000020", "BLACKOPT.ZD2", "1.10"],

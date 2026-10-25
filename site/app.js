@@ -25,9 +25,10 @@ const SLOTS = 6;
 
 const slugify = text => text.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => {
-  const [dsp, lcd, fxId, zd2, version] = FIRMWARE_DATA[index];
+  const [dspRaw, lcd, fxId, zd2, version] = FIRMWARE_DATA[index];
   return {
-    index, name, category, model, description, tags, params, dsp, lcd, fxId, zd2, version,
+    index, name, category, model, description, tags, params, lcd, fxId, zd2, version,
+    dsp: dspRaw * DSP_SCALE,
     slug: slugify(name),
     image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
     haystack: [name, lcd, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
@@ -169,7 +170,7 @@ function openEffect(effect) {
       <div class="dsp-card">
         ${dspMeter(effect.dsp, true)}
         <p>Occupa circa <b>${dspText(effect.dsp)}</b> della capacità di elaborazione. Restano <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> per gli altri ${SLOTS - 1} slot della patch${effect.dsp > 100 / SLOTS ? '' : `; ne entrerebbero fino a ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copie`}. Oltre il 100% il pedale mostra <code>PROCESS OVERFLOW</code> e bypassa gli effetti.</p>
-        <p class="dsp-source">Stima non ufficiale letta dai file del firmware (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>); ZOOM non pubblica questi valori.</p>
+        <p class="dsp-source">Stima non ufficiale: valori letti dai file del firmware (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) e calibrati sull'indicatore "Processor" di Handy Guitar Lab (scarto ±1% sulle patch verificate). La somma degli effetti di una patch corrisponde a quell'indicatore.</p>
       </div>
     </section>
     <section class="detail-section">

@@ -1,0 +1,6 @@
+{
+  "name": "GEN TEST1",
+  "effects": [
+    { "effect": "DYNAMIC COMPRESSOR", "on": true, "params": { "SENSE": 7, "ATTACK": "SLOW", "TONE": 70, "VOL": 90 } }
+  ]
+}

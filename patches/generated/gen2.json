@@ -1,0 +1,9 @@
+{
+  "name": "GEN TEST2",
+  "effects": [
+    { "effect": "DYNAMIC COMPRESSOR", "params": { "SENSE": 5, "ATTACK": "FAST", "TONE": 50, "VOL": 80 } },
+    { "effect": "BASS OVERDRIVE", "params": { "GAIN": 40, "TONE": 60, "BALANCE": 50, "VOL": 75 } },
+    { "effect": "BASS GRAPHIC EQ", "params": { "50Hz": 2, "120Hz": 0, "400Hz": -3, "500Hz": -2, "800Hz": 0, "4.5kHz": 1.5, "10kHz": 0, "VOL": 80 } },
+    { "effect": "FLIPTOP", "params": { "GAIN": 35, "VOL": 70, "CABINET": 50, "ULTRA": "OFF", "BRIGHT": "ON", "BASS": 4, "MID": -2, "TREBLE": 1.5 } }
+  ]
+}
