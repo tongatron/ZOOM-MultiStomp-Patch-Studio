@@ -44,6 +44,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 ## 4. Advice engine
 
+- **Output choice** is done: "Plugging into" (bass amp or mixer/PA/headphones) switches the CABINET advice to exact warnings with a one-click fix. It is a global builder setting, not stored in the `.zptc` file. Possible next step: remember it per saved patch, and more output-dependent rules (levels, EQ) once a source is found.
 - **Style ideas** are done (fit per style from the starter roles, "+ effect" buttons, closest other styles). Possible next step: more starters (e.g. a second chain per style) and per-style parameter hints.
 - **Test the starter chains on the pedal** (6 styles with a starter) and adjust their values by ear.
 - **More rules**, each with a source: stereo output, patch level / unity gain, tuner and mute usage. (Footswitch effects and tempo-synced delays are done.)

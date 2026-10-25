@@ -89,6 +89,7 @@ const ADVICE = (() => {
     // Personal preferences silence the rules they list (see addPreferences)
     preferences.filter(p => (options.preferences || []).includes(p.id)).forEach(p => p.silences.forEach(id => ignored.add(id)));
     const ctx = context(patch, style);
+    ctx.output = options.output === 'amp' || options.output === 'mixer' ? options.output : null; // where the pedal plugs in
     if (!ctx.slots.length) return [];
     const findings = [];
     for (const rule of rules) {

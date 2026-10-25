@@ -255,9 +255,35 @@
       id: 'amp.cabinet', severity: 'tip', topic: 'output', title: 'Set CABINET for where you plug in',
       why: 'Cabinet simulation is meant for PA systems and headphones. Into a real bass cabinet it stacks a second speaker colour and often sounds dark and lifeless.',
       sources: ['talkbassPod', 'darkglass'],
-      check: ctx => ctx.of('amp').filter(s => s.has('CABINET')).map(s => ({
-        slots: [s.i], message: `${s.fx.name}: keep CABINET high for PA or headphones, low when you play through a real bass amp.`
+      check: ctx => ctx.output ? [] : ctx.of('amp').filter(s => s.has('CABINET')).map(s => ({
+        slots: [s.i], message: `${s.fx.name}: keep CABINET high for PA or headphones, low when you play through a real bass amp. Choose where you plug in (Advice panel) for an exact check.`
       }))
+    },
+    {
+      id: 'output.cab-into-amp', severity: 'warning', topic: 'output', title: 'Cabinet simulation into a real amp',
+      why: 'CABINET blends the signal after the cabinet simulation with the raw pre-amp signal (0 = pre-amp only). Cabinet simulation is meant for PA systems and headphones; into a real bass cabinet it stacks a second speaker colour and often sounds dark and lifeless.',
+      sources: ['zoomFxList', 'talkbassPod', 'darkglass'],
+      check: ctx => ctx.output !== 'amp' ? [] : ctx.of('amp').filter(s => s.has('CABINET') && (s.num('CABINET') ?? 0) > 50).map(s => ({
+        slots: [s.i], message: `${s.fx.name}: CABINET is ${s.num('CABINET')} but you plug into a bass amp. Lower it so the amp's own speaker is the only cabinet.`,
+        fix: { label: 'Set CABINET to 0', apply: p => setValue(p, s.i, 'CABINET', 0) }
+      }))
+    },
+    {
+      id: 'output.cab-into-mixer', severity: 'warning', topic: 'output', title: 'No cabinet simulation into a mixer',
+      why: 'Straight into a mixer, PA or headphones nothing colours the sound like a speaker would. With CABINET low the amp model sends its raw pre-amp signal, which tends to sound harsh and fizzy. Cabinet simulation is designed for exactly this case.',
+      sources: ['zoomFxList', 'talkbassPod', 'darkglass'],
+      check: ctx => ctx.output !== 'mixer' ? [] : ctx.of('amp').filter(s => s.has('CABINET') && (s.num('CABINET') ?? 0) < 50).map(s => ({
+        slots: [s.i], message: `${s.fx.name}: CABINET is ${s.num('CABINET') ?? 0} but you plug into a mixer. Raise it to hear the cabinet.`,
+        fix: { label: 'Set CABINET to 100', apply: p => setValue(p, s.i, 'CABINET', 100) }
+      }))
+    },
+    {
+      id: 'output.no-cab-mixer', severity: 'tip', topic: 'output', title: 'Distortion into a mixer without an amp model',
+      why: 'A drive on its own has no speaker character. Straight into a mixer or PA it can sound fizzy; an amp model with CABINET up (cabinet simulation is made for PA and headphones) rounds it off.',
+      sources: ['talkbassPod', 'darkglass'],
+      check: ctx => ctx.output !== 'mixer' || ctx.of('amp').length || !ctx.of('drive').length ? [] : [{
+        slots: [ctx.of('drive')[0].i], message: 'If the drive sounds fizzy in the mixer, add an amp model with CABINET high after it.'
+      }]
     },
     {
       id: 'pitch.mono-chords', severity: 'tip', topic: 'usage', title: 'Mono pitch shifter: single notes only',

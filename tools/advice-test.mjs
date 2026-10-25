@@ -207,4 +207,41 @@ test('missing roles come with a starter effect and a sensible position', () => {
   assert.equal(ADVICE.insertPosition(patch(['BASS DRIVER PREAMP', {}]), fit, 'comp'), 0);
 });
 
+const withOutput = (p, output, style) => ADVICE.analyze(p, { style, output });
+const ampPatch = cab => patch(['FLIPTOP', { GAIN: 30, VOL: 70, CABINET: cab }]);
+
+test('without an output choice the generic cabinet tip is shown and the output rules stay quiet', () => {
+  const found = ids(ampPatch(80));
+  assert.ok(found.includes('amp.cabinet'));
+  assert.ok(!found.some(id => id.startsWith('output.')));
+});
+
+test('into a bass amp: a high CABINET warns and the fix sets it to 0', () => {
+  const p = ampPatch(80);
+  const finding = withOutput(p, 'amp').find(f => f.ruleId === 'output.cab-into-amp');
+  assert.ok(finding && finding.severity === 'warning');
+  assert.ok(!withOutput(p, 'amp').some(f => f.ruleId === 'amp.cabinet'));
+  const fixed = finding.fix.apply(p);
+  assert.equal(fixed.effects[0].values.CABINET, 0);
+  assert.ok(!withOutput(fixed, 'amp').some(f => f.ruleId === 'output.cab-into-amp'));
+  assert.ok(!withOutput(ampPatch(20), 'amp').some(f => f.ruleId === 'output.cab-into-amp'));
+});
+
+test('into a mixer: a low CABINET warns and the fix sets it to 100', () => {
+  const p = ampPatch(10);
+  const finding = withOutput(p, 'mixer').find(f => f.ruleId === 'output.cab-into-mixer');
+  assert.ok(finding && finding.severity === 'warning');
+  const fixed = finding.fix.apply(p);
+  assert.equal(fixed.effects[0].values.CABINET, 100);
+  assert.ok(!withOutput(fixed, 'mixer').some(f => f.ruleId === 'output.cab-into-mixer'));
+  assert.ok(!withOutput(ampPatch(80), 'mixer').some(f => f.ruleId === 'output.cab-into-mixer'));
+});
+
+test('into a mixer: a drive with no amp model gets a tip', () => {
+  const drive = patch(['DARK OVERDRIVE', { GAIN: 60, BLEND: 50, VOL: 75 }]);
+  assert.ok(withOutput(drive, 'mixer').some(f => f.ruleId === 'output.no-cab-mixer'));
+  assert.ok(!withOutput(drive, 'amp').some(f => f.ruleId === 'output.no-cab-mixer'));
+  assert.ok(!withOutput(patch(['DARK OVERDRIVE', { GAIN: 60, BLEND: 50, VOL: 75 }], ['FLIPTOP', { CABINET: 80 }]), 'mixer').some(f => f.ruleId === 'output.no-cab-mixer'));
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
