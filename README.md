@@ -35,6 +35,41 @@ The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot ch
 | **`.zptc` export / import** | Reverse-engineered format; every sample file round-trips byte for byte. |
 | **Saved patches** | Local library, comparison view, backup and import. |
 
+## Under the hood: reverse-engineering `.zptc`
+
+ZOOM publishes the effects, not the patch file format. So the generator was **reconstructed from scratch**, with no disassembly of the firmware or of Handy Guitar Lab: just a black box, a hex editor and a lot of patient diffing.
+
+**The method: differential analysis.** Seven patches were exported from Handy Guitar Lab, each differing from the previous one by exactly *one* known change (a parameter +1, an effect switched off, a renamed patch, one more effect). Comparing the bytes shows what each change touches.
+
+```
+TONE 50 -> 51      offset 0x62     80 -> c0     one bit flips in the middle of a byte
+effect ON -> OFF   offset 0x5c     21 -> 20     bit 0 of the effect block is ON/OFF
+add FLIPTOP        size 0xc4 -> 0xe0, slots 2 -> 3   one more 24-byte effect block
+```
+
+That first line cracked the format: a single increment lighting up a bit *inside* a byte means the parameters are **bit-packed**, not byte-aligned.
+
+**The result.** Each effect is a 24-byte block read as one 192-bit little-endian integer:
+
+```
+bit    0        ON / OFF
+bits   1-29     effect ID (29 bits)
+bits  30-89     parameters 1-5   (12 bits each)
+bits  90-113    parameters 6-8   ( 8 bits each)
+bits 114-161    parameters 9-12  (12 bits each)
+```
+
+Around it sit the `PTCF` header and tagged blocks (`EDTB`, `PRM2`, `NAME`). A hidden "slot 0" turned out to be the BLANK tile the app shows at the start of the chain, and amps carry a ninth, undocumented parameter that the generator reproduces. Display values map to stored values by rule: list index for options, `value - min` for integers, and 0.5 dB steps for the EQ ranges, deduced from a real patch ("Big Black") where stored values 16, 28, 33, 36, 24 only make sense as -4, +2, +4.5, +6, 0 dB.
+
+**Proven four ways.**
+
+1. **Byte-for-byte round-trip.** Decode and re-encode every exported file: all of them come back identical.
+2. **Encoder from readable values.** Typing "TONE 50, ATTACK FAST" reproduces the original files exactly.
+3. **On the real pedal.** Generated patches were imported into Handy Guitar Lab and copied to an MS-60B+ on firmware 1.20: all 28 values match, decimals, negatives and switches included.
+4. **In the browser.** The patch composed in the builder UI yields the same bytes as the tested file.
+
+Effect IDs and DSP load figures come from the open-source [zoom-zt2](https://github.com/mungewell/zoom-zt2) project (MIT). Full write-up, including what is still unverified: [`docs/zptc-reverse-engineering.md`](docs/zptc-reverse-engineering.md).
+
 ## Repository layout
 
 ```
