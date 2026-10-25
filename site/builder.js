@@ -118,8 +118,10 @@ function uniqueName(name, list, ignoreId = null) {
     if (!taken.has(candidate.toLowerCase())) return candidate;
   }
 }
+// Where the patch plugs in ('amp' | 'mixer' | null), remembered with each saved patch
+const validOutput = value => (value === 'amp' || value === 'mixer') ? value : null;
 function addToLibrary(patch, list = readLibrary()) {
-  const entry = { id: newId(), ...serialize(patch), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
+  const entry = { id: newId(), ...serialize(patch), output: validOutput(patch.output), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
   list.unshift(entry);
   return entry;
 }
@@ -266,7 +268,7 @@ function renderLibrary() {
       <button class="library-open" data-lib="open" title="Open in the builder">
         <span class="library-name">${escapeHtml(entry.name)}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
-        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)} · ${formatDate(entry.updatedAt)}</span>
+        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? 'bass amp' : 'mixer'}` : ''} · ${formatDate(entry.updatedAt)}</span>
       </button>
       <div class="library-tools">
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Download .zptc" aria-label="Download ${escapeHtml(entry.name)} as .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
@@ -462,10 +464,10 @@ function saveCurrent(asNew = false) {
   const list = readLibrary();
   const existing = !asNew && state.currentId ? list.find(e => e.id === state.currentId) : null;
   if (existing) {
-    Object.assign(existing, serialize(state), { name: uniqueName(state.name.trim(), list, existing.id), updatedAt: new Date().toISOString() });
+    Object.assign(existing, serialize(state), { output: validOutput(adviceSettings.output), name: uniqueName(state.name.trim(), list, existing.id), updatedAt: new Date().toISOString() });
     state.name = existing.name;
   } else {
-    const entry = addToLibrary({ ...state, name: state.name.trim() }, list);
+    const entry = addToLibrary({ ...state, output: adviceSettings.output, name: state.name.trim() }, list);
     state.currentId = entry.id;
     state.name = entry.name;
   }
@@ -518,6 +520,7 @@ $('#library-list').addEventListener('click', event => {
     case 'open':
       if (id === state.currentId || !confirmDiscard()) return;
       loadPatch(entry, id);
+      if (validOutput(entry.output)) { adviceSettings.output = entry.output; saveAdvice(); renderAdvice(); }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       break;
     case 'download':
@@ -568,7 +571,7 @@ function patchesFromBackup(text) {
   const patches = Array.isArray(data) ? data : data?.patches;
   if (!Array.isArray(patches)) throw new Error('not a patch backup');
   return patches.filter(p => p && typeof p.name === 'string' && Array.isArray(p.effects))
-    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), effects: p.effects.filter(e => catalog[e?.index]).slice(0, ZPTC.MAX_EFFECTS) }));
+    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), output: validOutput(p.output), effects: p.effects.filter(e => catalog[e?.index]).slice(0, ZPTC.MAX_EFFECTS) }));
 }
 
 async function importFiles(files) {
