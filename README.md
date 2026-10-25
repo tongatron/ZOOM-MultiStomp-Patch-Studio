@@ -12,15 +12,28 @@
 
 ---
 
-## What it does
+## Why use it
+
+The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot chain are hard to explore on a tiny screen. MS-60B+ STUDIO gives you the whole pedal on a big screen, so you can design patches at your desk and load them with confidence.
+
+- **Find the right effect fast.** Every effect with the original ZOOM text, parameters and ranges, searchable by name, model or parameter.
+- **Never hit the DSP wall by surprise.** See the load of each effect and of the whole chain live, against the 100% limit.
+- **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources.
+- **Tailored to your rig.** Pick a style profile and say whether the pedal feeds a bass amp or a mixer, and the tips adapt.
+- **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
+- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore.
+- **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
+
+## Features
 
 | | |
 |---|---|
-| **Effects library** | All 97 effects with the original ZOOM Effects List text, parameters and ranges. Search by effect, model or parameter and filter by category. |
-| **Patch builder** | Pick up to 6 effects, order them, set every parameter and watch the DSP load (the pedal's limit is 100%). Undo/redo, saved patches, comparison view, backup and import. |
-| **Advice engine** | Rules that check effect order, levels and DSP load, with tips on placement and parameter settings. Style profiles tailor the advice, and you can say whether the pedal plugs into a bass amp or a mixer. Every rule cites its sources. |
-| **`.zptc` export** | Generates patch files that import into Handy Guitar Lab. The format was reverse-engineered from exported patches and every sample file round-trips byte for byte. |
-| **Installable** | Works offline as a PWA. |
+| **Effects library** | All 97 effects with the original ZOOM Effects List text, parameters and ranges. Search and filter by category. |
+| **Patch builder** | Up to 6 effects, drag to reorder, every parameter editable, live DSP meter. |
+| **Advice engine** | Order, level and DSP checks plus placement tips. Order rules are warnings or tips, never errors. Every rule cites its sources. |
+| **Style profiles** | Starter chains and tuned advice per playing style. |
+| **`.zptc` export / import** | Reverse-engineered format; every sample file round-trips byte for byte. |
+| **Saved patches** | Local library, comparison view, backup and import. |
 
 ## Repository layout
 
