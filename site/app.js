@@ -132,6 +132,28 @@ function renderList() {
 
 function render() { renderFilters(); renderList(); }
 
+// Placement tips from the advice engine; shares the on/off setting with the Patch builder
+const adviceEnabled = () => { try { return JSON.parse(localStorage.getItem('ms60b-advice') || '{}').enabled !== false; } catch { return true; } };
+function setAdviceEnabled(enabled) {
+  try {
+    const settings = JSON.parse(localStorage.getItem('ms60b-advice') || '{}');
+    localStorage.setItem('ms60b-advice', JSON.stringify({ ...settings, enabled }));
+  } catch {}
+}
+function placementTips(effect) {
+  if (!adviceEnabled()) return '';
+  const tip = ADVICE.effectTips(effect.index);
+  if (!tip) return '';
+  return `<section class="detail-section">
+      <h3>Placement &amp; tips <button class="clear-link" data-advice-off>Turn advice off</button></h3>
+      <div class="tip-card">
+        <span class="Label">${escapeHtml(tip.place)}</span>
+        <p>${escapeHtml(tip.text)}</p>
+        ${tip.sources.length ? `<details class="sources"><summary>Sources</summary>${tip.sources.map(src => `<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('')}</details>` : ''}
+      </div>
+    </section>`;
+}
+
 // Effect detail
 const dialog = $('#fx-dialog');
 let current = null;
@@ -153,6 +175,7 @@ function openEffect(effect) {
         ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b></p>` : ''}
       </div>
     </div>
+    ${placementTips(effect)}
     <section class="detail-section">
       <h3>DSP load</h3>
       <div class="dsp-card">
@@ -197,7 +220,10 @@ dialog.addEventListener('close', () => {
   current = null;
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 });
-dialog.addEventListener('click', event => { if (event.target === dialog) closeEffect(); });
+dialog.addEventListener('click', event => {
+  if (event.target === dialog) { closeEffect(); return; }
+  if (event.target.closest('[data-advice-off]') && current) { setAdviceEnabled(false); openEffect(current); }
+});
 $('#dialog-close').addEventListener('click', closeEffect);
 const step = delta => {
   const next = current && state.visible[state.visible.indexOf(current) + delta];

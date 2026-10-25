@@ -183,8 +183,9 @@ function renderSummary() {
   if (!state.effects.length) notices.push(['muted', 'Add at least one effect.']);
   if (!state.name.trim()) notices.push(['muted', 'Give the patch a name.']);
   else if (!ZPTC.NAME_CHARS.test(state.name)) notices.push(['danger', 'The name contains characters the pedal does not accept.']);
-  if (total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
-  else if (total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
+  // With advice on, the DSP warnings appear in the Advice panel instead
+  if (!adviceSettings.enabled && total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
+  else if (!adviceSettings.enabled && total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
   const unverified = [];
   const raw = [];
   state.effects.forEach(slot => catalog[slot.index].params.forEach(p => {
@@ -197,6 +198,7 @@ function renderSummary() {
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
   renderSaveState();
+  renderAdvice();
 }
 
 const formatDate = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -501,6 +503,108 @@ picker.addEventListener('click', event => {
   document.querySelector('.chain-item:last-child')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 });
 $('#picker-query').addEventListener('input', event => { pickerState.query = event.target.value.trim().toLowerCase(); renderPicker(); });
+
+// ---- advice -----------------------------------------------------------------------------------
+// Settings are shared with the catalog page (ms60b-advice in localStorage).
+const SEVERITY_LABEL = { error: 'Errors', warning: 'Warnings', tip: 'Tips' };
+const SEVERITY_ICON = {
+  error: '<path fill="currentColor" d="M2.343 13.657A8 8 0 1 1 13.658 2.343 8 8 0 0 1 2.343 13.657ZM6.03 4.97a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042L6.94 8 4.97 9.97a.749.749 0 0 0 .326 1.275.749.749 0 0 0 .734-.215L8 9.06l1.97 1.97a.749.749 0 0 0 1.275-.326.749.749 0 0 0-.215-.734L9.06 8l1.97-1.97a.749.749 0 0 0-.326-1.275.749.749 0 0 0-.734.215L8 6.94Z"/>',
+  warning: '<path fill="currentColor" d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>',
+  tip: '<path fill="currentColor" d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/>'
+};
+const adviceSettings = (() => {
+  const defaults = { enabled: true, style: 'general', ignored: [], show: { error: true, warning: true, tip: true } };
+  try { return { ...defaults, ...JSON.parse(localStorage.getItem('ms60b-advice') || '{}') }; } catch { return defaults; }
+})();
+const saveAdvice = () => { try { localStorage.setItem('ms60b-advice', JSON.stringify(adviceSettings)); } catch {} };
+let findings = [];
+
+function renderAdvice() {
+  const on = adviceSettings.enabled;
+  $('#advice-toggle').checked = on;
+  $('#advice-toggle-label').textContent = on ? 'ON' : 'OFF';
+  $('#advice-body').hidden = !on;
+  $('#advice-off').hidden = on;
+  $('#advice-style').disabled = !on;
+  document.querySelectorAll('.advice-dot').forEach(dot => dot.remove());
+  if (!on) { $('#advice-count').textContent = '–'; findings = []; return; }
+
+  const style = ADVICE.styles.find(s => s.id === adviceSettings.style) || ADVICE.styles[0];
+  $('#advice-style').innerHTML = ADVICE.styles.map(s => `<option value="${s.id}"${s.id === style.id ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+  const sourceLinks = list => list.map(src => `<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('');
+  $('#advice-style-card').innerHTML = style.id === 'general' ? '' : `
+    <div class="style-card">
+      <div class="style-card-main"><strong>${escapeHtml(style.name)}</strong><p>${escapeHtml(style.summary)}</p>
+        <details class="sources"><summary>Sources</summary>${sourceLinks(style.sources.map(k => ADVICE.sources[k]).filter(Boolean))}</details></div>
+      ${style.starter ? `<button class="btn btn-sm" data-advice="starter" title="Replace the current chain with a starting point for this style">Load starter chain</button>` : ''}
+    </div>`;
+
+  findings = ADVICE.analyze(serialize(state), { style: style.id, ignored: adviceSettings.ignored });
+  const counts = Object.fromEntries(ADVICE.SEVERITIES.map(sev => [sev, findings.filter(f => f.severity === sev).length]));
+  $('#advice-count').textContent = findings.length;
+  $('#advice-filters').innerHTML = ADVICE.SEVERITIES.map(sev => `<button class="chip-filter sev-${sev}" data-advice="filter" data-sev="${sev}" aria-pressed="${adviceSettings.show[sev] !== false}">${icon(SEVERITY_ICON[sev], 14)} ${SEVERITY_LABEL[sev]} <span class="Counter">${counts[sev]}</span></button>`).join('');
+
+  const visible = findings.map((f, i) => ({ f, i })).filter(({ f }) => adviceSettings.show[f.severity] !== false);
+  $('#advice-list').innerHTML = !state.effects.length ? '<li class="advice-empty">Add effects to get advice on the chain.</li>'
+    : !visible.length ? `<li class="advice-empty">${findings.length ? 'Nothing to show with the current filters.' : 'No issues found for this chain.'}</li>`
+    : visible.map(({ f, i }) => `<li class="advice-item sev-${f.severity}">
+        <span class="advice-icon" title="${f.severity}">${icon(SEVERITY_ICON[f.severity])}</span>
+        <div class="advice-main">
+          <div class="advice-title">${escapeHtml(f.title)}</div>
+          <p class="advice-msg">${escapeHtml(f.message)}</p>
+          <details class="advice-why"><summary>Why</summary><p>${escapeHtml(f.why)}</p>${f.sources.length ? `<div class="sources">${sourceLinks(f.sources)}</div>` : ''}</details>
+        </div>
+        <div class="advice-actions">
+          ${f.fix ? `<button class="btn btn-sm" data-advice="fix" data-i="${i}">${escapeHtml(f.fix.label)}</button>` : ''}
+          <button class="btn btn-sm btn-invisible" data-advice="ignore" data-i="${i}" title="Stop showing this rule">Ignore</button>
+        </div>
+      </li>`).join('');
+  const ignored = adviceSettings.ignored.length;
+  $('#advice-foot').innerHTML = ignored ? `${ignored} rule${ignored === 1 ? '' : 's'} ignored · <button class="clear-link" data-advice="restore">Show again</button>` : '';
+
+  // Severity dot on the affected chain items
+  const worst = {};
+  visible.forEach(({ f }) => f.slots.forEach(slot => {
+    if (!worst[slot] || ADVICE.SEVERITIES.indexOf(f.severity) < ADVICE.SEVERITIES.indexOf(worst[slot])) worst[slot] = f.severity;
+  }));
+  document.querySelectorAll('.chain-item').forEach((item, slot) => {
+    if (!worst[slot]) return;
+    item.querySelector('.chain-meta').insertAdjacentHTML('beforeend', `<span class="advice-dot sev-${worst[slot]}" title="See Advice">${icon(SEVERITY_ICON[worst[slot]], 12)}</span>`);
+  });
+}
+
+$('#advice-toggle').addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
+$('#advice-style').addEventListener('change', event => { adviceSettings.style = event.target.value; saveAdvice(); renderAdvice(); });
+$('#advice').addEventListener('click', event => {
+  const button = event.target.closest('[data-advice]');
+  if (!button) return;
+  const finding = findings[Number(button.dataset.i)];
+  switch (button.dataset.advice) {
+    case 'filter': {
+      const sev = button.dataset.sev;
+      adviceSettings.show[sev] = adviceSettings.show[sev] === false;
+      break;
+    }
+    case 'ignore': adviceSettings.ignored = [...new Set([...adviceSettings.ignored, finding.ruleId])]; break;
+    case 'restore': adviceSettings.ignored = []; break;
+    case 'fix': {
+      const next = finding.fix.apply(serialize(state));
+      state.effects = hydrate(next);
+      render();
+      return;
+    }
+    case 'starter': {
+      const style = ADVICE.styles.find(s => s.id === adviceSettings.style);
+      if (!style?.starter || !confirmDiscard()) return;
+      const effects = style.starter.effects.map(e => ({ index: catalog.find(fx => fx.name === e.effect).index, on: true, values: e.values }));
+      loadPatch({ name: style.starter.name, effects });
+      return;
+    }
+    default: return;
+  }
+  saveAdvice();
+  renderAdvice();
+});
 
 // ---- startup ----------------------------------------------------------------------------------
 load();

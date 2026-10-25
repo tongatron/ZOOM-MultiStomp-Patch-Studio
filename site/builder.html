@@ -7,7 +7,7 @@
     <meta name="description" content="Build a Zoom MS-60B+ patch and download the .zptc file to import into Handy Guitar Lab." />
     <title>MS-60B+ Patch Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=en-20261025" />
+    <link rel="stylesheet" href="styles.css?v=advice-20261025" />
   </head>
   <body>
     <header class="gh-header">
@@ -56,6 +56,26 @@
           <ol class="chain-list" id="chain-list"></ol>
           <div class="signal-end signal-end--out">OUTPUT</div>
         </div>
+
+        <section class="Box advice" id="advice" aria-labelledby="advice-title">
+          <div class="Box-header">
+            <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
+            <div class="toolbar-right">
+              <label class="select-wrap" title="Style profile">
+                <span class="sr-only">Style profile</span>
+                <select id="advice-style" class="btn btn-sm"></select>
+              </label>
+              <label class="switch" title="Turn advice on or off"><input type="checkbox" id="advice-toggle" checked /><span></span><b id="advice-toggle-label">ON</b></label>
+            </div>
+          </div>
+          <div class="advice-body" id="advice-body">
+            <div class="advice-style-card" id="advice-style-card"></div>
+            <div class="advice-filters" id="advice-filters" role="group" aria-label="Show"></div>
+            <ul class="advice-list" id="advice-list" aria-live="polite"></ul>
+            <div class="advice-foot" id="advice-foot"></div>
+          </div>
+          <p class="advice-off" id="advice-off" hidden>Advice is off. Turn it on to check order, levels, DSP load and style-specific tips.</p>
+        </section>
       </section>
 
       <aside class="builder-side" aria-label="Patch summary">
@@ -140,9 +160,11 @@
       <ul class="picker-list" id="picker-list"></ul>
     </dialog>
 
-    <script src="effects-data.js?v=en-20261025"></script>
-    <script src="firmware-data.js?v=en-20261025"></script>
-    <script src="zptc.js?v=en-20261025"></script>
-    <script src="builder.js?v=en-20261025"></script>
+    <script src="effects-data.js?v=advice-20261025"></script>
+    <script src="firmware-data.js?v=advice-20261025"></script>
+    <script src="zptc.js?v=advice-20261025"></script>
+    <script src="advice-engine.js?v=advice-20261025"></script>
+    <script src="advice-rules.js?v=advice-20261025"></script>
+    <script src="builder.js?v=advice-20261025"></script>
   </body>
 </html>
