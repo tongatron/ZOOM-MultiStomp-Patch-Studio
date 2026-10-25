@@ -55,7 +55,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - Drag-and-drop reordering on desktop and touch, in addition to the ↑/↓ buttons.
 - Compare two saved patches side by side.
 - Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
-- Make the site an installable PWA that works offline at rehearsals.
+- PWA: done (`manifest.webmanifest`, `sw.js`). Still to do: PNG icons (192/512 px) for the install prompt on every browser and an "update available" notice when a new version is deployed.
 
 ## 6. Project hygiene
 

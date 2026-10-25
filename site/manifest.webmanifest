@@ -1,0 +1,11 @@
+{
+  "name": "ZOOM MS-60B+ Effects & Patch Builder",
+  "short_name": "MS-60B+",
+  "description": "Effects library and .zptc patch builder for the ZOOM MS-60B+.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#010409",
+  "theme_color": "#010409",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
