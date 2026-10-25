@@ -7,7 +7,7 @@
     <meta name="description" content="Catalogo consultabile dei 97 effetti dello Zoom MS-60B+: categorie, modelli di riferimento, parametri e range." />
     <title>MS-60B+ Effects</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=gh-catalog-20261025b" />
+    <link rel="stylesheet" href="styles.css?v=gh-catalog-20261025c" />
   </head>
   <body>
     <header class="gh-header">
@@ -32,7 +32,7 @@
           <h1>Libreria effetti MS-60B+</h1>
           <span class="Label Label--muted">Effects List 2024</span>
         </div>
-        <p class="repo-desc">Tutti gli effetti del pedale con modello di riferimento, descrizione e parametri con i relativi range. Ogni patch può contenere fino a 6 effetti.</p>
+        <p class="repo-desc">Tutti gli effetti del pedale con descrizioni originali della Effects List, parametri, range e carico DSP stimato. Ogni patch può contenere fino a 6 effetti, purché il carico totale non superi il 100%.</p>
         <ul class="repo-stats" id="repo-stats" aria-label="Riepilogo catalogo"></ul>
       </div>
     </div>
@@ -67,6 +67,8 @@
                   <option value="zoom">Ordine Zoom</option>
                   <option value="az">Nome A–Z</option>
                   <option value="params">N. parametri</option>
+                  <option value="dsp-asc">DSP: più leggeri</option>
+                  <option value="dsp-desc">DSP: più pesanti</option>
                 </select>
               </label>
               <div class="segmented" role="group" aria-label="Vista">
@@ -107,7 +109,8 @@
       <div class="Overlay-body" id="dialog-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=gh-catalog-20261025"></script>
-    <script src="app.js?v=gh-catalog-20261025"></script>
+    <script src="effects-data.js?v=gh-catalog-20261025c"></script>
+    <script src="firmware-data.js?v=gh-catalog-20261025c"></script>
+    <script src="app.js?v=gh-catalog-20261025c"></script>
   </body>
 </html>

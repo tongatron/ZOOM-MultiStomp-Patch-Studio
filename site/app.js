@@ -19,15 +19,25 @@ const FEATURES = {
 };
 const PDF_URL = 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf';
 const MANUAL_URL = 'https://zoomcorp.com/manuals/ms-60bplus-it/#unique_41';
+const FW_SOURCE_URL = 'https://github.com/mungewell/zoom-zt2/blob/master/zoom_fx_ms-plus/ms-60bp/effects_sort.txt';
 const KNOBS = 4;
+const SLOTS = 6;
 
 const slugify = text => text.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => ({
-  index, name, category, model, description, tags, params,
-  slug: slugify(name),
-  image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
-  haystack: [name, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
-}));
+const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => {
+  const [dsp, lcd, fxId, zd2, version] = FIRMWARE_DATA[index];
+  return {
+    index, name, category, model, description, tags, params, dsp, lcd, fxId, zd2, version,
+    slug: slugify(name),
+    image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
+    haystack: [name, lcd, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
+  };
+});
+
+const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Nome sul display">${text}</code>`;
+const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
+const dspText = dsp => `${dsp.toFixed(1).replace('.', ',')}%`;
+const dspMeter = (dsp, wide = false) => `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Carico DSP stimato: ${dspText(dsp)} della capacità"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
 const state = { query: '', category: null, features: new Set(), sort: 'zoom', view: 'list', visible: [] };
 try { state.view = localStorage.getItem('ms60b-view') === 'grid' ? 'grid' : 'list'; } catch {}
@@ -58,9 +68,11 @@ function matches(effect, { ignoreCategory = false } = {}) {
 
 function renderStats() {
   const params = effects.reduce((sum, effect) => sum + effect.params.length, 0);
-  const models = effects.filter(effect => effect.model && !effect.model.startsWith('Originale')).length;
+  const models = effects.filter(effect => effect.model && effect.model !== 'ZOOM original').length;
+  const dsps = effects.map(effect => effect.dsp);
   $('#repo-stats').innerHTML = [
-    [effects.length, 'effetti'], [Object.keys(CATEGORIES).length, 'categorie'], [params, 'parametri documentati'], [models, 'ispirati a hardware reale']
+    [effects.length, 'effetti'], [Object.keys(CATEGORIES).length, 'categorie'], [params, 'parametri documentati'], [models, 'ispirati a hardware reale'],
+    [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'carico DSP per effetto']
   ].map(([n, label]) => `<li><strong>${n}</strong> ${label}</li>`).join('');
   const bar = document.createElement('div');
   bar.className = 'lang-bar';
@@ -87,6 +99,8 @@ function renderFilters() {
 function sorted(list) {
   if (state.sort === 'az') return [...list].sort((a, b) => a.name.localeCompare(b.name));
   if (state.sort === 'params') return [...list].sort((a, b) => b.params.length - a.params.length || a.index - b.index);
+  if (state.sort === 'dsp-asc') return [...list].sort((a, b) => a.dsp - b.dsp || a.index - b.index);
+  if (state.sort === 'dsp-desc') return [...list].sort((a, b) => b.dsp - a.dsp || a.index - b.index);
   return list;
 }
 
@@ -112,14 +126,15 @@ function renderList() {
     return `<li class="fx-row"><a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}">
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
-        <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${categoryLabel(effect.category)}</div>
+        <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
         ${effect.model ? `<div class="fx-model">Modello: <b>${highlight(effect.model)}</b></div>` : ''}
-        <p class="fx-desc">${highlight(effect.description)}</p>
+        <p class="fx-desc" lang="en">${highlight(effect.description)}</p>
         <div class="fx-params" aria-label="Parametri">${paramChips}</div>
       </div>
       <div class="fx-side">
         <span class="fx-num">#${String(effect.index + 1).padStart(2, '0')}</span>
-        <span>${effect.params.length} parametri</span>
+        ${dspMeter(effect.dsp)}
+        <span class="fx-pcount">${effect.params.length} parametri</span>
         <span class="fx-tags">${effect.tags.map(featureLabel).join('')}</span>
       </div>
     </a></li>`;
@@ -144,22 +159,39 @@ function openEffect(effect) {
       <img class="fx-thumb" src="${effect.image}" alt="Icona di ${escapeHtml(effect.name)} sul display del pedale" width="96" height="120" />
       <div>
         <h2 id="dialog-title">${escapeHtml(effect.name)}</h2>
-        <div class="detail-meta">${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
-        <p class="detail-desc">${escapeHtml(effect.description)}</p>
+        <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
+        <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
         ${effect.model ? `<p class="detail-model">Modello di riferimento: <b>${escapeHtml(effect.model)}</b></p>` : ''}
       </div>
     </div>
+    <section class="detail-section">
+      <h3>Carico DSP</h3>
+      <div class="dsp-card">
+        ${dspMeter(effect.dsp, true)}
+        <p>Occupa circa <b>${dspText(effect.dsp)}</b> della capacità di elaborazione. Restano <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> per gli altri ${SLOTS - 1} slot della patch${effect.dsp > 100 / SLOTS ? '' : `; ne entrerebbero fino a ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copie`}. Oltre il 100% il pedale mostra <code>PROCESS OVERFLOW</code> e bypassa gli effetti.</p>
+        <p class="dsp-source">Stima non ufficiale letta dai file del firmware (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>); ZOOM non pubblica questi valori.</p>
+      </div>
+    </section>
     <section class="detail-section">
       <h3>${icon(ICON_SLIDERS)} Parametri <span class="Counter">${effect.params.length}</span></h3>
       <table class="ptable">
         <thead><tr><th class="pknob" title="Pagina · manopola">Pos.</th><th>Parametro</th><th class="pdesc-col">Descrizione</th><th>Range</th></tr></thead>
         <tbody>${effect.params.map(([name, desc, range], i) => `<tr>
           <td class="pknob">${pages > 1 ? `P${Math.floor(i / KNOBS) + 1}·` : ''}${(i % KNOBS) + 1}</td>
-          <td class="pname">${escapeHtml(name)}<small>${escapeHtml(desc)}</small></td>
-          <td class="pdesc">${escapeHtml(desc)}</td>
+          <td class="pname">${escapeHtml(name)}<small lang="en">${escapeHtml(desc)}</small></td>
+          <td class="pdesc" lang="en">${escapeHtml(desc)}</td>
           <td class="prange">${escapeHtml(range)}</td></tr>`).join('')}</tbody>
       </table>
       <p class="page-hint">${pages > 1 ? `Sul pedale i parametri sono distribuiti su ${pages} pagine da ${KNOBS} manopole.` : `Tutti i parametri stanno sulle ${KNOBS} manopole della prima pagina.`}${effect.tags.includes('sync') ? ' Il simbolo ♩ indica la sincronizzazione al tempo.' : ''}</p>
+    </section>
+    <section class="detail-section">
+      <h3>Dettagli firmware</h3>
+      <dl class="fw-list">
+        <div><dt>Nome sul display</dt><dd><code>${escapeHtml(effect.lcd)}</code></dd></div>
+        <div><dt>ID effetto</dt><dd><code>${effect.fxId}</code></dd></div>
+        <div><dt>File</dt><dd><code>${escapeHtml(effect.zd2)}</code></dd></div>
+        <div><dt>Versione</dt><dd><code>v${effect.version}</code></dd></div>
+      </dl>
     </section>
     <div class="detail-foot">
       <a class="btn btn-sm" href="${PDF_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Effects List PDF</a>
