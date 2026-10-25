@@ -596,3 +596,18 @@ body.is-dropping .drop-overlay { display: grid; }
 .tip-card { padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .tip-card p { margin: 8px 0 0; }
 .detail-section h3 .clear-link { margin-left: auto; font-weight: 400; }
+
+/* Add-to-patch choice */
+.Overlay--small { width: min(480px, calc(100vw - 32px)); }
+@media (max-width: 640px) { .Overlay--small { height: auto; max-height: 100dvh; } }
+.add-choice-body p { margin: 0 0 12px; color: var(--fg-muted); }
+.add-choice-body p b { color: var(--fg); }
+.choice-list { display: flex; flex-direction: column; gap: 8px; }
+.choice {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--fg); text-align: left; cursor: pointer;
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-subtle); }
+.choice:disabled { opacity: .5; cursor: not-allowed; }
+.choice span { font-size: 12px; color: var(--fg-muted); }

@@ -7,7 +7,7 @@
     <meta name="description" content="Build a Zoom MS-60B+ patch and download the .zptc file to import into Handy Guitar Lab." />
     <title>MS-60B+ Patch Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=advice-20261025" />
+    <link rel="stylesheet" href="styles.css?v=add-20261025" />
   </head>
   <body>
     <header class="gh-header">
@@ -82,9 +82,7 @@
         <div class="Box side-box">
           <label class="field">
             <span class="field-label">Patch name</span>
-            <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />
-            <span class="field-hint" id="name-hint">Up to 28 characters: A–Z, 0–9, space and ! % &amp; ' + , - . = _</span>
-          </label>
+            <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />          </label>
 
           <div class="field">
             <div class="field-label field-label--row"><span>DSP load</span><strong id="dsp-total">0%</strong></div>
@@ -160,11 +158,21 @@
       <ul class="picker-list" id="picker-list"></ul>
     </dialog>
 
-    <script src="effects-data.js?v=advice-20261025"></script>
-    <script src="firmware-data.js?v=advice-20261025"></script>
-    <script src="zptc.js?v=advice-20261025"></script>
-    <script src="advice-engine.js?v=advice-20261025"></script>
-    <script src="advice-rules.js?v=advice-20261025"></script>
-    <script src="builder.js?v=advice-20261025"></script>
+    <dialog class="Overlay Overlay--small" id="add-choice" aria-labelledby="add-choice-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="add-choice-title">Add effect</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" data-choice="cancel" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
+    </dialog>
+
+    <script src="effects-data.js?v=add-20261025"></script>
+    <script src="firmware-data.js?v=add-20261025"></script>
+    <script src="zptc.js?v=add-20261025"></script>
+    <script src="advice-engine.js?v=add-20261025"></script>
+    <script src="advice-rules.js?v=add-20261025"></script>
+    <script src="builder.js?v=add-20261025"></script>
   </body>
 </html>

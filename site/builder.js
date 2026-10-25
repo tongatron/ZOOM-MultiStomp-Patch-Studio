@@ -607,15 +607,61 @@ $('#advice').addEventListener('click', event => {
 });
 
 // ---- startup ----------------------------------------------------------------------------------
+// "Add to patch" from the catalog (?add=slug): with a patch already in the editor, ask where the effect goes.
+const addChoice = $('#add-choice');
+let pendingAdd = null;
+function appendEffect(fx) {
+  state.effects.forEach(slot => { slot.open = false; });
+  state.effects.push(slotFor(fx.index));
+  render();
+  document.querySelector('.chain-item:last-child')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function askWhereToAdd(fx) {
+  const name = state.name.trim() || 'Untitled patch';
+  const full = state.effects.length >= ZPTC.MAX_EFFECTS;
+  const dirty = isDirty();
+  const canSave = state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
+  const over = totalDsp() + fx.dsp > 100;
+  pendingAdd = fx;
+  $('#add-choice-title').textContent = `Add ${fx.name}`;
+  $('#add-choice-body').innerHTML = `
+    <p>The editor already holds <b>${escapeHtml(name)}</b> (${state.effects.length} of ${ZPTC.MAX_EFFECTS} effects${dirty ? ', unsaved changes' : ''}).</p>
+    <div class="choice-list">
+      <button class="choice" data-choice="current" ${full ? 'disabled' : ''}>
+        <strong>Add to “${escapeHtml(name)}”</strong>
+        <span>${full ? 'This patch already has 6 effects.' : `Appended as effect ${state.effects.length + 1}. DSP ${pct(totalDsp())} → ${pct(totalDsp() + fx.dsp)}${over ? ' — over the limit' : ''}.`}</span>
+      </button>
+      ${dirty && canSave ? `<button class="choice" data-choice="save-new">
+        <strong>Save “${escapeHtml(name)}” and start a new patch</strong>
+        <span>The current patch goes to My patches; the new one starts with ${escapeHtml(fx.name)}.</span>
+      </button>` : ''}
+      <button class="choice" data-choice="new">
+        <strong>${dirty ? 'Start a new patch without saving' : 'Start a new patch'}</strong>
+        <span>${dirty ? 'Unsaved changes to the current patch will be lost.' : `A new patch with ${escapeHtml(fx.name)} only.`}</span>
+      </button>
+    </div>`;
+  addChoice.showModal();
+  addChoice.querySelector('.choice:not([disabled])')?.focus();
+}
+addChoice.addEventListener('click', event => {
+  if (event.target === addChoice) { addChoice.close(); return; }
+  const choice = event.target.closest('[data-choice]')?.dataset.choice;
+  if (!choice) return;
+  const fx = pendingAdd;
+  addChoice.close();
+  if (choice === 'current') appendEffect(fx);
+  if (choice === 'save-new') saveCurrent();
+  if (choice === 'save-new' || choice === 'new') loadPatch({ name: '', effects: [{ index: fx.index, on: true, values: {} }] });
+});
+addChoice.addEventListener('close', () => { pendingAdd = null; });
+
 load();
 const addSlug = new URLSearchParams(location.search).get('add');
-if (addSlug) {
-  const fx = catalog.find(item => item.slug === addSlug);
-  if (fx && state.effects.length < ZPTC.MAX_EFFECTS) {
-    state.effects.forEach(slot => { slot.open = false; });
-    state.effects.push(slotFor(fx.index));
-  }
-  history.replaceState(null, '', location.pathname);
-}
+history.replaceState(null, '', location.pathname);
 $('#patch-name').value = state.name;
 render();
+const addFx = addSlug && catalog.find(item => item.slug === addSlug);
+if (addFx) {
+  if (state.effects.length) askWhereToAdd(addFx);
+  else appendEffect(addFx);
+}
