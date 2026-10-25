@@ -299,6 +299,7 @@ function loadPatch(patch, currentId = null) {
 $('#clear-chain').addEventListener('click', () => {
   if (!confirmDiscard()) return;
   loadPatch({ name: '', effects: [] });
+  $('#patch-name').focus();
 });
 
 // ---- saving -----------------------------------------------------------------------------------

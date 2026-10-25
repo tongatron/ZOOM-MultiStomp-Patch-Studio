@@ -7,7 +7,7 @@
     <meta name="description" content="Build a Zoom MS-60B+ patch and download the .zptc file to import into Handy Guitar Lab." />
     <title>MS-60B+ Patch Builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=add-20261025" />
+    <link rel="stylesheet" href="styles.css?v=grid-20261025" />
   </head>
   <body>
     <header class="gh-header">
@@ -105,7 +105,6 @@
           <div class="save-status" id="save-status" aria-live="polite"></div>
           <div class="save-extra">
             <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
-            <button class="btn btn-sm btn-invisible" id="clear-chain">New patch</button>
           </div>
         </div>
 
@@ -113,6 +112,7 @@
           <div class="library-head">
             <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span></h2>
             <div class="library-actions">
+              <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
               <label class="btn btn-sm" for="import-files">Import</label>
               <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
             </div>
@@ -168,11 +168,11 @@
       <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=add-20261025"></script>
-    <script src="firmware-data.js?v=add-20261025"></script>
-    <script src="zptc.js?v=add-20261025"></script>
-    <script src="advice-engine.js?v=add-20261025"></script>
-    <script src="advice-rules.js?v=add-20261025"></script>
-    <script src="builder.js?v=add-20261025"></script>
+    <script src="effects-data.js?v=grid-20261025"></script>
+    <script src="firmware-data.js?v=grid-20261025"></script>
+    <script src="zptc.js?v=grid-20261025"></script>
+    <script src="advice-engine.js?v=grid-20261025"></script>
+    <script src="advice-rules.js?v=grid-20261025"></script>
+    <script src="builder.js?v=grid-20261025"></script>
   </body>
 </html>
