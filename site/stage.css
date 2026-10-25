@@ -60,3 +60,8 @@ body { background: radial-gradient(1200px 520px at 50% -140px, #1b2a14 0%, trans
 .dsp-bar { background: repeating-linear-gradient(90deg, #1b221f 0 5px, transparent 5px 7px); border-radius: 2px; }
 .dsp-bar span { background: repeating-linear-gradient(90deg, var(--dsp) 0 5px, transparent 5px 7px); border-radius: 2px; }
 dialog.Overlay { border-radius: 20px; }
+
+/* "New version available" notice (pwa.js) */
+.update-bar { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 10px 12px 10px 16px; background: var(--bg-subtle); border: 1px solid var(--accent-muted); border-radius: 999px; box-shadow: 0 10px 40px rgba(0, 0, 0, .6), 0 0 24px -6px rgba(210, 249, 90, .4); font-size: 13px; }
+.update-bar span { flex: 1; white-space: nowrap; }
+@media (max-width: 480px) { .update-bar { left: 12px; right: 12px; bottom: 12px; transform: none; border-radius: 16px; } .update-bar span { white-space: normal; } }

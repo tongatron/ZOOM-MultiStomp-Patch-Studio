@@ -132,6 +132,7 @@ function renderChain() {
     const fx = catalog[slot.index];
     return `<li class="chain-item${slot.on ? '' : ' is-off'}" data-uid="${slot.uid}" style="--c:${color(fx)}">
       <div class="chain-head">
+        <button class="chain-grip" data-grip aria-label="Drag to reorder ${escapeHtml(fx.name)}" title="Drag to reorder" tabindex="-1"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M5 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM5 7a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm-6 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg></button>
         <span class="chain-slot">${i + 1}</span>
         <img class="fx-thumb" src="${fx.image}" alt="" width="40" height="50" />
         <button class="chain-title" data-action="toggle-open" aria-expanded="${slot.open}">
@@ -301,6 +302,48 @@ $('#clear-chain').addEventListener('click', () => {
   loadPatch({ name: '', effects: [] });
   $('#patch-name').focus();
 });
+
+// ---- drag to reorder ----------------------------------------------------------------------------
+// Pointer events cover mouse, pen and touch; the grip handle is the only drag source, so scrolling still works.
+{
+  const list = $('#chain-list');
+  let drag = null;
+  const targetIndex = y => {
+    const others = [...list.querySelectorAll('.chain-item')].filter(item => item !== drag.item);
+    return others.filter(item => { const r = item.getBoundingClientRect(); return y > r.top + r.height / 2; }).length;
+  };
+  const clearMarks = () => list.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+  list.addEventListener('pointerdown', event => {
+    const grip = event.target.closest('[data-grip]');
+    if (!grip || event.button > 0) return;
+    const item = grip.closest('.chain-item');
+    drag = { item, from: state.effects.findIndex(s => String(s.uid) === item.dataset.uid), startY: event.clientY, to: null };
+    grip.setPointerCapture(event.pointerId);
+    item.classList.add('is-dragging');
+    event.preventDefault();
+  });
+  list.addEventListener('pointermove', event => {
+    if (!drag) return;
+    drag.item.style.transform = `translateY(${event.clientY - drag.startY}px)`;
+    drag.to = targetIndex(event.clientY);
+    clearMarks();
+    const others = [...list.querySelectorAll('.chain-item')].filter(item => item !== drag.item);
+    if (drag.to < others.length) others[drag.to].classList.add('drop-before'); else others.at(-1)?.classList.add('drop-after');
+  });
+  const finish = event => {
+    if (!drag) return;
+    const { from, to } = drag;
+    drag = null;
+    clearMarks();
+    if (event.type !== 'pointercancel' && to !== null && to !== from) {
+      const [moved] = state.effects.splice(from, 1);
+      state.effects.splice(to, 0, moved);
+    }
+    render();
+  };
+  list.addEventListener('pointerup', finish);
+  list.addEventListener('pointercancel', finish);
+}
 
 // ---- saving -----------------------------------------------------------------------------------
 function saveCurrent(asNew = false) {

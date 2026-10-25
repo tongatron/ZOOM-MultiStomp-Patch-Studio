@@ -52,10 +52,10 @@ Close each one with a generated patch checked on the pedal, then add the range t
 ## 5. Patch builder
 
 - Patch description (`TXE1`) and patch level fields.
-- Drag-and-drop reordering on desktop and touch, in addition to the ↑/↓ buttons.
+- Drag-and-drop reordering is done (grip handle, pointer events). Not yet tried on a real touch screen.
 - Compare two saved patches side by side.
 - Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
-- PWA: done (`manifest.webmanifest`, `sw.js`). The worker is stale-while-revalidate, so a deploy shows from the second visit on: add an "update available" notice. Also PNG icons (192/512 px) for the install prompt on every browser.
+- PWA: done (`manifest.webmanifest`, `sw.js`). The worker is stale-while-revalidate: after a deploy the visitor sees a "new version available" bar (always bump the `?v=` in the HTML, or the CDN keeps serving the old files). PNG icons are in place.
 
 ## 6. Project hygiene
 
@@ -64,4 +64,4 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 ## 7. UI
 
-- The "Stage" theme (`site/stage.css`) is applied on top of `styles.css`; the builder chain is still vertical. The demo in `site/demos/pedal.html` shows the horizontal pedalboard layout with signal cables.
+- The "Stage" theme (`site/stage.css`) is applied on top of `styles.css`; the builder chain is still vertical. A horizontal pedalboard layout with signal cables was prototyped in a demo (removed; see commit e645b06, `site/demos/pedal.css`).

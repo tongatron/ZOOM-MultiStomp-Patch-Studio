@@ -4,11 +4,13 @@
 
 const CACHE = 'ms60b-v2';
 const CORE = [
-  './', 'index.html', 'builder.html', 'styles.css', 'stage.css', 'favicon.svg', 'manifest.webmanifest',
+  './', 'index.html', 'builder.html', 'styles.css', 'stage.css', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
   'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'app.js', 'builder.js', 'pwa.js',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 
+const stamp = response => response.headers.get('etag') || response.headers.get('last-modified') || '';
+const notifyUpdate = async () => (await self.clients.matchAll()).forEach(client => client.postMessage({ type: 'updated' }));
 const keyFor = request => { const url = new URL(request.url); url.search = ''; return url.href; };
 
 self.addEventListener('install', event => {
@@ -29,7 +31,11 @@ self.addEventListener('fetch', event => {
     // Stale-while-revalidate: answer from the cache at once and refresh it in the background,
     // so switching pages never waits for the network. A new deploy shows from the next visit on.
     const refresh = fetch(request).then(response => {
-      if (response.ok) cache.put(key, response.clone());
+      if (response.ok) {
+        cache.put(key, response.clone());
+        // A different copy than the one just served means a new deploy: tell the open pages
+        if (hit && stamp(hit) !== stamp(response)) notifyUpdate();
+      }
       return response;
     });
     if (hit) { event.waitUntil(refresh.catch(() => {})); return hit; }
