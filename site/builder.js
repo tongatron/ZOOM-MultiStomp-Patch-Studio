@@ -719,6 +719,7 @@ function renderAdvice() {
   });
 }
 
+$('#advice-on').addEventListener('click', () => { adviceSettings.enabled = true; saveAdvice(); renderSummary(); });
 $('#advice-toggle').addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
 $('#advice-style').addEventListener('change', event => { adviceSettings.style = event.target.value; saveAdvice(); renderAdvice(); });
 $('#advice').addEventListener('click', event => {

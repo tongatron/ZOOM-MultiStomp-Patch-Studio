@@ -226,6 +226,7 @@ select.btn {
   width: 100%; padding: 14px 16px;
   background: none; border: 0; color: inherit; text-align: left; cursor: pointer;
 }
+.fx-link, .fx-link:hover { text-decoration: none; }
 .fx-link:hover { background: var(--bg-hover); }
 .fx-row:last-child .fx-link { border-radius: 0 0 var(--radius) var(--radius); }
 .fx-thumb {
@@ -268,12 +269,8 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 .dsp-card { padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .dsp-card p { margin: 10px 0 0; color: var(--fg-muted); }
 .dsp-card p b { color: var(--fg); font-weight: 600; }
-.dsp-card code, .fw-list code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); color: var(--fg); }
+.dsp-card code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); color: var(--fg); }
 .dsp-card .dsp-source { font-size: 12px; }
-.fw-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0; }
-.fw-list div { padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
-.fw-list dt { font-size: 12px; color: var(--fg-muted); }
-.fw-list dd { margin: 2px 0 0; }
 
 @media (max-width: 640px) {
   .fx-link { grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 12px; }
@@ -667,3 +664,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .builder > * { min-width: 0; }
 .Box-header { flex-wrap: wrap; }
 .library-head, .library-actions { flex-wrap: wrap; }
+
+/* DSP estimate note (detail) and "advice is off" note */
+.dsp-note { margin-top: 10px; }
+.dsp-note summary { cursor: pointer; color: var(--fg-muted); font-size: 13px; }
+.dsp-note summary:hover { color: var(--fg); }
+.dsp-note p { margin: 8px 0 0; }
+.advice-off-note { margin: 0; color: var(--fg-muted); font-size: 13px; }
+.advice-off p { margin: 0 0 10px; }

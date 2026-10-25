@@ -141,7 +141,7 @@ function setAdviceEnabled(enabled) {
   } catch {}
 }
 function placementTips(effect) {
-  if (!adviceEnabled()) return '';
+  if (!adviceEnabled()) return `<section class="detail-section"><p class="advice-off-note">Placement tips are off. <button class="clear-link" data-advice-on>Turn advice on</button></p></section>`;
   const tip = ADVICE.effectTips(effect.index);
   if (!tip) return '';
   return `<section class="detail-section">
@@ -180,8 +180,11 @@ function openEffect(effect) {
       <h3>DSP load</h3>
       <div class="dsp-card">
         ${dspMeter(effect.dsp, true)}
+        <details class="dsp-note">
+          <summary>How this load is estimated</summary>
         <p>Uses about <b>${dspText(effect.dsp)}</b> of the processing capacity, leaving <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> for the other ${SLOTS - 1} slots of the patch${effect.dsp > 100 / SLOTS ? '' : `; up to ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copies would fit`}. Above 100% the pedal shows <code>PROCESS OVERFLOW</code> and bypasses the effects.</p>
         <p class="dsp-source">Unofficial estimate: values read from the firmware files (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) and calibrated against the Handy Guitar Lab "Processor" meter (within ±1% on tested patches). The sum of a patch's effects matches that meter.</p>
+        </details>
       </div>
     </section>
     <section class="detail-section">
@@ -195,15 +198,6 @@ function openEffect(effect) {
           <td class="prange">${escapeHtml(range)}</td></tr>`).join('')}</tbody>
       </table>
       <p class="page-hint">${pages > 1 ? `On the pedal the parameters span ${pages} pages of ${KNOBS} knobs.` : `All parameters fit on the ${KNOBS} knobs of the first page.`}${effect.tags.includes('sync') ? ' The ♩ symbol means the value is synced to the tempo.' : ''}</p>
-    </section>
-    <section class="detail-section">
-      <h3>Firmware details</h3>
-      <dl class="fw-list">
-        <div><dt>Display name</dt><dd><code>${escapeHtml(effect.lcd)}</code></dd></div>
-        <div><dt>Effect ID</dt><dd><code>${effect.fxId}</code></dd></div>
-        <div><dt>File</dt><dd><code>${escapeHtml(effect.zd2)}</code></dd></div>
-        <div><dt>Module version</dt><dd><code>v${effect.version}</code></dd></div>
-      </dl>
     </section>
     <div class="detail-foot">
       <a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>
@@ -223,6 +217,7 @@ dialog.addEventListener('close', () => {
 dialog.addEventListener('click', event => {
   if (event.target === dialog) { closeEffect(); return; }
   if (event.target.closest('[data-advice-off]') && current) { setAdviceEnabled(false); openEffect(current); }
+  if (event.target.closest('[data-advice-on]') && current) { setAdviceEnabled(true); openEffect(current); }
 });
 $('#dialog-close').addEventListener('click', closeEffect);
 const step = delta => {

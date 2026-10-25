@@ -65,3 +65,10 @@ dialog.Overlay { border-radius: 20px; }
 .update-bar { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 10px 12px 10px 16px; background: var(--bg-subtle); border: 1px solid var(--accent-muted); border-radius: 999px; box-shadow: 0 10px 40px rgba(0, 0, 0, .6), 0 0 24px -6px rgba(210, 249, 90, .4); font-size: 13px; }
 .update-bar span { flex: 1; white-space: nowrap; }
 @media (max-width: 480px) { .update-bar { left: 12px; right: 12px; bottom: 12px; transform: none; border-radius: 16px; } .update-bar span { white-space: normal; } }
+
+/* Header: Official Manual ENG/ITA */
+.gh-manual { gap: 6px; cursor: default; }
+.gh-manual:hover { background: var(--btn-bg); border-color: var(--btn-border); }
+.gh-manual a { color: var(--accent); font-weight: 600; }
+.gh-manual > span[aria-hidden] { color: var(--fg-subtle); margin: 0 -2px; }
+@media (max-width: 520px) { .gh-manual-label { display: none; } }

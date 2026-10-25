@@ -14,8 +14,8 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=styles3-20261025" />
-    <link rel="stylesheet" href="stage.css?v=styles3-20261025" />
+    <link rel="stylesheet" href="styles.css?v=ux2-20261025" />
+    <link rel="stylesheet" href="stage.css?v=ux2-20261025" />
   </head>
   <body>
     <header class="gh-header">
@@ -24,10 +24,11 @@
         <span class="gh-brand-name">MS-60B+ <span>STUDIO</span></span>
       </a>
       <span class="gh-spacer"></span>
-      <a class="btn btn-sm gh-header-link" href="https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41" target="_blank" rel="noreferrer">
+      <span class="btn btn-sm gh-header-link gh-manual">
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg>
-        <span>Manual</span>
-      </a>
+        <span class="gh-manual-label">Official Manual</span>
+        <a href="https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41" target="_blank" rel="noreferrer" aria-label="Official Manual, English">ENG</a><span aria-hidden="true">/</span><a href="https://zoomcorp.com/manuals/ms-60bplus-it/" target="_blank" rel="noreferrer" aria-label="Official Manual, Italian">ITA</a>
+      </span>
     </header>
 
     <div class="repo-head repo-head--tabs">
@@ -88,7 +89,7 @@
             <ul class="advice-list" id="advice-list" aria-live="polite"></ul>
             <div class="advice-foot" id="advice-foot"></div>
           </div>
-          <p class="advice-off" id="advice-off" hidden>Advice is off. Turn it on to check order, levels, DSP load and style-specific tips.</p>
+          <div class="advice-off" id="advice-off" hidden><p>Advice is off. Turn it on to check order, levels, DSP load and style-specific tips.</p><button class="btn btn-sm" id="advice-on">Turn advice on</button></div>
         </section>
       </section>
 
@@ -197,12 +198,12 @@
       <div class="Overlay-body compare-body" id="compare-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=styles3-20261025"></script>
-    <script src="firmware-data.js?v=styles3-20261025"></script>
-    <script src="zptc.js?v=styles3-20261025"></script>
-    <script src="advice-engine.js?v=styles3-20261025"></script>
-    <script src="advice-rules.js?v=styles3-20261025"></script>
-    <script src="builder.js?v=styles3-20261025"></script>
-    <script src="pwa.js?v=styles3-20261025"></script>
+    <script src="effects-data.js?v=ux2-20261025"></script>
+    <script src="firmware-data.js?v=ux2-20261025"></script>
+    <script src="zptc.js?v=ux2-20261025"></script>
+    <script src="advice-engine.js?v=ux2-20261025"></script>
+    <script src="advice-rules.js?v=ux2-20261025"></script>
+    <script src="builder.js?v=ux2-20261025"></script>
+    <script src="pwa.js?v=ux2-20261025"></script>
   </body>
 </html>
