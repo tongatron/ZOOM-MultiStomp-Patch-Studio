@@ -6,7 +6,7 @@
 
 [**Open the site → zoom.tongatron.org**](https://zoom.tongatron.org)
 
-[Effects library](https://zoom.tongatron.org) · [Patch builder](https://zoom.tongatron.org/builder.html) · [Official manual (EN)](https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41) · [Manuale (IT)](https://zoomcorp.com/manuals/ms-60bplus-it/)
+[Landing](https://zoom.tongatron.org/landing/) · [Effects library](https://zoom.tongatron.org) · [Patch builder](https://zoom.tongatron.org/builder.html) · [Official manual (EN)](https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41) · [Manuale (IT)](https://zoomcorp.com/manuals/ms-60bplus-it/)
 
 </div>
 
