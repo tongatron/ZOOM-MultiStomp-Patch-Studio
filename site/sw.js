@@ -1,11 +1,10 @@
 // Service worker: makes the site work offline (e.g. at rehearsals).
-// Pages and scripts are fetched from the network first so a deploy shows up straight away;
-// the cached copy is used when the network is unavailable. Effect images are served from the cache first.
+// Everything is served from the cache first and refreshed in the background (stale-while-revalidate).
 // Cache keys ignore the ?v= query string so old versions do not pile up.
 
-const CACHE = 'ms60b-v1';
+const CACHE = 'ms60b-v2';
 const CORE = [
-  './', 'index.html', 'builder.html', 'styles.css', 'favicon.svg', 'manifest.webmanifest',
+  './', 'index.html', 'builder.html', 'styles.css', 'stage.css', 'favicon.svg', 'manifest.webmanifest',
   'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'app.js', 'builder.js', 'pwa.js',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
@@ -24,21 +23,16 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   const key = keyFor(request);
-  const isImage = request.destination === 'image';
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    if (isImage) {
-      const hit = await cache.match(key);
-      if (hit) return hit;
-    }
-    try {
-      const response = await fetch(request);
+    const hit = await cache.match(key);
+    // Stale-while-revalidate: answer from the cache at once and refresh it in the background,
+    // so switching pages never waits for the network. A new deploy shows from the next visit on.
+    const refresh = fetch(request).then(response => {
       if (response.ok) cache.put(key, response.clone());
       return response;
-    } catch (error) {
-      const hit = await cache.match(key);
-      if (hit) return hit;
-      throw error;
-    }
+    });
+    if (hit) { event.waitUntil(refresh.catch(() => {})); return hit; }
+    return refresh;
   })());
 });

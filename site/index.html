@@ -3,18 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#010409" />
-    <meta name="description" content="Searchable catalog of all 97 Zoom MS-60B+ effects: categories, reference models, parameters, ranges and DSP load." />
-    <title>MS-60B+ Effects</title>
+    <meta name="description" content="Explore all 97 ZOOM MS-60B+ effects, then build patches with a smart advice engine that checks effect order, levels and DSP load. Export .zptc files for Handy Guitar Lab." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MS-60B+ Patch Studio" />
+    <meta property="og:title" content="MS-60B+ Patch Studio — effects library and smart patch builder" />
+    <meta property="og:description" content="Explore all 97 ZOOM MS-60B+ effects, then build patches with a smart advice engine that checks effect order, levels and DSP load. Export .zptc files for Handy Guitar Lab." />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content="#0a0c0c" />
+    <title>MS-60B+ Patch Studio — effects library and smart patch builder</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles.css?v=prefs-20261025" />
+    <link rel="stylesheet" href="styles.css?v=stage2-20261025" />
+    <link rel="stylesheet" href="stage.css?v=stage2-20261025" />
   </head>
   <body>
     <header class="gh-header">
-      <a class="gh-brand" href="./" aria-label="MS-60B+ Effects, home">
+      <a class="gh-brand" href="./" aria-label="MS-60B+ Patch Studio, home">
         <img src="favicon.svg" alt="" width="32" height="32" />
-        <span class="gh-crumbs"><span class="muted">zoom</span><span class="sep">/</span><strong>ms-60b-plus-effects</strong></span>
+        <span class="gh-brand-name">MS-60B+ <span>STUDIO</span></span>
       </a>
       <label class="gh-search" for="search">
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.060ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/></svg>
@@ -30,10 +36,10 @@
     <div class="repo-head repo-head--tabs">
       <div class="container">
         <div class="repo-title">
-          <h1>MS-60B+ effects library</h1>
+          <h1>MS-60B+ Patch Studio</h1>
           <span class="Label Label--muted">Effects List 2024</span>
         </div>
-        <p class="repo-desc">Every effect on the pedal with the original Effects List descriptions, parameters, ranges and estimated DSP load. A patch holds up to 6 effects, as long as the total load stays within 100%.</p>
+        <p class="repo-desc">Explore all 97 effects with the original Effects List text, then build patches with a smart advice engine that checks effect order, levels and DSP load. Export <code>.zptc</code> files for Handy Guitar Lab. A patch holds up to 6 effects within 100% load.</p>
         <ul class="repo-stats" id="repo-stats" aria-label="Catalog summary"></ul>
         <nav class="UnderlineNav" aria-label="Sections">
           <a class="UnderlineNav-item" href="./" aria-current="page">Effects <span class="Counter">97</span></a>
@@ -114,11 +120,11 @@
       <div class="Overlay-body" id="dialog-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=prefs-20261025"></script>
-    <script src="firmware-data.js?v=prefs-20261025"></script>
-    <script src="advice-engine.js?v=prefs-20261025"></script>
-    <script src="advice-rules.js?v=prefs-20261025"></script>
-    <script src="app.js?v=prefs-20261025"></script>
-    <script src="pwa.js?v=prefs-20261025"></script>
+    <script src="effects-data.js?v=stage2-20261025"></script>
+    <script src="firmware-data.js?v=stage2-20261025"></script>
+    <script src="advice-engine.js?v=stage2-20261025"></script>
+    <script src="advice-rules.js?v=stage2-20261025"></script>
+    <script src="app.js?v=stage2-20261025"></script>
+    <script src="pwa.js?v=stage2-20261025"></script>
   </body>
 </html>

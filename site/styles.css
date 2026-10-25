@@ -292,7 +292,8 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
   padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle);
 }
 .fx-list[data-view="grid"] .fx-link:hover { border-color: #8b949e; background: var(--bg-hover); }
-.fx-list[data-view="grid"] .fx-thumb { width: 100%; }
+/* height:auto beats the img height attribute, which otherwise letterboxes the artwork with black bars */
+.fx-list[data-view="grid"] .fx-thumb { width: 100%; height: auto; aspect-ratio: 204 / 256; object-fit: cover; }
 .fx-list[data-view="grid"] .fx-name { font-size: 14px; }
 .fx-list[data-view="grid"] .fx-desc,
 .fx-list[data-view="grid"] .fx-params,

@@ -55,9 +55,13 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - Drag-and-drop reordering on desktop and touch, in addition to the ↑/↓ buttons.
 - Compare two saved patches side by side.
 - Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
-- PWA: done (`manifest.webmanifest`, `sw.js`). Still to do: PNG icons (192/512 px) for the install prompt on every browser and an "update available" notice when a new version is deployed.
+- PWA: done (`manifest.webmanifest`, `sw.js`). The worker is stale-while-revalidate, so a deploy shows from the second visit on: add an "update available" notice. Also PNG icons (192/512 px) for the install prompt on every browser.
 
 ## 6. Project hygiene
 
 - Done: CI (`.github/workflows/ci.yml`, round-trip + advice tests on every push) and English text outside `site/`. Push the repository to GitHub to activate the workflow.
 - Accessibility pass (keyboard flow in the builder, contrast of the severity colours) and a performance check on mobile.
+
+## 7. UI
+
+- The "Stage" theme (`site/stage.css`) is applied on top of `styles.css`; the builder chain is still vertical. The demo in `site/demos/pedal.html` shows the horizontal pedalboard layout with signal cables.

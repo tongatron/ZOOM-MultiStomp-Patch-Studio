@@ -112,7 +112,7 @@ function renderList() {
   }
   list.innerHTML = state.visible.map(effect => {
     const paramChips = effect.params.map(([name]) => `<span class="param-chip${state.query && name.toLowerCase().includes(state.query) ? ' hit' : ''}">${escapeHtml(name)}</span>`).join('');
-    return `<li class="fx-row"><a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}">
+    return `<li class="fx-row"><a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
         <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
