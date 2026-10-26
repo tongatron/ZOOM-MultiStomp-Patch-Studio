@@ -19,6 +19,7 @@
   const memories = new Map(); // number → { state: 'loading' | 'ok' | 'empty' | 'error', data, memory, decoded, error }
   let selected = null; // memory number where a local patch goes
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
+  let renaming = null; // memory number whose rename field is open
 
   // ---- log and status --------------------------------------------------------------------------------
   const showLog = () => { $('#usb-log').textContent = lines.join('\n'); };
@@ -55,6 +56,15 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const chainText = names => names.length ? names.join(' → ') : 'no effects';
+  // The chain of a decoded patch as effect cards with their pedal images, in signal order
+  const chainCards = d => d.effects.length ? `<ol class="usb-fx">${d.effects.map(e => {
+    const index = EFFECTS_DATA.findIndex(fx => fx[0] === e.effect);
+    const category = CATEGORIES[EFFECTS_DATA[index]?.[1]];
+    return `<li class="${e.on ? '' : 'is-off'}" style="--c:${category?.color ?? 'var(--border)'}">
+      ${index === -1 ? '' : `<img class="fx-thumb" src="assets/effects/fx-${String(index).padStart(3, '0')}.png" alt="" width="40" height="50" loading="lazy" />`}
+      <span><b>${escapeHtml(e.effect)}</b><small>${escapeHtml(category?.label ?? '')}${e.on ? '' : ' · off'}</small></span>
+    </li>`;
+  }).join('')}</ol>` : '<p class="usb-chain-line">No effects.</p>';
 
   // Decoded PTCF → builder patch: { name, effects: [{ index, on, values }] }
   function toPatch(decoded) {
@@ -165,9 +175,15 @@
         <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>
       </button>
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
-        <p class="usb-chain-line">${escapeHtml(chainText(d.effects.map(e => `${e.effect}${e.on ? '' : ' (off)'}`)))}</p>
+        ${chainCards(d)}
+        ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
+          <label>New name <input class="form-control form-control--sm" name="name" maxlength="28" value="${escapeHtml(d.name)}" required spellcheck="false" autocomplete="off" /></label>
+          <button class="btn btn-sm btn-primary" type="submit">Rename on the pedal</button>
+          <button class="btn btn-sm btn-invisible" type="button" data-act="rename-cancel">Cancel</button>
+        </form>` : ''}
         <div class="usb-row">
           <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}">Open in builder</a>
+          <button class="btn btn-sm" data-act="rename" ${connected && !busy ? '' : 'disabled'}>Rename</button>
           <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
           <button class="btn btn-sm" data-act="download">Download .zptc</button>
           <button class="btn btn-sm btn-invisible" data-act="reread">Read again</button>
@@ -200,7 +216,9 @@
     const n = Number(button.closest('[data-n]').dataset.n);
     const m = memories.get(n);
     switch (button.dataset.act) {
-      case 'select': select(n); break;
+      case 'select': renaming = null; select(n); break;
+      case 'rename': renaming = n; renderMemory(n); $(`[data-rename="${n}"] input`)?.select(); break;
+      case 'rename-cancel': renaming = null; renderMemory(n); break;
       case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
       case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
       case 'copy': {
@@ -216,6 +234,28 @@
         break;
       }
     }
+  });
+
+  // Rename: the same patch re-encoded with the new name (raw values, slots and patch data kept), then written
+  // through the usual backup → confirm → write → read-back flow
+  function renamed(bytes, name) {
+    if (!ZPTC.roundtrip(bytes)) throw new Error('This patch cannot be re-encoded byte for byte yet, so it is not renamed.');
+    const spec = ZPTC.decode(bytes);
+    return ZPTC.encode({ ...spec, name, shortName: name, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
+  }
+  $('#usb-memories').addEventListener('submit', event => {
+    const form = event.target.closest('[data-rename]');
+    if (!form) return;
+    event.preventDefault();
+    const n = Number(form.dataset.rename);
+    const name = form.elements.name.value.trim();
+    const m = memories.get(n);
+    if (!name || !ZPTC.NAME_CHARS.test(name)) { status('Use letters, digits, spaces and ! % & \' + , - . = _ only.', 'danger'); return; }
+    if (name === m.decoded.name) { renaming = null; renderMemory(n); return; }
+    let bytes;
+    try { bytes = renamed(m.data, name); } catch (error) { status(error.message, 'danger'); return; }
+    renaming = null;
+    send(n, bytes);
   });
 
   // ---- local patches ---------------------------------------------------------------------------------

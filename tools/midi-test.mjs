@@ -71,5 +71,17 @@ await test('writing a memory sends the patch intact and reading it back gives th
   await assert.rejects(() => PEDALMIDI.writeMemory(101, info, file), /does not exist/);
   await assert.rejects(() => PEDALMIDI.writeMemory(1, info, new Uint8Array(info.size + 1)), /a memory holds/);
 });
+await test('renaming a patch changes only its names (the manager re-encodes it from raw values)', () => {
+  const { file } = ZPTC.encode({ name: 'D.I Plus Preamp', _noBlank: true, description: 'This clean sound emphasizes high and low frequencies.', effects: [{ effect: 'D.I PLUS PREAMP' }] });
+  assert.ok(ZPTC.roundtrip(file));
+  const spec = ZPTC.decode(file);
+  const out = ZPTC.encode({ ...spec, name: 'My DI', shortName: 'My DI', effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
+  const back = ZPTC.decode(out);
+  assert.equal(back.name, 'My DI');
+  assert.equal(back.shortName, 'My DI');
+  assert.equal(back.description, spec.description);
+  assert.equal(JSON.stringify(back.effects), JSON.stringify(spec.effects));
+  assert.equal(back._noBlank, true);
+});
 PEDALMIDI.disconnect();
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
