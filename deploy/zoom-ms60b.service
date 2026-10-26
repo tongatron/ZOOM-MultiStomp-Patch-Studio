@@ -1,17 +1,18 @@
 [Unit]
-Description=Zoom MS-60B+ Patch Lab static site
+Description=Zoom MS-60B+ Patch Studio (static site + patch sync API)
 After=network.target
 
 [Service]
 Type=simple
 User=giovanni
-WorkingDirectory=/srv/apps/zoom-ms60b
-ExecStart=/usr/bin/python3 -m http.server 8097 --bind 127.0.0.1 --directory /srv/apps/zoom-ms60b
+WorkingDirectory=/srv/apps/zoom-ms60b-app
+Environment=ROOT=/srv/apps/zoom-ms60b DATA_DIR=/srv/apps/zoom-ms60b-data PORT=8097
+ExecStart=/usr/bin/node /srv/apps/zoom-ms60b-app/server.mjs
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
 ProtectSystem=strict
-ReadWritePaths=/srv/apps/zoom-ms60b
+ReadWritePaths=/srv/apps/zoom-ms60b-data
 
 [Install]
 WantedBy=multi-user.target

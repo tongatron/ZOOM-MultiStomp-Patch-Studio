@@ -30,6 +30,8 @@ const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index]
 // ---- state ------------------------------------------------------------------------------------
 // Current draft (STORAGE_KEY) and saved patch library (LIBRARY_KEY), both in the browser's localStorage.
 const LIBRARY_KEY = 'ms60b-library';
+const DELETED_KEY = 'ms60b-deleted'; // { patchId: ISO time } deletions waiting to reach other devices
+const SYNC_KEY = 'ms60b-sync'; // { code, id, lastSync } when this device syncs
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
@@ -103,9 +105,22 @@ function readLibrary() {
   try { const list = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); return Array.isArray(list) ? list : []; }
   catch { storageOk = false; return []; }
 }
-function writeLibrary(list) {
-  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); storageOk = true; return true; }
+const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+const readDeleted = () => { const d = readJson(DELETED_KEY, {}); return d && typeof d === 'object' && !Array.isArray(d) ? d : {}; };
+function storeLibrary(list, deleted = readDeleted()) {
+  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); localStorage.setItem(DELETED_KEY, JSON.stringify(deleted)); storageOk = true; return true; }
   catch { storageOk = false; notify('danger', 'Cannot save: this browser does not allow this site to store data.'); return false; }
+}
+// Every change by the user goes through here: removed patches are remembered as deletions so a sync can delete them elsewhere.
+function writeLibrary(list) {
+  const now = new Date().toISOString();
+  const deleted = readDeleted();
+  const ids = new Set(list.map(e => e.id));
+  readLibrary().forEach(e => { if (!ids.has(e.id)) deleted[e.id] = now; });
+  list.forEach(e => { if (deleted[e.id]) { delete deleted[e.id]; e.updatedAt = now; } }); // restored after a deletion: counts as a new edit
+  if (!storeLibrary(list, deleted)) return false;
+  scheduleSync();
+  return true;
 }
 const newId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const findEntry = id => readLibrary().find(entry => entry.id === id);
@@ -907,6 +922,101 @@ addChoice.addEventListener('click', event => {
 });
 addChoice.addEventListener('close', () => { pendingAdd = null; });
 
+// ---- sync between devices -----------------------------------------------------------------------
+// A random sync code (shown once, typed on the other devices) identifies a shared copy of My patches on the server.
+// The server only sees SHA-256 of the code. Both sides merge with LIBMERGE: newest edit wins, deletions travel as well.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 symbols, no I or O
+const normalizeCode = text => text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+const validCode = code => code.length === 20 && [...code].every(c => CODE_ALPHABET.includes(c));
+const formatCode = code => code.match(/.{5}/g).join('-');
+const newSyncCode = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), b => CODE_ALPHABET[b % 32]).join('');
+async function codeToId(code) {
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`ms60b-sync:${code}`));
+  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+}
+const syncConfig = () => { const c = readJson(SYNC_KEY, null); return c && validCode(c.code || '') && /^[a-f0-9]{64}$/.test(c.id || '') ? c : null; };
+
+let syncing = false;
+let syncAgain = false;
+let syncTimer = null;
+let syncError = '';
+function scheduleSync() {
+  if (!syncConfig()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncNow, 2000);
+}
+async function syncNow() {
+  const config = syncConfig();
+  if (!config) return;
+  if (syncing) { syncAgain = true; return; }
+  if (!navigator.onLine) { syncError = 'Offline: will sync when the connection is back.'; renderSync(); return; }
+  syncing = true;
+  syncError = '';
+  renderSync();
+  try {
+    const response = await fetch(`/api/sync/${config.id}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patches: readLibrary(), deleted: readDeleted() })
+    });
+    if (!response.ok) throw new Error(response.status === 429 ? 'Too many requests: try again in a minute.' : `The server answered ${response.status}.`);
+    const remote = await response.json();
+    // Merge with the library as it is now, so edits made while the request was running are not lost
+    const merged = LIBMERGE.merge({ patches: readLibrary(), deleted: readDeleted() }, remote);
+    if (!storeLibrary(merged.patches, merged.deleted)) throw new Error('Cannot store the synced patches in this browser.');
+    localStorage.setItem(SYNC_KEY, JSON.stringify({ ...config, lastSync: Date.now() }));
+    if (state.currentId && !merged.patches.some(p => p.id === state.currentId)) { state.currentId = null; render(); }
+    else renderLibrary();
+  } catch (error) {
+    syncError = error instanceof TypeError ? 'Cannot reach the server: will retry.' : error.message;
+  } finally {
+    syncing = false;
+    renderSync();
+    if (syncAgain) { syncAgain = false; scheduleSync(); }
+  }
+}
+
+const syncDialog = $('#sync-dialog');
+function renderSync() {
+  const config = syncConfig();
+  $('#sync-open').classList.toggle('is-synced', !!config);
+  $('#sync-open').title = config ? 'This device syncs My patches' : 'Keep My patches in sync between your devices';
+  $('#sync-off').hidden = !!config;
+  $('#sync-on').hidden = !config;
+  if (!config) return;
+  $('#sync-code').textContent = formatCode(config.code);
+  $('#sync-status').textContent = syncing ? 'Syncing…' : syncError || (config.lastSync ? `Last synced ${new Date(config.lastSync).toLocaleString('en-GB')}.` : 'Not synced yet.');
+  $('#sync-now').disabled = syncing;
+}
+async function startSync(code) {
+  localStorage.setItem(SYNC_KEY, JSON.stringify({ code, id: await codeToId(code) }));
+  renderSync();
+  syncNow();
+}
+$('#sync-open').addEventListener('click', () => { $('#sync-join-error').textContent = ''; renderSync(); syncDialog.showModal(); });
+$('#sync-close').addEventListener('click', () => syncDialog.close());
+syncDialog.addEventListener('click', event => { if (event.target === syncDialog) syncDialog.close(); });
+$('#sync-create').addEventListener('click', () => startSync(newSyncCode()));
+$('#sync-join').addEventListener('click', () => {
+  const code = normalizeCode($('#sync-code-input').value);
+  if (!validCode(code)) { $('#sync-join-error').textContent = 'That code is not valid: it has 20 letters and digits, like ABCDE-FGHJK-LMNPQ-RSTUV.'; return; }
+  $('#sync-join-error').textContent = '';
+  $('#sync-code-input').value = '';
+  startSync(code);
+});
+$('#sync-now').addEventListener('click', syncNow);
+$('#sync-copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('#sync-code').textContent); $('#sync-copy').textContent = 'Copied'; setTimeout(() => { $('#sync-copy').textContent = 'Copy'; }, 1500); }
+  catch { /* the code is selectable on screen */ }
+});
+$('#sync-stop').addEventListener('click', () => {
+  if (!confirm('Stop syncing on this device? Your patches stay here and on the server; the other devices keep syncing.')) return;
+  localStorage.removeItem(SYNC_KEY);
+  syncError = '';
+  renderSync();
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncNow(); });
+window.addEventListener('online', syncNow);
+
 load();
 const addSlug = new URLSearchParams(location.search).get('add');
 history.replaceState(null, '', location.pathname);
@@ -917,3 +1027,5 @@ if (addFx) {
   if (state.effects.length) askWhereToAdd(addFx);
   else appendEffect(addFx);
 }
+renderSync();
+syncNow();

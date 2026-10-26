@@ -21,7 +21,7 @@ The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot ch
 - **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources.
 - **Tailored to your rig.** Pick a style profile and say whether the pedal feeds a bass amp or a mixer, and the tips adapt.
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
-- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore.
+- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore, or sync them between your devices with a private code.
 - **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
 
 ## Features
@@ -74,11 +74,11 @@ Effect IDs and DSP load figures come from the open-source [zoom-zt2](https://git
 
 ```
 site/            The static site (HTML, CSS, vanilla JS). No build step.
-tools/           Node scripts: .zptc codec CLI, advice tests, source-link checker.
+tools/           Node scripts: .zptc codec CLI, advice and sync tests, source-link checker.
 patches/         Sample .zptc patches used for the codec round-trip test.
 docs/            Notes on the .zptc format and the open work list.
 documentazione/  Official ZOOM documents used as the source of the data.
-deploy/          systemd unit for the server.
+deploy/          Node server (static files + sync API) and its systemd unit.
 ```
 
 ## Run it locally

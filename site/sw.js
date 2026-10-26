@@ -2,10 +2,10 @@
 // Everything is served from the cache first and refreshed in the background (stale-while-revalidate).
 // Cache keys ignore the ?v= query string so old versions do not pile up.
 
-const CACHE = 'ms60b-v2';
+const CACHE = 'ms60b-v3';
 const CORE = [
   './', 'index.html', 'builder.html', 'styles.css', 'stage.css', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
-  'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'app.js', 'builder.js', 'pwa.js',
+  'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'library-merge.js', 'app.js', 'builder.js', 'pwa.js',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 
@@ -23,7 +23,8 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   const key = keyFor(request);
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);

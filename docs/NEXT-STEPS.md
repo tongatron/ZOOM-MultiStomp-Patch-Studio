@@ -57,7 +57,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - Undo/redo is done (history of the editor in memory, Ctrl/⌘+Z, Shift+Ctrl/⌘+Z; slider and name edits collapse into one step). Possible extension: keep the history across page reloads.
 - Drag-and-drop reordering is done (grip handle, pointer events). Not yet tried on a real touch screen.
 - Compare two patches: done ("Compare" in My patches; also accepts the editor). Each side has "Open in editor". Possible extension: copy a changed value from one patch to the other.
-- Sync "My patches" across devices: today they live in one browser and move via Backup/Import. Options: a small backend on the server, or a shared file.
+- Sync "My patches" across devices: done (Sync button in My patches; a random code identifies the shared copy, `deploy/server.mjs` merges it, newest edit wins and deletions travel too). Possible extensions: end-to-end encryption of the stored patches, and a list of the devices that sync.
 - PWA: done (`manifest.webmanifest`, `sw.js`). The worker is stale-while-revalidate: after a deploy the visitor sees a "new version available" bar (always bump the `?v=` in the HTML, or the CDN keeps serving the old files). PNG icons are in place.
 
 ## 6. Project hygiene

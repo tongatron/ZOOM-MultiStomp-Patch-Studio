@@ -687,3 +687,15 @@ body.is-dropping .drop-overlay { display: grid; }
 .gh-footer-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .gh-footer .gh-repo { display: inline-flex; align-items: center; gap: 8px; color: var(--fg-muted); font-size: 13px; transition: color .2s, transform .2s; }
 .gh-footer .gh-repo:hover { color: var(--fg); text-decoration: none; transform: translateX(2px); }
+
+/* Sync dialog */
+#sync-open.is-synced { border-color: var(--accent); color: var(--accent); }
+.sync-body { display: flex; flex-direction: column; gap: 14px; }
+.sync-body p { margin: 0; }
+.sync-label { font-size: 13px; margin-top: 6px; }
+.sync-row { display: flex; align-items: center; gap: 8px; }
+.sync-row .form-control { flex: 1; min-width: 0; font-family: var(--mono); }
+.sync-code { flex: 1; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); font: 15px var(--mono); letter-spacing: .04em; user-select: all; }
+.sync-status { font-size: 13px; color: var(--fg-muted); }
+.sync-error:empty { display: none; }
+.sync-error { color: #f85149; }
