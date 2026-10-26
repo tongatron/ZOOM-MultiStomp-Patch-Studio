@@ -1,5 +1,5 @@
 // A simulated pedal for tests: answers the SysEx commands of site/pedal-midi.js the way zoom-zt2 expects
-// a ZOOM pedal to answer (identity, editor mode, patch memory size, current patch, patch memory). Identity, editor
+// a ZOOM pedal to answer (identity, editor mode, patch memory size, current patch, reading and writing a memory). Identity, editor
 // mode, memory size and current patch copy the answers of a real MS-60B+ (firmware 1.20, MIDI log of 2026-10-26).
 // Used by tools/midi-test.mjs (Node) and injected into the browser as a fake navigator.requestMIDIAccess.
 export function fakePedalSource() {
@@ -16,8 +16,10 @@ export function fakePedal(patches, { device = 0x6e, version = '1.20', count = 10
     const crc = (crc32(padded) ^ 0xffffffff) >>> 0;
     return [0xf0, ...head, size & 0x7f, size >> 7, ...pack(padded), crc & 0x7f, crc >>> 7 & 0x7f, crc >>> 14 & 0x7f, crc >>> 21 & 0x7f, crc >>> 28 & 0x0f, 0xf7];
   };
+  const unpack = (packed, length) => { const out = []; for (let i = 0; i < packed.length && out.length < length; i += 8) for (let k = 0; k < 7 && out.length < length; k++) out.push(packed[i + 1 + k] | ((packed[i] & (0x40 >> k)) ? 0x80 : 0)); return new Uint8Array(out); };
+  const memories = new Map(); // memory index → bytes written over USB
   let editor = false;
-  return function answer(message) {
+  function answer(message) {
     const m = Array.from(message);
     if (m[1] === 0x7e && m[3] === 0x06 && m[4] === 0x01) return [0xf0, 0x7e, 0x00, 0x06, 0x02, 0x52, device, 0x00, 0x27, 0x00, ...Array.from(version.padEnd(4), c => c.charCodeAt(0)), 0xf7];
     if (m[1] !== 0x52 || m[3] !== device) return null;
@@ -26,10 +28,19 @@ export function fakePedal(patches, { device = 0x6e, version = '1.20', count = 10
     if (cmd === 0x51) { editor = false; return [0xf0, 0x52, 0x00, device, 0x00, 0x00, 0xf7]; }
     if (cmd === 0x44) return [0xf0, 0x52, 0x00, device, 0x43, count & 0x7f, count >> 7, size & 0x7f, size >> 7, count & 0x7f, count >> 7, bankSize & 0x7f, bankSize >> 7, 0x02, ...Array(15).fill(0), 0xf7];
     if (cmd === 0x64 && m[5] === 0x13) return editor ? framed([0x52, 0x00, device, 0x64, 0x12, 0x01], patches[0]) : null;
-    if (cmd === 0x46) {
-      const number = (m[7] | m[8] << 7) * bankSize + (m[9] | m[10] << 7);
-      return framed([0x52, 0x00, device, 0x45, 0x00, 0x00, m[7], m[8], m[9], m[10]], patches[number % patches.length]);
+    const number = (m[7] | m[8] << 7) * bankSize + (m[9] | m[10] << 7);
+    if (cmd === 0x46) return framed([0x52, 0x00, device, 0x45, 0x00, 0x00, m[7], m[8], m[9], m[10]], memories.get(number) ?? patches[number % patches.length]);
+    if (cmd === 0x45) {
+      const length = m[11] | m[12] << 7;
+      const data = unpack(m.slice(13, m.length - 6), length);
+      const tail = m.slice(m.length - 6, m.length - 1);
+      const crc = ((tail[0] | tail[1] << 7 | tail[2] << 14 | tail[3] << 21 | (tail[4] & 0x0f) << 28) ^ 0xffffffff) >>> 0;
+      if (length !== size || crc !== crc32(data)) return [0xf0, 0x52, 0x00, device, 0x00, 0x01, 0xf7];
+      memories.set(number, data);
+      return [0xf0, 0x52, 0x00, device, 0x00, 0x00, 0xf7];
     }
     return null;
-  };
+  }
+  answer.memories = memories;
+  return answer;
 }

@@ -1,78 +1,60 @@
-// Pedal over USB page (experimental): connects with Web MIDI (pedal-midi.js), identifies the pedal and reads
-// the current patch or a patch memory. Read-only: nothing is written to the pedal.
+// Pedal manager (usb.html, experimental): the patch memories of the pedal, read over Web MIDI (pedal-midi.js),
+// next to the patches saved in this browser (My patches of the builder). A pedal patch can be opened in the
+// builder, copied to My patches or downloaded; a local patch can be sent to the selected memory. Every write first
+// reads the target memory and keeps it as a backup (localStorage and a downloaded .zptc), asks for confirmation,
+// then reads the memory back and compares it with what was sent.
 (() => {
   const $ = selector => document.querySelector(selector);
   const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const NO_MIDI = 'This browser has no Web MIDI. Use Chrome or Edge on a computer.';
+  const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, updatedAt }]
+  const DRAFT_KEY = `${PEDAL.id}-builder`;
+  const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
+  const MAX_BACKUPS = 30;
   const lines = [];
   let info = null; // { count, size, bankSize } from the pedal
-  let lastPatch = null; // { name, bytes }
+  let connected = false;
+  let reading = 0; // bumps on every full read, so an older read stops
+  let busy = false; // a full read or a write is running: one exchange with the pedal at a time
+  const memories = new Map(); // number → { state: 'loading' | 'ok' | 'empty' | 'error', data, memory, decoded, error }
+  let selected = null; // memory number where a local patch goes
+  let fileItem = null; // { name, bytes } from "Send a .zptc file"
 
+  // ---- log and status --------------------------------------------------------------------------------
   const showLog = () => { $('#usb-log').textContent = lines.join('\n'); };
   PEDALMIDI.onLog((dir, bytes) => {
     const text = PEDALMIDI.hex(bytes);
     lines.push(`${new Date().toISOString().slice(11, 23)} ${dir === 'out' ? '→' : '←'} ${bytes.length} B  ${text.length > 600 ? `${text.slice(0, 600)} …` : text}`);
+    if (lines.length > 2000) lines.splice(0, lines.length - 2000);
     showLog();
   });
   const note = text => { lines.push(`   ${text}`); showLog(); };
   const status = (text, kind = '') => { $('#usb-status').textContent = text; $('#usb-status').dataset.kind = kind; };
-  const setConnected = on => {
-    $('#usb-connect').disabled = on;
-    $('#usb-disconnect').disabled = !on;
-    $('#usb-current').disabled = !on;
-    $('#usb-read-memory').disabled = !on || !info;
-  };
-
+  const result = (ok, text) => { $('#usb-result').innerHTML = text ? `<p class="usb-result" data-ok="${ok}">${escapeHtml(text)}</p>` : ''; };
   // Runs one step; a failure shows in the status line and the log
   async function step(label, fn) {
     status(`${label}…`);
     try { return { ok: true, value: await fn() }; } catch (error) {
       status(error.message, 'danger');
       note(`${label} failed: ${error.message}`);
-      return { ok: false, value: null };
+      return { ok: false, value: null, error };
     }
   }
 
-  async function listPorts() {
-    const { inputs, outputs } = await PEDALMIDI.ports();
-    const options = list => list.map(p => `<option value="${escapeHtml(p.id)}"${/zoom/i.test(p.name) ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
-    $('#usb-in').innerHTML = options(inputs);
-    $('#usb-out').innerHTML = options(outputs);
-    $('#usb-ports').hidden = inputs.length + outputs.length === 0;
-  }
-
-  $('#usb-connect').addEventListener('click', async () => {
-    if (!PEDALMIDI.supported()) { status(NO_MIDI, 'danger'); return; }
-    if (!(await step('Asking for MIDI access', listPorts)).ok) return;
-    const ports = await step('Connecting', () => PEDALMIDI.connect($('#usb-in').value, $('#usb-out').value));
-    if (!ports.ok) return;
-    note(`Ports: ${ports.value.input} / ${ports.value.output}`);
-    const facts = [['MIDI port', ports.value.output]];
-    const id = await step('Identifying the pedal', PEDALMIDI.identify);
-    if (id.ok) facts.push(['Model byte', `0x${id.value.device.toString(16)}`], ['Firmware', id.value.version || '—']);
-    const editor = await step('Editor mode', PEDALMIDI.editorOn);
-    if (editor.ok) {
-      const memory = await step('Reading the patch memory size', PEDALMIDI.patchInfo);
-      info = memory.value;
-      if (info) {
-        facts.push(['Patch memories', info.count], ['Patch size', `${info.size} bytes`], ['Patches per bank', info.bankSize]);
-        $('#usb-memory').max = info.count;
-      }
-    }
-    $('#usb-facts').innerHTML = facts.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
-    setConnected(true);
-    if (id.ok && info) status('Connected', 'ok');
-  });
-
-  async function disconnect() {
-    try { await PEDALMIDI.editorOff(); } catch {}
-    PEDALMIDI.disconnect();
-    info = null;
-    setConnected(false);
-    status('Not connected');
-  }
-  $('#usb-disconnect').addEventListener('click', disconnect);
-  window.addEventListener('pagehide', () => { PEDALMIDI.editorOff().catch(() => {}); });
+  // ---- helpers ---------------------------------------------------------------------------------------
+  const toBase64 = bytes => btoa(String.fromCharCode(...bytes));
+  const fromBase64 = text => Uint8Array.from(atob(text), c => c.charCodeAt(0));
+  const ptcfOf = bytes => bytes.slice(0, Math.min(bytes.length, new DataView(bytes.buffer, bytes.byteOffset).getUint32(4, true) || bytes.length));
+  const sameBytes = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+  const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+  const when = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fileName = text => text.replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'PATCH';
+  const download = (bytes, name) => {
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+    Object.assign(document.createElement('a'), { href: url, download: name }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const chainText = names => names.length ? names.join(' → ') : 'no effects';
 
   // Decoded PTCF → builder patch: { name, effects: [{ index, on, values }] }
   function toPatch(decoded) {
@@ -82,49 +64,304 @@
       const values = Object.fromEntries(Object.entries(e.params).map(([n, v]) => [n, v && typeof v === 'object' ? v.raw : v]));
       return [{ index, on: e.on, values }];
     });
-    return { name: decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim() || 'PEDAL', effects };
+    return { name: decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim().slice(0, 28) || 'PEDAL', effects };
+  }
+  // Builder patch → PTCF bytes, encoded like the builder's Download .zptc
+  function toFile(patch) {
+    if (!patch.effects?.length) throw new Error('The patch has no effects.');
+    if (!String(patch.name || '').trim()) throw new Error('The patch has no name. Give it one in the patch builder first.');
+    return ZPTC.encode({
+      name: patch.name.trim(),
+      effects: patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => ({
+        effect: EFFECTS_DATA[e.index][0], on: e.on !== false,
+        params: Object.fromEntries(EFFECTS_DATA[e.index][5].map(([n, , range]) => [n, ZPTC.codec(range, n) ? e.values?.[n] : { raw: Number(e.values?.[n]) || 0 }]))
+      }))
+    }).file;
   }
 
-  function showPatch(label, result) {
-    lastPatch = null;
-    if (!result) { $('#usb-patch').innerHTML = `<p class="usb-empty">${escapeHtml(label)}: the pedal sent no patch data.</p>`; return; }
-    let decoded;
-    try { decoded = ZPTC.decode(result.data); } catch (error) {
-      note(`Decode failed: ${error.message}`);
-      $('#usb-patch').innerHTML = `<p class="usb-empty">${escapeHtml(label)}: ${result.data.length} bytes received${result.crcOk ? '' : ' (checksum mismatch)'}, but they are not a patch this site can read (${escapeHtml(error.message)}).</p>`;
-      return;
+  // ---- connection ------------------------------------------------------------------------------------
+  async function listPorts() {
+    const { inputs, outputs } = await PEDALMIDI.ports();
+    const options = list => list.map(p => `<option value="${escapeHtml(p.id)}"${/zoom/i.test(p.name) ? ' selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+    $('#usb-in').innerHTML = options(inputs);
+    $('#usb-out').innerHTML = options(outputs);
+  }
+  function setConnected(on) {
+    connected = on;
+    $('#usb-connect').hidden = on;
+    $('#usb-disconnect').hidden = !on;
+    $('#usb-refresh').disabled = !on || !info;
+    renderMemories();
+    renderLocals();
+    renderBackups();
+  }
+
+  $('#usb-connect').addEventListener('click', async () => {
+    if (!PEDALMIDI.supported()) { status(NO_MIDI, 'danger'); return; }
+    if (!(await step('Asking for MIDI access', listPorts)).ok) return;
+    const ports = await step('Connecting', () => PEDALMIDI.connect($('#usb-in').value, $('#usb-out').value));
+    if (!ports.ok) return;
+    note(`Ports: ${ports.value.input} / ${ports.value.output}`);
+    const id = await step('Identifying the pedal', PEDALMIDI.identify);
+    if ((await step('Editor mode', PEDALMIDI.editorOn)).ok) info = (await step('Reading the patch memory size', PEDALMIDI.patchInfo)).value;
+    $('#usb-facts').textContent = [ports.value.output, id.ok && `firmware ${id.value.version}`, info && `${info.count} memories`].filter(Boolean).join(' · ');
+    setConnected(true);
+    if (info) readAll();
+  });
+  async function disconnect() {
+    reading++;
+    try { await PEDALMIDI.editorOff(); } catch {}
+    PEDALMIDI.disconnect();
+    info = null;
+    $('#usb-facts').textContent = '';
+    setConnected(false);
+    status('Not connected');
+  }
+  $('#usb-disconnect').addEventListener('click', disconnect);
+  window.addEventListener('pagehide', () => { PEDALMIDI.editorOff().catch(() => {}); });
+
+  // ---- pedal memories --------------------------------------------------------------------------------
+  async function readOne(number) {
+    memories.set(number, { state: 'loading' });
+    try {
+      const r = await PEDALMIDI.readMemory(number, info);
+      if (!r) { memories.set(number, { state: 'empty' }); return; }
+      let decoded = null, error = null;
+      try { decoded = ZPTC.decode(r.data); } catch (e) { error = e.message; }
+      memories.set(number, { state: decoded ? 'ok' : 'error', data: r.data, memory: r.memory, crcOk: r.crcOk, decoded, error: error || (r.crcOk ? null : 'checksum mismatch') });
+    } catch (e) {
+      memories.set(number, { state: 'error', error: e.message });
+      note(`Memory ${number}: ${e.message}`);
     }
-    const patch = toPatch(decoded);
-    lastPatch = { name: patch.name, bytes: result.data };
-    note(`${label}: ${result.data.length} bytes, checksum ${result.crcOk ? 'OK' : 'MISMATCH'}, ${decoded.effects.length} effects`);
-    $('#usb-patch').innerHTML = `<div class="usb-patch">
-      <div class="usb-patch-head"><strong>${escapeHtml(decoded.name || '(no name)')}</strong><span>${escapeHtml(label)} · DSP ${decoded.dspTotal.toFixed(1)}% · ${result.crcOk ? 'checksum OK' : 'checksum mismatch'}</span></div>
-      <ol class="usb-chain">${decoded.effects.map(e => `<li><b>${escapeHtml(e.effect)}</b> <span>${e.on ? 'ON' : 'OFF'}</span></li>`).join('')}</ol>
-      <div class="usb-row">
-        <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(patch)}">Open in builder</a>
-        <button class="btn btn-sm" id="usb-save">Download .zptc</button>
-      </div>
-    </div>`;
+  }
+  async function readAll() {
+    const run = ++reading;
+    busy = true;
+    renderLocals();
+    memories.clear();
+    for (let n = 1; n <= info.count; n++) memories.set(n, { state: 'loading' });
+    renderMemories();
+    for (let n = 1; n <= info.count; n++) {
+      if (run !== reading || !connected) { busy = false; return; }
+      status(`Reading memory ${n} of ${info.count}…`);
+      await readOne(n);
+      renderMemory(n);
+    }
+    busy = false;
+    renderLocals();
+    const failed = [...memories.values()].filter(m => m.state === 'error').length;
+    status(failed ? `Read ${info.count} memories, ${failed} with errors (see the MIDI log)` : `Read ${info.count} memories`, failed ? 'danger' : 'ok');
+  }
+  $('#usb-refresh').addEventListener('click', () => { if (info) readAll(); });
+
+  function memoryHtml(n) {
+    const m = memories.get(n) || { state: 'loading' };
+    const d = m.decoded;
+    const isSelected = n === selected;
+    const name = m.state === 'ok' ? d.name || '(no name)' : m.state === 'loading' ? 'Reading…' : m.state === 'empty' ? '(empty)' : `Unreadable: ${m.error}`;
+    const meta = m.state === 'ok' ? `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%` : '';
+    return `<li class="usb-mem${isSelected ? ' is-selected' : ''}" data-n="${n}" data-state="${m.state}">
+      <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
+        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>
+      </button>
+      ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
+        <p class="usb-chain-line">${escapeHtml(chainText(d.effects.map(e => `${e.effect}${e.on ? '' : ' (off)'}`)))}</p>
+        <div class="usb-row">
+          <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}">Open in builder</a>
+          <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
+          <button class="btn btn-sm" data-act="download">Download .zptc</button>
+          <button class="btn btn-sm btn-invisible" data-act="reread">Read again</button>
+        </div>
+      </div>` : ''}
+    </li>`;
+  }
+  function renderMemories() {
+    const count = info?.count ?? 0;
+    $('#usb-pedal-count').textContent = count;
+    $('#usb-memories').innerHTML = !connected ? '<li class="usb-empty">Connect the pedal to see its patch memories.</li>'
+      : !count ? '<li class="usb-empty">The pedal did not report its patch memories.</li>'
+      : Array.from({ length: count }, (_, i) => memoryHtml(i + 1)).join('');
+  }
+  function renderMemory(n) {
+    const item = $(`#usb-memories [data-n="${n}"]`);
+    if (item) item.outerHTML = memoryHtml(n);
+  }
+  function select(n) {
+    const previous = selected;
+    selected = selected === n ? null : n;
+    if (previous) renderMemory(previous);
+    if (selected) renderMemory(selected);
+    renderLocals();
   }
 
-  $('#usb-current').addEventListener('click', async () => {
-    const result = await step('Reading the current patch', PEDALMIDI.readCurrent);
-    if (result.ok) { showPatch('Current patch', result.value); status('Connected', 'ok'); }
+  $('#usb-memories').addEventListener('click', async event => {
+    const button = event.target.closest('[data-act]');
+    if (!button) return;
+    const n = Number(button.closest('[data-n]').dataset.n);
+    const m = memories.get(n);
+    switch (button.dataset.act) {
+      case 'select': select(n); break;
+      case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
+      case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
+      case 'copy': {
+        const patch = toPatch(m.decoded);
+        const list = readJson(LIBRARY_KEY, []);
+        const taken = new Set(list.map(e => String(e.name).toLowerCase()));
+        let name = patch.name;
+        for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${patch.name.slice(0, 28 - ` ${i}`.length)} ${i}`;
+        list.unshift({ id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name, effects: patch.effects, output: null, updatedAt: new Date().toISOString() });
+        try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); } catch { status('This browser does not allow this site to store data.', 'danger'); return; }
+        renderLocals();
+        status(`“${name}” copied to My patches`, 'ok');
+        break;
+      }
+    }
   });
-  $('#usb-read-memory').addEventListener('click', async () => {
-    const number = Number($('#usb-memory').value);
-    if (!info || !Number.isInteger(number) || number < 1 || number > info.count) { status(`Choose a memory from 1 to ${info?.count ?? '?'}.`, 'danger'); return; }
-    const result = await step(`Reading memory ${number}`, () => PEDALMIDI.readMemory(number, info));
-    if (result.ok) { showPatch(`Memory ${number}`, result.value); status('Connected', 'ok'); }
+
+  // ---- local patches ---------------------------------------------------------------------------------
+  // [{ key, name, label, chain, bytes | error }]: the builder's open patch, a chosen .zptc file, then My patches
+  function localItems() {
+    const items = [];
+    const make = (key, label, getPatch) => {
+      try {
+        const patch = getPatch();
+        const chain = patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => EFFECTS_DATA[e.index][0]);
+        try { items.push({ key, label, name: patch.name || '(no name)', chain, bytes: toFile(patch) }); }
+        catch (error) { items.push({ key, label, name: patch.name || '(no name)', chain, error: error.message }); }
+      } catch {}
+    };
+    if (fileItem) {
+      try { const d = ZPTC.decode(fileItem.bytes); items.push({ key: 'file', label: `File ${fileItem.fileName}`, name: d.name, chain: d.effects.map(e => e.effect), bytes: fileItem.bytes }); }
+      catch (error) { items.push({ key: 'file', label: `File ${fileItem.fileName}`, name: fileItem.fileName, chain: [], error: error.message }); }
+    }
+    const draft = readJson(DRAFT_KEY, null);
+    if (draft?.effects?.length) make('draft', 'Open in the builder', () => draft);
+    readJson(LIBRARY_KEY, []).forEach(entry => make(`lib:${entry.id}`, entry.updatedAt ? `Saved ${when(entry.updatedAt)}` : '', () => entry));
+    return items;
+  }
+  function renderLocals() {
+    const items = localItems();
+    $('#usb-local-count').textContent = items.filter(i => i.key.startsWith('lib:')).length;
+    const target = selected && memories.get(selected)?.state !== 'loading' ? selected : null;
+    $('#usb-locals').innerHTML = items.length ? items.map(item => `<li class="usb-local" data-key="${escapeHtml(item.key)}">
+        <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
+          <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
+        <button class="btn btn-sm${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
+          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the left first' : `Write it to memory ${target}`}">${target ? `Send to memory ${target}` : 'Send to…'}</button>
+      </li>`).join('') : '<li class="usb-empty">No patches yet. Build one in the <a href="builder.html">patch builder</a> and save it, or send a <code>.zptc</code> file.</li>';
+  }
+  $('#usb-locals').addEventListener('click', event => {
+    const button = event.target.closest('[data-act="send"]');
+    if (!button || !selected) return;
+    const item = localItems().find(i => i.key === button.closest('[data-key]').dataset.key);
+    if (item?.bytes) send(selected, item.bytes);
   });
-  $('#usb-patch').addEventListener('click', event => {
-    if (event.target.id !== 'usb-save' || !lastPatch) return;
-    const url = URL.createObjectURL(new Blob([lastPatch.bytes], { type: 'application/octet-stream' }));
-    Object.assign(document.createElement('a'), { href: url, download: `${lastPatch.name}.zptc` }).click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  $('#usb-file').addEventListener('change', async event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    fileItem = { fileName: file.name, bytes: new Uint8Array(await file.arrayBuffer()) };
+    renderLocals();
+    status(selected ? `“${file.name}” ready: press Send to memory ${selected}` : `“${file.name}” ready: select a memory on the left, then press Send`);
+  });
+  window.addEventListener('storage', event => { if (event.key === LIBRARY_KEY || event.key === DRAFT_KEY) renderLocals(); });
+  window.addEventListener('focus', renderLocals);
+
+  // ---- writing ---------------------------------------------------------------------------------------
+  const readBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };
+  const writeBackups = list => { try { localStorage.setItem(BACKUP_KEY, JSON.stringify(list.slice(0, MAX_BACKUPS))); return true; } catch { return false; } };
+  function renderBackups() {
+    const list = readBackups();
+    $('#usb-backup-count').textContent = list.length;
+    $('#usb-backups').innerHTML = list.length ? list.map(b => `<li data-id="${escapeHtml(b.id)}">
+        <span><b>Memory ${b.memory}</b> · ${escapeHtml(b.name)} <small>${escapeHtml(when(b.at))}</small></span>
+        <span class="usb-row"><button class="btn btn-sm" data-backup="download">Download</button><button class="btn btn-sm" data-backup="restore" ${connected && info ? '' : 'disabled'}>Restore to memory ${b.memory}</button><button class="btn btn-sm btn-invisible" data-backup="delete" aria-label="Delete this backup">Delete</button></span>
+      </li>`).join('') : '<li class="usb-empty">No backups yet.</li>';
+  }
+
+  // Resolves true when the user confirms
+  function confirmWrite(html, action) {
+    const dialog = $('#usb-confirm');
+    $('#usb-confirm-body').innerHTML = html;
+    $('#usb-confirm-yes').textContent = action;
+    dialog.showModal();
+    return new Promise(resolve => {
+      dialog.onclick = event => {
+        const choice = event.target.closest('[data-confirm]')?.dataset.confirm;
+        if (!choice && event.target !== dialog) return;
+        dialog.close();
+        resolve(choice === 'yes');
+      };
+      dialog.oncancel = () => resolve(false);
+    });
+  }
+
+  // Writes bytes to a memory, reads it back into the list and compares the PTCF data
+  async function writeAndCheck(number, bytes) {
+    const sent = await step(`Writing memory ${number}`, () => PEDALMIDI.writeMemory(number, info, bytes));
+    if (!sent.ok && !/No answer/.test(sent.error?.message || '')) return { ok: false, text: `Writing failed: ${sent.error.message}` };
+    await readOne(number);
+    renderMemory(number);
+    const back = memories.get(number);
+    if (back.state !== 'ok') return { ok: false, text: `Memory ${number} could not be read back (${back.error || back.state}): check it on the pedal.` };
+    const ok = back.crcOk && sameBytes(back.data, ptcfOf(bytes));
+    note(`Read back memory ${number}: ${ok ? 'identical' : 'DIFFERENT'} (${back.data.length} bytes)`);
+    return ok ? { ok: true, text: `Memory ${number} now holds “${back.decoded.name}”: read back and identical.` }
+      : { ok: false, text: `Memory ${number} was read back but differs from what was sent. Restore the backup if the patch is wrong.` };
+  }
+
+  async function send(number, bytes) {
+    if (busy) return;
+    busy = true;
+    renderLocals();
+    try { await sendNow(number, bytes); } finally { busy = false; renderLocals(); }
+  }
+  async function sendNow(number, bytes) {
+    result(true, '');
+    let d;
+    try { d = ZPTC.decode(bytes); } catch (error) { status(`Not a patch: ${error.message}`, 'danger'); return; }
+    if (bytes.length > info.size) { status(`The patch has ${bytes.length} bytes; a memory holds ${info.size}.`, 'danger'); return; }
+    // 1. Backup of the memory about to be replaced (read fresh, not from the list)
+    await step(`Backing up memory ${number}`, () => readOne(number));
+    renderMemory(number);
+    const old = memories.get(number);
+    if (old.state !== 'ok' || !old.crcOk) { status(`Memory ${number} could not be read safely, so nothing was written.`, 'danger'); return; }
+    const stored = writeBackups([{ id: `${Date.now()}`, memory: number, name: old.decoded.name || '(no name)', at: new Date().toISOString(), data: toBase64(old.memory) }, ...readBackups()]);
+    download(old.data, `backup ${String(number).padStart(3, '0')} ${fileName(old.decoded.name)}.zptc`);
+    renderBackups();
+    // 2. Confirmation
+    status('Waiting for your confirmation');
+    const yes = await confirmWrite(`<p>Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?</p>
+      <p>It replaces <b>${escapeHtml(old.decoded.name || '(no name)')}</b>. A backup of it ${stored ? 'is in Backups on this page and ' : ''}was downloaded as a <code>.zptc</code> file.</p>
+      ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, `Write to memory ${number}`);
+    if (!yes) { status('Nothing written'); return; }
+    // 3. Write and read back
+    const r = await writeAndCheck(number, bytes);
+    result(r.ok, r.text);
+    status(r.ok ? 'Written' : 'Check the pedal', r.ok ? 'ok' : 'danger');
+  }
+
+  $('#usb-backups').addEventListener('click', async event => {
+    const button = event.target.closest('[data-backup]');
+    if (!button) return;
+    const list = readBackups();
+    const backup = list.find(b => b.id === button.closest('li').dataset.id);
+    if (!backup) return;
+    const memory = fromBase64(backup.data);
+    if (button.dataset.backup === 'download') download(ptcfOf(memory), `backup ${String(backup.memory).padStart(3, '0')} ${fileName(backup.name)}.zptc`);
+    if (button.dataset.backup === 'delete') { writeBackups(list.filter(b => b !== backup)); renderBackups(); }
+    if (button.dataset.backup === 'restore') {
+      const yes = await confirmWrite(`<p>Put <b>${escapeHtml(backup.name)}</b> (backup of ${escapeHtml(when(backup.at))}) back into <b>memory ${backup.memory}</b>?</p><p>It replaces what that memory holds now.</p>`, `Restore memory ${backup.memory}`);
+      if (!yes || busy) return;
+      busy = true;
+      const r = await writeAndCheck(backup.memory, memory).finally(() => { busy = false; renderLocals(); });
+      result(r.ok, r.ok ? r.text.replace('now holds', 'holds its backup again,') : r.text);
+      status(r.ok ? 'Restored' : 'Check the pedal', r.ok ? 'ok' : 'danger');
+    }
   });
 
   $('#usb-copy-log').addEventListener('click', () => navigator.clipboard?.writeText($('#usb-log').textContent).then(() => status('Log copied', 'ok')));
   $('#usb-clear-log').addEventListener('click', () => { lines.length = 0; showLog(); });
   if (!PEDALMIDI.supported()) status(NO_MIDI, 'danger');
+  setConnected(false);
 })();

@@ -24,6 +24,7 @@ body { background: radial-gradient(1200px 520px at 50% -140px, #1b2a14 0%, trans
 .UnderlineNav-item[aria-current="page"] { background: var(--accent); color: #11160a; font-weight: 600; }
 .UnderlineNav-item[aria-current="page"]::after { display: none; }
 .UnderlineNav-item[aria-current="page"] .Counter { background: rgba(17, 22, 10, .15); color: #11160a; }
+@media (max-width: 520px) { .UnderlineNav { display: flex; max-width: 100%; } .UnderlineNav-item { padding: 8px 12px; font-size: 14px; white-space: nowrap; } .UnderlineNav-item .Counter { display: none; } }
 
 /* Buttons, boxes, filters */
 .btn { border-radius: 10px; }

@@ -760,22 +760,60 @@ body.is-dropping .drop-overlay { display: grid; }
 .untested-banner p + p { margin-top: 6px; color: var(--fg-muted); }
 .untested-banner b { color: #ff7b72; }
 
-/* Pedal over USB (usb.html, experimental) */
+/* Pedal manager (usb.html, experimental) */
 .usb { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; padding-bottom: 32px; }
+.usb-connect { padding: 12px 16px; }
 .usb-body { padding: 12px 16px; }
 .usb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.usb-connect > .usb-row { margin: 0; }
+.usb-connect [hidden] { display: none; }
 .usb-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 13px; }
-.usb-row input[type="number"] { width: 80px; }
 .usb-status { color: var(--fg-muted); font-size: 13px; }
 .usb-status[data-kind="ok"] { color: #3fb950; }
 .usb-status[data-kind="danger"] { color: #f85149; }
-.usb-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 0; font-size: 13px; }
-.usb-facts dt { color: var(--fg-muted); }
-.usb-facts dd { margin: 0; font-family: var(--mono); }
-.usb-patch { padding: 12px 14px; margin-top: 8px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; }
-.usb-patch-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
-.usb-patch-head span, .usb-empty { color: var(--fg-muted); font-size: 13px; }
-.usb-chain { margin: 8px 0; padding-left: 20px; }
-.usb-chain span { color: var(--fg-muted); font: 12px var(--mono); }
+.usb-facts { margin-left: auto; color: var(--fg-muted); font: 12px var(--mono); }
+.usb-ports summary { margin-top: 8px; color: var(--fg-muted); font-size: 13px; cursor: pointer; }
+.usb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .usb-grid { grid-template-columns: 1fr; } .usb-facts { margin-left: 0; width: 100%; } }
+.usb-hint { margin: 0; padding: 8px 16px; border-bottom: 1px solid var(--border-muted); }
+.usb-memories, .usb-locals { max-height: 70vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.usb-mem, .usb-local { border-top: 1px solid var(--border-muted); }
+.usb-mem:first-child, .usb-local:first-child { border-top: 0; }
+.usb-mem-main { display: grid; grid-template-columns: 36px 1fr auto; align-items: baseline; gap: 10px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
+.usb-mem-main:hover:not(:disabled) { background: var(--bg-hover); }
+.usb-mem.is-selected { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
+.usb-mem[data-state="loading"] .usb-name, .usb-mem[data-state="empty"] .usb-name { color: var(--fg-subtle); }
+.usb-mem[data-state="error"] .usb-name { color: #f85149; }
+.usb-num { color: var(--fg-muted); font: 13px var(--mono); text-align: right; }
+.usb-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-meta { color: var(--fg-muted); font: 12px var(--mono); }
+.usb-mem-detail { padding: 0 16px 10px 62px; }
+.usb-chain-line { display: block; margin: 2px 0 0; color: var(--fg-muted); font-size: 12px; }
+.usb-local { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; }
+.usb-local-main { min-width: 0; }
+.usb-local-main small { margin-left: 8px; color: var(--fg-subtle); font-size: 12px; }
+.usb-local .btn { flex: none; }
+.usb-empty { padding: 12px 16px; color: var(--fg-muted); font-size: 13px; }
+.usb-box > summary { cursor: pointer; list-style: none; }
+.usb-box > summary::-webkit-details-marker { display: none; }
+.usb-backups { margin: 0; list-style: none; }
+.usb-backups li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 6px 0; border-top: 1px solid var(--border-muted); font-size: 13px; }
+.usb-backups li:first-child { border-top: 0; }
+.usb-backups small { margin-left: 6px; color: var(--fg-muted); }
+.usb-backups .usb-row { margin: 0; }
+.usb-result { margin: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(248, 81, 73, .4); color: #f85149; font-size: 13px; }
+.usb-result[data-ok="true"] { border-color: rgba(63, 185, 80, .4); color: #3fb950; }
+.usb-warn { color: #d29922; }
+.usb-confirm-actions { justify-content: flex-end; margin: 0; padding: 0 20px 20px; }
 .usb-log { max-height: 320px; margin: 0; padding: 12px 16px; overflow: auto; border-top: 1px solid var(--border-muted); font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; color: var(--fg-muted); }
 .gh-footer .gh-updated { margin-top: -4px; color: var(--fg-muted); font: 12px var(--mono); }
+.usb-subtitle { margin: 20px 0 8px; font-size: 14px; }
+.usb-backups { margin: 0; padding: 0; list-style: none; }
+.usb-backups li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 6px 0; border-top: 1px solid var(--border-muted); font-size: 13px; }
+.usb-backups li:first-child { border-top: 0; }
+.usb-backups small { margin-left: 6px; color: var(--fg-muted); }
+.usb-backups .usb-row { margin: 0; }
+.usb-result { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(248, 81, 73, .4); color: #f85149; font-size: 13px; }
+.usb-result[data-ok="true"] { border-color: rgba(63, 185, 80, .4); color: #3fb950; }
+.usb-warn { color: #d29922; }
+.usb-confirm-actions { justify-content: flex-end; margin: 0; padding: 0 20px 20px; }

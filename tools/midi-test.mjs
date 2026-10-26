@@ -56,5 +56,20 @@ await test('a stored patch without the leading BLANK slot decodes its effects an
   const r = fake([0xf0, 0x52, 0x00, 0x6e, 0x46, 0, 0, 0, 0, 9, 0, 0xf7]);
   assert.ok(r.length > 100);
 });
+await test('writing a memory sends the patch intact and reading it back gives the same bytes', async () => {
+  const info = await PEDALMIDI.patchInfo();
+  const before = await PEDALMIDI.readMemory(42, info);
+  const { file } = ZPTC.encode({ name: 'USB WRITE', effects: [{ effect: 'DYNAMIC COMPRESSOR' }, { effect: 'FLIPTOP' }] });
+  await PEDALMIDI.writeMemory(42, info, file);
+  const after = await PEDALMIDI.readMemory(42, info);
+  assert.ok(after.crcOk);
+  assert.equal(Buffer.from(after.data).equals(Buffer.from(file)), true);
+  // Restoring the backup (the whole memory as read) brings the old patch back
+  await PEDALMIDI.writeMemory(42, info, before.memory);
+  const restored = await PEDALMIDI.readMemory(42, info);
+  assert.equal(Buffer.from(restored.data).equals(Buffer.from(before.data)), true);
+  await assert.rejects(() => PEDALMIDI.writeMemory(101, info, file), /does not exist/);
+  await assert.rejects(() => PEDALMIDI.writeMemory(1, info, new Uint8Array(info.size + 1)), /a memory holds/);
+});
 PEDALMIDI.disconnect();
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

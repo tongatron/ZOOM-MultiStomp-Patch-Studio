@@ -1,4 +1,4 @@
-// USB link to the pedal over Web MIDI (Chrome and Edge on a computer). Experimental and read-only for now.
+// USB link to the pedal over Web MIDI (Chrome and Edge on a computer). Experimental.
 // The SysEx commands, the 7-bit packing and the CRC32 framing come from zoomzt2.py in the open-source
 // zoom-zt2 project (https://github.com/mungewell/zoom-zt2, MIT). They are not documented or supported by ZOOM.
 //
@@ -110,19 +110,33 @@ const PEDALMIDI = (() => {
     const crcOk = crcOf(r.slice(r.length - 6, r.length - 1)) === crc32(data);
     // The PTCF header holds the real file size; the memory can be padded after it
     const size = data.length >= 8 ? new DataView(data.buffer).getUint32(4, true) : 0;
-    return { data: size > 0 && size <= data.length ? data.slice(0, size) : data, crcOk, length };
+    // data: the PTCF file; memory: the whole memory as sent (what a backup must write back)
+    return { data: size > 0 && size <= data.length ? data.slice(0, size) : data, memory: data, crcOk, length };
   }
   // The patch being played or edited now (needs editor mode)
-  const readCurrent = async () => patchFrom(await zoom(0x64, 0x13), 7);
-  // A stored patch: memory 1…count
-  async function readMemory(number, info) {
+  const address = (number, info) => {
+    if (!Number.isInteger(number) || number < 1 || number > info.count) throw new Error(`Memory ${number} does not exist (1–${info.count})`);
     const bank = Math.floor((number - 1) / info.bankSize);
     const slot = number - 1 - bank * info.bankSize;
-    return patchFrom(await zoom(0x46, 0x00, 0x00, bank & 0x7f, bank >> 7, slot & 0x7f, slot >> 7), 11);
+    return [bank & 0x7f, bank >> 7, slot & 0x7f, slot >> 7];
+  };
+  const readCurrent = async () => patchFrom(await zoom(0x64, 0x13), 7);
+  // A stored patch: memory 1…count
+  const readMemory = async (number, info) => patchFrom(await zoom(0x46, 0x00, 0x00, ...address(number, info)), 11);
+  // Overwrites a stored patch. bytes: a PTCF file (padded with zeros to the memory size) or a whole memory from
+  // readMemory().memory. Layout: 45 00 00 <bank lo hi> <slot lo hi> <length lo hi> <packed data> <CRC ×5>
+  async function writeMemory(number, info, bytes) {
+    if (bytes.length > info.size) throw new Error(`The patch has ${bytes.length} bytes; a memory holds ${info.size}`);
+    const data = new Uint8Array(info.size);
+    data.set(bytes);
+    const crc = (crc32(data) ^ 0xffffffff) >>> 0;
+    const r = await zoom(0x45, 0x00, 0x00, ...address(number, info), data.length & 0x7f, data.length >> 7, ...pack(data),
+      crc & 0x7f, crc >>> 7 & 0x7f, crc >>> 14 & 0x7f, crc >>> 21 & 0x7f, crc >>> 28 & 0x0f);
+    return r;
   }
 
   return {
-    supported, ports, connect, disconnect, identify, editorOn, editorOff, patchInfo, readCurrent, readMemory,
+    supported, ports, connect, disconnect, identify, editorOn, editorOff, patchInfo, readCurrent, readMemory, writeMemory,
     hex, pack, unpack, crc32, onLog: fn => { log = fn; }, get device() { return device; }
   };
 })();

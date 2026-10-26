@@ -62,6 +62,7 @@ What still needs checking is listed in [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md
 | **Advice engine** | Order, level and DSP checks plus placement tips. Order rules are warnings or tips, never errors. Every rule cites its sources. |
 | **`.zptc` export / import** | Reverse-engineered format; every sample file round-trips byte for byte. |
 | **My patches** | Local library per pedal, comparison view, share links, backup and import, sync between devices. |
+| **Pedal manager** (experimental) | Over USB in Chrome: lists the pedal's 100 memories next to My patches, opens them in the builder, sends patches to a chosen memory with backup and read-back check (MS-60B+). |
 
 ## Under the hood: reverse-engineering `.zptc`
 
