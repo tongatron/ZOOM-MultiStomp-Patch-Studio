@@ -1,0 +1,19 @@
+name: Advice sources
+
+# Every advice rule cites a web page. Check once a week that none of them has disappeared.
+# "blocked" (403/429, e.g. TalkBass behind Cloudflare) does not fail the run; only broken links do.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check every source link
+        run: node tools/check-sources.mjs

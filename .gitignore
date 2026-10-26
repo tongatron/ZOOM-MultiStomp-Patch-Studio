@@ -2,3 +2,4 @@ ServerHP-ubuntu.md
 tmp/
 .DS_Store
 sync-data/
+node_modules/

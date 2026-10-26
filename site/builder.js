@@ -253,6 +253,7 @@ function renderSummary() {
   if (raw.length) notices.push(['attention', `Raw values (format not decoded): ${raw.join(', ')}.`]);
   $('#notices').innerHTML = notices.map(([kind, text]) => `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`).join('');
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
+  $('#share-patch').disabled = !state.effects.length;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
   renderSaveState();
   renderAdvice();
@@ -365,6 +366,33 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
+// ---- share link -------------------------------------------------------------------------------
+// The patch travels in the URL fragment (#p=…), which browsers never send to the server.
+// Payload: [name, [[effectIndex, on 1|0, [values in catalog parameter order]]]] as base64url JSON.
+const toBase64Url = text => btoa(String.fromCharCode(...new TextEncoder().encode(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const fromBase64Url = code => new TextDecoder().decode(Uint8Array.from(atob(code.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
+function shareCode(source) {
+  return toBase64Url(JSON.stringify([source.name.trim(), source.effects.map(slot => [slot.index, slot.on === false ? 0 : 1, catalog[slot.index].params.map(p => slot.values[p.name] ?? null)])]));
+}
+function patchFromShareCode(code) {
+  const [name, effects] = JSON.parse(fromBase64Url(code));
+  if (typeof name !== 'string' || !Array.isArray(effects)) throw new Error('not a patch');
+  return {
+    name: name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').slice(0, 28),
+    effects: effects.filter(e => Array.isArray(e) && Number.isInteger(e[0]) && catalog[e[0]]).slice(0, ZPTC.MAX_EFFECTS).map(([index, on, values]) => ({
+      index, on: on !== 0,
+      values: Object.fromEntries(catalog[index].params.map((p, i) => [p.name, Array.isArray(values) ? values[i] : null]).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && v.length <= 40)))
+    }))
+  };
+}
+async function sharePatch() {
+  if (!state.effects.length) return;
+  const url = `${location.origin}${location.pathname}#p=${shareCode(state)}`;
+  try { await navigator.clipboard.writeText(url); notify('muted', 'Link copied: whoever opens it gets this patch in the builder.'); }
+  catch { prompt('Copy this link to share the patch:', url); }
+}
+$('#share-patch').addEventListener('click', sharePatch);
+
 const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('The current patch has unsaved changes. Continue and lose them?');
 function loadPatch(patch, currentId = null) {
   state.name = patch.name;
@@ -715,10 +743,11 @@ function renderPicker() {
     && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category}`.toLowerCase().includes(pickerState.query)));
   $('#picker-list').innerHTML = items.length ? items.map(fx => {
     const over = total + fx.dsp > 100;
+    const near = !over && total + fx.dsp > 95;
     return `<li><button class="picker-item" data-index="${fx.index}">
       <img class="fx-thumb" src="${fx.image}" alt="" loading="lazy" width="36" height="45" />
       <span class="picker-main"><span class="picker-name">${escapeHtml(fx.name)} ${categoryLabel(fx)}</span><span class="picker-desc" lang="en">${escapeHtml(fx.description)}</span></span>
-      <span class="picker-dsp${over ? ' is-over' : ''}" title="${over ? 'With this effect the patch goes over 100%' : 'DSP load and resulting total'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}</small></span>
+      <span class="picker-dsp${over ? ' is-over' : near ? ' is-near' : ''}" title="${over ? 'With this effect the patch goes over 100%' : near ? 'With this effect the patch is close to 100%' : 'DSP load and resulting total'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}${over ? ' · over' : ''}</small></span>
     </button></li>`;
   }).join('') : '<li class="blankslate"><p>No effects found.</p></li>';
 }
@@ -736,9 +765,11 @@ picker.addEventListener('click', event => {
   if (cat) { pickerState.category = cat.dataset.cat || null; renderPicker(); return; }
   const item = event.target.closest('.picker-item');
   if (!item) return;
-  state.effects.forEach(slot => { slot.open = false; });
-  state.effects.push(slotFor(Number(item.dataset.index)));
+  const fx = catalog[Number(item.dataset.index)];
+  if (!fitsDsp(fx)) return; // the picker stays open to choose a lighter effect
   picker.close();
+  state.effects.forEach(slot => { slot.open = false; });
+  state.effects.push(slotFor(fx.index));
   render();
   document.querySelector('.chain-item:last-child')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 });
@@ -872,6 +903,7 @@ $('#advice').addEventListener('click', event => {
       const entry = fit.missing.find(m => m.role === button.dataset.role)?.entry;
       if (!entry || state.effects.length >= ZPTC.MAX_EFFECTS) return;
       const index = catalog.find(fx => fx.name === entry.effect).index;
+      if (!fitsDsp(catalog[index])) return;
       state.effects.forEach(slot => { slot.open = false; });
       state.effects.splice(ADVICE.insertPosition(patch, fit, button.dataset.role), 0, slotFor(index, entry.values));
       render();
@@ -905,7 +937,13 @@ $('#advice').addEventListener('click', event => {
 // "Add to patch" from the catalog (?add=slug): with a patch already in the editor, ask where the effect goes.
 const addChoice = $('#add-choice');
 let pendingAdd = null;
+// Asks before an addition that takes the estimated load over 100% (the pedal would show PROCESS OVERFLOW)
+function fitsDsp(fx) {
+  const after = totalDsp() + fx.dsp;
+  return after <= 100 || confirm(`Adding ${fx.name} takes the estimated load to ${pct(after)}. Above 100% the pedal shows PROCESS OVERFLOW and bypasses the effects. Add it anyway?`);
+}
 function appendEffect(fx) {
+  if (!fitsDsp(fx)) return;
   state.effects.forEach(slot => { slot.open = false; });
   state.effects.push(slotFor(fx.index));
   render();
@@ -1114,9 +1152,19 @@ applyRulePacks();
 
 load();
 const addSlug = new URLSearchParams(location.search).get('add');
+const sharedCode = location.hash.startsWith('#p=') ? location.hash.slice(3) : null;
 history.replaceState(null, '', location.pathname);
 $('#patch-name').value = state.name;
 render();
+if (sharedCode) {
+  try {
+    const shared = patchFromShareCode(sharedCode);
+    if (!shared.effects.length) throw new Error('empty');
+    if (confirmDiscard()) { loadPatch(shared); notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`); }
+  } catch {
+    notify('danger', 'This share link is broken or incomplete.');
+  }
+}
 const addFx = addSlug && catalog.find(item => item.slug === addSlug);
 if (addFx) {
   if (state.effects.length) askWhereToAdd(addFx);

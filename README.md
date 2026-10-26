@@ -21,7 +21,7 @@ The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot ch
 - **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources.
 - **Tailored to your rig.** Pick a style profile and say whether the pedal feeds a bass amp or a mixer, and the tips adapt.
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
-- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore, or sync them between your devices with a private code. Write your own advice rules in a form and share them as `.json` rule packs.
+- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, share a patch with a link, back up and restore, or sync them between your devices with a private code. Write your own advice rules in a form and share them as `.json` rule packs.
 - **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
 
 ## Features
@@ -84,10 +84,11 @@ deploy/          Node server (static files + sync API) and its systemd unit.
 ## Run it locally
 
 ```bash
-python3 -m http.server 8766 --directory site
+node deploy/server.mjs
 ```
 
-Then open <http://localhost:8766>.
+Then open <http://localhost:8097>. The Node server also runs the Sync API; a plain static server
+(`python3 -m http.server 8766 --directory site`) works too, without Sync.
 
 ## Checks
 
@@ -98,9 +99,19 @@ node tools/zptc.mjs roundtrip patches/0* "patches/07Big Black .zptc"
 # advice rules and starter chains
 node tools/advice-test.mjs
 
-# are the sources cited by the advice rules still reachable?
+# patch sync: merge rules and server API
+node tools/sync-test.mjs
+
+# the builder in a real browser: build, save, share, compare, download, sync
+npm install && npx playwright install chromium && node tools/e2e-test.mjs
+# (or use your installed Chrome: PW_CHANNEL=chrome node tools/e2e-test.mjs)
+
+# are the sources cited by the advice rules still reachable? (also runs weekly on GitHub Actions)
 node tools/check-sources.mjs
 ```
+
+On the server, `deploy/backup-sync-data.sh` runs every day at 03:30 from the user crontab and keeps 30 days of
+the sync data in `/srv/apps/zoom-ms60b-backups`.
 
 ## Notes
 

@@ -733,3 +733,4 @@ body.is-dropping .drop-overlay { display: grid; }
 .pe-errors ul { margin: 4px 0 0; padding-left: 18px; }
 .pe-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (max-width: 640px) { .pe-source { grid-template-columns: 1fr; } }
+.picker-dsp.is-near small { color: #d29922; }
