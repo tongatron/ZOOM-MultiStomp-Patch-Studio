@@ -63,7 +63,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 ## 6. Project hygiene
 
 - Done: CI (`.github/workflows/ci.yml`, round-trip + advice tests on every push) and English text outside `site/`. Push the repository to GitHub to activate the workflow.
-- Accessibility: text contrast checked with a script on the catalog (list, grid, detail) and the builder (chain, compare, picker): everything meets WCAG AA after raising `--fg-subtle`. Still to do: a real screen-reader and keyboard-only pass (the drag handle is pointer-only; the arrow buttons are the keyboard way to reorder) and a performance check on mobile.
+- Accessibility: text contrast checked with a script on the catalog (list, grid, detail) and the builder (chain, compare, picker): everything meets WCAG AA after raising `--fg-subtle`. Keyboard reordering keeps focus on the moved effect and announces the new position. Still to do: a real screen-reader pass and a performance check on mobile.
 
 ## 7. UI
 

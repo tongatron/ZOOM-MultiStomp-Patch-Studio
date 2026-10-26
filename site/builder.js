@@ -282,6 +282,16 @@ function renderLibrary() {
 }
 
 function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
+// Rendering rebuilds the chain, so keyboard focus is put back on the same control of the same effect.
+const announce = text => { $('#sr-status').textContent = ''; setTimeout(() => { $('#sr-status').textContent = text; }, 50); };
+function renderKeepingFocus(uid, action) {
+  render();
+  const item = $('#chain-list').querySelector(`.chain-item[data-uid="${uid}"]`);
+  if (!item) return;
+  const control = item.querySelector(`[data-action="${action}"]:not([disabled])`)
+    ?? item.querySelector('[data-action="up"]:not([disabled]), [data-action="down"]:not([disabled])');
+  control?.focus();
+}
 const notify = (kind, text) => $('#notices').insertAdjacentHTML('afterbegin', `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`);
 
 // ---- chain interactions -----------------------------------------------------------------------
@@ -299,7 +309,15 @@ $('#chain-list').addEventListener('click', event => {
     case 'toggle-open': slot.open = !slot.open; break;
     default: return;
   }
-  render();
+  const action = button.dataset.action;
+  if (action === 'remove') {
+    announce(`${catalog[slot.index].name} removed`);
+    render();
+    $('#chain-list').querySelector('[data-action="remove"], [data-action="open-picker"]')?.focus();
+    return;
+  }
+  if (action === 'up' || action === 'down') announce(`${catalog[slot.index].name} moved to position ${state.effects.indexOf(slot) + 1} of ${state.effects.length}`);
+  renderKeepingFocus(slot.uid, action);
 });
 
 $('#chain-list').addEventListener('change', event => {
@@ -307,6 +325,7 @@ $('#chain-list').addEventListener('change', event => {
   const slot = state.effects.find(s => s.uid === Number(event.target.closest('.chain-item').dataset.uid));
   slot.on = event.target.checked;
   render();
+  $('#chain-list').querySelector(`.chain-item[data-uid="${slot.uid}"] [data-action="toggle-on"]`)?.focus();
 });
 
 $('#chain-list').addEventListener('input', event => {
