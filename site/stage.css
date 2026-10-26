@@ -1,4 +1,4 @@
-/* "Stage" theme: lime LCD accent, artwork-first cards, pill tabs. Loaded after styles.css and only overrides it. */
+/* "Stage" theme: lime LCD accent, artwork-first cards, pill tabs. No longer used by the site (theme.css, Primer, replaced it); kept for the comparison in designs/github.html. */
 :root {
   --bg: #0a0c0c; --bg-inset: #0a0c0c; --bg-subtle: #121615; --bg-muted: #1b211f; --bg-hover: #181d1c;
   --border: #232a28; --border-muted: #1c2220; --fg: #e8efe6; --fg-muted: #8a978d; --fg-subtle: #7d8a80;

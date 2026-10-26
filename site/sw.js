@@ -4,7 +4,7 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v10';
+const CACHE = 'ms60b-v11';
 const CORE = [
   './', 'index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)

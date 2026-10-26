@@ -38,15 +38,16 @@
       <div class="group"><b>Variant</b><div class="seg" id="variant" role="group" aria-label="Variant"></div></div>
       <div class="group"><b>Page</b><div class="seg" id="page" role="group" aria-label="Page"></div></div>
       <div class="group"><b>Width</b><div class="seg" id="width" role="group" aria-label="Width"></div></div>
-      <div class="group"><div class="seg"><button type="button" id="stage-toggle" aria-pressed="false">Current Stage theme</button></div></div>
+      <div class="group"><div class="seg"><button type="button" id="stage-toggle" aria-pressed="false">Old Stage theme</button></div></div>
       <p class="note" id="note"></p>
     </div>
     <div class="stage" id="stage"><iframe id="frame" title="Page preview"></iframe></div>
 
     <script>
-      // The demo loads a real page in the frame, turns stage.css off and adds base.css plus a variant. The live pages do not change.
+      // The demo loads a real page in the frame, turns its theme.css (Primer, the site theme) off and adds base.css plus a variant.
+      // "Old Stage theme" puts back the lime stage.css the site used before, for comparison. The live pages do not change.
       const VARIANTS = {
-        primer: { label: 'Primer', note: 'GitHub dark as it is: blue links and focus, green primary button, coral tab bar, 6px corners.' },
+        primer: { label: 'Primer', note: 'The site theme now. GitHub dark as it is: blue links and focus, green primary button, coral tab bar, 6px corners.' },
         dimmed: { label: 'Dimmed', note: 'GitHub dark dimmed: softer greys and lower contrast, same structure.' },
         lime: { label: 'Lime', note: 'GitHub dark structure with the brand lime as a flat accent (buttons, tab bar, selection), no glow, 8px corners.' },
         contrast: { label: 'High contrast', note: 'GitHub dark high contrast: near-black, bright text, visible borders, 4px corners.' }
@@ -75,16 +76,16 @@
           document.querySelectorAll(`#${key} button`).forEach(b => b.setAttribute('aria-pressed', b.dataset.k === state[key]));
         document.getElementById('stage-toggle').setAttribute('aria-pressed', state.stage);
         document.getElementById('stage').dataset.width = state.width;
-        document.getElementById('note').textContent = state.stage ? 'The current Stage theme (stage.css), for comparison.' : VARIANTS[state.variant].note;
+        document.getElementById('note').textContent = state.stage ? 'The old lime Stage theme (stage.css), for comparison. The site now uses Primer.' : VARIANTS[state.variant].note;
         history.replaceState(null, '', `#v=${state.variant}&p=${state.page}&w=${state.width}`);
       }
-      // Swap the theme inside the frame (same origin): stage.css off, base.css and the variant on
+      // Swap the theme inside the frame (same origin): theme.css off, then base.css and the variant, or stage.css
       function apply() {
         const doc = frame.contentDocument;
         if (!doc?.head) return;
         doc.querySelectorAll('link[data-demo]').forEach(l => l.remove());
-        doc.querySelectorAll('link[href*="stage.css"]').forEach(l => { l.disabled = !state.stage; });
-        if (!state.stage) for (const file of ['base.css', `${state.variant}.css`]) {
+        doc.querySelectorAll('link[href*="theme.css"]').forEach(l => { l.disabled = true; });
+        for (const file of state.stage ? ['../stage.css'] : ['base.css', `${state.variant}.css`]) {
           const link = doc.createElement('link');
           link.rel = 'stylesheet';
           link.href = new URL(`github/${file}`, location.href).href;

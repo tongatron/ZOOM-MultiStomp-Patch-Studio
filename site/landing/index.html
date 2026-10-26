@@ -8,39 +8,39 @@
     <meta property="og:site_name" content="ZOOM MultiStomp Patch Studio" />
     <meta property="og:title" content="ZOOM MultiStomp Patch Studio — design patches for the ZOOM MS-60B+ and MS-50G+" />
     <meta property="og:description" content="Effects library, patch builder with live DSP load, advice and .zptc export for Handy Guitar Lab." />
-    <meta name="theme-color" content="#0a0c0c" />
+    <meta name="theme-color" content="#0d1117" />
     <title>ZOOM MultiStomp Patch Studio — design patches for the ZOOM MS-60B+ and MS-50G+</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="../styles.css?v=zoom24-20261026" />
-    <link rel="stylesheet" href="../stage.css?v=zoom24-20261026" />
+    <link rel="stylesheet" href="../styles.css?v=zoom27-20261027" />
+    <link rel="stylesheet" href="../theme.css?v=zoom27-20261027" />
     <style>
       .lp section { padding: 40px 0; }
       .lp section + section { border-top: 1px solid var(--border-muted); }
-      .lp-eyebrow { margin: 0 0 12px; font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+      .lp-eyebrow { margin: 0 0 12px; font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent-fg); }
       .lp h2 { margin: 0 0 8px; font-size: clamp(22px, 3.2vw, 30px); line-height: 1.2; }
       .lp-lead { max-width: 640px; margin: 0 0 28px; font-size: 16px; color: var(--fg-muted); }
 
       /* Hero */
       .lp .lp-hero { padding: 72px 0 48px; }
       .lp-hero h1 { max-width: 820px; margin: 0 0 20px; font-size: clamp(34px, 6.4vw, 60px); line-height: 1.05; letter-spacing: -.02em; }
-      .lp-hero h1 em { font-style: normal; color: var(--accent); }
+      .lp-hero h1 em { font-style: normal; color: var(--accent-fg); }
       .lp-hero .lp-lead { font-size: 18px; margin-bottom: 32px; }
       .lp-cta { display: flex; flex-wrap: wrap; gap: 12px; }
-      .lp-cta .btn { height: 44px; padding: 0 20px; font-size: 15px; border-radius: 999px; }
+      .lp-cta .btn { height: 40px; padding: 0 20px; font-size: 15px; }
 
       /* Pedal cards */
       .lp-pedals { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-      .lp-pedal { display: flex; flex-direction: column; gap: 18px; padding: 24px; border: 1px solid var(--border); border-radius: 18px; background: var(--bg-subtle); transition: border-color .2s, box-shadow .2s, transform .2s; }
-      .lp-pedal:hover { transform: translateY(-3px); border-color: var(--accent-muted); box-shadow: 0 16px 48px -24px var(--accent); }
-      .lp-pedal--untested:hover { border-color: rgba(248, 81, 73, .5); box-shadow: 0 16px 48px -24px #f85149; }
+      .lp-pedal { display: flex; flex-direction: column; gap: 18px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); transition: border-color .12s; }
+      .lp-pedal:hover { border-color: #8b949e; }
+      .lp-pedal--untested:hover { border-color: rgba(248, 81, 73, .6); }
       .lp-pedal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
       .lp-pedal h3 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
       .lp-pedal h3 small { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--fg-muted); letter-spacing: 0; }
-      .lp-badge { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-      .lp-badge--ok { color: #11160a; background: var(--accent); }
+      .lp-badge { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 2em; font-size: 12px; font-weight: 600; white-space: nowrap; }
+      .lp-badge--ok { color: #fff; background: var(--primary); }
       .lp-badge--untested { color: #fff; background: #c93c37; }
       .lp-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-      .lp-strip img { width: 100%; height: auto; aspect-ratio: 4 / 5; border-radius: 8px; background: #000; }
+      .lp-strip img { width: 100%; height: auto; aspect-ratio: 4 / 5; border-radius: var(--radius); background: #000; }
       .lp-facts { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--fg-muted); }
       .lp-facts strong { color: var(--fg); font-size: 15px; }
       .lp-pedal p { margin: 0; font-size: 14px; color: var(--fg-muted); }
@@ -49,20 +49,20 @@
 
       /* Steps */
       .lp-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
-      .lp-steps li { position: relative; padding: 20px 20px 20px 64px; border: 1px solid var(--border-muted); border-radius: 14px; background: var(--bg-inset); counter-increment: step; }
-      .lp-steps li::before { content: counter(step); position: absolute; left: 20px; top: 18px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 700 14px/1 var(--mono); color: #11160a; background: var(--accent); }
+      .lp-steps li { position: relative; padding: 20px 20px 20px 64px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); counter-increment: step; }
+      .lp-steps li::before { content: counter(step); position: absolute; left: 20px; top: 18px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font: 600 14px/1 var(--mono); color: var(--fg); background: var(--bg-muted); border: 1px solid var(--border); }
       .lp-steps h3 { margin: 0 0 4px; font-size: 15px; }
       .lp-steps p { margin: 0; font-size: 14px; color: var(--fg-muted); }
 
       /* Features */
       .lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
-      .lp-card { padding: 18px 20px; border: 1px solid var(--border-muted); border-radius: 14px; background: var(--bg-inset); }
-      .lp-card h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; font-size: 15px; color: var(--accent); }
+      .lp-card { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); }
+      .lp-card h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; font-size: 15px; color: var(--fg); }
       .lp-card h3 .Label { height: 18px; font-size: 11px; color: var(--fg-muted); }
       .lp-card p { margin: 0; font-size: 14px; color: var(--fg-muted); line-height: 1.55; }
 
       /* Testers */
-      .lp-testers { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; padding: 28px; border: 1px solid rgba(248, 81, 73, .4); border-radius: 18px; background: rgba(248, 81, 73, .08); }
+      .lp-testers { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; padding: 28px; border: 1px solid rgba(248, 81, 73, .4); border-radius: var(--radius); background: rgba(248, 81, 73, .08); }
       .lp-testers .lp-eyebrow, .lp-testers h2 { color: #ff7b72; }
       .lp-testers .lp-lead { margin: 0; }
       .lp-testers ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; color: var(--fg-muted); }
@@ -227,7 +227,7 @@
       <div class="gh-footer-left">
         <a class="tt-badge" href="https://tongatron.org" target="_blank" rel="noreferrer" aria-label="tongatron.org"><span class="tt-dot"></span><span>tongatron.org<span class="tt-cursor">_</span></span></a>
         <a class="gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
-        <time class="gh-updated" datetime="2026-10-26T22:53Z">Last update 26 October 2026 23:53</time>
+        <time class="gh-updated" datetime="2026-10-26T23:06Z">Last update 27 October 2026 00:06</time>
       </div>
       <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
     </footer>
