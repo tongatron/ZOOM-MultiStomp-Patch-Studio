@@ -1,4 +1,4 @@
-// Advice rules, placement tips and style profiles for the Zoom MS-60B+.
+// Advice rules, placement tips and the styles used by Tone ideas for the Zoom MS-60B+.
 // Every rule cites where its reasoning comes from. Effect order is mostly convention, not law:
 // order rules are 'warning' or 'tip', never 'error'. 'error' is reserved for objective problems.
 //
@@ -49,7 +49,7 @@
   });
 
   // ---- helpers ----------------------------------------------------------------------------------------
-  const { moveBefore, moveAfter, setValue, move } = ADVICE.edit;
+  const { moveBefore, moveAfter, setValue } = ADVICE.edit;
   const gainOf = s => ['GAIN', 'SUSTAIN', 'BOOST', 'DIST', 'INPUT'].map(p => s.num(p)).find(n => n !== null) ?? null;
   const blendParam = s => ['BLEND', 'BALANCE'].find(p => s.has(p));
   // Parameters with a symmetric dB range (EQ bands, amp tone stacks): [{ name, value, max }]
@@ -414,65 +414,6 @@
       check: ctx => ctx.active.filter(s => s.has('MODE') && String(s.v('MODE')).includes('♩')).map(s => ({
         slots: [s.i], message: `${s.fx.name}: the delay time follows the tempo. Set the tempo of this patch on the pedal.`
       }))
-    },
-
-    // ---- style-specific ----
-    {
-      id: 'funk.comp-attack', severity: 'tip', topic: 'style', styles: ['funk'], title: 'Fast attack for slap',
-      why: 'For slap and percussive funk playing a fast compressor attack tames popped notes and evens out the thumb.',
-      sources: ['aguilar', 'yamahaComp'],
-      check: ctx => ctx.active.filter(s => s.fx.name === 'DYNAMIC COMPRESSOR' && s.v('ATTACK') === 'SLOW').map(s => ({
-        slots: [s.i], message: `${s.label} uses a SLOW attack.`, fix: { label: 'Set ATTACK to FAST', apply: p => setValue(p, s.i, 'ATTACK', 'FAST') }
-      }))
-    },
-    {
-      id: 'funk.no-comp', severity: 'tip', topic: 'style', styles: ['funk'], title: 'Funk usually starts with a compressor',
-      why: 'Slap and funk lines have big level differences between thumb and pops; a compressor keeps them even.',
-      sources: ['yamahaComp', 'thomannFunk'],
-      check: ctx => ctx.of('comp').length ? [] : [{ message: 'Add DYNAMIC COMPRESSOR or OPTICAL COMPRESSOR near the start.' }]
-    },
-    {
-      id: 'funk.no-envfilter', severity: 'tip', topic: 'style', styles: ['funk'], title: 'Try an envelope filter',
-      why: 'The envelope filter (Mu-Tron style) is the signature funk bass effect: it opens with your attack like an automatic wah.',
-      sources: ['premierFunk', 'thomannFunk'],
-      check: ctx => ctx.of('envfilter').length ? [] : [{ message: 'Add ENVELOPE FILTER, Z TRON FILTER or BASS AUTO WAH early in the chain.' }]
-    },
-    {
-      id: 'reggae.drive', severity: 'tip', topic: 'style', styles: ['reggae'], title: 'Reggae bass is usually clean',
-      why: 'Reggae and dub bass is deep, warm and round. Distortion adds upper harmonics that work against it.',
-      sources: ['soundfingers', 'premierReggae'],
-      check: ctx => ctx.of('drive').map(s => ({ slots: [s.i], message: `${s.fx.name} adds grit; consider removing it.` }))
-    },
-    {
-      id: 'reggae.treble', severity: 'tip', topic: 'style', styles: ['reggae'], title: 'Roll off the treble',
-      why: 'Dub tones boost the bass and roll the treble (and often the mids) down for a deep, slightly muted sound.',
-      sources: ['soundfingers', 'fenderRumble', 'premierReggae'],
-      check: ctx => ctx.active.filter(s => s.role === 'amp' || s.role === 'preamp').filter(s => {
-        const treble = boostParams(s).find(b => b.name === 'TREBLE');
-        return treble ? treble.value > 0 : (s.num('TREBLE') ?? 0) > 50;
-      }).map(s => ({ slots: [s.i], message: `${s.label}: TREBLE is ${s.num('TREBLE')}; turn it down.` }))
-    },
-    {
-      id: 'jazz.gain', severity: 'tip', topic: 'style', styles: ['jazz'], title: 'Keep jazz tones clean',
-      why: 'Jazz bass tones are warm and round, with the highs rolled back; drive is rarely part of it.',
-      sources: ['talkbassJazz'],
-      check: ctx => ctx.of('drive').filter(s => (gainOf(s) ?? 0) > 40).map(s => ({ slots: [s.i], message: `${s.label} has a lot of gain for a jazz tone.` }))
-    },
-    {
-      id: 'jazz.reverb', severity: 'tip', topic: 'style', styles: ['jazz'], title: 'Just a touch of room',
-      why: 'A small, low-mix room reverb adds air without blurring walking lines.',
-      sources: ['soundbridge'],
-      check: ctx => ctx.of('reverb').filter(s => (s.num('MIX') ?? 0) > 25).map(s => ({ slots: [s.i], message: `${s.label} has MIX at ${s.num('MIX')}.`, fix: { label: 'Set MIX to 15', apply: p => setValue(p, s.i, 'MIX', 15) } }))
-    },
-    {
-      id: 'synth.first', severity: 'warning', topic: 'style', styles: ['synth'], title: 'Put the synth or octaver first',
-      why: 'Synth and octave effects need the cleanest possible signal to track your notes, so they go at the very start of the chain.',
-      sources: ['alderete', 'perfectCircuit'],
-      check: ctx => {
-        const first = ctx.active[0];
-        const tracker = ctx.first('tracking');
-        return tracker && first && tracker.i !== first.i ? [{ slots: [tracker.i], message: `${tracker.fx.name} is not the first effect.`, fix: { label: 'Move to the start', apply: p => move(p, tracker.i, 0) } }] : [];
-      }
     }
   ]);
 
@@ -510,14 +451,12 @@
     sfx: { place: 'Anywhere — experiment', text: 'Special effects are controlled from the footswitch; place them where the sound they act on is the one you want.', sources: ['zoomFxList'] }
   });
 
-  // ---- style profiles ---------------------------------------------------------------------------------
-  // severity: per-rule overrides while the style is active. starter: a chain to load (values in display units).
-  // avoids: effect roles that work against the style (backed by that style's own rules); used by the style suggestions.
+  // ---- styles for Tone ideas (tones.js) ----------------------------------------------------------------
+  // starter: a chain to open in the builder (values in display units).
   ADVICE.addStyles([
-    { id: 'general', name: 'General', summary: 'Neutral advice for any style.', severity: {}, sources: ['boss', 'yamaha'], starter: null },
     {
       id: 'funk', name: 'Funk & Slap', summary: 'Even dynamics, a quick envelope filter and a punchy preamp. Fast compressor attack for slap.',
-      severity: {}, sources: ['premierFunk', 'thomannFunk', 'yamahaComp'],
+      sources: ['premierFunk', 'thomannFunk', 'yamahaComp'],
       starter: { name: 'FUNK SLAP', effects: [
         { effect: 'ENVELOPE FILTER', values: { THRSHLD: 50, ATTACK: 60, MODE: 'UP', VOL: 80 } },
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 6, ATTACK: 'FAST', TONE: 55, VOL: 80 } },
@@ -526,7 +465,7 @@
     },
     {
       id: 'rock', name: 'Rock', summary: 'Mild overdrive with the clean low end blended in, into a classic amp.',
-      severity: {}, sources: ['reverbOD', 'bassMusician', 'boss'],
+      sources: ['reverbOD', 'bassMusician', 'boss'],
       starter: { name: 'ROCK DRIVE', effects: [
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 4, ATTACK: 'SLOW', TONE: 50, VOL: 80 } },
         { effect: 'BLUEBERRY DRIVE', values: { GAIN: 55, TONE: 55, BLEND: 50, VOL: 75 } },
@@ -535,7 +474,7 @@
     },
     {
       id: 'metal', name: 'Metal & Djent', summary: 'Tight distortion that keeps a clean low end, noise reduction after the drive, EQ for definition.',
-      severity: { 'gate.suggest': 'warning', 'lowend.drive-blend': 'warning' }, sources: ['nailthemix', 'neuraldsp', 'sos'],
+      sources: ['nailthemix', 'neuraldsp', 'sos'],
       starter: { name: 'METAL GRIND', effects: [
         { effect: '1176 LIMITER', values: { INPUT: 40, RATIO: '4:1', RELEASE: 40, OUTPUT: 40 } },
         { effect: 'DARK OVERDRIVE', values: { GAIN: 65, ATTACK: 'BOOST', BLEND: 50, VOL: 75 } },
@@ -545,7 +484,7 @@
     },
     {
       id: 'reggae', name: 'Reggae & Dub', summary: 'Deep, warm and round: lows up, treble rolled off, no distortion.',
-      severity: {}, avoids: ['drive'], sources: ['soundfingers', 'premierReggae', 'fenderRumble'],
+      sources: ['soundfingers', 'premierReggae', 'fenderRumble'],
       starter: { name: 'DUB DEEP', effects: [
         { effect: 'OPTICAL COMPRESSOR', values: { DRIVE: 4, LO: 60, HI: 30, VOL: 80 } },
         { effect: 'SUPER LOW PREAMP', values: { GAIN: 30, ENHANCE: 60, SUB: 40, LO: 70, MID: 40, HI: 20, BALANCE: 60, VOL: 70 } },
@@ -554,7 +493,7 @@
     },
     {
       id: 'jazz', name: 'Jazz & Fretless', summary: 'Warm and round, light compression, a touch of room.',
-      severity: {}, avoids: ['drive'], sources: ['talkbassJazz', 'soundbridge'],
+      sources: ['talkbassJazz', 'soundbridge'],
       starter: { name: 'JAZZ WARM', effects: [
         { effect: 'OPTICAL COMPRESSOR', values: { DRIVE: 3, LO: 50, HI: 40, VOL: 80 } },
         { effect: 'FLIPTOP', values: { GAIN: 20, VOL: 70, CABINET: 50, ULTRA: 'OFF', BRIGHT: 'OFF', BASS: 2, MID: 0, TREBLE: -4 } },
@@ -563,7 +502,7 @@
     },
     {
       id: 'synth', name: 'Synth & Electronic', summary: 'Synth first on a clean signal, then dynamics and space.',
-      severity: {}, sources: ['perfectCircuit', 'alderete'],
+      sources: ['perfectCircuit', 'alderete'],
       starter: { name: 'SYNTH BASS', effects: [
         { effect: 'Z-SYNTHESIZER', values: { FREQ: 5, RANGE: 10, DECAY: 50, RESO: 8, WAVE: 'SAW', TONE: 6, BALANCE: 70, VOL: 75 } },
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 5, ATTACK: 'FAST', TONE: 50, VOL: 80 } },
@@ -574,7 +513,7 @@
     // MID-FREQ of the amps is not decoded yet: raw 13 is the value stored in the exported AMPG SVT patches in patches/.
     {
       id: 'grunge', name: 'Grunge', summary: 'Distortion in the style of a ProCo RAT into an Ampeg SVT, with some clean bass kept under the dirt. After Krist Novoselic (Nirvana).',
-      severity: {}, sources: ['novoselicGear', 'bassMusician'],
+      sources: ['novoselicGear', 'bassMusician'],
       starter: { name: 'GRUNGE', effects: [
         { effect: 'SQUEAK DISTORTION', values: { GAIN: 60, FILTER: 40, VOL: 70, DRY: 40 } },
         { effect: 'AMPG SVT', values: { GAIN: 45, VOL: 70, CABINET: 60, ULTRA: 'OFF', BASS: 4, 'MID-FREQ': 13, MID: 2, TREBLE: 2 } }
@@ -582,7 +521,7 @@
     },
     {
       id: 'postpunk', name: 'Post-punk', summary: 'Melodic lines high on the neck with a heavy chorus left on. After Peter Hook (Joy Division, New Order).',
-      severity: {}, sources: ['hookWiki'],
+      sources: ['hookWiki'],
       starter: { name: 'POST PUNK', effects: [
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 4, ATTACK: 'FAST', TONE: 55, VOL: 80 } },
         { effect: 'CLONE CHORUS', values: { DEPTH: '2', RATE: 35, TONE: 60, MIX: 50 } }
@@ -590,7 +529,7 @@
     },
     {
       id: 'indie', name: 'Indie & Alt rock', summary: 'A pick-played Precision-style bass straight into an Ampeg SVT, with only light compression. After Kim Deal (Pixies).',
-      severity: {}, sources: ['dealMixdown'],
+      sources: ['dealMixdown'],
       starter: { name: 'INDIE ROCK', effects: [
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 3, ATTACK: 'FAST', TONE: 50, VOL: 80 } },
         { effect: 'AMPG SVT', values: { GAIN: 35, VOL: 70, CABINET: 60, ULTRA: 'OFF', BASS: 3, 'MID-FREQ': 13, MID: 3, TREBLE: 2 } }
@@ -598,7 +537,7 @@
     },
     {
       id: 'altmetal', name: 'Alt-metal & Prog', summary: 'A RAT-style distortion and a bass graphic EQ for midrange punch, plus a delay for the repeats. After Justin Chancellor (Tool).',
-      severity: {}, sources: ['chancellorPG'],
+      sources: ['chancellorPG'],
       starter: { name: 'ALT METAL', effects: [
         { effect: 'SQUEAK DISTORTION', values: { GAIN: 50, FILTER: 45, VOL: 70, DRY: 50 } },
         { effect: 'BASS GRAPHIC EQ', values: { '50Hz': 0, '120Hz': 2, '400Hz': 0, '500Hz': 2, '800Hz': 3, '4.5kHz': 2, '10kHz': 0, VOL: 80 } },
@@ -607,7 +546,7 @@
     },
     {
       id: 'fuzzrock', name: 'Fuzz & Octave rock', summary: 'An octave layer in front of a Big Muff-style fuzz into a Fender-style amp: one bass that fills the space of bass and guitar. After Mike Kerr (Royal Blood) and Chris Wolstenholme (Muse).',
-      severity: {}, sources: ['kerrMixdown', 'wolstenholmeWiki'],
+      sources: ['kerrMixdown', 'wolstenholmeWiki'],
       starter: { name: 'FUZZ ROCK', effects: [
         { effect: 'POLYPHONIC OCTAVER', values: { LO: 50, HI: 60, WET: 60, DRY: 80 } },
         { effect: 'NEW YORK MUFF FUZZ', values: { SUSTAIN: 60, TONE: 50, BALANCE: 60, VOL: 70 } },

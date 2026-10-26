@@ -196,8 +196,7 @@
       }
       function stylesTab(s) {
         return `<div class="repos">${P.styles().map(st => {
-          const fit = ADVICE.styleFit({ effects: s.chain }, st).fit;
-          return `<div class="repo"><h3>${esc(st.name)}</h3><p>${esc(st.summary)}</p><div class="foot"><span>★ ${fit}% match</span><button class="btn btn-sm" data-load="${st.id}">Use starter</button></div></div>`;
+          return `<div class="repo"><h3>${esc(st.name)}</h3><p>${esc(st.summary)}</p><div class="foot"><span></span><button class="btn btn-sm" data-load="${st.id}">Use starter</button></div></div>`;
         }).join('')}</div>`;
       }
       function side(s) {

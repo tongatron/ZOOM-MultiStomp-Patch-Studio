@@ -22,26 +22,24 @@ const test = (name, fn) => {
 
 const index = name => { const fx = ADVICE.byName.get(name); assert.ok(fx, `unknown effect ${name}`); return fx.index; };
 const patch = (...effects) => ({ name: 'TEST', effects: effects.map(([name, values = {}, on = true]) => ({ index: index(name), on, values })) });
-const ids = (p, style) => ADVICE.analyze(p, { style }).map(f => f.ruleId);
-const find = (p, id, style) => ADVICE.analyze(p, { style }).find(f => f.ruleId === id);
+const ids = p => ADVICE.analyze(p).map(f => f.ruleId);
+const find = (p, id) => ADVICE.analyze(p).find(f => f.ruleId === id);
 const order = p => p.effects.map(e => ADVICE.effects[e.index].name);
 // Applies the fix of `id` and checks the finding is gone
-const fixes = (p, id, style) => {
-  const finding = find(p, id, style);
+const fixes = (p, id) => {
+  const finding = find(p, id);
   assert.ok(finding, `${id} should fire`);
   assert.ok(finding.fix, `${id} should offer a fix`);
   const fixed = finding.fix.apply(p);
-  assert.ok(!ids(fixed, style).includes(id), `${id} still fires after its fix`);
+  assert.ok(!ids(fixed).includes(id), `${id} still fires after its fix`);
   return fixed;
 };
 
-test('every rule references known sources and styles', () => {
+test('every rule references known sources', () => {
   ADVICE.rules.forEach(rule => {
     assert.ok(ADVICE.SEVERITIES.includes(rule.severity), rule.id);
     (rule.sources || []).forEach(key => assert.ok(ADVICE.sources[key], `${rule.id}: unknown source ${key}`));
-    (rule.styles || []).forEach(id => assert.ok(ADVICE.styles.some(s => s.id === id), `${rule.id}: unknown style ${id}`));
   });
-  ADVICE.styles.forEach(style => Object.keys(style.severity).forEach(id => assert.ok(ADVICE.rules.some(r => r.id === id), `${style.id}: unknown rule ${id}`)));
 });
 
 test('every effect has a role with placement tips', () => {
@@ -114,25 +112,8 @@ test('ignored rules are skipped', () => {
   assert.ok(!ADVICE.analyze(p, { ignored: ['level.muted'] }).some(f => f.ruleId === 'level.muted'));
 });
 
-test('style rules only run in their style', () => {
-  const p = patch(['DYNAMIC COMPRESSOR', { ATTACK: 'SLOW', VOL: 80 }]);
-  assert.ok(!ids(p, 'general').includes('funk.comp-attack'));
-  assert.equal(fixes(p, 'funk.comp-attack', 'funk').effects[0].values.ATTACK, 'FAST');
-});
-
-test('style severity overrides apply', () => {
-  const p = patch(['BASS METAL DRIVE', { GAIN: 85, TONE: 50, BALANCE: 50, VOL: 70 }]);
-  assert.equal(find(p, 'gate.suggest', 'general').severity, 'tip');
-  assert.equal(find(p, 'gate.suggest', 'metal').severity, 'warning');
-});
-
-test('synth style wants the synth first', () => {
-  const p = patch(['DYNAMIC COMPRESSOR', { VOL: 80 }], ['Z-SYNTHESIZER', { VOL: 70 }]);
-  same(order(fixes(p, 'synth.first', 'synth')), ['Z-SYNTHESIZER', 'DYNAMIC COMPRESSOR']);
-});
-
 for (const style of ADVICE.styles.filter(s => s.starter)) {
-  test(`starter chain "${style.name}" is valid, encodable and clean in its style`, () => {
+  test(`starter chain "${style.name}" is valid, encodable and clean`, () => {
     const p = { name: style.starter.name, effects: style.starter.effects.map(e => ({ index: index(e.effect), on: true, values: e.values })) };
     p.effects.forEach(e => {
       const fx = ADVICE.effects[e.index];
@@ -148,14 +129,14 @@ for (const style of ADVICE.styles.filter(s => s.starter)) {
     const { file, dsp } = ZPTC.encode({ name: p.name, effects: style.starter.effects.map(e => ({ effect: e.effect, params: asSpec(e) })) });
     assert.ok(file.length > 0);
     assert.ok(dsp <= 100, `DSP ${dsp}`);
-    const serious = ADVICE.analyze(p, { style: style.id }).filter(f => f.severity !== 'tip');
+    const serious = ADVICE.analyze(p).filter(f => f.severity !== 'tip');
     same(serious.map(f => `${f.ruleId}: ${f.message}`), []);
   });
 }
 
 // ---- tone ideas by bassist ------------------------------------------------------------------------------
 for (const idea of TONE_IDEAS) {
-  test(`tone idea "${idea.name}": facts cite known sources, the chain is valid and clean in its style`, () => {
+  test(`tone idea "${idea.name}": facts cite known sources, the chain is valid and clean`, () => {
     const style = ADVICE.styles.find(st => st.id === idea.style);
     assert.ok(style?.starter, `unknown style ${idea.style}`);
     assert.ok(idea.facts.length >= 1);
@@ -170,7 +151,7 @@ for (const idea of TONE_IDEAS) {
     const { dsp } = ZPTC.encode({ name: chain.name, effects: chain.effects.map(e => ({ effect: e.effect, params: Object.fromEntries(Object.entries(e.values).map(([n, v]) => [n, ZPTC.codec(ADVICE.byName.get(e.effect).params.find(x => x.name === n).range, n) ? v : { raw: v }])) })) });
     assert.ok(dsp <= 100, `DSP ${dsp}`);
     const p = { name: chain.name, effects: chain.effects.map(e => ({ index: index(e.effect), on: true, values: e.values })) };
-    same(ADVICE.analyze(p, { style: style.id }).filter(f => f.severity !== 'tip').map(f => f.ruleId), []);
+    same(ADVICE.analyze(p).filter(f => f.severity !== 'tip').map(f => f.ruleId), []);
   });
 }
 
@@ -312,36 +293,7 @@ test('every preference silences existing rules only', () => {
   ADVICE.preferences.forEach(pref => pref.silences.forEach(id => assert.ok(ADVICE.rules.some(r => r.id === id), `${pref.id}: ${id}`)));
 });
 
-const starterPatch = style => patch(...style.starter.effects.map(e => [e.effect, e.values]));
-
-test('every starter chain fits its own style at 100%', () => {
-  ADVICE.styles.filter(s => s.starter).forEach(style => {
-    const fit = ADVICE.styleFit(starterPatch(style), style);
-    assert.equal(fit.fit, 100, `${style.id}: ${fit.fit}`);
-    assert.equal(fit.missing.length, 0);
-    assert.equal(fit.conflicts.length, 0);
-  });
-});
-
-test('a drive lowers the reggae fit and is reported as a conflict', () => {
-  const reggae = ADVICE.styles.find(s => s.id === 'reggae');
-  const clean = ADVICE.styleFit(starterPatch(reggae), reggae);
-  const driven = ADVICE.styleFit(patch(...reggae.starter.effects.map(e => [e.effect, e.values]), ['DARK OVERDRIVE', {}]), reggae);
-  assert.ok(driven.fit < clean.fit);
-  same(driven.conflicts, ['drive']);
-});
-
-test('missing roles come with a starter effect and a sensible position', () => {
-  const funk = ADVICE.styles.find(s => s.id === 'funk');
-  const p = patch(['ENVELOPE FILTER', {}], ['BASS DRIVER PREAMP', {}]);
-  const fit = ADVICE.styleFit(p, funk);
-  const comp = fit.missing.find(m => m.role === 'comp');
-  assert.equal(comp.entry.effect, 'DYNAMIC COMPRESSOR');
-  assert.equal(ADVICE.insertPosition(p, fit, 'comp'), 1);
-  assert.equal(ADVICE.insertPosition(patch(['BASS DRIVER PREAMP', {}]), fit, 'comp'), 0);
-});
-
-const withOutput = (p, output, style) => ADVICE.analyze(p, { style, output });
+const withOutput = (p, output) => ADVICE.analyze(p, { output });
 const ampPatch = cab => patch(['FLIPTOP', { GAIN: 30, VOL: 70, CABINET: cab }]);
 
 test('without an output choice the generic cabinet tip is shown and the output rules stay quiet', () => {
@@ -401,7 +353,7 @@ test('MS-50G+: every effect with an ID encodes with its defaults and decodes bac
 
 test('MS-50G+: rules cite known sources and run on every effect', () => {
   G.ADVICE.rules.forEach(rule => rule.sources.forEach(key => assert.ok(G.ADVICE.sources[key], `${rule.id}: ${key}`)));
-  G.ADVICE.effects.forEach(fx => G.ADVICE.analyze({ name: 'T', effects: [{ index: fx.index, on: true, values: {} }] }, { style: 'general' }));
+  G.ADVICE.effects.forEach(fx => G.ADVICE.analyze({ name: 'T', effects: [{ index: fx.index, on: true, values: {} }] }));
   const amps = G.ADVICE.effects.filter(fx => fx.category === 'PREAMP').slice(0, 4).map(fx => ({ index: fx.index, on: true, values: {} }));
   assert.ok(G.ADVICE.analyze({ name: 'T', effects: amps }, {}).some(f => f.ruleId === 'dsp.overflow'), 'four amps overflow');
 });

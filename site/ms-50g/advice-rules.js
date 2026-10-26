@@ -78,8 +78,4 @@
   ADVICE.addRoleTips({
     linesel: { place: 'In front of the effects to skip', text: 'LINE SELECTOR sends the signal to the next effect or straight to the outputs, so effects after it can be skipped. It does nothing as the last effect.', sources: ['zoomFxList'] }
   });
-
-  ADVICE.addStyles([
-    { id: 'general', name: 'General', summary: 'Objective checks only: guitar style advice is not written yet.', severity: {}, sources: [], starter: null }
-  ]);
 })();

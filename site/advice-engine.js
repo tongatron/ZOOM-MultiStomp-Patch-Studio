@@ -1,12 +1,11 @@
 // Advice engine: runs rules against a patch and returns findings.
-// Rules and style profiles are registered from advice-rules.js (ADVICE.addRules / ADVICE.addStyles),
+// Rules are registered from advice-rules.js (ADVICE.addRules), and the styles for Tone ideas with ADVICE.addStyles,
 // so new advice can be added without touching the engine or the UI.
 // Requires EFFECTS_DATA, FIRMWARE_DATA and DSP_SCALE.
 //
 // Patch shape (same as the builder): { name, effects: [{ index, on, values: { PARAM: value } }] }
 // Rule shape:
 //   { id, severity: 'error' | 'warning' | 'tip', topic, title, why, sources: [sourceKey],
-//     styles?: [styleId]            — only active for these styles
 //     check(ctx) → [{ slots: [i], message, fix?: { label, apply(patch) → patch } }] }
 
 const ADVICE = (() => {
@@ -44,7 +43,7 @@ const ADVICE = (() => {
   const inGroup = (role, group) => (GROUPS[group] || [group]).includes(role);
 
   // ---- analysis context -----------------------------------------------------------------------------
-  function context(patch, style) {
+  function context(patch) {
     const slots = (patch.effects || []).map((e, i) => {
       const fx = effects[e.index];
       return {
@@ -58,7 +57,7 @@ const ADVICE = (() => {
     const active = slots.filter(s => s.on);
     const of = group => active.filter(s => inGroup(s.role, group));
     return {
-      patch, style, slots, active, of,
+      patch, slots, active, of,
       first: group => of(group)[0] ?? null,
       last: group => of(group).at(-1) ?? null,
       dsp: slots.reduce((sum, s) => sum + s.fx.dsp, 0)
@@ -84,22 +83,19 @@ const ADVICE = (() => {
 
   // ---- public API -------------------------------------------------------------------------------------
   function analyze(patch, options = {}) {
-    const style = styles.find(s => s.id === options.style) || null;
     const ignored = new Set(options.ignored || []);
     // Personal preferences silence the rules they list (see addPreferences)
     preferences.filter(p => (options.preferences || []).includes(p.id)).forEach(p => p.silences.forEach(id => ignored.add(id)));
-    const ctx = context(patch, style);
+    const ctx = context(patch);
     ctx.output = options.output === 'amp' || options.output === 'mixer' ? options.output : null; // where the pedal plugs in
     if (!ctx.slots.length) return [];
     const findings = [];
     for (const rule of rules) {
       if (ignored.has(rule.id)) continue;
-      if (rule.styles && !(style && rule.styles.includes(style.id))) continue;
       let results;
       try { results = rule.check(ctx) || []; } catch (error) { console.error(`Advice rule ${rule.id} failed`, error); continue; }
-      const severity = style?.severity?.[rule.id] || rule.severity;
       results.forEach(result => findings.push({
-        ruleId: rule.id, severity, topic: rule.topic, title: rule.title, why: rule.why,
+        ruleId: rule.id, severity: rule.severity, topic: rule.topic, title: rule.title, why: rule.why,
         sources: (rule.sources || []).map(key => sources[key]).filter(Boolean),
         slots: result.slots || [], message: result.message, fix: result.fix || null
       }));
@@ -131,30 +127,6 @@ const ADVICE = (() => {
   };
   const addSources = map => { Object.assign(sources, map); };
 
-  // ---- style suggestions ------------------------------------------------------------------------------
-  // A style "wants" the effect roles of its starter chain and "avoids" the roles listed in style.avoids
-  // (taken from the style's own sourced rules, e.g. reggae.drive). Fit is the share of wanted roles present,
-  // minus 25 points per avoided role found. Preamps and amps stand in for each other, octavers for synths.
-  const STANDS_IN = { preamp: ['preamp', 'amp'], amp: ['amp', 'preamp'], synth: ['synth', 'octave'] };
-  const satisfies = (have, want) => (STANDS_IN[want] || [want]).includes(have);
-  function styleFit(patch, style) {
-    const used = (patch.effects || []).filter(e => e.on !== false).map(e => effects[e.index]);
-    const wants = [...new Set(style.starter.effects.map(e => byName.get(e.effect).role))];
-    const present = wants.filter(role => used.some(fx => satisfies(fx.role, role)));
-    const missing = wants.filter(role => !present.includes(role)).map(role => ({ role, entry: style.starter.effects.find(e => byName.get(e.effect).role === role) }));
-    const conflicts = (style.avoids || []).filter(role => used.some(fx => fx.role === role));
-    const fit = Math.max(0, Math.round(100 * present.length / wants.length - 25 * conflicts.length));
-    return { style, fit, wants, present, missing, conflicts };
-  }
-  // Where a missing role belongs: after the last effect that comes earlier in the style's own chain order
-  function insertPosition(patch, fit, role) {
-    const rank = fx => fit.wants.findIndex(w => satisfies(fx.role, w));
-    const target = fit.wants.indexOf(role);
-    let pos = 0;
-    (patch.effects || []).forEach((e, i) => { const r = rank(effects[e.index]); if (r !== -1 && r < target) pos = i + 1; });
-    return pos;
-  }
-
   // Placement guidance for one effect, used by the catalog.
   const roleTips = {};
   const addRoleTips = map => { Object.assign(roleTips, map); };
@@ -165,7 +137,7 @@ const ADVICE = (() => {
 
   return {
     SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
-    analyze, addRules, setUserRules, addStyles, addPreferences, styleFit, insertPosition, addSources, addRoleTips, effectTips,
+    analyze, addRules, setUserRules, addStyles, addPreferences, addSources, addRoleTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();
