@@ -4,11 +4,14 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v11';
+const CACHE = 'ms60b-v12';
 const CORE = [
   './', 'index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
+
+// Sign-in and account pages are always asked to the server (they depend on the session)
+const ACCOUNT_PAGES = /^\/(login|register|forgot|reset|verify|logout|account|admin)(\/|$)/;
 
 const stamp = response => response.headers.get('etag') || response.headers.get('last-modified') || '';
 const notifyUpdate = async () => (await self.clients.matchAll()).forEach(client => client.postMessage({ type: 'updated' }));
@@ -60,6 +63,6 @@ async function staleWhileRevalidate(event) {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || ACCOUNT_PAGES.test(url.pathname)) return;
   event.respondWith(url.searchParams.has('v') ? versioned(request, url) : staleWhileRevalidate(event));
 });

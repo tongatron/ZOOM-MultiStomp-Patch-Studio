@@ -1,4 +1,5 @@
-// Accounts for the ZOOM MultiStomp Patch Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me.
+// Accounts for the ZOOM MultiStomp Patch Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me,
+// and the account page (/account: password, export, sign out everywhere, delete).
 // The site stays open to everyone; an account only keeps the user's data on the server.
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
 // database), SITE_URL (links in emails), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
@@ -11,7 +12,7 @@ import {
 } from './auth.mjs';
 import { openDb } from './db.mjs';
 import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
-import { forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
+import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
 const RESET_TTL = 3600; // seconds
 const VERIFY_TTL = 24 * 3600;
@@ -79,6 +80,19 @@ export function createAccounts({ dataDir }) {
       "If you didn't ask for this, ignore this email: your password stays the same.\n",
       mailHtml({ title: 'Choose a new password', intro: 'Use the button below to choose a new password. The link is valid for one hour and works only once.',
         button: 'Choose a new password', url, outro: "If you didn't ask for this, ignore this email: your password stays the same." }));
+  }
+
+  const patchCounts = userId => Object.fromEntries(store.db.prepare('SELECT pedal, COUNT(*) AS n FROM patches WHERE user_id = ? AND deleted_at IS NULL GROUP BY pedal').all(userId).map(r => [r.pedal, r.n]));
+  function exportData(user) {
+    const pedals = {};
+    for (const row of store.db.prepare('SELECT pedal, data FROM patches WHERE user_id = ? AND deleted_at IS NULL ORDER BY pedal, pos').all(user.id)) {
+      (pedals[row.pedal] ||= { patches: [], docs: {} }).patches.push(JSON.parse(row.data));
+    }
+    for (const row of store.db.prepare('SELECT pedal, kind, data, updated_at FROM docs WHERE user_id = ?').all(user.id)) {
+      (pedals[row.pedal] ||= { patches: [], docs: {} }).docs[row.kind] = { data: JSON.parse(row.data), updatedAt: row.updated_at };
+    }
+    return { format: 'zoom-patch-studio-account', exportedAt: new Date().toISOString(),
+      account: { email: user.email, name: user.name, createdAt: user.created_at, emailConfirmedAt: user.email_verified_at }, pedals };
   }
 
   // ---- routes -----------------------------------------------------------------------------------
@@ -185,6 +199,59 @@ export function createAccounts({ dataDir }) {
     },
     'GET /logout': (request, response, url) => html(response, 200, logoutPage(safeNext(url.searchParams.get('next')))),
     'POST /logout': (request, response, form) => redirect(response, safeNext(form.next), { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) }),
+    'GET /account': (request, response, url) => {
+      const session = current(request);
+      if (!session) return redirect(response, '/login?next=/account');
+      html(response, 200, accountPage({ user: session.user, counts: patchCounts(session.user.id), done: url.searchParams.get('done') || '', minPassword: MIN_PASSWORD }));
+    },
+    'POST /account/password': async (request, response, form) => {
+      const session = current(request);
+      if (!session) return redirect(response, '/login?next=/account');
+      const { user } = session;
+      const key = user.email.toLowerCase();
+      const again = (status, error) => html(response, status, accountPage({ user, counts: patchCounts(user.id), error, minPassword: MIN_PASSWORD }));
+      if (limits.tooMany('loginEmail', key)) return again(429, 'Too many attempts. Try again in a few minutes.');
+      if (!(await checkPassword(user, String(form.current || '')))) { limits.note('loginEmail', key); return again(400, 'The current password is not correct.'); }
+      const problem = passwordProblem(String(form.password || ''));
+      if (problem) return again(400, problem);
+      store.setPassword(user.id, await hashPassword(String(form.password)));
+      redirect(response, '/account?done=password', { 'Set-Cookie': signIn(request, store.userById(user.id)) });
+    },
+    'POST /account/verify': (request, response) => {
+      const session = current(request);
+      if (!session) return redirect(response, '/login?next=/account');
+      const key = session.user.email.toLowerCase();
+      if (limits.tooMany('forgotEmail', key)) return tooManyPage(response);
+      limits.note('forgotEmail', key);
+      store.dropTokens(session.user.id, 'verify');
+      const { token, hash } = newToken();
+      store.addToken(hash, session.user.id, 'verify', VERIFY_TTL);
+      welcome(session.user, token);
+      redirect(response, '/account?done=verify');
+    },
+    'POST /account/signout-everywhere': (request, response) => {
+      const session = current(request);
+      if (session) store.signOutEverywhere(session.user.id);
+      redirect(response, '/login', { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) });
+    },
+    'GET /account/export': (request, response) => {
+      const session = current(request);
+      if (!session) return json(response, 401, { error: 'sign in first' });
+      const date = new Date().toISOString().slice(0, 10);
+      json(response, 200, exportData(session.user), { 'Content-Disposition': `attachment; filename="zoom-patch-studio-${date}.json"` });
+    },
+    'POST /account/delete': async (request, response, form) => {
+      const session = current(request);
+      if (!session) return redirect(response, '/login?next=/account');
+      const { user } = session;
+      const key = user.email.toLowerCase();
+      const again = (status, error) => html(response, status, accountPage({ user, counts: patchCounts(user.id), error, minPassword: MIN_PASSWORD }));
+      if (limits.tooMany('loginEmail', key)) return again(429, 'Too many attempts. Try again in a few minutes.');
+      if (!(await checkPassword(user, String(form.password || '')))) { limits.note('loginEmail', key); return again(400, 'The password is not correct: the account was not deleted.'); }
+      store.removeUser(user.id);
+      html(response, 200, messagePage('Account deleted', 'Your account and everything kept in it have been deleted. Patches stored in your browsers stay there.'),
+        { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) });
+    },
     'GET /api/me': (request, response) => {
       const session = current(request);
       if (!session) return json(response, 200, { signedIn: false });

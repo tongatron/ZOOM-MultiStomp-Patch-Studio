@@ -71,16 +71,27 @@ const ACCOUNT = (() => {
     return { syncPedal, snapshot, fingerprint };
   }
 
-  const account = { PEDALS, KINDS, createSync, me: null, status: { syncing: false, lastSync: 0, error: '' } };
+  const account = { PEDALS, KINDS, createSync, me: null, status: { syncing: false, lastSync: 0, error: '' }, changed: () => {} };
 
   // ---- in the page ------------------------------------------------------------------------------
+  // Header entry ("Sign in" or the account menu), the signed-out notice (pages with <body data-account-notice>),
+  // the first sign-in on a browser that already has patches, and sign-out (by default it removes the data from here).
+  const OWNER_KEY = 'account-owner'; // email of the account this browser's data was last synced with
+  const ASIDE = pedal => `${pedal}-library-aside`; // patches kept out of the account ("Not now" at the first sign-in)
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const here = () => location.pathname + location.search;
+
   function start() {
     const sync = createSync({ storage: localStorage, request: (...args) => fetch(...args), merge: LIBMERGE });
     const seen = {}; // fingerprint of each pedal after its last sync
-    let running = false;
+    let running = null;
     let again = false;
     let timer = null;
+    let ready = false; // false until the first sign-in check of this browser is done
     const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
+    const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+    const list = key => { const value = readJson(key, []); return Array.isArray(value) ? value : []; };
+    for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-sync`); // the old anonymous sync codes
 
     async function refreshMe() {
       try {
@@ -90,45 +101,240 @@ const ACCOUNT = (() => {
       } catch {
         try { account.me = JSON.parse(sessionStorage.getItem('account-me')) || { signedIn: false }; } catch { account.me = { signedIn: false }; }
       }
+      render();
       emit('account-change', account.me);
       return account.me;
     }
 
-    async function syncAll() {
-      if (!account.me?.signedIn) return;
-      if (running) { again = true; return; }
-      if (!navigator.onLine) { account.status.error = 'Offline: changes are saved here and synced when the connection is back.'; emit('account-change', account.me); return; }
-      running = true;
+    // Syncs both pedals; resolves true when everything reached the server
+    function syncAll() {
+      if (!account.me?.signedIn || !ready) return Promise.resolve(false);
+      if (running) { again = true; return running; }
+      if (!navigator.onLine) { account.status.error = 'Offline: changes are saved here and synced when the connection is back.'; render(); return Promise.resolve(false); }
       account.status = { ...account.status, syncing: true, error: '' };
-      try {
-        for (const pedal of PEDALS) {
-          const { changed, pending } = await sync.syncPedal(pedal);
-          seen[pedal] = pending ? '' : sync.fingerprint(pedal);
-          if (changed.length) emit('account-synced', { pedal, changed });
+      render();
+      running = (async () => {
+        try {
+          for (const pedal of PEDALS) {
+            const { changed, pending } = await sync.syncPedal(pedal);
+            seen[pedal] = pending ? '' : sync.fingerprint(pedal);
+            if (changed.length) emit('account-synced', { pedal, changed });
+          }
+          account.status.lastSync = Date.now();
+          return true;
+        } catch (error) {
+          if (error.signedOut) await refreshMe();
+          else account.status.error = error instanceof TypeError ? 'Cannot reach the server: will retry.' : error.message;
+          return false;
+        } finally {
+          account.status.syncing = false;
+          running = null;
+          render();
+          emit('account-change', account.me);
+          if (again) { again = false; schedule(); }
         }
-        account.status.lastSync = Date.now();
-      } catch (error) {
-        if (error.signedOut) await refreshMe();
-        else account.status.error = error instanceof TypeError ? 'Cannot reach the server: will retry.' : error.message;
-      } finally {
-        account.status.syncing = false;
-        running = false;
-        emit('account-change', account.me);
-        if (again) { again = false; schedule(); }
+      })();
+      return running;
+    }
+    function schedule(delay = 2000) { clearTimeout(timer); timer = setTimeout(syncAll, delay); }
+
+    // ---- first sign-in on this browser ----
+    // The account's copy without changing it: a sync that sends nothing
+    async function peek(pedal) {
+      const response = await fetch(`/api/account/sync/${pedal}`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{"patches":[],"deleted":{}}' });
+      if (!response.ok) throw new Error(`Server error ${response.status}.`);
+      return response.json();
+    }
+    async function firstSignIn() {
+      const owner = (localStorage.getItem(OWNER_KEY) || '').toLowerCase();
+      const email = account.me.email.toLowerCase();
+      if (owner === email) return;
+      if (owner) for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-account-sync`); // synced with another account
+      const local = PEDALS.flatMap(pedal => list(`${pedal}-library`).map(p => ({ pedal, id: p.id })));
+      let missing = local;
+      let accountHas = 0;
+      if (local.length) {
+        const remote = {};
+        for (const pedal of PEDALS) remote[pedal] = new Set((await peek(pedal)).patches.map(p => p.id));
+        accountHas = PEDALS.reduce((n, pedal) => n + remote[pedal].size, 0);
+        missing = local.filter(p => !remote[p.pedal].has(p.id));
       }
+      if (missing.length && accountHas) {
+        const add = await choose({
+          title: 'Patches in this browser',
+          text: `This browser has ${missing.length} ${missing.length === 1 ? 'patch' : 'patches'} that ${missing.length === 1 ? 'is' : 'are'} not in your account.`,
+          note: 'Not now keeps them aside in this browser only: you can add them later from the account menu.',
+          primary: 'Add them to my account', secondary: 'Not now'
+        });
+        if (!add) {
+          for (const pedal of PEDALS) {
+            const aside = LIBMERGE.merge({ patches: list(ASIDE(pedal)), deleted: {} }, { patches: list(`${pedal}-library`), deleted: {} });
+            if (aside.patches.length) localStorage.setItem(ASIDE(pedal), JSON.stringify(aside.patches));
+            localStorage.removeItem(`${pedal}-library`);
+            localStorage.removeItem(`${pedal}-deleted`);
+          }
+        } else toast(`${missing.length} ${missing.length === 1 ? 'patch' : 'patches'} from this browser added to your account.`);
+      } else if (missing.length) toast(`Your ${missing.length} ${missing.length === 1 ? 'patch is' : 'patches are'} now kept in your account.`);
+      localStorage.setItem(OWNER_KEY, email);
     }
 
-    function schedule(delay = 2000) { clearTimeout(timer); timer = setTimeout(syncAll, delay); }
+    function addAside() {
+      for (const pedal of PEDALS) {
+        const aside = list(ASIDE(pedal));
+        if (!aside.length) continue;
+        const merged = LIBMERGE.merge({ patches: list(`${pedal}-library`), deleted: readJson(`${pedal}-deleted`, {}) }, { patches: aside, deleted: {} });
+        localStorage.setItem(`${pedal}-library`, JSON.stringify(merged.patches));
+        localStorage.removeItem(ASIDE(pedal));
+        emit('account-synced', { pedal, changed: [`${pedal}-library`] });
+      }
+      render();
+      syncAll();
+    }
+
+    // ---- sign out ----
+    function clearBrowser() {
+      for (const pedal of PEDALS) {
+        for (const kind of ['library', 'deleted', 'library-aside', 'account-sync', 'pedal-edit', ...KINDS]) localStorage.removeItem(`${pedal}-${kind}`);
+      }
+      localStorage.removeItem(OWNER_KEY);
+    }
+    async function signOut() {
+      const remove = await choose({
+        title: 'Sign out',
+        text: 'Your patches, settings and pedal backups stay in your account.',
+        note: 'Remove them from this browser on a shared computer; keep a copy to keep working here without signing in.',
+        primary: 'Remove from this browser', secondary: 'Keep a copy here', cancel: true
+      });
+      if (remove === null) return;
+      if (remove && !(await syncAll())) {
+        const anyway = await choose({
+          title: 'Sign out',
+          text: "Can't reach the server: your latest changes are only in this browser.",
+          note: 'Sign out anyway and keep them here?', primary: 'Sign out and keep them', secondary: 'Cancel'
+        });
+        if (!anyway) return;
+        return finishSignOut(false);
+      }
+      if (!remove) await syncAll();
+      finishSignOut(remove);
+    }
+    async function finishSignOut(remove) {
+      try { await fetch('/logout', { method: 'POST', credentials: 'same-origin', redirect: 'manual', body: new URLSearchParams({ next: '/' }) }); } catch {}
+      if (remove) clearBrowser();
+      try { sessionStorage.removeItem('account-me'); } catch {}
+      location.reload();
+    }
+
+    // ---- interface ----
+    const header = document.querySelector('.gh-header');
+    const slot = document.createElement('div');
+    slot.className = 'account-slot';
+    header?.append(slot);
+    let notice = null;
+
+    function render() {
+      const me = account.me;
+      document.documentElement.classList.toggle('signed-out', !me?.signedIn);
+      document.documentElement.classList.toggle('signed-in', !!me?.signedIn);
+      if (!me) return;
+      if (!me.signedIn) {
+        slot.innerHTML = `<a class="btn btn-sm account-signin" href="/login?next=${encodeURIComponent(here())}">Sign in</a>`;
+      } else {
+        const s = account.status;
+        const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet');
+        const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
+        const open = slot.querySelector('details')?.open;
+        slot.innerHTML = `<details class="account-menu"${open ? ' open' : ''}>
+          <summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>
+          <div class="account-dropdown" role="menu">
+            <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
+            <div class="account-state" role="status">${esc(state)}</div>
+            ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
+            <a class="account-item" href="/account">Account</a>
+            ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
+            <button class="account-item" type="button" data-action="signout">Sign out</button>
+          </div>
+        </details>`;
+      }
+      renderNotice();
+    }
+    slot.addEventListener('click', event => {
+      const action = event.target.closest('[data-action]')?.dataset.action;
+      if (action === 'signout') { slot.querySelector('details').open = false; signOut(); }
+      if (action === 'aside') addAside();
+    });
+    document.addEventListener('click', event => { const menu = slot.querySelector('details[open]'); if (menu && !menu.contains(event.target)) menu.open = false; });
+
+    function renderNotice() {
+      const show = document.body.hasAttribute('data-account-notice') && account.me && !account.me.signedIn && sessionStorage.getItem('account-notice') !== 'dismissed';
+      if (!show) { notice?.remove(); notice = null; return; }
+      if (notice) return;
+      const next = encodeURIComponent(here());
+      notice = document.createElement('div');
+      notice.className = 'account-notice';
+      notice.setAttribute('role', 'note');
+      notice.innerHTML = `<p><b>Not signed in.</b> Your patches, settings and pedal backups are stored only in this browser.
+        Clearing browsing data, a private window or another device won't have them.
+        <a href="/login?next=${next}">Sign in</a> or <a href="/register?next=${next}">create a free account</a> to keep them safe.</p>
+        <button class="btn btn-sm btn-invisible" type="button">Dismiss</button>`;
+      notice.querySelector('button').addEventListener('click', () => {
+        try { sessionStorage.setItem('account-notice', 'dismissed'); } catch {}
+        renderNotice();
+      });
+      header ? header.after(notice) : document.body.prepend(notice);
+    }
+
+    // A small dialog; resolves true (primary), false (secondary) or null (cancelled)
+    function choose({ title, text, note = '', primary, secondary, cancel = false }) {
+      return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'Overlay Overlay--small account-dialog';
+        dialog.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title">${esc(title)}</h2></div>
+          <div class="Overlay-body"><p>${esc(text)}</p>${note ? `<p class="account-note">${esc(note)}</p>` : ''}
+          <div class="account-actions">${cancel ? '<button class="btn" type="button" value="">Cancel</button>' : ''}
+          <button class="btn" type="button" value="no">${esc(secondary)}</button><button class="btn btn-primary" type="button" value="yes">${esc(primary)}</button></div></div>`;
+        let answer = null;
+        dialog.addEventListener('click', event => {
+          const button = event.target.closest('button');
+          if (!button) return;
+          answer = button.value === 'yes' ? true : button.value === 'no' ? false : null;
+          dialog.close();
+        });
+        dialog.addEventListener('close', () => { dialog.remove(); resolve(answer); });
+        document.body.append(dialog);
+        dialog.showModal();
+        dialog.querySelector('.btn-primary').focus();
+      });
+    }
+
+    function toast(text) {
+      const bar = document.createElement('div');
+      bar.className = 'update-bar';
+      bar.setAttribute('role', 'status');
+      bar.innerHTML = `<span>${esc(text)}</span><button class="btn btn-sm btn-invisible" type="button" aria-label="Dismiss">OK</button>`;
+      bar.querySelector('button').addEventListener('click', () => bar.remove());
+      document.body.append(bar);
+      setTimeout(() => bar.remove(), 8000);
+    }
+
     // Pages write localStorage directly: a cheap check every few seconds notices their changes
     const changedHere = () => PEDALS.some(pedal => seen[pedal] !== undefined && seen[pedal] !== sync.fingerprint(pedal));
     setInterval(() => { if (account.me?.signedIn && !running && changedHere()) schedule(); }, 5000);
-    window.addEventListener('storage', event => { if (PEDALS.some(p => event.key?.startsWith(`${p}-`)) && !event.key.endsWith('-account-sync')) schedule(); });
+    window.addEventListener('storage', event => {
+      if (event.key === OWNER_KEY) return refreshMe();
+      if (PEDALS.some(p => event.key?.startsWith(`${p}-`)) && !event.key.endsWith('-account-sync')) schedule();
+    });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncAll(); });
     window.addEventListener('online', syncAll);
 
     account.syncNow = syncAll;
-    account.refresh = () => refreshMe().then(syncAll);
-    refreshMe().then(syncAll);
+    account.changed = () => schedule(500);
+    refreshMe().then(async me => {
+      if (me.signedIn) {
+        try { await firstSignIn(); ready = true; } catch { account.status.error = 'Cannot reach the server: reload the page to sync.'; render(); }
+        await syncAll();
+      }
+    });
   }
 
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof LIBMERGE !== 'undefined') start();

@@ -341,6 +341,7 @@
   });
   window.addEventListener('storage', event => { if (event.key === LIBRARY_KEY || event.key === DRAFT_KEY) renderLocals(); });
   window.addEventListener('focus', renderLocals);
+  window.addEventListener('account-synced', event => { if (event.detail.pedal === PEDAL.id) { renderLocals(); renderBackups(); } });
 
   // ---- writing ---------------------------------------------------------------------------------------
   const readBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };

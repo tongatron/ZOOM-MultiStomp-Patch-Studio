@@ -1,4 +1,5 @@
-// End-to-end test of the patch builder in a real browser (Playwright): build, save, share, compare, download, sync.
+// End-to-end test of the patch builder in a real browser (Playwright): build, save, share, compare, download, and the
+// accounts (signed-out notice, sign-up, first sign-in with local patches, sync between devices, sign-out).
 // Run: npm install && npx playwright install chromium && node tools/e2e-test.mjs
 // Locally you can use the installed Chrome instead of downloading Chromium: PW_CHANNEL=chrome node tools/e2e-test.mjs
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ import { chromium } from 'playwright';
 const port = 18197;
 const base = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), 'ms60b-e2e-'));
-const server = spawn(process.execPath, [fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir }, stdio: ['ignore', 'pipe', 'inherit'] });
+const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, PBKDF2_ITER: '1000', MAIL_OUTBOX: join(dataDir, 'mail') }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise(resolve => server.stdout.once('data', resolve));
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 
@@ -100,19 +101,94 @@ try {
     await page.click('#compare-close');
   });
 
-  await test('two devices share My patches through Sync', async () => {
-    await page.click('#sync-open');
-    await page.click('#sync-create');
-    const code = (await page.locator('#sync-code').innerText()).trim();
-    assert.match(code, /^[A-Z2-9]{5}(-[A-Z2-9]{5}){3}$/);
-    await page.waitForFunction(() => /Last synced/.test(document.querySelector('#sync-status').textContent));
-    await page.click('#sync-close');
+  const PASSWORD = 'e2e password 123';
+  const signIn = async (target, email) => {
+    await target.goto(`${base}/login?next=/builder.html`);
+    await target.fill('#email', email);
+    await target.fill('#password', PASSWORD);
+    await target.click('button[type="submit"]');
+    await target.waitForURL(/builder\.html/);
+    await target.locator('.account-button').waitFor();
+  };
+  const signOut = async (target, choice) => {
+    await target.click('.account-button');
+    await target.click('[data-action="signout"]');
+    await target.locator('.account-dialog button', { hasText: choice }).click();
+    await target.waitForLoadState('load');
+    await target.locator('.account-signin').waitFor();
+  };
+
+  await test('signed out: a Sign in button and a notice that the patches stay in this browser', async () => {
+    await page.reload();
+    await page.locator('.account-notice').waitFor();
+    assert.match(await page.locator('.account-notice').innerText(), /stored only in this browser/);
+    assert.ok(await page.locator('.account-local', { hasText: 'Saved in this browser only' }).isVisible());
+    await page.locator('.account-notice button', { hasText: 'Dismiss' }).click();
+    assert.equal(await page.locator('.account-notice').count(), 0);
+    await page.reload();
+    await page.locator('.account-signin').waitFor();
+    assert.equal(await page.locator('.account-notice').count(), 0, 'dismissed for this session');
+    await page.goto(`${base}/`);
+    await page.locator('.account-signin').waitFor();
+    assert.equal(await page.locator('.account-notice').count(), 0, 'the Effects page saves nothing: no notice');
+  });
+
+  await test('signing up keeps the patches of this browser in the new account', async () => {
+    await page.goto(`${base}/builder.html`);
+    await page.click('.account-signin');
+    await page.click('text=Create an account');
+    await page.fill('#email', 'e2e@example.com');
+    await page.fill('#password', PASSWORD);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/builder\.html/);
+    await page.locator('.account-button').waitFor();
+    await page.locator('.update-bar', { hasText: 'now kept in your account' }).waitFor();
+    assert.equal(await page.locator('.account-local').isVisible(), false);
+  });
+
+  await test('another device signs in and gets the same patches', async () => {
     const laptop = await device();
-    await laptop.page.click('#sync-open');
-    await laptop.page.fill('#sync-code-input', code.toLowerCase().replaceAll('-', ''));
-    await laptop.page.click('#sync-join');
+    await signIn(laptop.page, 'e2e@example.com');
     await laptop.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
     await laptop.context.close();
+  });
+
+  await test('first sign-in on a browser with its own patches: Not now keeps them aside, then they can be added', async () => {
+    const tablet = await device();
+    await addEffect(tablet.page, 'DYNAMIC COMPRESSOR');
+    await tablet.page.fill('#patch-name', 'TABLET ONLY');
+    await tablet.page.click('#save-patch');
+    await tablet.page.goto(`${base}/login?next=/builder.html`);
+    await tablet.page.fill('#email', 'e2e@example.com');
+    await tablet.page.fill('#password', PASSWORD);
+    await tablet.page.click('button[type="submit"]');
+    const dialog = tablet.page.locator('.account-dialog');
+    await dialog.waitFor();
+    assert.match(await dialog.innerText(), /This browser has 1 patch that is not in your account/);
+    await dialog.locator('button', { hasText: 'Not now' }).click();
+    await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
+    assert.doesNotMatch(await tablet.page.locator('#library-list').innerText(), /TABLET ONLY/);
+    await tablet.page.click('.account-button');
+    await tablet.page.click('[data-action="aside"]');
+    await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
+    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-state')?.textContent || ''));
+    await tablet.context.close();
+  });
+
+  await test('sign-out removes the data from this browser by default; it comes back at the next sign-in', async () => {
+    await page.goto(`${base}/builder.html`);
+    await page.locator('.account-button').waitFor();
+    await page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
+    await signOut(page, 'Remove from this browser');
+    assert.equal(await page.locator('#library-count').innerText(), '0');
+    assert.equal(await page.evaluate(() => localStorage.getItem('ms60b-library')), null);
+    await signIn(page, 'e2e@example.com');
+    await page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
+  });
+
+  await test('the account page shows the saved patches', async () => {
+    await page.goto(`${base}/account`);
+    assert.match(await page.locator('body').innerText(), /3 MS-60B\+ patches/);
   });
 
   await test('a tone idea opens in the builder with its chain', async () => {

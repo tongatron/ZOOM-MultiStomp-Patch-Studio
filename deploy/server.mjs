@@ -1,15 +1,13 @@
-// Static file server + sync API for the ZOOM MultiStomp Patch Studio. No dependencies (Node 18+).
+// Static file server + accounts for the ZOOM MultiStomp Patch Studio. No dependencies (Node 22+, for node:sqlite).
 //   node deploy/server.mjs                 → serves ./site on 127.0.0.1:8097, data in ./sync-data
 //   ROOT=… DATA_DIR=… PORT=… node …        → override
 //
-// POST /api/sync/<64 hex id>   body { patches, deleted }  → merges with the stored copy and returns the merged state.
-// The id is the SHA-256 of the user's sync code (computed in the browser), so the server never sees the code.
 // Accounts (sign-in pages, /api/me, database in DATA_DIR/studio.db): see accounts.mjs.
 // POST /api/account/sync/<pedal>  body { patches, deleted, docs }  → the signed-in user's merged copy (account-sync.mjs).
 
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
+import { mkdir, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +26,6 @@ const accounts = createAccounts({ dataDir: DATA_DIR });
 const MAX_BODY = 1_000_000;
 const MAX_PATCHES = 300;
 const MAX_EFFECTS = 6;
-const MAX_LIBRARIES = 5000;
 const RATE_LIMIT = 90; // requests per minute per address
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -59,30 +56,6 @@ function cleanState(state) {
     if (/^[\w-]{1,40}$/.test(id) && isoDate(at)) deleted[id] = at;
   }
   return { patches: patches.slice(0, MAX_PATCHES), deleted };
-}
-
-// ---- storage ------------------------------------------------------------------------------------
-const locks = new Map(); // one write at a time per library
-const withLock = (id, task) => {
-  const next = (locks.get(id) || Promise.resolve()).then(task, task);
-  locks.set(id, next.finally(() => { if (locks.get(id) === next) locks.delete(id); }));
-  return next;
-};
-
-async function sync(id, incoming) {
-  const file = join(DATA_DIR, `${id}.json`);
-  let stored = { patches: [], deleted: {} };
-  try { stored = cleanState(JSON.parse(await readFile(file, 'utf8'))); }
-  catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    if ((await readdir(DATA_DIR)).filter(name => name.endsWith('.json')).length >= MAX_LIBRARIES) { const full = new Error('storage full'); full.status = 507; throw full; }
-  }
-  const merged = LIBMERGE.merge(stored, incoming);
-  merged.patches = merged.patches.slice(0, MAX_PATCHES);
-  const tmp = `${file}.${process.pid}.tmp`;
-  await writeFile(tmp, JSON.stringify(merged));
-  await rename(tmp, file);
-  return merged;
 }
 
 const accountSync = createAccountSync({ store: accounts.store, LIBMERGE, maxPatches: MAX_PATCHES });
@@ -137,7 +110,6 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url, 'http://localhost');
     const { pathname } = url;
     if (await accounts.handle(request, response, url)) return;
-    const route = pathname.match(/^\/api\/sync\/([a-f0-9]{64})$/);
     const accountRoute = pathname.match(/^\/api\/account\/sync\/([a-z0-9]{1,12})$/);
     if (accountRoute) {
       if (!PEDALS.includes(accountRoute[1])) return sendJson(response, 404, { error: 'not found' });
@@ -152,14 +124,9 @@ const server = createServer(async (request, response) => {
       const incoming = { ...cleanState(body), docs: cleanDocs(body?.docs) };
       return sendJson(response, 200, accountSync.sync(session.user.id, accountRoute[1], incoming));
     }
-    if (pathname.startsWith('/api/')) {
-      if (!route) return sendJson(response, 404, { error: 'not found' });
-      if (request.method !== 'POST') return sendJson(response, 405, { error: 'use POST' });
-      if (limited(clientIp(request))) return sendJson(response, 429, { error: 'too many requests' });
-      let incoming;
-      try { incoming = cleanState(JSON.parse(await readBody(request))); } catch (error) { if (error.status) throw error; return sendJson(response, 400, { error: 'invalid body' }); }
-      return sendJson(response, 200, await withLock(route[1], () => sync(route[1], incoming)));
-    }
+    // The anonymous sync codes were replaced by accounts (2026-10)
+    if (/^\/api\/sync\/[a-f0-9]{64}$/.test(pathname)) return sendJson(response, 410, { error: 'Sync codes have been replaced by accounts: sign in to keep your patches.' });
+    if (pathname.startsWith('/api/')) return sendJson(response, 404, { error: 'not found' });
     if (request.method !== 'GET' && request.method !== 'HEAD') return send(response, 405, 'Method not allowed');
     await serveStatic(request, response, pathname);
   } catch (error) {

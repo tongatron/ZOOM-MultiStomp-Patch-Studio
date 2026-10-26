@@ -36,6 +36,12 @@ export function page(title, body) {
   .auth-alt { width: 100%; max-width: 340px; margin-top: 16px; padding: 16px; text-align: center; font-size: 14px; border: 1px solid var(--border); border-radius: var(--radius); }
   .auth-alt + .auth-alt { margin-top: 8px; }
   .auth-alt p { margin: 4px 0 0; color: var(--fg-muted); font-size: 12px; }
+  .auth-card .hint { color: var(--fg-muted); font-size: 12px; }
+  .account-section { margin-top: 16px; }
+  .account-section h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+  .account-danger { border-color: rgba(248, 81, 73, .4); }
+  .btn-danger { color: #f85149; }
+  .btn-danger:hover { color: #fff; background: #da3633; border-color: #f85149; }
 </style>
 </head>
 <body>
@@ -108,3 +114,43 @@ export const logoutPage = (next = '/') => page('Sign out', `<form class="auth-ca
   <input type="hidden" name="next" value="${esc(next)}">
   <button class="btn btn-primary" type="submit">Sign out</button>
 </form>`);
+
+const ACCOUNT_DONE = {
+  password: 'Your password has been changed. Your other devices are signed out.',
+  verify: 'We sent you a new confirmation link (valid for 24 hours).'
+};
+
+export const accountPage = ({ user, counts = {}, done = '', error = '', minPassword = 10 }) => page('Your account', `${errorBox(error)}${okBox(ACCOUNT_DONE[done] || '')}
+<div class="auth-card">
+  <p><b>${esc(user.email)}</b>${user.name ? `<br>${esc(user.name)}` : ''}<br>
+  <span class="hint">${user.email_verified_at ? 'Email confirmed' : 'Email not confirmed yet'} · member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
+  <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}.</p>
+  ${user.email_verified_at ? '' : `<form method="post" action="/account/verify"><button class="btn" type="submit">Send the confirmation email again</button></form>`}
+</div>
+<form class="auth-card account-section" method="post" action="/account/password">
+  <h2>Change password</h2>
+  <input type="email" name="email" value="${esc(user.email)}" autocomplete="username" hidden>
+  <label for="current">Current password</label>
+  <input id="current" name="current" type="password" autocomplete="current-password" required>
+  <label for="password">New password <span class="hint">(at least ${minPassword} characters)</span></label>
+  <input id="password" name="password" type="password" autocomplete="new-password" minlength="${minPassword}" required>
+  <button class="btn" type="submit">Change password</button>
+</form>
+<div class="auth-card account-section">
+  <h2>Your data</h2>
+  <p>Download everything kept in your account (patches, settings, rule packs, pedal backups) as a JSON file.</p>
+  <a class="btn" href="/account/export" download>Download my data</a>
+</div>
+<form class="auth-card account-section" method="post" action="/account/signout-everywhere">
+  <h2>Devices</h2>
+  <p>Signs out every browser where you are signed in, this one included.</p>
+  <button class="btn" type="submit">Sign out everywhere</button>
+</form>
+<form class="auth-card account-section account-danger" method="post" action="/account/delete">
+  <h2>Delete account</h2>
+  <p>Deletes your account and everything kept in it. Patches stored in your browsers stay there. This can't be undone.</p>
+  <label for="delete-password">Password</label>
+  <input id="delete-password" name="password" type="password" autocomplete="current-password" required>
+  <button class="btn btn-danger" type="submit">Delete my account</button>
+</form>
+<div class="auth-alt"><a href="/">Back to the site</a></div>`);

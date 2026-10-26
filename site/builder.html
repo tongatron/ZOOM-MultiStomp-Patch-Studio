@@ -14,11 +14,11 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=zoom27-20261027" />
+    <link rel="stylesheet" href="styles.css?v=zoom28-20261027" />
     <link rel="stylesheet" href="theme.css?v=zoom27-20261027" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
-  <body>
+  <body data-account-notice>
     <header class="gh-header">
       <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, home">
         <img src="favicon.svg" alt="" width="32" height="32" />
@@ -142,12 +142,11 @@
 
         <section class="Box side-box library" aria-labelledby="library-title">
           <div class="library-head">
-            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span></h2>
+            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
             <div class="library-actions">
               <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
               <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
               <label class="btn btn-sm" for="import-files">Import</label>
-              <button class="btn btn-sm" id="sync-open" title="Keep My patches in sync between your devices">Sync</button>
               <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
             </div>
           </div>
@@ -214,33 +213,6 @@
       <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
     </dialog>
 
-    <dialog class="Overlay Overlay--small" id="sync-dialog" aria-labelledby="sync-title">
-      <div class="Overlay-header">
-        <h2 class="Overlay-title" id="sync-title">Sync My patches</h2>
-        <button class="btn btn-sm btn-icon btn-invisible" id="sync-close" aria-label="Close" title="Close (Esc)">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
-        </button>
-      </div>
-      <div class="Overlay-body sync-body">
-        <div id="sync-off">
-          <p>Keep My patches the same on your computer, phone and tablet. Changes and deletions travel both ways; the newest edit of a patch wins.</p>
-          <button class="btn btn-primary" id="sync-create">Start syncing this device</button>
-          <label class="sync-label" for="sync-code-input">Already syncing on another device? Enter its code:</label>
-          <div class="sync-row">
-            <input class="form-control" id="sync-code-input" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" />
-            <button class="btn" id="sync-join">Connect</button>
-          </div>
-          <p class="field-hint sync-error" id="sync-join-error" role="alert"></p>
-        </div>
-        <div id="sync-on" hidden>
-          <p>This device is syncing. Enter this code on your other devices:</p>
-          <div class="sync-row"><code class="sync-code" id="sync-code"></code><button class="btn btn-sm" id="sync-copy">Copy</button></div>
-          <p class="sync-status" id="sync-status" role="status"></p>
-          <div class="sync-row"><button class="btn" id="sync-now">Sync now</button><button class="btn btn-danger" id="sync-stop">Stop syncing</button></div>
-        </div>
-        <p class="field-hint">Anyone with the code can read and change your patches, so keep it private. The patches are stored unencrypted on this site's server and nothing else is sent. Stopping only affects this device.</p>
-      </div>
-    </dialog>
 
     <dialog class="Overlay pack-editor" id="pack-editor" aria-labelledby="pack-editor-title">
       <div class="Overlay-header">
@@ -273,14 +245,15 @@
     <script src="pedal.js?v=zoom24-20261026"></script>
     <script src="effects-data.js?v=zoom24-20261026"></script>
     <script src="firmware-data.js?v=zoom24-20261026"></script>
-    <script src="library-merge.js?v=zoom24-20261026"></script>
+    <script src="library-merge.js?v=zoom28-20261027"></script>
     <script src="patch-link.js?v=zoom24-20261026"></script>
     <script src="zptc.js?v=zoom26-20261026"></script>
     <script src="advice-engine.js?v=zoom24-20261026"></script>
     <script src="rule-packs.js?v=zoom24-20261026"></script>
     <script src="advice-rules.js?v=zoom24-20261026"></script>
     <script src="rule-pack-editor.js?v=zoom24-20261026"></script>
-    <script src="builder.js?v=zoom25-20261026"></script>
+    <script src="builder.js?v=zoom28-20261027"></script>
+    <script src="account.js?v=zoom28-20261027"></script>
     <script src="pwa.js?v=zoom24-20261026"></script>
   </body>
 </html>

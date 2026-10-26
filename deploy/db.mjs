@@ -63,6 +63,7 @@ function accounts(db) {
                    VALUES (:id, :email, :name, :hash, :salt, :iterations, :role, :created_at, :last_login)`),
     setPassword: q('UPDATE users SET pw_hash = :hash, pw_salt = :salt, pw_iter = :iterations, pwv = pwv + 1 WHERE id = :id'),
     bumpPwv: q('UPDATE users SET pwv = pwv + 1 WHERE id = ?'),
+    removeUser: q('DELETE FROM users WHERE id = ?'),
     setRole: q('UPDATE users SET role = ? WHERE id = ?'),
     setName: q('UPDATE users SET name = ? WHERE id = ?'),
     loggedIn: q('UPDATE users SET last_login = ? WHERE id = ?'),
@@ -86,6 +87,7 @@ function accounts(db) {
     },
     setPassword: (id, hashed) => s.setPassword.run({ id, ...hashed }), // pwv + 1 closes every open session
     signOutEverywhere: id => s.bumpPwv.run(id),
+    removeUser: id => s.removeUser.run(id), // patches, docs and tokens go with it (ON DELETE CASCADE)
     setRole: (id, role) => s.setRole.run(role, id),
     setName: (id, name) => s.setName.run(name, id),
     touchLogin: id => s.loggedIn.run(now(), id),

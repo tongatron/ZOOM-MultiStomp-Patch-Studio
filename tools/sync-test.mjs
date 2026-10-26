@@ -70,32 +70,9 @@ const rawGet = path => new Promise(resolve => {
 });
 
 try {
-  await test('two devices converge through the server', async () => {
-    const first = await (await post(`/api/sync/${id}`, { patches: [patch('a', 'FROM PHONE', T(20))], deleted: {} })).json();
-    assert.equal(first.patches.length, 1);
-    const second = await (await post(`/api/sync/${id}`, { patches: [patch('b', 'FROM LAPTOP', T(21))], deleted: {} })).json();
-    assert.deepEqual(second.patches.map(p => p.id).sort(), ['a', 'b']);
-    const third = await (await post(`/api/sync/${id}`, { patches: [], deleted: { a: T(22) } })).json();
-    assert.deepEqual(third.patches.map(p => p.id), ['b']);
-    const other = await (await post(`/api/sync/${'b'.repeat(64)}`, { patches: [], deleted: {} })).json();
-    assert.deepEqual(other.patches, [], 'another sync code sees nothing');
-  });
-
-  await test('the server rejects bad ids, methods and bodies', async () => {
-    assert.equal((await post('/api/sync/short', {})).status, 404);
-    assert.equal((await fetch(`${base}/api/sync/${id}`)).status, 405);
-    assert.equal((await post(`/api/sync/${id}`, 'not json')).status, 400);
-    assert.equal((await post(`/api/sync/${id}`, 'x'.repeat(1_100_000))).status, 413);
-  });
-
-  await test('invalid patches are dropped, valid fields are kept', async () => {
-    const bad = { id: 'x', name: 'NO EFFECTS', updatedAt: T(20) };
-    const odd = { ...patch('c', 'A'.repeat(40), T(20)), output: 'evil', extra: '<script>' };
-    const m = await (await post(`/api/sync/${'c'.repeat(64)}`, { patches: [bad, odd], deleted: {} })).json();
-    assert.equal(m.patches.length, 1);
-    assert.equal(m.patches[0].name.length, 28);
-    assert.equal(m.patches[0].output, null);
-    assert.equal('extra' in m.patches[0], false);
+  await test('the old anonymous sync codes are gone', async () => {
+    assert.equal((await post(`/api/sync/${id}`, { patches: [], deleted: {} })).status, 410);
+    assert.equal((await post('/api/nothing', {})).status, 404);
   });
 
   // ---- account sync ----
@@ -170,6 +147,14 @@ try {
     assert.deepEqual(JSON.parse(merged.docs['usb-backups'].data).map(b => b.id), ['2', '1']);
     assert.equal(merged.docs.view, undefined);
     assert.equal(merged.docs.secrets, undefined);
+    const bad = { id: 'x', name: 'NO EFFECTS', updatedAt: T(20) };
+    const odd = { ...patch('c', 'A'.repeat(40), T(20)), output: 'evil', extra: '<script>' };
+    const cleaned = await fetch(`${base}/api/account/sync/ms60b`, { method: 'POST', headers, body: JSON.stringify({ patches: [bad, odd], deleted: {} }) }).then(r => r.json());
+    assert.equal(cleaned.patches.length, 1);
+    assert.equal(cleaned.patches[0].name.length, 28);
+    assert.equal(cleaned.patches[0].output, null);
+    assert.equal('extra' in cleaned.patches[0], false);
+    assert.equal((await fetch(`${base}/api/account/sync/ms60b`, { method: 'POST', headers, body: 'x'.repeat(1_100_000) })).status, 413);
   });
 
   await test('account sync: a change made while the request is on its way is not lost', async () => {

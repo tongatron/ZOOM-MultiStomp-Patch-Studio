@@ -242,10 +242,48 @@ try {
     assert.deepEqual(await me(session), { signedIn: true, email: 'admin@example.com', name: 'Giovanni', verified: false, admin: true });
   });
 
-  await test('the static site and the sync API still work next to the accounts', async () => {
+  await test('the account page: password change, export, sign out everywhere, delete', async () => {
+    assert.equal((await get('/account')).headers.get('location'), '/login?next=/account', 'signed out: sign in first');
+    const email = 'page@example.com';
+    let session = sessionOf(await post('/register', { email, password: PASSWORD }));
+    const other = sessionOf(await post('/login', { email, password: PASSWORD }));
+    const page = await (await get('/account', { cookie: session })).text();
+    assert.match(page, /page@example\.com/);
+    assert.match(page, /0 MS-60B\+ patches/);
+    assert.equal((await post('/account/password', { current: 'wrong password', password: 'brand new password' }, { cookie: session })).status, 400);
+    const changed = await post('/account/password', { current: PASSWORD, password: 'brand new password' }, { cookie: session });
+    assert.equal(changed.headers.get('location'), '/account?done=password');
+    session = sessionOf(changed);
+    assert.equal((await me(session)).signedIn, true, 'this browser stays signed in');
+    assert.equal((await me(other)).signedIn, false, 'the other devices are signed out');
+    await fetch(`${base}/api/account/sync/ms60b`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: session },
+      body: JSON.stringify({ patches: [{ id: 'p1', name: 'MINE', effects: [], updatedAt: new Date().toISOString() }], deleted: {}, docs: { view: { data: 'grid', updatedAt: new Date().toISOString() } } }) });
+    const exported = await get('/account/export', { cookie: session });
+    assert.match(exported.headers.get('content-disposition'), /attachment; filename="zoom-patch-studio-/);
+    const data = await exported.json();
+    assert.equal(data.account.email, email);
+    assert.deepEqual(data.pedals.ms60b.patches.map(p => p.name), ['MINE']);
+    assert.equal(data.pedals.ms60b.docs.view.data, 'grid');
+    assert.equal((await get('/account/export')).status, 401);
+    const second = sessionOf(await post('/login', { email, password: 'brand new password' }));
+    await post('/account/signout-everywhere', {}, { cookie: second });
+    assert.equal((await me(session)).signedIn, false, 'signed out everywhere');
+    session = sessionOf(await post('/login', { email, password: 'brand new password' }));
+    assert.equal((await post('/account/delete', { password: 'wrong password' }, { cookie: session })).status, 400);
+    const deleted = await post('/account/delete', { password: 'brand new password' }, { cookie: session });
+    assert.equal(deleted.status, 200);
+    assert.match(deleted.headers.get('set-cookie'), /Max-Age=0/);
+    assert.equal((await me(session)).signedIn, false);
+    assert.equal((await post('/login', { email, password: 'brand new password' })).status, 401, 'the account is gone');
+    const store = openDb(join(dataDir, 'studio.db'));
+    assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM patches WHERE id = ?').get('p1').n, 0, 'its patches are gone too');
+    store.close();
+  });
+
+  await test('the static site works next to the accounts; the old sync codes answer 410', async () => {
     assert.equal((await get('/builder.html')).status, 200);
-    const sync = await fetch(`${base}/api/sync/${hashToken('sync')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patches: [], deleted: {} }) });
-    assert.equal(sync.status, 200);
+    const sync = await fetch(`${base}/api/sync/${hashToken('sync')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(sync.status, 410);
   });
 
   console.log(`\n${passed} tests passed`);
