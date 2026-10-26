@@ -16,6 +16,8 @@ jobs:
         run: node tools/zptc.mjs roundtrip patches/0*
       - name: Advice engine and starter chains
         run: node tools/advice-test.mjs
+      - name: Pedal over USB (simulated pedal)
+        run: node tools/midi-test.mjs
       - name: Patch sync (merge rules and server)
         run: node tools/sync-test.mjs
 

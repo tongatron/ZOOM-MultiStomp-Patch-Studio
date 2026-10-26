@@ -76,7 +76,7 @@ then a sequence of blocks  [4-char tag][u32 length][data]:
   "NAME"  32 bytes: full name (28 chars + 4 zero bytes)
 ```
 
-**Slot 0.** Every file contains one more slot than the number of effects: ID 0, on, parameters at zero. The Handy Guitar Lab screenshots made clear what it is: the **BLANK** tile the app shows at the start of the chain. The generator reproduces it identically.
+**Slot 0.** Every file contains one more slot than the number of effects: ID 0, on, parameters at zero. The Handy Guitar Lab screenshots made clear what it is: the **BLANK** tile the app shows at the start of the chain. The generator reproduces it identically. Patches stored on the pedal do not always have it: factory memory 10 ("D.I Plus Preamp", read over USB) has one slot holding the effect itself. The decoder treats slot 0 as BLANK only when its ID is 0; otherwise every slot is an effect and `_noBlank` keeps the round trip exact.
 
 ### The effect block (EDTB, 24 bytes)
 

@@ -63,6 +63,13 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - **Rule packs (v3)**: done. Import and export `.json` packs from the Advice panel ("Rule packs"); the format is documented at the top of `site/rule-packs.js`. Packs are data only (effect or role, parameter conditions, before/after, first/last, each/once/absent), always need a source and can be `tip` or `warning`. Rules can carry a one-click fix (`move-before`, `move-after`, `set`). Packs can also be created and edited in the page with a form ("New rule pack" and "Edit"; `site/rule-pack-editor.js`).
 - **Source health**: `node tools/check-sources.mjs` checks every source. On 2026-10-25: 26 links, none broken; 3 TalkBass threads cannot be verified from automation (Cloudflare blocks scripts and the test browser), the rest answer; redirected URLs were updated.
 
+## 4b. Pedal over USB (Web MIDI) — experimental
+
+`site/usb.html` (not linked from the menus yet) reads patches straight from the pedal in Chrome or Edge: identity request, editor mode, patch memory size, current patch and patch memories, decoded with `site/zptc.js`, with "Open in builder" and ".zptc" download. It is read-only. The SysEx commands, 7-bit packing and CRC32 come from `zoomzt2.py` in zoom-zt2 (MIT) and are not documented by ZOOM; `site/pedal-midi.js` implements them, `node tools/midi-test.mjs` tests them against a simulated pedal (`tools/fake-pedal.mjs`). Tried on a real MS-60B+ (firmware 1.20, macOS, Chrome) on 2026-10-26: the port is "ZOOM MS Plus Series"; the identity reply is `7e 00 06 02 52 6e 00 27 00 "1.20"` (model byte `0x6e` like zoom-zt2, model code `0x27`); 100 memories of 848 bytes, 10 per bank; the current patch (`64 13` → `64 12 01 <length 848> …`) arrived with a valid CRC and decoded to the patch on the pedal (280-byte PTCF, 4 effects).
+
+1. **Test reading on the pedal**: current patch done; memory 10 arrives with a valid CRC and the right name (factory "D.I Plus Preamp", stored without the BLANK slot, now decoded). Still to check: the effects and values of a few memories against the pedal, and memories across a bank change (10 → 11).
+2. **Writing** (not built): zoom-zt2 writes a whole patch into a memory (`45 00 00 bank slot …`), overwriting what is stored there; writing only the edit buffer is not implemented there. Plan: read the target memory first and keep it as a backup in My patches, confirm with the memory number and the name being replaced, write, then read back and compare byte for byte.
+
 ## 5. Patch builder
 
 - Patch description (`TXE1`) and patch level fields.

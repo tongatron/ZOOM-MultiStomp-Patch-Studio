@@ -121,13 +121,16 @@ const ZPTC = (() => {
     const entries = [];
     for (let i = 0; i < slots; i++) entries.push(unpackEntry(chunks.EDTB.subarray(i * ENTRY, (i + 1) * ENTRY)));
     entries.forEach((e, i) => { if (e.id !== ids[i]) throw new Error(`Slot ${i} ID differs between header and EDTB`); });
+    // Exports from Handy Guitar Lab start with a BLANK slot (ID 0); patches stored on the pedal may not
     const slot0 = entries[0];
+    const blank = slot0?.id === 0;
+    const fxEntries = blank ? entries.slice(1) : entries;
     return {
       name: latin1(chunks.NAME, 0, 28).trimEnd(),
       shortName: shortName.trimEnd(),
       description: chunks.TXE1 ? latin1(chunks.TXE1, 0).replace(/\0+$/, '').trimEnd() : '',
-      dspTotal: +entries.slice(1).reduce((s, e) => s + (byId.get(e.id)?.dsp ?? 0), 0).toFixed(2),
-      effects: entries.slice(1).map((entry, i) => {
+      dspTotal: +fxEntries.reduce((s, e) => s + (byId.get(e.id)?.dsp ?? 0), 0).toFixed(2),
+      effects: fxEntries.map((entry, i) => {
         const fx = byId.get(entry.id);
         const params = {};
         fx?.params.forEach(([pname, , range], p) => {
@@ -145,7 +148,7 @@ const ZPTC = (() => {
           ...(entry.tail ? { tail: entry.tail } : {})
         };
       }),
-      ...(slot0.on && slot0.id === 0 && slot0.raw.every(v => v === 0) && !slot0.tail ? {} : { _slot0: slot0 }),
+      ...(!blank ? { _noBlank: true } : slot0.on && slot0.raw.every(v => v === 0) && !slot0.tail ? {} : { _slot0: slot0 }),
       ...(version !== 2 ? { _version: version } : {}),
       ...(toHex(header) === HEADER_MAGIC ? {} : { _header: toHex(header) }),
       ...(chunks.TXJ1?.length ? { _txj1: toHex(chunks.TXJ1) } : {}),
@@ -162,7 +165,7 @@ const ZPTC = (() => {
     const list = spec.effects ?? [];
     if (list.length < 1 || list.length > MAX_EFFECTS) throw new Error(`A patch holds 1 to ${MAX_EFFECTS} effects`);
     const warnings = [];
-    const entries = [spec._slot0 ?? { on: true, id: 0, raw: [] }];
+    const entries = spec._noBlank ? [] : [spec._slot0 ?? { on: true, id: 0, raw: [] }];
     for (const item of list) {
       const fx = item.id ? byId.get(parseInt(item.id, 16)) : byName.get(String(item.effect).toLowerCase());
       if (!fx) throw new Error(`Unknown effect: ${item.effect ?? item.id}`);
