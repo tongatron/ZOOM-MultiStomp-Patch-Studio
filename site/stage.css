@@ -19,7 +19,7 @@ body { background: radial-gradient(1200px 520px at 50% -140px, #1b2a14 0%, trans
 .repo-title h1::after { content: ""; display: block; width: 44px; height: 3px; margin-top: 10px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
 .repo-desc { font-size: 15px; max-width: 760px; }
 .UnderlineNav { display: inline-flex; gap: 0; margin: 4px 0 16px; padding: 3px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 999px; }
-.UnderlineNav-item { padding: 6px 18px; border-radius: 999px; color: var(--fg-muted); }
+.UnderlineNav-item { padding: 9px 24px; border-radius: 999px; color: var(--fg-muted); font-size: 16px; }
 .UnderlineNav-item:hover { background: none; color: var(--fg); }
 .UnderlineNav-item[aria-current="page"] { background: var(--accent); color: #11160a; font-weight: 600; }
 .UnderlineNav-item[aria-current="page"]::after { display: none; }
@@ -76,7 +76,3 @@ dialog.Overlay { border-radius: 20px; }
 /* Redo icon is the undo arrow mirrored */
 .flip { transform: scaleX(-1); }
 
-/* Effects / Patch builder tabs stay under the header while the page scrolls (height of the header from pwa.js) */
-.tabs-bar { position: sticky; top: var(--header-h, 57px); z-index: 15; pointer-events: none; }
-.tabs-bar .UnderlineNav { pointer-events: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
-@media (min-width: 1012px) { .sidebar { top: calc(var(--header-h, 57px) + 56px); max-height: calc(100vh - var(--header-h, 57px) - 72px); } }
