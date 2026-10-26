@@ -1053,7 +1053,7 @@ let rulePacks = (() => {
   return (Array.isArray(stored) ? stored : []).flatMap(e => { const checked = RULEPACK.validate(e?.pack, ADVICE); return checked.pack ? [{ pack: checked.pack, enabled: e.enabled !== false }] : []; });
 })();
 function applyRulePacks() {
-  const compiled = RULEPACK.compile(rulePacks.filter(e => e.enabled).map(e => e.pack));
+  const compiled = RULEPACK.compile(rulePacks.filter(e => e.enabled).map(e => e.pack), ADVICE);
   ADVICE.setUserRules(compiled.rules, compiled.sources);
 }
 function savePacks() {

@@ -48,7 +48,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - **Style ideas** are done (fit per style from the starter roles, "+ effect" buttons, closest other styles). Possible next step: more starters (e.g. a second chain per style) and per-style parameter hints.
 - **Test the starter chains on the pedal** (6 styles with a starter) and adjust their values by ear.
 - **More rules**, each with a source: stereo output, patch level, tuner and mute usage (no source found yet for the MS-60B+; level stacking is done). (Footswitch effects and tempo-synced delays are done.)
-- **Rule packs (v3)**: done. Import and export `.json` packs from the Advice panel ("Rule packs"); the format is documented at the top of `site/rule-packs.js`. Packs are data only (effect or role, parameter conditions, before/after, first/last, each/once/absent), always need a source and can be `tip` or `warning`. Possible next step: a pack editor in the page and fixes ("move before") in pack rules.
+- **Rule packs (v3)**: done. Import and export `.json` packs from the Advice panel ("Rule packs"); the format is documented at the top of `site/rule-packs.js`. Packs are data only (effect or role, parameter conditions, before/after, first/last, each/once/absent), always need a source and can be `tip` or `warning`. Rules can carry a one-click fix (`move-before`, `move-after`, `set`). Possible next step: a pack editor in the page.
 - **Source health**: `node tools/check-sources.mjs` checks every source. On 2026-10-25: 26 links, none broken; 3 TalkBass threads cannot be verified from automation (Cloudflare blocks scripts and the test browser), the rest answer; redirected URLs were updated.
 
 ## 5. Patch builder

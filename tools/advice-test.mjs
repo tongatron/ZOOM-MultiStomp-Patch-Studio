@@ -172,7 +172,7 @@ const packWith = (rule, extra = {}) => ({ ...RULEPACK.EXAMPLE, ...extra, rules: 
 const userFindings = (pack, p) => {
   const checked = RULEPACK.validate(pack, ADVICE);
   assert.ok(checked.pack, JSON.stringify(checked.errors));
-  const compiled = RULEPACK.compile([checked.pack]);
+  const compiled = RULEPACK.compile([checked.pack], ADVICE);
   ADVICE.setUserRules(compiled.rules, compiled.sources);
   return ADVICE.analyze(p).filter(f => f.ruleId.startsWith('user.'));
 };
@@ -185,15 +185,29 @@ test('the example rule pack is valid and its rules fire', () => {
   ADVICE.setUserRules([], {});
   assert.equal(ADVICE.rules.some(r => r.id.startsWith('user.')), false, 'removing a pack removes its rules');
 });
+test('rule pack fixes move or set, and only exist with mode each', () => {
+  const drive = ADVICE.effects.find(fx => fx.role === 'drive' && fx.params.some(p => p.name === 'GAIN')).name;
+  const p = patch([drive, { GAIN: 95 }], ['DYNAMIC COMPRESSOR', {}]);
+  const found = userFindings(RULEPACK.EXAMPLE, p);
+  const move = found.find(f => f.ruleId === 'user.example.comp-after-drive').fix;
+  assert.match(move.label, /Move before/);
+  same(move.apply(p).effects.map(e => ADVICE.effects[e.index].name), ['DYNAMIC COMPRESSOR', drive]);
+  const set = found.find(f => f.ruleId === 'user.example.drive-gain-high').fix;
+  assert.equal(set.apply(p).effects[0].values.GAIN, 70);
+  assert.equal(p.effects[0].values.GAIN, 95, 'the original patch is untouched');
+  assert.match(RULEPACK.validate(packWith({ mode: 'once', fix: { action: 'set', param: 'GAIN', value: 1 } }), ADVICE).errors.join(' '), /mode each/);
+  assert.match(RULEPACK.validate(packWith({ fix: { action: 'run', target: { role: 'drive' } } }), ADVICE).errors.join(' '), /fix action/);
+  ADVICE.setUserRules([], {});
+});
 test('rule pack modes: once, absent and position', () => {
-  const once = packWith({ id: 'two-drives', mode: 'once', min: 2, match: { role: 'drive' }, message: '{count} drives: {effect}' });
+  const once = packWith({ id: 'two-drives', fix: undefined, mode: 'once', min: 2, match: { role: 'drive' }, message: '{count} drives: {effect}' });
   const drives = ADVICE.effects.filter(fx => fx.role === 'drive').slice(0, 2).map(fx => [fx.name, {}]);
   assert.equal(userFindings(once, patch(...drives)).length, 1);
   assert.equal(userFindings(once, patch(drives[0])).length, 0);
-  const absent = packWith({ id: 'no-comp', mode: 'absent', match: { role: 'comp' }, message: 'Add a compressor.' });
+  const absent = packWith({ id: 'no-comp', fix: undefined, mode: 'absent', match: { role: 'comp' }, message: 'Add a compressor.' });
   assert.equal(userFindings(absent, patch(drives[0])).length, 1);
   assert.equal(userFindings(absent, patch(['DYNAMIC COMPRESSOR', {}])).length, 0);
-  const last = packWith({ id: 'comp-last', match: { role: 'comp', position: 'last' }, message: '{effect} last' });
+  const last = packWith({ id: 'comp-last', fix: undefined, match: { role: 'comp', position: 'last' }, message: '{effect} last' });
   assert.equal(userFindings(last, patch(drives[0], ['DYNAMIC COMPRESSOR', {}])).length, 1);
   assert.equal(userFindings(last, patch(['DYNAMIC COMPRESSOR', {}], drives[0])).length, 0);
   ADVICE.setUserRules([], {});

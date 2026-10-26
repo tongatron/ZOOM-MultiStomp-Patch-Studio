@@ -2,11 +2,13 @@
 // A pack is data only, never code, so importing one is safe. Format (version 1):
 //   { format: 'ms60b-rule-pack', version: 1, id: 'my-pack', name, author?,
 //     sources: { key: { title, url } },
-//     rules: [{ id, severity: 'tip' | 'warning', title, why, topic?, sources: [key], match, mode?, min?, message }] }
+//     rules: [{ id, severity: 'tip' | 'warning', title, why, topic?, sources: [key], match, mode?, min?, message, fix? }] }
 // match selects effects that are ON:    { effect: 'NAME' | role: 'drive', param?: { name, op, value }, position?: 'first' | 'last',
 //                                         before?: selector, after?: selector }       (selector = { effect | role, param? })
 // mode: 'each' (default, one finding per matching effect) | 'once' (one finding when at least `min` match) | 'absent' (when none match)
 // message may use {effect} (names of the matching effects) and {count}.
+// fix (only with mode 'each', adds a one-click button): { action: 'move-before' | 'move-after', target: selector }  moves the matching effect
+//   next to the first (before) or last (after) effect the target selects; or { action: 'set', param, value }  sets a parameter of the matching effect.
 // Like the built-in rules, every rule must cite a source, and none can be an 'error' (order and levels are convention).
 
 const RULEPACK = (() => {
@@ -15,6 +17,7 @@ const RULEPACK = (() => {
   const SEVERITIES = ['tip', 'warning'];
   const OPS = ['<', '<=', '>', '>=', '==', '!='];
   const MODES = ['each', 'once', 'absent'];
+  const FIX_ACTIONS = ['move-before', 'move-after', 'set'];
   const slug = /^[a-z0-9][a-z0-9-]{0,39}$/;
   const prefix = packId => `user.${packId}.`;
 
@@ -77,6 +80,18 @@ const RULEPACK = (() => {
         title: text(r.title, LIMITS.title, `${where} title`), why: text(r.why, LIMITS.why, `${where} why`), message: text(r.message, LIMITS.message, `${where} message`),
         topic: r.topic === undefined ? 'custom' : text(r.topic, LIMITS.topic, `${where} topic`), sources: cited.filter(key => sources[key])
       };
+      let fix = null;
+      if (r.fix !== undefined) {
+        const x = r.fix;
+        if (mode !== 'each') fail(`${where}: fix only works with mode each`);
+        else if (!x || !FIX_ACTIONS.includes(x.action)) fail(`${where}: fix action must be ${FIX_ACTIONS.join(', ')}`);
+        else if (x.action === 'set') {
+          const ok = typeof x.param === 'string' && x.param && (typeof x.value === 'string' || (typeof x.value === 'number' && Number.isFinite(x.value)));
+          if (ok) fix = { action: 'set', param: x.param.slice(0, 40), value: typeof x.value === 'string' ? x.value.slice(0, 40) : x.value }; else fail(`${where}: fix set needs param and value`);
+        } else fix = { action: x.action, target: selector(x.target, `${where} fix target`, false) };
+        if (fix && x.label !== undefined) fix.label = text(x.label, 40, `${where} fix label`);
+      }
+      rule.fix = fix;
       if (match && r.match.before !== undefined) match.before = selector(r.match.before, `${where} before`, false);
       if (match && r.match.after !== undefined) match.after = selector(r.match.after, `${where} after`, false);
       return rule;
@@ -96,7 +111,7 @@ const RULEPACK = (() => {
   }
 
   // Turns validated packs into engine rules and sources (ids are prefixed with user.<pack id>.)
-  function compile(packs) {
+  function compile(packs, advice) {
     const rules = [];
     const sourceMap = {};
     for (const pack of packs) {
@@ -113,9 +128,19 @@ const RULEPACK = (() => {
               (!m.before || pick(m.before).some(other => other.i > s.i)) &&
               (!m.after || pick(m.after).some(other => other.i < s.i)));
             const say = list => r.message.replaceAll('{effect}', list.map(s => s.fx.name).join(', ')).replaceAll('{count}', String(list.length));
+            const fixFor = s => {
+              if (!r.fix) return undefined;
+              const f = r.fix;
+              if (f.action === 'set') return s.has(f.param) ? { label: f.label || `Set ${f.param} to ${f.value}`, apply: p => advice.edit.setValue(p, s.i, f.param, f.value) } : undefined;
+              const others = pick(f.target).filter(o => o.i !== s.i);
+              const to = f.action === 'move-before' ? others[0] : others.at(-1);
+              if (!to) return undefined;
+              const move = f.action === 'move-before' ? advice.edit.moveBefore : advice.edit.moveAfter;
+              return { label: f.label || `Move ${f.action === 'move-before' ? 'before' : 'after'} ${to.fx.name}`, apply: p => move(p, s.i, to.i) };
+            };
             if (r.mode === 'absent') return !hits.length && ctx.slots.length ? [{ message: r.message.replaceAll('{effect}', '').replaceAll('{count}', '0') }] : [];
             if (r.mode === 'once') return hits.length >= r.min ? [{ slots: hits.map(s => s.i), message: say(hits) }] : [];
-            return hits.map(s => ({ slots: [s.i], message: say([s]) }));
+            return hits.map(s => ({ slots: [s.i], message: say([s]), fix: fixFor(s) }));
           }
         });
       }
@@ -130,12 +155,14 @@ const RULEPACK = (() => {
       {
         id: 'comp-after-drive', severity: 'tip', topic: 'order', title: 'Compressor after a drive',
         why: 'A compressor usually goes before the drive so the drive sees an even signal. Edit or delete this example rule.',
-        sources: ['boss'], match: { role: 'comp', after: { role: 'drive' } }, message: '{effect} comes after a drive: try it before.'
+        sources: ['boss'], match: { role: 'comp', after: { role: 'drive' } }, message: '{effect} comes after a drive: try it before.',
+        fix: { action: 'move-before', target: { role: 'drive' } }
       },
       {
         id: 'drive-gain-high', severity: 'warning', topic: 'gain', title: 'Drive gain very high',
         why: 'Very high gain on a bass drive tends to thin out the low end. Edit the numbers to taste.',
-        sources: ['boss'], match: { role: 'drive', param: { name: 'GAIN', op: '>=', value: 90 } }, message: '{effect} has GAIN at 90 or more.'
+        sources: ['boss'], match: { role: 'drive', param: { name: 'GAIN', op: '>=', value: 90 } }, message: '{effect} has GAIN at 90 or more.',
+        fix: { action: 'set', param: 'GAIN', value: 70 }
       }
     ]
   };
