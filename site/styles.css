@@ -754,3 +754,5 @@ body.is-dropping .drop-overlay { display: grid; }
 .tone-approach { color: var(--fg-muted); font-size: 13px !important; }
 .tone-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
 .tone-card .sources a { display: block; font-size: 12px; }
+.tone-ideas-link { justify-content: center; gap: 8px; padding: 10px 16px; }
+.tone-ideas-link .tone-ideas-hint { color: var(--fg-muted); font-weight: 400; font-size: 12px; }
