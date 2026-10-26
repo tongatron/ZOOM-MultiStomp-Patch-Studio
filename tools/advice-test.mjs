@@ -8,9 +8,9 @@ import assert from 'node:assert/strict';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({ console });
-const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'rule-packs.js'];
-vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC; globalThis.RULEPACK = RULEPACK;`, ctx);
-const { ADVICE, ZPTC, RULEPACK } = ctx;
+const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'rule-packs.js', 'tone-ideas.js'];
+vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC; globalThis.RULEPACK = RULEPACK; globalThis.TONE_IDEAS = TONE_IDEAS;`, ctx);
+const { ADVICE, ZPTC, RULEPACK, TONE_IDEAS } = ctx;
 // Values created inside the vm context have their own Array prototype: compare as plain JSON
 const same = (actual, expected, message) => assert.equal(JSON.stringify(actual), JSON.stringify(expected), message);
 
@@ -140,11 +140,37 @@ for (const style of ADVICE.styles.filter(s => s.starter)) {
       same(missing, [], `${fx.name} is missing ${missing.join(', ')}`);
       Object.keys(e.values).forEach(n => assert.ok(fx.params.some(x => x.name === n), `${fx.name} has no parameter ${n}`));
     });
-    const { file, dsp } = ZPTC.encode({ name: p.name, effects: style.starter.effects.map(e => ({ effect: e.effect, params: e.values })) });
+    // Like the builder: parameters whose format is not decoded yet hold the raw stored number
+    const asSpec = e => Object.fromEntries(Object.entries(e.values).map(([n, v]) => {
+      const range = ADVICE.effects[index(e.effect)].params.find(x => x.name === n).range;
+      return [n, ZPTC.codec(range, n) ? v : { raw: v }];
+    }));
+    const { file, dsp } = ZPTC.encode({ name: p.name, effects: style.starter.effects.map(e => ({ effect: e.effect, params: asSpec(e) })) });
     assert.ok(file.length > 0);
     assert.ok(dsp <= 100, `DSP ${dsp}`);
     const serious = ADVICE.analyze(p, { style: style.id }).filter(f => f.severity !== 'tip');
     same(serious.map(f => `${f.ruleId}: ${f.message}`), []);
+  });
+}
+
+// ---- tone ideas by bassist ------------------------------------------------------------------------------
+for (const idea of TONE_IDEAS) {
+  test(`tone idea "${idea.name}": facts cite known sources, the chain is valid and clean in its style`, () => {
+    const style = ADVICE.styles.find(st => st.id === idea.style);
+    assert.ok(style?.starter, `unknown style ${idea.style}`);
+    assert.ok(idea.facts.length >= 1);
+    idea.facts.forEach(f => assert.ok(ADVICE.sources[f.source], `unknown source ${f.source}`));
+    const chain = idea.chain || style.starter;
+    assert.ok(chain.name.length <= 10, 'patch names on the pedal have 10 characters');
+    chain.effects.forEach(e => {
+      const fx = ADVICE.byName.get(e.effect);
+      assert.ok(fx, `unknown effect ${e.effect}`);
+      same(fx.params.map(x => x.name).filter(n => !(n in e.values)), [], `${fx.name} misses parameters`);
+    });
+    const { dsp } = ZPTC.encode({ name: chain.name, effects: chain.effects.map(e => ({ effect: e.effect, params: Object.fromEntries(Object.entries(e.values).map(([n, v]) => [n, ZPTC.codec(ADVICE.byName.get(e.effect).params.find(x => x.name === n).range, n) ? v : { raw: v }])) })) });
+    assert.ok(dsp <= 100, `DSP ${dsp}`);
+    const p = { name: chain.name, effects: chain.effects.map(e => ({ index: index(e.effect), on: true, values: e.values })) };
+    same(ADVICE.analyze(p, { style: style.id }).filter(f => f.severity !== 'tip').map(f => f.ruleId), []);
   });
 }
 

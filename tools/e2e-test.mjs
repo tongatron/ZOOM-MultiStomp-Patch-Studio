@@ -63,7 +63,7 @@ try {
   });
 
   await test('a share link opens the same patch on another device', async () => {
-    const link = await page.evaluate(() => `${location.origin}${location.pathname}#p=${shareCode(state)}`);
+    const link = await page.evaluate(() => new URL(PATCHLINK.url(serialize(state)), location.href).href);
     const other = await device();
     await other.page.goto(link);
     await other.page.reload();
@@ -99,6 +99,18 @@ try {
     await laptop.page.click('#sync-join');
     await laptop.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
     await laptop.context.close();
+  });
+
+  await test('a tone idea opens in the builder with its chain and advice style', async () => {
+    const fresh = await device();
+    await fresh.page.goto(`${base}/tones.html`);
+    assert.ok(await fresh.page.locator('#tone-styles .tone-card').count() >= 5);
+    await fresh.page.locator('#bassist-wolstenholme .btn-primary').click();
+    await fresh.page.waitForURL(/builder\.html/);
+    assert.equal(await fresh.page.inputValue('#patch-name'), 'FUZZ SYNTH');
+    assert.equal(await chain(fresh.page), 2);
+    assert.equal(await fresh.page.inputValue('#advice-style'), 'fuzzrock');
+    await fresh.context.close();
   });
 
   await test('the catalog page loads and links to the builder', async () => {

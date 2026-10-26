@@ -734,3 +734,23 @@ body.is-dropping .drop-overlay { display: grid; }
 .pe-actions { display: flex; justify-content: flex-end; gap: 8px; }
 @media (max-width: 640px) { .pe-source { grid-template-columns: 1fr; } }
 .picker-dsp.is-near small { color: #d29922; }
+
+/* Tone ideas page */
+.tones { padding-top: 16px; padding-bottom: 40px; }
+.tone-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.tone-section-title { margin: 24px 0 8px; font-size: 18px; }
+.tone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 12px; }
+.tone-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; scroll-margin-top: 16px; }
+.tone-card:target { border-color: var(--accent); }
+.tone-card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tone-card h3 { margin: 0; font-size: 16px; }
+.tone-card p { margin: 0; font-size: 14px; }
+.tone-chain { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: fx; }
+.tone-chain li { display: flex; align-items: center; gap: 10px; padding: 4px 8px; border-left: 3px solid var(--c); background: rgba(110, 118, 129, .08); border-radius: 6px; font: 12px var(--mono); }
+.tone-chain .fx-thumb { width: 28px; height: auto; }
+.tone-dsp, .tone-players { color: var(--fg-muted); font-size: 12px !important; }
+.tone-facts { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.tone-cite a { font-size: 11px; color: var(--fg-muted); }
+.tone-approach { color: var(--fg-muted); font-size: 13px !important; }
+.tone-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.tone-card .sources a { display: block; font-size: 12px; }

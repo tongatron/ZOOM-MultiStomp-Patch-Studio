@@ -22,6 +22,7 @@ The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot ch
 - **Tailored to your rig.** Pick a style profile and say whether the pedal feeds a bass amp or a mixer, and the tips adapt.
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
 - **Keep your work.** Save patches in the browser, compare two versions, undo and redo, share a patch with a link, back up and restore, or sync them between your devices with a private code. Write your own advice rules in a form and share them as `.json` rule packs.
+- **Tone ideas.** Starting chains by style and by bassist, with a focus on alternative rock (grunge, post-punk, indie, alt-metal, fuzz rock: Krist Novoselic, Peter Hook, Kim Deal, Justin Chancellor, Mike Kerr, Chris Wolstenholme). Every gear fact cites its source; one click opens the chain in the builder.
 - **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
 
 ## Features

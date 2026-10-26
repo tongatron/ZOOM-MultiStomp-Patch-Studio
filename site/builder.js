@@ -366,28 +366,10 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
-// ---- share link -------------------------------------------------------------------------------
-// The patch travels in the URL fragment (#p=…), which browsers never send to the server.
-// Payload: [name, [[effectIndex, on 1|0, [values in catalog parameter order]]]] as base64url JSON.
-const toBase64Url = text => btoa(String.fromCharCode(...new TextEncoder().encode(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const fromBase64Url = code => new TextDecoder().decode(Uint8Array.from(atob(code.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
-function shareCode(source) {
-  return toBase64Url(JSON.stringify([source.name.trim(), source.effects.map(slot => [slot.index, slot.on === false ? 0 : 1, catalog[slot.index].params.map(p => slot.values[p.name] ?? null)])]));
-}
-function patchFromShareCode(code) {
-  const [name, effects] = JSON.parse(fromBase64Url(code));
-  if (typeof name !== 'string' || !Array.isArray(effects)) throw new Error('not a patch');
-  return {
-    name: name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').slice(0, 28),
-    effects: effects.filter(e => Array.isArray(e) && Number.isInteger(e[0]) && catalog[e[0]]).slice(0, ZPTC.MAX_EFFECTS).map(([index, on, values]) => ({
-      index, on: on !== 0,
-      values: Object.fromEntries(catalog[index].params.map((p, i) => [p.name, Array.isArray(values) ? values[i] : null]).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && v.length <= 40)))
-    }))
-  };
-}
+// ---- share link (format in patch-link.js) -------------------------------------------------------
 async function sharePatch() {
   if (!state.effects.length) return;
-  const url = `${location.origin}${location.pathname}#p=${shareCode(state)}`;
+  const url = new URL(PATCHLINK.url(serialize(state)), location.href).href;
   try { await navigator.clipboard.writeText(url); notify('muted', 'Link copied: whoever opens it gets this patch in the builder.'); }
   catch { prompt('Copy this link to share the patch:', url); }
 }
@@ -1152,15 +1134,19 @@ applyRulePacks();
 
 load();
 const addSlug = new URLSearchParams(location.search).get('add');
-const sharedCode = location.hash.startsWith('#p=') ? location.hash.slice(3) : null;
+const sharedLink = PATCHLINK.fromHash(location.hash);
 history.replaceState(null, '', location.pathname);
 $('#patch-name').value = state.name;
 render();
-if (sharedCode) {
+if (sharedLink) {
   try {
-    const shared = patchFromShareCode(sharedCode);
+    const shared = PATCHLINK.decode(sharedLink.code, ZPTC.MAX_EFFECTS);
     if (!shared.effects.length) throw new Error('empty');
-    if (confirmDiscard()) { loadPatch(shared); notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`); }
+    if (confirmDiscard()) {
+      if (ADVICE.styles.some(st => st.id === sharedLink.style)) { adviceSettings.style = sharedLink.style; saveAdvice(); }
+      loadPatch(shared);
+      notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`);
+    }
   } catch {
     notify('danger', 'This share link is broken or incomplete.');
   }

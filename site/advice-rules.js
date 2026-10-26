@@ -38,6 +38,12 @@
     musicGuyReverb: { title: 'Music Guy Mixing — How to use reverb on bass guitar', url: 'https://www.musicguymixing.com/reverb-on-bass-guitar/' },
     neuralDelay: { title: 'Neural DSP — How to use a delay pedal', url: 'https://neuraldsp.com/articles/how-to-use-a-delay-pedal' },
     guitarchalkSynth: { title: 'Guitarchalk — MXR Bass Synth settings', url: 'https://www.guitarchalk.com/mxr-bass-synth-settings/' },
+    novoselicGear: { title: 'Live Nirvana — Krist Novoselic equipment', url: 'https://www.livenirvana.com/equipment/krist.php' },
+    hookWiki: { title: 'Wikipedia — Peter Hook', url: 'https://en.wikipedia.org/wiki/Peter_Hook' },
+    dealMixdown: { title: 'Mixdown — Gear rundown: Kim Deal of the Pixies', url: 'https://mixdownmag.com.au/features/gear-rundown-kim-deal/' },
+    chancellorPG: { title: 'Premier Guitar — Pro pedalboards 2025 (Justin Chancellor, Tool)', url: 'https://www.premierguitar.com/features/gear-features/pro-pedalboards-2025' },
+    kerrMixdown: { title: 'Mixdown — Gear rundown: Mike Kerr (Royal Blood)', url: 'https://mixdownmag.com.au/features/gear-rundown-mike-kerr/' },
+    wolstenholmeWiki: { title: 'Wikipedia — Chris Wolstenholme', url: 'https://en.wikipedia.org/wiki/Chris_Wolstenholme' },
     zoomManual: { title: 'ZOOM MS-60B+ Operation Manual', url: 'https://zoomcorp.com/manuals/ms-60bplus-en/' },
     zoomFxList: { title: 'ZOOM MS-60B+ Effects List', url: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf' }
   });
@@ -562,6 +568,50 @@
         { effect: 'Z-SYNTHESIZER', values: { FREQ: 5, RANGE: 10, DECAY: 50, RESO: 8, WAVE: 'SAW', TONE: 6, BALANCE: 70, VOL: 75 } },
         { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 5, ATTACK: 'FAST', TONE: 50, VOL: 80 } },
         { effect: 'MODULATION DELAY', values: { TIME: 350, MODE: 'SHORT', REPEAT: 25, MIX: 20 } }
+      ] }
+    },
+    // ---- alternative rock: each profile follows a documented bassist rig (see tone-ideas.js for the players) ----
+    // MID-FREQ of the amps is not decoded yet: raw 13 is the value stored in the exported AMPG SVT patches in patches/.
+    {
+      id: 'grunge', name: 'Grunge', summary: 'Distortion in the style of a ProCo RAT into an Ampeg SVT, with some clean bass kept under the dirt. After Krist Novoselic (Nirvana).',
+      severity: {}, sources: ['novoselicGear', 'bassMusician'],
+      starter: { name: 'GRUNGE', effects: [
+        { effect: 'SQUEAK DISTORTION', values: { GAIN: 60, FILTER: 40, VOL: 70, DRY: 40 } },
+        { effect: 'AMPG SVT', values: { GAIN: 45, VOL: 70, CABINET: 60, ULTRA: 'OFF', BASS: 4, 'MID-FREQ': 13, MID: 2, TREBLE: 2 } }
+      ] }
+    },
+    {
+      id: 'postpunk', name: 'Post-punk', summary: 'Melodic lines high on the neck with a heavy chorus left on. After Peter Hook (Joy Division, New Order).',
+      severity: {}, sources: ['hookWiki'],
+      starter: { name: 'POST PUNK', effects: [
+        { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 4, ATTACK: 'FAST', TONE: 55, VOL: 80 } },
+        { effect: 'CLONE CHORUS', values: { DEPTH: '2', RATE: 35, TONE: 60, MIX: 50 } }
+      ] }
+    },
+    {
+      id: 'indie', name: 'Indie & Alt rock', summary: 'A pick-played Precision-style bass straight into an Ampeg SVT, with only light compression. After Kim Deal (Pixies).',
+      severity: {}, sources: ['dealMixdown'],
+      starter: { name: 'INDIE ROCK', effects: [
+        { effect: 'DYNAMIC COMPRESSOR', values: { SENSE: 3, ATTACK: 'FAST', TONE: 50, VOL: 80 } },
+        { effect: 'AMPG SVT', values: { GAIN: 35, VOL: 70, CABINET: 60, ULTRA: 'OFF', BASS: 3, 'MID-FREQ': 13, MID: 3, TREBLE: 2 } }
+      ] }
+    },
+    {
+      id: 'altmetal', name: 'Alt-metal & Prog', summary: 'A RAT-style distortion and a bass graphic EQ for midrange punch, plus a delay for the repeats. After Justin Chancellor (Tool).',
+      severity: {}, sources: ['chancellorPG'],
+      starter: { name: 'ALT METAL', effects: [
+        { effect: 'SQUEAK DISTORTION', values: { GAIN: 50, FILTER: 45, VOL: 70, DRY: 50 } },
+        { effect: 'BASS GRAPHIC EQ', values: { '50Hz': 0, '120Hz': 2, '400Hz': 0, '500Hz': 2, '800Hz': 3, '4.5kHz': 2, '10kHz': 0, VOL: 80 } },
+        { effect: 'DELAY', values: { TIME: 375, MODE: 'SHORT', REPEAT: 30, MIX: 25 } }
+      ] }
+    },
+    {
+      id: 'fuzzrock', name: 'Fuzz & Octave rock', summary: 'An octave layer in front of a Big Muff-style fuzz into a Fender-style amp: one bass that fills the space of bass and guitar. After Mike Kerr (Royal Blood) and Chris Wolstenholme (Muse).',
+      severity: {}, sources: ['kerrMixdown', 'wolstenholmeWiki'],
+      starter: { name: 'FUZZ ROCK', effects: [
+        { effect: 'POLYPHONIC OCTAVER', values: { LO: 50, HI: 60, WET: 60, DRY: 80 } },
+        { effect: 'NEW YORK MUFF FUZZ', values: { SUSTAIN: 60, TONE: 50, BALANCE: 60, VOL: 70 } },
+        { effect: 'B-MAN100', values: { GAIN: 40, VOL: 60, CABINET: 60, DEEP: 'ON', BASS: 60, 'MID-FREQ': 13, MID: 55, TREBLE: 55 } }
       ] }
     }
   ]);
