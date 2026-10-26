@@ -1,6 +1,7 @@
 // Merge rules for syncing "My patches" between devices, shared by the site (builder.js) and the sync server (deploy/server.mjs).
 // State shape: { patches: [{ id, name, effects, output, updatedAt }], deleted: { [id]: ISO time } }
 // The newest edit of each patch wins; a deletion wins over an edit that is not newer than it.
+// mergeDocs: the other data kept in an account (settings, rule packs, pedal backups), see site/account.js.
 
 const LIBMERGE = (() => {
   const TOMBSTONE_DAYS = 90;
@@ -29,7 +30,29 @@ const LIBMERGE = (() => {
     return { patches, deleted };
   }
 
-  return { merge, time };
+  // Docs: { [kind]: { data: the browser's stored string or null, updatedAt } }. The newest copy of each kind wins,
+  // except pedal backups, which are only ever added: both sides are kept (by id, the newest MAX_BACKUPS).
+  const MAX_BACKUPS = 30;
+  const parseList = text => { try { const list = JSON.parse(text); return Array.isArray(list) ? list : []; } catch { return []; } };
+  function mergeBackups(a, b) {
+    if (a == null && b == null) return null;
+    const byId = new Map();
+    for (const item of [...parseList(a), ...parseList(b)]) if (item && typeof item.id === 'string' && !byId.has(item.id)) byId.set(item.id, item);
+    const list = [...byId.values()].sort((x, y) => time(y.at) - time(x.at)).slice(0, MAX_BACKUPS);
+    return JSON.stringify(list);
+  }
+  function mergeDocs(local = {}, remote = {}) {
+    const docs = {};
+    for (const kind of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+      const a = local[kind], b = remote[kind];
+      if (!a || !b) { docs[kind] = a || b; continue; }
+      const newer = time(b.updatedAt) > time(a.updatedAt) ? b : a;
+      docs[kind] = kind === 'usb-backups' ? { data: mergeBackups(a.data, b.data), updatedAt: newer.updatedAt } : newer;
+    }
+    return docs;
+  }
+
+  return { merge, mergeDocs, time };
 })();
 
 if (typeof module !== 'undefined') module.exports = LIBMERGE;

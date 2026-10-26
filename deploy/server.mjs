@@ -5,6 +5,7 @@
 // POST /api/sync/<64 hex id>   body { patches, deleted }  → merges with the stored copy and returns the merged state.
 // The id is the SHA-256 of the user's sync code (computed in the browser), so the server never sees the code.
 // Accounts (sign-in pages, /api/me, database in DATA_DIR/studio.db): see accounts.mjs.
+// POST /api/account/sync/<pedal>  body { patches, deleted, docs }  → the signed-in user's merged copy (account-sync.mjs).
 
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
@@ -13,6 +14,8 @@ import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAccounts } from './accounts.mjs';
+import { PEDALS, cleanDocs, createAccountSync } from './account-sync.mjs';
+import { crossSite } from './auth.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(process.env.ROOT || join(here, '..', 'site'));
@@ -82,6 +85,8 @@ async function sync(id, incoming) {
   return merged;
 }
 
+const accountSync = createAccountSync({ store: accounts.store, LIBMERGE, maxPatches: MAX_PATCHES });
+
 // ---- helpers ------------------------------------------------------------------------------------
 const hits = new Map();
 setInterval(() => hits.clear(), 60_000).unref();
@@ -133,6 +138,20 @@ const server = createServer(async (request, response) => {
     const { pathname } = url;
     if (await accounts.handle(request, response, url)) return;
     const route = pathname.match(/^\/api\/sync\/([a-f0-9]{64})$/);
+    const accountRoute = pathname.match(/^\/api\/account\/sync\/([a-z0-9]{1,12})$/);
+    if (accountRoute) {
+      if (!PEDALS.includes(accountRoute[1])) return sendJson(response, 404, { error: 'not found' });
+      if (request.method !== 'POST') return sendJson(response, 405, { error: 'use POST' });
+      if (crossSite(request.headers)) return sendJson(response, 403, { error: 'request from another site' });
+      if (!String(request.headers['content-type'] || '').startsWith('application/json')) return sendJson(response, 415, { error: 'use JSON' });
+      if (limited(clientIp(request))) return sendJson(response, 429, { error: 'too many requests' });
+      const session = accounts.current(request);
+      if (!session) return sendJson(response, 401, { error: 'sign in first' });
+      let body;
+      try { body = JSON.parse(await readBody(request)); } catch (error) { if (error.status) throw error; return sendJson(response, 400, { error: 'invalid body' }); }
+      const incoming = { ...cleanState(body), docs: cleanDocs(body?.docs) };
+      return sendJson(response, 200, accountSync.sync(session.user.id, accountRoute[1], incoming));
+    }
     if (pathname.startsWith('/api/')) {
       if (!route) return sendJson(response, 404, { error: 'not found' });
       if (request.method !== 'POST') return sendJson(response, 405, { error: 'use POST' });
