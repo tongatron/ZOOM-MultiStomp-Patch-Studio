@@ -760,7 +760,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .untested-banner p + p { margin-top: 6px; color: var(--fg-muted); }
 .untested-banner b { color: #ff7b72; }
 
-/* Pedal manager (usb.html, experimental) */
+/* Pedal manager (pedal-manager.html, experimental) */
 .usb { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; padding-bottom: 32px; }
 .usb-connect { padding: 12px 16px; }
 .usb-body { padding: 12px 16px; }

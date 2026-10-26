@@ -2,7 +2,7 @@
 // Run it right before a deploy: node tools/stamp-update.mjs
 import fs from 'node:fs';
 
-const pages = ['index.html', 'builder.html', 'tones.html', 'usb.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'landing/index.html'];
+const pages = ['index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'landing/index.html'];
 const now = new Date();
 const part = type => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
   .formatToParts(now).find(p => p.type === type).value;

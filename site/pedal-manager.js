@@ -1,4 +1,4 @@
-// Pedal manager (usb.html, experimental): the patch memories of the pedal, read over Web MIDI (pedal-midi.js),
+// Pedal manager (pedal-manager.html, experimental): the patch memories of the pedal, read over Web MIDI (pedal-midi.js),
 // next to the patches saved in this browser (My patches of the builder). A pedal patch can be opened in the
 // builder, copied to My patches or downloaded; a local patch can be sent to the selected memory. Every write first
 // reads the target memory and keeps it as a backup (localStorage and a downloaded .zptc), asks for confirmation,
@@ -319,7 +319,7 @@
         <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
         <button class="btn btn-sm${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
-          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the left first' : `Write it to memory ${target}`}">${target ? `Send to memory ${target}` : 'Send to…'}</button>
+          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Write it to memory ${target}`}">${target ? `Send to memory ${target}` : 'Send to…'}</button>
       </li>`).join('') : '<li class="usb-empty">No patches yet. Build one in the <a href="builder.html">patch builder</a> and save it, or send a <code>.zptc</code> file.</li>';
   }
   $('#usb-locals').addEventListener('click', event => {
@@ -334,7 +334,7 @@
     if (!file) return;
     fileItem = { fileName: file.name, bytes: new Uint8Array(await file.arrayBuffer()) };
     renderLocals();
-    status(selected ? `“${file.name}” ready: press Send to memory ${selected}` : `“${file.name}” ready: select a memory on the left, then press Send`);
+    status(selected ? `“${file.name}” ready: press Send to memory ${selected}` : `“${file.name}” ready: select a memory on the right, then press Send`);
   });
   window.addEventListener('storage', event => { if (event.key === LIBRARY_KEY || event.key === DRAFT_KEY) renderLocals(); });
   window.addEventListener('focus', renderLocals);

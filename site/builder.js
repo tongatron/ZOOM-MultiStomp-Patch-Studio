@@ -1113,7 +1113,7 @@ $('#advice-packs').addEventListener('change', event => {
 applyRulePacks();
 
 // ---- editing a pedal memory ----------------------------------------------------------------------
-// The pedal manager (usb.html) opens a memory here with #p=…&m=<memory> and stores { memory, name, base, at,
+// The pedal manager (pedal-manager.html) opens a memory here with #p=…&m=<memory> and stores { memory, name, base, at,
 // pending: true } under PEDAL_EDIT_KEY. Once the patch is open here it is no longer pending, and a bar offers to
 // send the edited patch back to that memory.
 const PEDAL_EDIT_KEY = `${PEDAL.id}-pedal-edit`;
@@ -1128,7 +1128,7 @@ function renderPedalEdit() {
   bar.hidden = !edit?.memory || edit.pending;
   if (bar.hidden) return;
   bar.innerHTML = `<span>Editing <b>memory ${edit.memory}</b> of the pedal (“${escapeHtml(edit.name)}”). Change it here, then send it back: the pedal manager keeps a backup of the memory first.</span>
-    <span class="pedal-edit-actions"><a class="btn btn-sm btn-primary" href="usb.html#send=${edit.memory}">Send to memory ${edit.memory}</a><button class="btn btn-sm btn-invisible" id="pedal-edit-stop">Stop editing</button></span>`;
+    <span class="pedal-edit-actions"><a class="btn btn-sm btn-primary" href="pedal-manager.html#send=${edit.memory}">Send to memory ${edit.memory}</a><button class="btn btn-sm btn-invisible" id="pedal-edit-stop">Stop editing</button></span>`;
 }
 $('#pedal-edit-bar')?.addEventListener('click', event => { if (event.target.id === 'pedal-edit-stop') endPedalEdit(); });
 
