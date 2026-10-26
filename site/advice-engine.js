@@ -146,11 +146,6 @@ const ADVICE = (() => {
     const fit = Math.max(0, Math.round(100 * present.length / wants.length - 25 * conflicts.length));
     return { style, fit, wants, present, missing, conflicts };
   }
-  // active: fit of the selected style (null for "general"); others: the remaining styles, best fit first
-  function suggestStyles(patch, activeId) {
-    const all = styles.filter(s => s.starter).map(s => styleFit(patch, s));
-    return { active: all.find(f => f.style.id === activeId) || null, others: all.filter(f => f.style.id !== activeId).sort((a, b) => b.fit - a.fit) };
-  }
   // Where a missing role belongs: after the last effect that comes earlier in the style's own chain order
   function insertPosition(patch, fit, role) {
     const rank = fx => fit.wants.findIndex(w => satisfies(fx.role, w));
@@ -170,7 +165,7 @@ const ADVICE = (() => {
 
   return {
     SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
-    analyze, addRules, setUserRules, addStyles, addPreferences, styleFit, suggestStyles, insertPosition, addSources, addRoleTips, effectTips,
+    analyze, addRules, setUserRules, addStyles, addPreferences, styleFit, insertPosition, addSources, addRoleTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();

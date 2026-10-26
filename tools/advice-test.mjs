@@ -331,15 +331,6 @@ test('a drive lowers the reggae fit and is reported as a conflict', () => {
   same(driven.conflicts, ['drive']);
 });
 
-test('suggestions: active style is separate, the others are sorted by fit', () => {
-  const funk = ADVICE.styles.find(s => s.id === 'funk');
-  const { active, others } = ADVICE.suggestStyles(starterPatch(funk), 'funk');
-  assert.equal(active.style.id, 'funk');
-  assert.ok(!others.some(f => f.style.id === 'funk'));
-  others.slice(1).forEach((f, i) => assert.ok(others[i].fit >= f.fit));
-  assert.equal(ADVICE.suggestStyles(starterPatch(funk), 'general').active, null);
-});
-
 test('missing roles come with a starter effect and a sensible position', () => {
   const funk = ADVICE.styles.find(s => s.id === 'funk');
   const p = patch(['ENVELOPE FILTER', {}], ['BASS DRIVER PREAMP', {}]);
