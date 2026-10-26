@@ -3,3 +3,9 @@ tmp/
 .DS_Store
 sync-data/
 node_modules/
+deploy/mail.json
+deploy/telegram.json
+deploy/.env
+*.db
+*.db-wal
+*.db-shm

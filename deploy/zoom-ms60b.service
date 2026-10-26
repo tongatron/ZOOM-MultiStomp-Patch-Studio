@@ -1,5 +1,5 @@
 [Unit]
-Description=ZOOM MultiStomp Patch Studio (static site + patch sync API)
+Description=ZOOM MultiStomp Patch Studio (static site, accounts, patch sync API)
 After=network.target
 
 [Service]
@@ -7,7 +7,10 @@ Type=simple
 User=giovanni
 WorkingDirectory=/srv/apps/zoom-ms60b-app
 Environment=ROOT=/srv/apps/zoom-ms60b DATA_DIR=/srv/apps/zoom-ms60b-data PORT=8097
-ExecStart=/usr/bin/node /srv/apps/zoom-ms60b-app/server.mjs
+# SITE_URL, SESSION_SECRET, MAIL_FILE, TELEGRAM_FILE (mode 600, never in git)
+EnvironmentFile=-/srv/apps/zoom-ms60b-app/.env
+# node:sqlite still prints an "experimental" warning on Node 22
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /srv/apps/zoom-ms60b-app/server.mjs
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true

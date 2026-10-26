@@ -4,6 +4,7 @@
 //
 // POST /api/sync/<64 hex id>   body { patches, deleted }  → merges with the stored copy and returns the merged state.
 // The id is the SHA-256 of the user's sync code (computed in the browser), so the server never sees the code.
+// Accounts (sign-in pages, /api/me, database in DATA_DIR/studio.db): see accounts.mjs.
 
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
@@ -11,6 +12,7 @@ import { mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promi
 import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createAccounts } from './accounts.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(process.env.ROOT || join(here, '..', 'site'));
@@ -18,6 +20,7 @@ const DATA_DIR = resolve(process.env.DATA_DIR || join(here, '..', 'sync-data'));
 const PORT = Number(process.env.PORT || 8097);
 const HOST = process.env.HOST || '127.0.0.1';
 const LIBMERGE = createRequire(import.meta.url)(join(ROOT, 'library-merge.js'));
+const accounts = createAccounts({ dataDir: DATA_DIR });
 
 const MAX_BODY = 1_000_000;
 const MAX_PATCHES = 300;
@@ -69,7 +72,7 @@ async function sync(id, incoming) {
   try { stored = cleanState(JSON.parse(await readFile(file, 'utf8'))); }
   catch (error) {
     if (error.code !== 'ENOENT') throw error;
-    if ((await readdir(DATA_DIR)).length >= MAX_LIBRARIES) { const full = new Error('storage full'); full.status = 507; throw full; }
+    if ((await readdir(DATA_DIR)).filter(name => name.endsWith('.json')).length >= MAX_LIBRARIES) { const full = new Error('storage full'); full.status = 507; throw full; }
   }
   const merged = LIBMERGE.merge(stored, incoming);
   merged.patches = merged.patches.slice(0, MAX_PATCHES);
@@ -126,7 +129,9 @@ async function serveStatic(request, response, pathname) {
 // ---- server -------------------------------------------------------------------------------------
 const server = createServer(async (request, response) => {
   try {
-    const { pathname } = new URL(request.url, 'http://localhost');
+    const url = new URL(request.url, 'http://localhost');
+    const { pathname } = url;
+    if (await accounts.handle(request, response, url)) return;
     const route = pathname.match(/^\/api\/sync\/([a-f0-9]{64})$/);
     if (pathname.startsWith('/api/')) {
       if (!route) return sendJson(response, 404, { error: 'not found' });
