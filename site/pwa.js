@@ -2,7 +2,8 @@
 // when a new version has been downloaded in the background.
 // The ?v= value (taken from this script's own URL) makes the CDN fetch a fresh sw.js after each deploy.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  const version = new URL(document.currentScript.src).searchParams.get('v') || '';
+  const script = new URL(document.currentScript.src);
+  const version = script.searchParams.get('v') || '';
   let notified = false;
   // sw.js posts 'updated' when a file refreshed in the background differs from the copy it served
   navigator.serviceWorker.addEventListener('message', event => {
@@ -17,5 +18,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     later.addEventListener('click', () => bar.remove());
     document.body.append(bar);
   });
-  window.addEventListener('load', () => navigator.serviceWorker.register(`sw.js?v=${version}`).catch(() => {}));
+  // sw.js sits next to this script, so the pages in pedal folders (ms-50g/) share the same worker
+  window.addEventListener('load', () => navigator.serviceWorker.register(new URL(`sw.js?v=${version}`, script)).catch(() => {}));
 }

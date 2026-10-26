@@ -10,11 +10,13 @@
 
 const ZPTC = (() => {
   const effects = EFFECTS_DATA.map(([name, category, , , , params], i) => {
-    const [dsp, lcd, fxId] = FIRMWARE_DATA[i];
-    return { index: i, name, category, params, lcd, id: parseInt(fxId, 16), dsp: +(dsp * DSP_SCALE).toFixed(2) };
+    // No firmware entry (MS-50G+ Handy Guitar Lab add-ons): the effect ID is unknown, so it cannot be written
+    const [dsp, lcd, fxId] = FIRMWARE_DATA[i] ?? [null, '', null];
+    return { index: i, name, category, params, lcd, id: fxId ? parseInt(fxId, 16) : null, dsp: dsp === null ? null : +(dsp * DSP_SCALE).toFixed(2) };
   });
-  const byId = new Map(effects.map(e => [e.id, e]));
-  const byName = new Map(effects.flatMap(e => [[e.name.toLowerCase(), e], [e.lcd.toLowerCase(), e]]));
+  const known = effects.filter(e => e.id !== null);
+  const byId = new Map(known.map(e => [e.id, e]));
+  const byName = new Map(known.flatMap(e => [[e.name.toLowerCase(), e], [e.lcd.toLowerCase(), e]]));
 
   const WIDTHS = [12, 12, 12, 12, 12, 8, 8, 8, 12, 12, 12, 12];
   const ENTRY = 24;
@@ -52,7 +54,7 @@ const ZPTC = (() => {
     if (offRange) {
       const [min, max] = offRange[2] ? [+offRange[1], +offRange[2]] : [1, +offRange[1]];
       return {
-        kind: 'off-number', min, max, step: 1, verified: false, fallback: 'OFF',
+        kind: 'off-number', min, max, step: 1, verified: false, fallback: /^(IN|GAIN)\d?$/.test(pname) ? Math.round(max / 2) : 'OFF', // OFF on an amp input would silence it
         encode: v => { if (String(v).toUpperCase() === 'OFF') return 0; const n = Number(v); if (!(n >= min && n <= max)) throw new Error(`${pname} ${v} is outside ${r}`); return n - min + 1; },
         decode: s => s === 0 ? 'OFF' : s + min - 1
       };

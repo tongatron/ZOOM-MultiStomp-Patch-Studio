@@ -37,8 +37,8 @@ const ADVICE = (() => {
     index, name, category, model, tags,
     role: ROLE_BY_NAME[name] || ROLE_BY_CATEGORY[category] || 'other',
     params: params.map(([pname, , range]) => ({ name: pname, range })),
-    lcd: FIRMWARE_DATA[index][1],
-    dsp: +(FIRMWARE_DATA[index][0] * DSP_SCALE).toFixed(2)
+    lcd: FIRMWARE_DATA[index]?.[1] ?? '',
+    dsp: +((FIRMWARE_DATA[index]?.[0] ?? 0) * DSP_SCALE).toFixed(2)
   }));
   const byName = new Map(effects.map(e => [e.name, e]));
   const inGroup = (role, group) => (GROUPS[group] || [group]).includes(role);

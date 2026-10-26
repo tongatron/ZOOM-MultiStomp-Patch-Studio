@@ -5,6 +5,7 @@
 //   node tools/zptc.mjs decode <file.zptc>            → readable JSON on stdout
 //   node tools/zptc.mjs encode <spec.json> <out.zptc> → generates a patch
 //   node tools/zptc.mjs roundtrip <file.zptc>...      → decode + encode, checks byte for byte
+//   ZPTC_PEDAL=ms-50g node tools/zptc.mjs …            → uses the MS-50G+ effects (site/ms-50g/), not tested yet
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +13,8 @@ import vm from 'node:vm';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({});
-const source = ['effects-data.js', 'firmware-data.js', 'zptc.js'].map(file => readFileSync(new URL(file, SITE), 'utf8')).join('\n;\n');
+const DATA = process.env.ZPTC_PEDAL ? `${process.env.ZPTC_PEDAL}/` : '';
+const source = [`${DATA}effects-data.js`, `${DATA}firmware-data.js`, 'zptc.js'].map(file => readFileSync(new URL(file, SITE), 'utf8')).join('\n;\n');
 vm.runInContext(`${source}\n;globalThis.ZPTC = ZPTC;`, ctx);
 const { ZPTC } = ctx;
 

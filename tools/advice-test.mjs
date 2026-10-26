@@ -387,4 +387,32 @@ test('into a mixer: a drive with no amp model gets a tip', () => {
   assert.ok(!withOutput(patch(['DARK OVERDRIVE', { GAIN: 60, BLEND: 50, VOL: 75 }], ['FLIPTOP', { CABINET: 80 }]), 'mixer').some(f => f.ruleId === 'output.no-cab-mixer'));
 });
 
+// ---- MS-50G+ (site/ms-50g/: own data and rules, shared engine and codec) ------------------------------
+const gctx = vm.createContext({ console });
+const gfiles = ['ms-50g/effects-data.js', 'ms-50g/firmware-data.js', 'zptc.js', 'advice-engine.js', 'ms-50g/advice-rules.js'];
+vm.runInContext(`${gfiles.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC; globalThis.EFFECTS_DATA = EFFECTS_DATA; globalThis.FIRMWARE_DATA = FIRMWARE_DATA;`, gctx);
+const G = gctx;
+
+test('MS-50G+: data and firmware tables line up, add-ons have no ID', () => {
+  assert.equal(G.EFFECTS_DATA.length, G.FIRMWARE_DATA.length);
+  assert.equal(G.FIRMWARE_DATA.filter(Boolean).length, 103);
+  assert.equal(new Set(G.FIRMWARE_DATA.filter(Boolean).map(f => f[2])).size, 103, 'effect IDs are unique');
+  G.ZPTC.effects.filter(e => e.id === null).forEach(e => assert.throws(() => G.ZPTC.encode({ name: 'X', effects: [{ effect: e.name }] }), e.name));
+});
+
+test('MS-50G+: every effect with an ID encodes with its defaults and decodes back', () => {
+  G.ZPTC.effects.filter(e => e.id !== null).forEach(e => {
+    const { file } = G.ZPTC.encode({ name: 'TEST', effects: [{ effect: e.name }] });
+    assert.ok(G.ZPTC.roundtrip(file), e.name);
+    assert.equal(G.ZPTC.decode(file).effects[0].effect, e.name);
+  });
+});
+
+test('MS-50G+: rules cite known sources and run on every effect', () => {
+  G.ADVICE.rules.forEach(rule => rule.sources.forEach(key => assert.ok(G.ADVICE.sources[key], `${rule.id}: ${key}`)));
+  G.ADVICE.effects.forEach(fx => G.ADVICE.analyze({ name: 'T', effects: [{ index: fx.index, on: true, values: {} }] }, { style: 'general' }));
+  const amps = G.ADVICE.effects.filter(fx => fx.category === 'PREAMP').slice(0, 4).map(fx => ({ index: fx.index, on: true, values: {} }));
+  assert.ok(G.ADVICE.analyze({ name: 'T', effects: amps }, {}).some(f => f.ruleId === 'dsp.overflow'), 'four amps overflow');
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

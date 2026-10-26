@@ -756,3 +756,12 @@ body.is-dropping .drop-overlay { display: grid; }
 .tone-card .sources a { display: block; font-size: 12px; }
 .tone-ideas-link { justify-content: center; gap: 8px; padding: 10px 16px; }
 .tone-ideas-link .tone-ideas-hint { color: var(--fg-muted); font-weight: 400; font-size: 12px; }
+
+/* Pedal switch (MS-60B+ bass / MS-50G+ guitar) and the notice on pages of a pedal not tested yet */
+.pedal-switch { display: inline-flex; gap: 6px; margin-left: auto; }
+.pedal-switch a { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border: 1px solid var(--border); border-radius: 2em; font-size: 12px; color: var(--fg-muted); }
+.pedal-switch a:hover { color: var(--fg); border-color: var(--fg-muted); }
+.pedal-switch a[aria-current="page"] { color: var(--fg); border-color: var(--accent-muted); background: var(--accent-subtle); }
+.untested-banner { margin: 12px 0 0; padding: 10px 14px; font-size: 13px; border: 1px solid rgba(187, 128, 9, .4); border-radius: var(--radius); background: rgba(187, 128, 9, .15); }
+.untested-banner p { margin: 0; }
+.untested-banner p + p { margin-top: 4px; color: var(--fg-muted); }

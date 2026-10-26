@@ -4,31 +4,35 @@ const FEATURES = {
   st: { label: 'Stereo', hint: 'Stereo output' },
   dry: { label: 'Mix dry/wet', hint: 'Dry signal can be blended in' }
 };
-const PDF_URL = 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf';
-const MANUAL_URL = 'https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41';
-const FW_SOURCE_URL = 'https://github.com/mungewell/zoom-zt2/blob/master/zoom_fx_ms-plus/ms-60bp/effects_sort.txt';
+const PDF_URL = PEDAL.fxListUrl;
+const MANUAL_URL = PEDAL.manualUrl;
+const FW_SOURCE_URL = PEDAL.fwSourceUrl;
+const ADVICE_KEY = `${PEDAL.id}-advice`;
 const KNOBS = 4;
 const SLOTS = 6;
 
 const slugify = text => text.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => {
-  const [dspRaw, lcd, fxId, zd2, version] = FIRMWARE_DATA[index];
+  // No firmware entry: a Handy Guitar Lab additional effect whose ID is not known, so the builder cannot use it
+  const [dspRaw, lcd, fxId, zd2, version] = FIRMWARE_DATA[index] ?? [null, '', null, null, null];
   return {
     index, name, category, model, description, tags, params, lcd, fxId, zd2, version,
-    dsp: dspRaw * DSP_SCALE,
+    extra: !fxId,
+    dsp: dspRaw === null ? null : dspRaw * DSP_SCALE,
     slug: slugify(name),
     image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
     haystack: [name, lcd, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
   };
 });
 
-const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Name on the pedal display">${text}</code>`;
+const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => !effect.lcd || effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Name on the pedal display">${text}</code>`;
 const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
 const dspText = dsp => `${dsp.toFixed(1)}%`;
-const dspMeter = (dsp, wide = false) => `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
+const EXTRA_LABEL = '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
+const dspMeter = (dsp, wide = false) => dsp === null ? EXTRA_LABEL : `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
 const state = { query: '', category: null, features: new Set(), sort: 'zoom', view: 'list', visible: [] };
-try { state.view = localStorage.getItem('ms60b-view') === 'grid' ? 'grid' : 'list'; } catch {}
+try { state.view = localStorage.getItem(`${PEDAL.id}-view`) === 'grid' ? 'grid' : 'list'; } catch {}
 
 const $ = selector => document.querySelector(selector);
 const escapeHtml = text => String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -58,7 +62,7 @@ function matches(effect, { ignoreCategory = false } = {}) {
 function renderStats() {
   const params = effects.reduce((sum, effect) => sum + effect.params.length, 0);
   const models = effects.filter(effect => effect.model && effect.model !== 'ZOOM original').length;
-  const dsps = effects.map(effect => effect.dsp);
+  const dsps = effects.filter(effect => !effect.extra).map(effect => effect.dsp);
   $('#repo-stats').innerHTML = [
     [effects.length, 'effects'], [Object.keys(CATEGORIES).length, 'categories'], [params, 'documented parameters'], [models, 'modeled on real hardware'],
     [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'DSP load per effect']
@@ -80,8 +84,8 @@ function renderFilters() {
 function sorted(list) {
   if (state.sort === 'az') return [...list].sort((a, b) => a.name.localeCompare(b.name));
   if (state.sort === 'params') return [...list].sort((a, b) => b.params.length - a.params.length || a.index - b.index);
-  if (state.sort === 'dsp-asc') return [...list].sort((a, b) => a.dsp - b.dsp || a.index - b.index);
-  if (state.sort === 'dsp-desc') return [...list].sort((a, b) => b.dsp - a.dsp || a.index - b.index);
+  if (state.sort === 'dsp-asc') return [...list].sort((a, b) => (a.dsp ?? Infinity) - (b.dsp ?? Infinity) || a.index - b.index);
+  if (state.sort === 'dsp-desc') return [...list].sort((a, b) => (b.dsp ?? -1) - (a.dsp ?? -1) || a.index - b.index);
   return list;
 }
 
@@ -125,11 +129,11 @@ function renderList() {
 function render() { renderFilters(); renderList(); }
 
 // Placement tips from the advice engine; shares the on/off setting with the Patch builder
-const adviceEnabled = () => { try { return JSON.parse(localStorage.getItem('ms60b-advice') || '{}').enabled !== false; } catch { return true; } };
+const adviceEnabled = () => { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || '{}').enabled !== false; } catch { return true; } };
 function setAdviceEnabled(enabled) {
   try {
-    const settings = JSON.parse(localStorage.getItem('ms60b-advice') || '{}');
-    localStorage.setItem('ms60b-advice', JSON.stringify({ ...settings, enabled }));
+    const settings = JSON.parse(localStorage.getItem(ADVICE_KEY) || '{}');
+    localStorage.setItem(ADVICE_KEY, JSON.stringify({ ...settings, enabled }));
   } catch {}
 }
 function placementTips(effect) {
@@ -168,17 +172,20 @@ function openEffect(effect) {
       </div>
     </div>
     ${placementTips(effect)}
-    <section class="detail-section">
+    ${effect.extra ? `<section class="detail-section">
+      <h3>Handy Guitar Lab add-on</h3>
+      <p>This effect is downloaded to the pedal with Handy Guitar Lab (★ in the Effects List). Its effect ID and DSP load are not known yet, so the Patch builder cannot add it.</p>
+    </section>` : `<section class="detail-section">
       <h3>DSP load</h3>
       <div class="dsp-card">
         ${dspMeter(effect.dsp, true)}
         <details class="dsp-note">
           <summary>How this load is estimated</summary>
         <p>Uses about <b>${dspText(effect.dsp)}</b> of the processing capacity, leaving <b>${dspText(Math.max(0, 100 - effect.dsp))}</b> for the other ${SLOTS - 1} slots of the patch${effect.dsp > 100 / SLOTS ? '' : `; up to ${Math.min(SLOTS, Math.floor(100 / effect.dsp))} copies would fit`}. Above 100% the pedal shows <code>PROCESS OVERFLOW</code> and bypasses the effects.</p>
-        <p class="dsp-source">Unofficial estimate: values read from the firmware files (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) and calibrated against the Handy Guitar Lab "Processor" meter (within ±1% on tested patches). The sum of a patch's effects matches that meter.</p>
+        <p class="dsp-source">Unofficial estimate: values read from the firmware files (<a href="${FW_SOURCE_URL}" target="_blank" rel="noreferrer">zoom-zt2</a>) and calibrated against the Handy Guitar Lab "Processor" meter (within ±1% on tested patches). The sum of a patch's effects matches that meter.${PEDAL.tested ? '' : ' The calibration comes from the MS-60B+ and has not been checked on this pedal yet.'}</p>
         </details>
       </div>
-    </section>
+    </section>`}
     <section class="detail-section">
       <h3>${icon(ICON_SLIDERS)} Parameters <span class="Counter">${effect.params.length}</span></h3>
       <table class="ptable">
@@ -192,7 +199,7 @@ function openEffect(effect) {
       <p class="page-hint">${pages > 1 ? `On the pedal the parameters span ${pages} pages of ${KNOBS} knobs.` : `All parameters fit on the ${KNOBS} knobs of the first page.`}${effect.tags.includes('sync') ? ' The ♩ symbol means the value is synced to the tempo.' : ''}</p>
     </section>
     <div class="detail-foot">
-      <a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>
+      ${effect.extra ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`}
       <a class="btn btn-sm" href="${PDF_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Effects List PDF</a>
       <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Using it on the pedal</a>
     </div>`;
@@ -260,7 +267,7 @@ function syncViewButtons() {
 }
 document.querySelectorAll('button[data-view]').forEach(button => button.addEventListener('click', () => {
   state.view = button.dataset.view;
-  try { localStorage.setItem('ms60b-view', state.view); } catch {}
+  try { localStorage.setItem(`${PEDAL.id}-view`, state.view); } catch {}
   syncViewButtons();
   renderList();
 }));

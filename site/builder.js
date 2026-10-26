@@ -1,6 +1,6 @@
 // Patch builder: composes an effect chain and downloads the .zptc file (codec in zptc.js).
 
-const STORAGE_KEY = 'ms60b-builder';
+const STORAGE_KEY = `${PEDAL.id}-builder`;
 const PARAM_BITS = [12, 12, 12, 12, 12, 8, 8, 8, 12, 12, 12, 12];
 
 const $ = selector => document.querySelector(selector);
@@ -16,8 +16,9 @@ const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.
 const catalog = EFFECTS_DATA.map(([name, category, , description, , params], index) => ({
   index, name, category, description,
   params: params.map(([pname, desc, range], p) => ({ name: pname, desc, range, bits: PARAM_BITS[p], codec: ZPTC.codec(range, pname) })),
-  dsp: ZPTC.effects[index].dsp,
+  dsp: ZPTC.effects[index].dsp ?? 0,
   lcd: ZPTC.effects[index].lcd,
+  usable: ZPTC.effects[index].id !== null, // false for add-ons whose effect ID is unknown
   slug: name.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
   image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`
 }));
@@ -29,9 +30,9 @@ const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index]
 
 // ---- state ------------------------------------------------------------------------------------
 // Current draft (STORAGE_KEY) and saved patch library (LIBRARY_KEY), both in the browser's localStorage.
-const LIBRARY_KEY = 'ms60b-library';
-const DELETED_KEY = 'ms60b-deleted'; // { patchId: ISO time } deletions waiting to reach other devices
-const SYNC_KEY = 'ms60b-sync'; // { code, id, lastSync } when this device syncs
+const LIBRARY_KEY = `${PEDAL.id}-library`;
+const DELETED_KEY = `${PEDAL.id}-deleted`; // { patchId: ISO time } deletions waiting to reach other devices
+const SYNC_KEY = `${PEDAL.id}-sync`; // { code, id, lastSync } when this device syncs
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
@@ -284,7 +285,7 @@ function renderLibrary() {
       <button class="library-open" data-lib="open" title="Open in the builder">
         <span class="library-name">${escapeHtml(entry.name)}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
-        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? 'bass amp' : 'mixer'}` : ''} · ${formatDate(entry.updatedAt)}</span>
+        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? PEDAL.amp.toLowerCase() : 'mixer'}` : ''} · ${formatDate(entry.updatedAt)}</span>
       </button>
       <div class="library-tools">
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Download .zptc" aria-label="Download ${escapeHtml(entry.name)} as .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
@@ -624,8 +625,8 @@ $('#library-list').addEventListener('click', event => {
 $('#export-library').addEventListener('click', () => {
   const list = readLibrary();
   if (!list.length) return;
-  const backup = { format: 'ms60b-patch-library', version: 1, exportedAt: new Date().toISOString(), patches: list };
-  downloadBytes(JSON.stringify(backup, null, 2), `ms60b-patch-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+  const backup = { format: `${PEDAL.id}-patch-library`, version: 1, exportedAt: new Date().toISOString(), patches: list };
+  downloadBytes(JSON.stringify(backup, null, 2), `${PEDAL.id}-patch-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
 });
 
 // ---- import -----------------------------------------------------------------------------------
@@ -651,8 +652,10 @@ function patchesFromBackup(text) {
   const data = JSON.parse(text);
   const patches = Array.isArray(data) ? data : data?.patches;
   if (!Array.isArray(patches)) throw new Error('not a patch backup');
+  // Effect indexes differ between pedals: a backup of another pedal would load the wrong effects
+  if (data?.format && data.format !== `${PEDAL.id}-patch-library`) throw new Error('a backup made for another pedal');
   return patches.filter(p => p && typeof p.name === 'string' && Array.isArray(p.effects))
-    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), output: validOutput(p.output), effects: p.effects.filter(e => catalog[e?.index]).slice(0, ZPTC.MAX_EFFECTS) }));
+    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), output: validOutput(p.output), effects: p.effects.filter(e => catalog[e?.index]?.usable).slice(0, ZPTC.MAX_EFFECTS) }));
 }
 
 async function importFiles(files) {
@@ -721,7 +724,7 @@ function renderPicker() {
   const total = totalDsp();
   $('#picker-cats').innerHTML = [[null, 'All'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
     .map(([key, label]) => `<button class="chip-filter" data-cat="${key ?? ''}" aria-pressed="${pickerState.category === key}">${key ? `<span class="dot" style="--c:${CATEGORIES[key].color}"></span>` : ''}${label}</button>`).join('');
-  const items = catalog.filter(fx => (!pickerState.category || fx.category === pickerState.category)
+  const items = catalog.filter(fx => fx.usable && (!pickerState.category || fx.category === pickerState.category)
     && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category}`.toLowerCase().includes(pickerState.query)));
   $('#picker-list').innerHTML = items.length ? items.map(fx => {
     const over = total + fx.dsp > 100;
@@ -758,7 +761,7 @@ picker.addEventListener('click', event => {
 $('#picker-query').addEventListener('input', event => { pickerState.query = event.target.value.trim().toLowerCase(); renderPicker(); });
 
 // ---- advice -----------------------------------------------------------------------------------
-// Settings are shared with the catalog page (ms60b-advice in localStorage).
+// Settings are shared with the catalog page (<pedal id>-advice in localStorage).
 const SEVERITY_LABEL = { error: 'Errors', warning: 'Warnings', tip: 'Tips' };
 const SEVERITY_ICON = {
   error: '<path fill="currentColor" d="M2.343 13.657A8 8 0 1 1 13.658 2.343 8 8 0 0 1 2.343 13.657ZM6.03 4.97a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042L6.94 8 4.97 9.97a.749.749 0 0 0 .326 1.275.749.749 0 0 0 .734-.215L8 9.06l1.97 1.97a.749.749 0 0 0 1.275-.326.749.749 0 0 0-.215-.734L9.06 8l1.97-1.97a.749.749 0 0 0-.326-1.275.749.749 0 0 0-.734.215L8 6.94Z"/>',
@@ -767,9 +770,9 @@ const SEVERITY_ICON = {
 };
 const adviceSettings = (() => {
   const defaults = { enabled: true, style: 'general', output: null, ignored: [], preferences: [], show: { error: true, warning: true, tip: true } };
-  try { return { ...defaults, ...JSON.parse(localStorage.getItem('ms60b-advice') || '{}') }; } catch { return defaults; }
+  try { return { ...defaults, ...JSON.parse(localStorage.getItem(`${PEDAL.id}-advice`) || '{}') }; } catch { return defaults; }
 })();
-const saveAdvice = () => { try { localStorage.setItem('ms60b-advice', JSON.stringify(adviceSettings)); } catch {} };
+const saveAdvice = () => { try { localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify(adviceSettings)); } catch {} };
 let findings = [];
 
 // Style ideas: how close the chain is to the selected style (and what is missing), plus the closest other styles.
@@ -823,7 +826,7 @@ function renderAdvice() {
 
   $('#advice-prefs-count').textContent = adviceSettings.preferences.length;
   $('#advice-prefs-list').innerHTML = ADVICE.preferences.map(pref => `<label class="pref-row" title="${escapeHtml(pref.hint)}"><input type="checkbox" data-advice="pref" data-id="${pref.id}"${adviceSettings.preferences.includes(pref.id) ? ' checked' : ''} /> <span>${escapeHtml(pref.label)}</span></label>`).join('');
-  $('#advice-output').innerHTML = `<span class="advice-output-label">Plugging into</span>${[['amp', 'Bass amp'], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
+  $('#advice-output').innerHTML = `<span class="advice-output-label">Plugging into</span>${[['amp', PEDAL.amp], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
     `<button class="chip-filter" data-advice="output" data-id="${id}" aria-pressed="${adviceSettings.output === id}">${label}</button>`).join('')}`;
   renderPacks();
   renderIdeas();
@@ -979,7 +982,7 @@ const validCode = code => code.length === 20 && [...code].every(c => CODE_ALPHAB
 const formatCode = code => code.match(/.{5}/g).join('-');
 const newSyncCode = () => Array.from(crypto.getRandomValues(new Uint8Array(20)), b => CODE_ALPHABET[b % 32]).join('');
 async function codeToId(code) {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`ms60b-sync:${code}`));
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${PEDAL.id}-sync:${code}`));
   return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
 }
 const syncConfig = () => { const c = readJson(SYNC_KEY, null); return c && validCode(c.code || '') && /^[a-f0-9]{64}$/.test(c.id || '') ? c : null; };
@@ -1067,7 +1070,7 @@ window.addEventListener('online', syncNow);
 
 // ---- rule packs -----------------------------------------------------------------------------------
 // Extra advice rules imported from .json files (see rule-packs.js). Data only; every pack is validated again when loaded.
-const PACKS_KEY = 'ms60b-rulepacks';
+const PACKS_KEY = `${PEDAL.id}-rulepacks`;
 let rulePacks = (() => {
   const stored = readJson(PACKS_KEY, []);
   return (Array.isArray(stored) ? stored : []).flatMap(e => { const checked = RULEPACK.validate(e?.pack, ADVICE); return checked.pack ? [{ pack: checked.pack, enabled: e.enabled !== false }] : []; });
@@ -1141,6 +1144,7 @@ render();
 if (sharedLink) {
   try {
     const shared = PATCHLINK.decode(sharedLink.code, ZPTC.MAX_EFFECTS);
+    shared.effects = shared.effects.filter(e => catalog[e.index].usable);
     if (!shared.effects.length) throw new Error('empty');
     if (confirmDiscard()) {
       if (ADVICE.styles.some(st => st.id === sharedLink.style)) { adviceSettings.style = sharedLink.style; saveAdvice(); }
@@ -1151,7 +1155,7 @@ if (sharedLink) {
     notify('danger', 'This share link is broken or incomplete.');
   }
 }
-const addFx = addSlug && catalog.find(item => item.slug === addSlug);
+const addFx = addSlug && catalog.find(item => item.slug === addSlug && item.usable);
 if (addFx) {
   if (state.effects.length) askWhereToAdd(addFx);
   else appendEffect(addFx);
