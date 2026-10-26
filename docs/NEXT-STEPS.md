@@ -47,7 +47,7 @@ Close each one with a generated patch checked on the pedal, then add the range t
 - **Output choice** is done: "Plugging into" (bass amp or mixer/PA/headphones) switches the CABINET advice to exact warnings with a one-click fix. It is remembered with each saved patch in My patches (and in Backup files) but not stored in the `.zptc` file, which has no field for it. Possible next step: more output-dependent rules (levels, EQ) once a source is found.
 - **Style ideas** are done (fit per style from the starter roles, "+ effect" buttons, closest other styles). Possible next step: more starters (e.g. a second chain per style) and per-style parameter hints.
 - **Test the starter chains on the pedal** (6 styles with a starter) and adjust their values by ear.
-- **More rules**, each with a source: stereo output, patch level / unity gain, tuner and mute usage. (Footswitch effects and tempo-synced delays are done.)
+- **More rules**, each with a source: stereo output, patch level, tuner and mute usage (no source found yet for the MS-60B+; level stacking is done). (Footswitch effects and tempo-synced delays are done.)
 - **Rule packs (v3)**: import and export rule sets as `.json` to share them.
 - **Source health**: `node tools/check-sources.mjs` checks every source. On 2026-10-25: 26 links, none broken; 3 TalkBass threads cannot be verified from automation (Cloudflare blocks scripts and the test browser), the rest answer; redirected URLs were updated.
 

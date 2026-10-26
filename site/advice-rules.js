@@ -31,6 +31,8 @@
     premierReggae: { title: 'Premier Guitar — On bass: covering your basses, part 2', url: 'https://www.premierguitar.com/on-bass-covering-your-basses-pt-2' },
     fenderRumble: { title: 'Fender Rumble Studio presets ("Dub & Reggae Deep")', url: 'https://www.guitarchalk.com/fender-rumble-studio-settings/' },
     talkbassJazz: { title: 'TalkBass — Tone on a Jazz Bass', url: 'https://www.talkbass.com/threads/tone-on-jazz-bass.135480/' },
+    tech21: { title: 'Tech 21 — Tech Notes: level matching engaged vs. bypassed', url: 'https://www.tech21nyc.com/?p=4989' },
+    talkbassLevels: { title: 'TalkBass — Trying to even out volume between effects?', url: 'https://www.talkbass.com/threads/trying-to-even-out-volume-between-effects.551648/' },
     zoomManual: { title: 'ZOOM MS-60B+ Operation Manual', url: 'https://zoomcorp.com/manuals/ms-60bplus-en/' },
     zoomFxList: { title: 'ZOOM MS-60B+ Effects List', url: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf' }
   });
@@ -75,6 +77,15 @@
         slots: [s.i], message: `${s.label} has VOL at 0.`,
         fix: { label: 'Set VOL to 80', apply: p => setValue(p, s.i, 'VOL', 80) }
       }))
+    },
+    {
+      id: 'level.stacked-boosts', severity: 'tip', topic: 'levels', title: 'Several loud gain stages in a row',
+      why: 'Each drive or preamp has its own level control. Stacking several set high can make the patch much louder than the others, or clip the next stage. Match the level with the effect on and off, starting from unity.',
+      sources: ['tech21', 'talkbassLevels'],
+      check: ctx => {
+        const loud = ctx.active.filter(s => ['drive', 'preamp'].includes(s.role) && (s.num('VOL') ?? s.num('LEVEL')) >= 90);
+        return loud.length >= 2 ? [{ slots: loud.map(s => s.i), message: `${names(loud)} all have a high level. Lower one so the patch stays at a similar volume to the others.` }] : [];
+      }
     },
     {
       id: 'chain.all-off', severity: 'warning', topic: 'chain', title: 'Every effect is off',

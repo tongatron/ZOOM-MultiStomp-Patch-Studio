@@ -158,6 +158,15 @@ test('tempo-synced delay gets a tip, free-time delay does not', () => {
   assert.ok(!find(patch(['DELAY', { MODE: 'SHORT' }]), 'usage.tempo-sync'));
 });
 
+test('several loud gain stages get a level tip, a single one does not', () => {
+  const drives = Object.keys(Object.fromEntries([...ADVICE.byName]))
+    .filter(n => ADVICE.byName.get(n).role === 'drive' && ADVICE.byName.get(n).params.some(p => p.name === 'VOL')).slice(0, 2);
+  assert.equal(drives.length, 2);
+  assert.ok(find(patch(...drives.map(n => [n, { VOL: 100 }])), 'level.stacked-boosts'));
+  assert.ok(!find(patch([drives[0], { VOL: 100 }]), 'level.stacked-boosts'));
+  assert.ok(!find(patch(...drives.map(n => [n, { VOL: 50 }])), 'level.stacked-boosts'));
+});
+
 test('a pinned preference silences its rules', () => {
   const p = patch(['HALL REVERB', { MIX: 20 }], ['ANALOG DELAY', { MIX: 20 }]);
   assert.ok(ids(p).includes('order.reverb-before-delay'));
