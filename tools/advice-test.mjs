@@ -247,6 +247,29 @@ test('imported rules take the same severity filter as built-in ones and can be i
   ADVICE.setUserRules([], {});
 });
 
+test('new sourced rules: delay, reverb tail, deep lows, compression ratio, gate threshold', () => {
+  const fires = (fx, values, id, yes = true) => assert.equal(ids(patch([fx, values])).includes(id), yes, `${fx} ${JSON.stringify(values)} → ${id}`);
+  fires('DELAY', { REPEAT: 80, MIX: 20 }, 'delay.repeat-high');
+  fires('DELAY', { REPEAT: 30, MIX: 20 }, 'delay.repeat-high', false);
+  fires('HOLD DELAY', { REPEAT: 90, MIX: 20 }, 'delay.repeat-high', false);
+  fires('ANALOG DELAY', { REPEAT: 20, MIX: 60 }, 'delay.mix-high');
+  fires('ANALOG DELAY', { REPEAT: 20, MIX: 30 }, 'delay.mix-high', false);
+  fires('HALL REVERB', { DECAY: 25, MIX: 30 }, 'reverb.long-tail');
+  fires('HALL REVERB', { DECAY: 25, MIX: 10 }, 'reverb.long-tail', false);
+  fires('HALL REVERB', { DECAY: 25, MIX: 60 }, 'reverb.long-tail', false); // reverb.mix-high covers it
+  fires('BASS GRAPHIC EQ', { '50Hz': 6 }, 'eq.sub-boost');
+  fires('BASS GRAPHIC EQ', { '50Hz': 3 }, 'eq.sub-boost', false);
+  fires('BASS GRAPHIC EQ', { '50Hz': 12 }, 'eq.sub-boost', false); // eq.extreme-boost covers it
+  fires('160 COMPRESSOR', { RATIO: 10 }, 'comp.ratio-high');
+  fires('160 COMPRESSOR', { RATIO: 4 }, 'comp.ratio-high', false);
+  fires('1176 LIMITER', { RATIO: '20:1' }, 'comp.ratio-high');
+  fires('1176 LIMITER', { RATIO: '4:1' }, 'comp.ratio-high', false);
+  fires('ZOOM NOISE REDUCTION', { THRSHLD: 85 }, 'gate.threshold-high');
+  fires('ZOOM NOISE REDUCTION', { THRSHLD: 30 }, 'gate.threshold-high', false);
+  const fix = find(patch(['DELAY', { REPEAT: 90, MIX: 20 }]), 'delay.repeat-high').fix;
+  assert.equal(fix.apply(patch(['DELAY', { REPEAT: 90, MIX: 20 }])).effects[0].values.REPEAT, 30);
+});
+
 test('a pinned preference silences its rules', () => {
   const p = patch(['HALL REVERB', { MIX: 20 }], ['ANALOG DELAY', { MIX: 20 }]);
   assert.ok(ids(p).includes('order.reverb-before-delay'));

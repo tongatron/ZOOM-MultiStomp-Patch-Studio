@@ -33,6 +33,10 @@
     talkbassJazz: { title: 'TalkBass — Tone on a Jazz Bass', url: 'https://www.talkbass.com/threads/tone-on-jazz-bass.135480/' },
     tech21: { title: 'Tech 21 — Tech Notes: level matching engaged vs. bypassed', url: 'https://www.tech21nyc.com/?p=4989' },
     talkbassLevels: { title: 'TalkBass — Trying to even out volume between effects?', url: 'https://www.talkbass.com/threads/trying-to-even-out-volume-between-effects.551648/' },
+    tapeop: { title: 'Tape Op — Noise gates', url: 'https://tapeop.com/interviews/33/noise-gates' },
+    musicGuyEq: { title: 'Music Guy Mixing — 7 bass guitar EQ tips', url: 'https://www.musicguymixing.com/bass-guitar-eq-tips/' },
+    musicGuyReverb: { title: 'Music Guy Mixing — How to use reverb on bass guitar', url: 'https://www.musicguymixing.com/reverb-on-bass-guitar/' },
+    neuralDelay: { title: 'Neural DSP — How to use a delay pedal', url: 'https://neuraldsp.com/articles/how-to-use-a-delay-pedal' },
     zoomManual: { title: 'ZOOM MS-60B+ Operation Manual', url: 'https://zoomcorp.com/manuals/ms-60bplus-en/' },
     zoomFxList: { title: 'ZOOM MS-60B+ Effects List', url: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf' }
   });
@@ -253,6 +257,33 @@
       }))
     },
     {
+      id: 'reverb.long-tail', severity: 'tip', topic: 'low end', title: 'Long reverb tail on bass',
+      why: 'A long reverb tail on bass can wash over the next notes. If you want the long tail, keep the reverb blend low.',
+      sources: ['musicGuyReverb'],
+      check: ctx => ctx.of('reverb').filter(s => (s.num('DECAY') ?? 0) >= 20 && (s.num('MIX') ?? 0) >= 25 && (s.num('MIX') ?? 0) <= 40).map(s => ({
+        slots: [s.i], message: `${s.label} has DECAY ${s.num('DECAY')} with MIX ${s.num('MIX')}: lower the MIX to keep the long tail in the background.`,
+        fix: { label: 'Set MIX to 15', apply: p => setValue(p, s.i, 'MIX', 15) }
+      }))
+    },
+    {
+      id: 'delay.repeat-high', severity: 'tip', topic: 'low end', title: 'Many delay repeats',
+      why: 'REPEAT (feedback) sets how many times the echo comes back; high settings give long or endless trails. On bass every repeat is another low note, so the tone gets washy and gets lost in a band mix.',
+      sources: ['neuralDelay'],
+      check: ctx => ctx.of('delay').filter(s => s.has('REPEAT') && !['HOLD DELAY'].includes(s.fx.name) && (s.num('REPEAT') ?? 0) >= 70).map(s => ({
+        slots: [s.i], message: `${s.label} has REPEAT at ${s.num('REPEAT')}.`,
+        fix: { label: 'Set REPEAT to 30', apply: p => setValue(p, s.i, 'REPEAT', 30) }
+      }))
+    },
+    {
+      id: 'delay.mix-high', severity: 'tip', topic: 'low end', title: 'Delay louder than the dry bass',
+      why: 'MIX balances the dry signal against the echoes. Turned up, the delay takes over and the dry bass becomes weaker; turned down, more of the original note comes through.',
+      sources: ['neuralDelay'],
+      check: ctx => ctx.of('delay').filter(s => s.has('MIX') && (s.num('MIX') ?? 0) >= 50).map(s => ({
+        slots: [s.i], message: `${s.label} has MIX at ${s.num('MIX')}.`,
+        fix: { label: 'Set MIX to 30', apply: p => setValue(p, s.i, 'MIX', 30) }
+      }))
+    },
+    {
       id: 'mod.locut', severity: 'tip', topic: 'low end', title: 'Keep the lows out of the modulation',
       why: 'Modulating the lowest frequencies makes the low end wobble. Bass chorus pedals filter the lows out of the effect; LOCUT does the same here.',
       sources: ['mxrM83'],
@@ -262,6 +293,29 @@
     },
 
     // ---- effect-specific usage ----
+    {
+      id: 'eq.sub-boost', severity: 'tip', topic: 'eq', title: 'Strong boost of the deep lows',
+      why: 'The open E of a 4-string bass is about 41 Hz, so there is little to gain far below it, while deep lows use up headroom. Mixing engineers often filter below about 40 Hz instead of boosting there.',
+      sources: ['musicGuyEq'],
+      check: ctx => ctx.active.filter(s => s.has('50Hz') && (s.num('50Hz') ?? 0) >= 6 && (s.num('50Hz') ?? 0) < 9).map(s => ({
+        slots: [s.i], message: `${s.label}: 50Hz is +${s.num('50Hz')} dB. Boost less if the low end booms or the next effect clips.`
+      }))
+    },
+    {
+      id: 'comp.ratio-high', severity: 'tip', topic: 'dynamics', title: 'Very high compression ratio',
+      why: 'Most bass players choose a ratio between 2:1 and 4:1: enough to control the peaks without losing all of the dynamics. Higher ratios work more like a limiter.',
+      sources: ['yamahaComp'],
+      check: ctx => ctx.active.filter(s => (s.fx.name === '160 COMPRESSOR' && (s.num('RATIO') ?? 0) >= 8) || (s.fx.name === '1176 LIMITER' && ['12:1', '20:1'].includes(String(s.v('RATIO')))))
+        .map(s => ({ slots: [s.i], message: `${s.label} has RATIO ${s.v('RATIO')}${s.fx.name === '160 COMPRESSOR' ? ':1' : ''}. Try 4:1 or lower for a natural bass.` }))
+    },
+    {
+      id: 'gate.threshold-high', severity: 'tip', topic: 'noise', title: 'Noise reduction may cut long notes',
+      why: 'A gate set too hard can cut off wanted parts of a note, such as the end of a sustained bass note. A longer release (DECAY) keeps sustained notes from being chopped.',
+      sources: ['tapeop'],
+      check: ctx => ctx.active.filter(s => s.fx.name === 'ZOOM NOISE REDUCTION' && (s.num('THRSHLD') ?? 0) >= 70).map(s => ({
+        slots: [s.i], message: `${s.label} has THRSHLD at ${s.num('THRSHLD')}: if long notes stop early, lower THRSHLD or raise DECAY.`
+      }))
+    },
     {
       id: 'amp.cabinet', severity: 'tip', topic: 'output', title: 'Set CABINET for where you plug in',
       why: 'Cabinet simulation is meant for PA systems and headphones. Into a real bass cabinet it stacks a second speaker colour and often sounds dark and lifeless.',
