@@ -1,5 +1,5 @@
 [Unit]
-Description=Zoom MS-60B+ Patch Studio (static site + patch sync API)
+Description=ZOOM MultiStomp Patch Studio (static site + patch sync API)
 After=network.target
 
 [Service]

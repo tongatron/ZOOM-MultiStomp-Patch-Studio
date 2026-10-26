@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "ms60b-patch-studio",
+  "name": "zoom-multistomp-patch-studio",
   "description": "Dev tooling only: the site itself has no build step and no dependencies.",
   "scripts": {
     "test": "node tools/zptc.mjs roundtrip patches/0* && node tools/advice-test.mjs && node tools/sync-test.mjs",

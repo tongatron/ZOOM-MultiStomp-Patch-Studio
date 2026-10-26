@@ -766,7 +766,13 @@ body.is-dropping .drop-overlay { display: grid; }
 .pedal-switch a[aria-current="page"]::before { opacity: 1; background: #11160a; }
 .pedal-switch .Label { height: 22px; padding: 0 8px; font-size: 11px; font-weight: 600; color: #ff7b72; background: rgba(248, 81, 73, .12); border-color: rgba(248, 81, 73, .45); }
 .pedal-switch a[aria-current="page"] .Label { color: #fff; background: #c93c37; border-color: #c93c37; }
-@media (max-width: 543px) { .pedal-switch { margin-left: 0; } .pedal-switch a { height: 34px; padding: 0 12px; font-size: 13px; } }
+.pedal-switch a { white-space: nowrap; }
+@media (max-width: 543px) {
+  .pedal-switch { margin-left: 0; }
+  .pedal-switch a { height: 34px; padding: 0 10px; gap: 6px; font-size: 12px; }
+  .pedal-switch .Label { height: 20px; padding: 0 6px; font-size: 10px; }
+  .gh-header .gh-brand-name { font-size: 12px; letter-spacing: .02em; } /* after stage.css */
+}
 .untested-banner { margin: 18px 0 20px; padding: 14px 18px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(248, 81, 73, .4); border-radius: var(--radius); background: rgba(248, 81, 73, .1); }
 .untested-banner p { margin: 0; }
 .untested-banner p + p { margin-top: 6px; color: var(--fg-muted); }
