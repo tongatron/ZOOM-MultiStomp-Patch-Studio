@@ -1,0 +1,8 @@
+/* Variant "Dimmed": GitHub dark dimmed. Softer greys, lower contrast, same structure. */
+:root {
+  --bg: #22272e; --bg-inset: #1c2128; --bg-subtle: #2d333b; --bg-muted: #373e47; --bg-hover: #2d333b;
+  --border: #444c56; --border-muted: #373e47; --fg: #adbac7; --fg-muted: #768390; --fg-subtle: #636e7b;
+  --accent: #539bf5; --accent-fg: #539bf5; --accent-subtle: rgba(65, 132, 228, .15); --accent-muted: rgba(65, 132, 228, .4);
+  --btn-bg: #373e47; --btn-hover: #444c56; --btn-border: rgba(205, 217, 229, .1);
+  --primary: #347d39; --primary-hover: #46954a; --tab-bar: #ec775c;
+}

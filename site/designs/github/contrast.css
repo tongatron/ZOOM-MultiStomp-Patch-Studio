@@ -1,0 +1,10 @@
+/* Variant "High contrast": GitHub dark high contrast. Near-black, bright text, visible borders, compact square corners. */
+:root {
+  --bg: #0a0c10; --bg-inset: #010409; --bg-subtle: #151b23; --bg-muted: #272b33; --bg-hover: #1b2028;
+  --border: #7a828e; --border-muted: #525964; --fg: #f0f3f6; --fg-muted: #bdc4cc; --fg-subtle: #9ea7b3;
+  --accent: #409eff; --accent-fg: #71b7ff; --accent-subtle: rgba(64, 158, 255, .15); --accent-muted: rgba(64, 158, 255, .5);
+  --btn-bg: #272b33; --btn-hover: #2f3742; --btn-border: #7a828e;
+  --primary: #09b43a; --primary-hover: #26cd4d; --primary-fg: #0a0c10; --tab-bar: #ff967d; --radius: 4px;
+}
+.Box-header { border-bottom-color: var(--border); }
+.UnderlineNav-item[aria-current="page"]::after { height: 3px; }

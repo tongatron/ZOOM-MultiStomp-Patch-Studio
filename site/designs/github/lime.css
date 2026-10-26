@@ -1,0 +1,8 @@
+/* Variant "Lime": GitHub dark structure with the brand lime as a flat accent (no glow). Neutral greys, 8px corners. */
+:root {
+  --bg: #0d1117; --bg-inset: #010409; --bg-subtle: #161b22; --bg-muted: #21262d; --bg-hover: #1c2128;
+  --accent: #b5e04a; --accent-fg: #c6ec6a; --accent-subtle: rgba(181, 224, 74, .1); --accent-muted: rgba(181, 224, 74, .4);
+  --primary: #b5e04a; --primary-hover: #c6ec6a; --primary-fg: #0d1117; --tab-bar: #b5e04a; --radius: 8px;
+}
+.filter-item .check svg, .switch input:checked + span::after { color: #0d1117; }
+.Counter { border-radius: 6px; }
