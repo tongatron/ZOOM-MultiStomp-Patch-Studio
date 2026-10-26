@@ -699,3 +699,6 @@ body.is-dropping .drop-overlay { display: grid; }
 .sync-status { font-size: 13px; color: var(--fg-muted); }
 .sync-error:empty { display: none; }
 .sync-error { color: #f85149; }
+
+.cmp-copy { margin-left: 6px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--fg-muted); font: inherit; line-height: 1.4; cursor: pointer; }
+.cmp-copy:hover, .cmp-copy:focus-visible { color: var(--fg); border-color: var(--accent); }

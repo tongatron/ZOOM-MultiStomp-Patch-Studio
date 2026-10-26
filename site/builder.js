@@ -452,13 +452,13 @@ $('#clear-chain').addEventListener('click', () => {
     fx.params.forEach(p => { const x = row.a.values?.[p.name], y = row.b.values?.[p.name]; if (fmt(x) !== fmt(y)) list.push({ name: p.name, a: fmt(x), b: fmt(y) }); });
     return list;
   }
-  const cell = (slot, changes, side) => {
+  const cell = (slot, changes, side, n) => {
     if (!slot) return '<div class="cmp-cell cmp-empty">—</div>';
     const fx = catalog[slot.index];
     return `<div class="cmp-cell" style="--c:${color(fx)}">
       <img class="fx-thumb" src="${fx.image}" alt="" width="32" height="40" />
       <div class="cmp-main"><strong>${escapeHtml(fx.name)}</strong>${slot.on === false ? ' <span class="Label">OFF</span>' : ''}
-        ${changes ? changes.map(c => `<div class="cmp-chg"><span>${escapeHtml(c.name)}</span> <b>${escapeHtml(c[side])}</b></div>`).join('') : ''}</div>
+        ${changes ? changes.map(c => `<div class="cmp-chg"><span>${escapeHtml(c.name)}</span> <b>${escapeHtml(c[side])}</b><button class="cmp-copy" data-cmp-copy="${side}" data-row="${n}" data-param="${escapeHtml(c.name)}" title="Copy this value to the ${side === 'a' ? 'right' : 'left'} patch" aria-label="Copy ${escapeHtml(c.name)} to patch ${side === 'a' ? 'B' : 'A'}">${side === 'a' ? '→' : '←'}</button></div>`).join('') : ''}</div>
     </div>`;
   };
   const dspOf = effects => effects.reduce((sum, e) => sum + catalog[e.index].dsp, 0);
@@ -466,10 +466,10 @@ $('#clear-chain').addEventListener('click', () => {
     const list = sources();
     const a = list.find(s => s.key === $('#compare-a').value), b = list.find(s => s.key === $('#compare-b').value);
     if (!a || !b) { $('#compare-body').innerHTML = '<p class="muted">Pick two patches.</p>'; return; }
-    const rows = align(a.effects, b.effects).map(row => {
+    const rows = align(a.effects, b.effects).map((row, n) => {
       if (!row.a || !row.b) return `<div class="cmp-row cmp-only-${row.a ? 'a' : 'b'}">${cell(row.a, null, 'a')}${cell(row.b, null, 'b')}</div>`;
       const changes = diffs(row);
-      return `<div class="cmp-row ${changes.length ? 'cmp-diff' : 'cmp-same'}">${cell(row.a, changes.length ? changes : null, 'a')}${cell(row.b, changes.length ? changes : null, 'b')}</div>`;
+      return `<div class="cmp-row ${changes.length ? 'cmp-diff' : 'cmp-same'}">${cell(row.a, changes.length ? changes : null, 'a', n)}${cell(row.b, changes.length ? changes : null, 'b', n)}</div>`;
     });
     const same = rows.every(r => r.includes('cmp-same'));
     $('#compare-body').innerHTML = `
@@ -487,7 +487,34 @@ $('#clear-chain').addEventListener('click', () => {
   }
   $('#compare-open').addEventListener('click', openCompare);
   $('#compare-close').addEventListener('click', () => dialog.close());
+  // Copy one changed value (or the ON/OFF state) from one side of a row to the other, in the editor or in a saved patch
+  function copyValue(from, rowIndex, param) {
+    const list = sources();
+    const sides = { a: list.find(s => s.key === $('#compare-a').value), b: list.find(s => s.key === $('#compare-b').value) };
+    const to = from === 'a' ? 'b' : 'a';
+    const row = align(sides.a.effects, sides.b.effects)[rowIndex];
+    if (!row?.a || !row?.b) return;
+    const source = row[from];
+    const position = sides[to].effects.indexOf(row[to]);
+    const apply = slot => {
+      if (param === 'State') slot.on = source.on !== false;
+      else if (source.values?.[param] !== undefined) slot.values = { ...slot.values, [param]: source.values[param] };
+    };
+    if (sides[to].key === '__editor') { apply(state.effects[position]); render(); }
+    else {
+      const saved = readLibrary();
+      const entry = saved.find(e => e.id === sides[to].key);
+      if (!entry) return;
+      apply(entry.effects.filter(e => catalog[e.index])[position]);
+      entry.updatedAt = new Date().toISOString();
+      if (!writeLibrary(saved)) return;
+      renderLibrary();
+    }
+    renderCompare();
+  }
   $('#compare-body').addEventListener('click', event => {
+    const copy = event.target.closest('[data-cmp-copy]');
+    if (copy) { copyValue(copy.dataset.cmpCopy, Number(copy.dataset.row), copy.dataset.param); return; }
     const button = event.target.closest('[data-cmp-open]');
     if (!button) return;
     const entry = findEntry(button.dataset.cmpOpen);
