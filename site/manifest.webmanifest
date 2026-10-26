@@ -1,6 +1,6 @@
 {
-  "name": "MS-60B+ Patch Studio",
-  "short_name": "MS-60B+ Studio",
+  "name": "Zoom MS-60B+ Patch Studio",
+  "short_name": "Zoom MS-60B+ Studio",
   "description": "Effects library and smart patch builder for the ZOOM MS-60B+: advice on order, levels and DSP load, .zptc export.",
   "start_url": "./",
   "scope": "./",

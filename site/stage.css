@@ -75,3 +75,8 @@ dialog.Overlay { border-radius: 20px; }
 
 /* Redo icon is the undo arrow mirrored */
 .flip { transform: scaleX(-1); }
+
+/* Effects / Patch builder tabs stay under the header while the page scrolls (height of the header from pwa.js) */
+.tabs-bar { position: sticky; top: var(--header-h, 57px); z-index: 15; pointer-events: none; }
+.tabs-bar .UnderlineNav { pointer-events: auto; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+@media (min-width: 1012px) { .sidebar { top: calc(var(--header-h, 57px) + 56px); max-height: calc(100vh - var(--header-h, 57px) - 72px); } }

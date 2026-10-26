@@ -1,3 +1,10 @@
+// Keeps --header-h equal to the sticky header's height, so the sticky tabs bar sits right under it
+{
+  const header = document.querySelector('.gh-header');
+  const setHeaderHeight = () => document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+  if (header) { setHeaderHeight(); new ResizeObserver(setHeaderHeight).observe(header); }
+}
+
 // Registers the service worker so the site can be installed and used offline, and tells the visitor
 // when a new version has been downloaded in the background.
 // The ?v= value (taken from this script's own URL) makes the CDN fetch a fresh sw.js after each deploy.

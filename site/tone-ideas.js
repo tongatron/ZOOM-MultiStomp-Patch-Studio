@@ -1,5 +1,5 @@
 // Tone ideas by bassist, shown on tones.html. Every fact cites a source registered in advice-rules.js (ADVICE.sources).
-// A bassist without its own `chain` uses the starter chain of its style. Chains are starting points built from MS-60B+
+// A bassist without its own `chain` uses the starter chain of its style. Chains are starting points built from Zoom MS-60B+
 // models that come closest to the documented gear; manufacturer names only describe sonic character.
 // Requires ADVICE (advice-engine.js + advice-rules.js).
 
@@ -20,7 +20,7 @@ const TONE_IDEAS = [
       { text: 'He often used the bass as a lead instrument, playing melodies on the high strings with a heavy chorus effect.', source: 'hookWiki' },
       { text: 'His distinctive tone comes from a chorus pedal, an Electro-Harmonix Clone Theory.', source: 'hookWiki' }
     ],
-    approach: 'CLONE CHORUS models the Electro-Harmonix Small Clone, the closest chorus on the MS-60B+. Play the melodies high on the neck.'
+    approach: 'CLONE CHORUS models the Electro-Harmonix Small Clone, the closest chorus on the Zoom MS-60B+. Play the melodies high on the neck.'
   },
   {
     id: 'deal', name: 'Kim Deal', band: 'Pixies', style: 'indie',
@@ -47,7 +47,7 @@ const TONE_IDEAS = [
       { text: 'The Electro-Harmonix POG2 octave pedal is the center of Royal Blood’s signature sound.', source: 'kerrMixdown' },
       { text: 'A Big Muff Pi gives his big, open live tone; Fender amps cover both the bass and the guitar side.', source: 'kerrMixdown' }
     ],
-    approach: 'POLYPHONIC OCTAVER adds the octave up and down (the "guitar" layer), NEW YORK MUFF FUZZ models the Big Muff and B-MAN100 the Fender Bassman. The MS-60B+ has one output, so bass and guitar amps cannot be split.'
+    approach: 'POLYPHONIC OCTAVER adds the octave up and down (the "guitar" layer), NEW YORK MUFF FUZZ models the Big Muff and B-MAN100 the Fender Bassman. The Zoom MS-60B+ has one output, so bass and guitar amps cannot be split.'
   },
   {
     id: 'wolstenholme', name: 'Chris Wolstenholme', band: 'Muse', style: 'fuzzrock',

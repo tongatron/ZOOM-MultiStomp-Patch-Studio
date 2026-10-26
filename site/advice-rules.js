@@ -1,4 +1,4 @@
-// Advice rules, placement tips and style profiles for the MS-60B+.
+// Advice rules, placement tips and style profiles for the Zoom MS-60B+.
 // Every rule cites where its reasoning comes from. Effect order is mostly convention, not law:
 // order rules are 'warning' or 'tip', never 'error'. 'error' is reserved for objective problems.
 //
