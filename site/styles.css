@@ -653,7 +653,7 @@ body.is-dropping .drop-overlay { display: grid; }
 
 /* Style ideas (builder advice panel) */
 .advice-ideas:empty { display: none; }
-.advice-ideas { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; }
+.advice-ideas { display: flex; flex-direction: column; gap: 10px; margin: 0 12px 12px; }
 .idea, .idea-alt { padding: 12px 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; }
 .idea-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .idea-note { margin: 6px 0 0; color: var(--fg-muted); font-size: 13px; }
@@ -684,9 +684,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .advice-output-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); margin-right: 2px; }
 
 .cmp-head .btn { align-self: flex-start; margin-top: 6px; }
-.gh-footer-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.gh-footer .gh-repo { display: inline-flex; align-items: center; gap: 8px; color: var(--fg-muted); font-size: 13px; transition: color .2s, transform .2s; }
-.gh-footer .gh-repo:hover { color: var(--fg); text-decoration: none; transform: translateX(2px); }
+.gh-footer-left { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.gh-footer .tt-dot { margin: 0 5px; }
+.gh-footer .gh-repo { display: inline-flex; align-items: center; gap: 12px; padding: 9px 15px; border-radius: 8px; background: #222; color: #fff; font-size: 18px; transition: transform .2s, box-shadow .2s; }
+.gh-footer .gh-repo svg { width: 24px; height: 24px; flex-shrink: 0; }
+.gh-footer .gh-repo:hover { color: #fff; text-decoration: none; transform: translateY(-2px) scale(1.04); box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(0, 0, 0, .5); }
 
 /* Sync dialog */
 #sync-open.is-synced { border-color: var(--accent); color: var(--accent); }
