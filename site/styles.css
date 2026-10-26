@@ -758,10 +758,15 @@ body.is-dropping .drop-overlay { display: grid; }
 .tone-ideas-link .tone-ideas-hint { color: var(--fg-muted); font-weight: 400; font-size: 12px; }
 
 /* Pedal switch (MS-60B+ bass / MS-50G+ guitar) and the notice on pages of a pedal not tested yet */
-.pedal-switch { display: inline-flex; gap: 6px; margin-left: auto; }
-.pedal-switch a { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border: 1px solid var(--border); border-radius: 2em; font-size: 12px; color: var(--fg-muted); }
-.pedal-switch a:hover { color: var(--fg); border-color: var(--fg-muted); }
-.pedal-switch a[aria-current="page"] { color: var(--fg); border-color: var(--accent-muted); background: var(--accent-subtle); }
+.pedal-switch { display: inline-flex; gap: 2px; margin-left: auto; padding: 4px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 999px; }
+.pedal-switch a { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--fg-muted); transition: background-color .15s, color .15s, box-shadow .15s; }
+.pedal-switch a::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .35; }
+.pedal-switch a:hover { color: var(--fg); background: var(--bg-muted); }
+.pedal-switch a[aria-current="page"] { background: var(--accent); color: #11160a; font-weight: 600; box-shadow: 0 0 0 1px var(--accent), 0 4px 18px var(--accent-muted); }
+.pedal-switch a[aria-current="page"]::before { opacity: 1; background: #11160a; }
+.pedal-switch .Label { height: 22px; padding: 0 8px; font-size: 11px; font-weight: 600; color: #ff7b72; background: rgba(248, 81, 73, .12); border-color: rgba(248, 81, 73, .45); }
+.pedal-switch a[aria-current="page"] .Label { color: #fff; background: #c93c37; border-color: #c93c37; }
+@media (max-width: 543px) { .pedal-switch { margin-left: 0; } .pedal-switch a { height: 34px; padding: 0 12px; font-size: 13px; } }
 .untested-banner { margin: 18px 0 20px; padding: 14px 18px; font-size: 13px; line-height: 1.6; border: 1px solid rgba(248, 81, 73, .4); border-radius: var(--radius); background: rgba(248, 81, 73, .1); }
 .untested-banner p { margin: 0; }
 .untested-banner p + p { margin-top: 6px; color: var(--fg-muted); }
