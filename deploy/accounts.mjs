@@ -1,17 +1,19 @@
 // Accounts for the ZOOM MultiStomp Patch Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me,
-// and the account page (/account: password, export, sign out everywhere, delete).
+// the account page (/account: password, export, sign out everywhere, delete) and the user console for admins (/admin).
 // The site stays open to everyone; an account only keeps the user's data on the server.
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
 // database), SITE_URL (links in emails), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
 
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
   EMAIL_RE, MIN_PASSWORD, SESSION_COOKIE, SESSION_DAYS, checkPassword, cleanEmail, cleanName, crossSite, fakeCheck, hashPassword,
   hashToken, isHttps, makeSession, newToken, newUserId, passwordProblem, rateLimiter, readCookie, safeNext, sessionCookie, sessionUser
 } from './auth.mjs';
+import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
-import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
+import { mailConfig, mailHtml, sendMail, sendTelegram, telegramConfig } from './mail.mjs';
 import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
 const RESET_TTL = 3600; // seconds
@@ -28,7 +30,8 @@ const PAGE_HEADERS = {
 export const clientIp = request => request.headers['cf-connecting-ip'] || String(request.headers['x-forwarded-for'] || '').split(',')[0].trim() || request.socket.remoteAddress;
 
 export function createAccounts({ dataDir }) {
-  const store = openDb(process.env.DB_FILE || join(dataDir, 'studio.db'));
+  const dbFile = process.env.DB_FILE || join(dataDir, 'studio.db');
+  const store = openDb(dbFile);
   const siteUrl = (process.env.SITE_URL || 'https://zoom.tongatron.org').replace(/\/$/, '');
   let secretHex = process.env.SESSION_SECRET || store.meta('session_secret');
   if (!/^[a-f0-9]{64}$/.test(secretHex || '')) {
@@ -94,6 +97,132 @@ export function createAccounts({ dataDir }) {
     return { format: 'zoom-patch-studio-account', exportedAt: new Date().toISOString(),
       account: { email: user.email, name: user.name, createdAt: user.created_at, emailConfirmedAt: user.email_verified_at }, pedals };
   }
+
+  // ---- user console (admins only) --------------------------------------------------------------
+  const BACKUP_DIR = process.env.BACKUP_DIR || '/srv/apps/zoom-ms60b-backups';
+  const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', change: 'last_change' };
+  const countOf = pedal => `(SELECT COUNT(*) FROM patches p WHERE p.user_id = u.id AND p.pedal = '${pedal}' AND p.deleted_at IS NULL)`;
+  const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g,
+    MAX(COALESCE((SELECT MAX(updated_at) FROM patches WHERE user_id = u.id), ''), COALESCE((SELECT MAX(updated_at) FROM docs WHERE user_id = u.id), '')) AS last_change
+    FROM users u WHERE (u.email LIKE :q ESCAPE '\\' OR u.name LIKE :q ESCAPE '\\')`;
+  const logAdmin = (admin, action, target) => store.db.prepare('INSERT INTO admin_log (at, admin_id, action, target_id) VALUES (?, ?, ?, ?)')
+    .run(new Date().toISOString(), admin.id, action, target?.id ?? null);
+
+  function adminOnly(request, response, next = '/admin') {
+    const session = current(request);
+    if (!session) { redirect(response, `/login?next=${encodeURIComponent(next)}`); return null; }
+    if (session.user.role !== 'admin') { html(response, 403, messagePage('Administrators only', 'This page is for the administrators of the site.')); return null; }
+    return session.user;
+  }
+
+  function serviceState() {
+    const mail = mailConfig();
+    let backup = null;
+    try {
+      for (const name of readdirSync(BACKUP_DIR)) {
+        const at = statSync(join(BACKUP_DIR, name)).mtimeMs;
+        if (!backup || at > backup.at) backup = { name, at };
+      }
+    } catch {}
+    return { mail: mail && !process.env.MAIL_OUTBOX ? mail.user : mail ? 'outbox (test)' : '', telegram: !!telegramConfig(), backup };
+  }
+
+  function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', ...rest } = {}) {
+    if (!SORTS[sort]) sort = 'created';
+    dir = dir === 'asc' ? 'asc' : 'desc';
+    const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
+    const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT 500`).all({ q: like });
+    const since = days => new Date(Date.now() - days * 864e5).toISOString();
+    const one = (sql, ...args) => Object.values(store.db.prepare(sql).get(...args))[0];
+    const fileSize = file => { try { return statSync(file).size; } catch { return 0; } };
+    const stats = {
+      users: one('SELECT COUNT(*) FROM users'), new7: one('SELECT COUNT(*) FROM users WHERE created_at >= ?', since(7)),
+      new30: one('SELECT COUNT(*) FROM users WHERE created_at >= ?', since(30)), active30: one('SELECT COUNT(*) FROM users WHERE last_login >= ?', since(30)),
+      ms60b: one("SELECT COUNT(*) FROM patches WHERE pedal = 'ms60b' AND deleted_at IS NULL"), ms50g: one("SELECT COUNT(*) FROM patches WHERE pedal = 'ms50g' AND deleted_at IS NULL"),
+      dbBytes: fileSize(dbFile) + fileSize(`${dbFile}-wal`)
+    };
+    const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
+      LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
+    html(response, status, adminPage({ me, stats, users, query, sort, dir, service: serviceState(), log, ...rest }));
+  }
+
+  // The account an admin action is about; never the admin's own (so an admin cannot lock themselves out)
+  function adminTarget(response, me, id) {
+    const target = typeof id === 'string' ? store.userById(id) : null;
+    if (!target) { showAdmin(response, me, { status: 404, error: 'This account does not exist (any more).' }); return null; }
+    if (target.id === me.id) { showAdmin(response, me, { status: 400, error: 'You cannot do this to your own account.' }); return null; }
+    return target;
+  }
+
+  const adminRoutes = {
+    'GET /admin': (request, response, url) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const p = url.searchParams;
+      const confirmId = p.get('delete');
+      const confirm = confirmId && confirmId !== me.id ? store.db.prepare(`${USERS_SQL} AND u.id = :id`).get({ q: '%', id: confirmId }) : null;
+      showAdmin(response, me, { query: (p.get('q') || '').slice(0, 100), sort: p.get('sort') || 'created', dir: p.get('dir') || 'desc', confirm });
+    },
+    'GET /admin/user': (request, response, url) => {
+      const me = adminOnly(request, response, url.pathname);
+      if (!me) return;
+      const user = store.userById(url.adminTarget);
+      if (!user) return html(response, 404, messagePage('Not found', 'This account does not exist (any more).', '/admin', 'Back to the users'));
+      html(response, 200, adminUserPage({ user, pedals: Object.fromEntries(Object.entries(exportData(user).pedals).map(([pedal, d]) => [pedal, d.patches])) }));
+    },
+    'GET /admin/user/export': (request, response, url) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const user = store.userById(url.adminTarget);
+      if (!user) return json(response, 404, { error: 'not found' });
+      logAdmin(me, 'download data', user);
+      json(response, 200, exportData(user), { 'Content-Disposition': `attachment; filename="zoom-patch-studio-${user.id.slice(0, 8)}.json"` });
+    },
+    'POST /admin/reset': (request, response, form) => {
+      const me = adminOnly(request, response);
+      const target = me && adminTarget(response, me, form.id);
+      if (!target) return;
+      store.dropTokens(target.id, 'reset');
+      const { token, hash } = newToken();
+      store.addToken(hash, target.id, 'reset', RESET_TTL);
+      logAdmin(me, 'reset link', target);
+      if (mailConfig()) { resetMail(target, token); return showAdmin(response, me, { note: `A new-password link was sent to ${target.email}.` }); }
+      showAdmin(response, me, { note: `Email is not configured: send this link to ${target.email} yourself (valid for one hour, works once).`, link: `${siteUrl}/reset?token=${token}` });
+    },
+    'POST /admin/signout': (request, response, form) => {
+      const me = adminOnly(request, response);
+      const target = me && adminTarget(response, me, form.id);
+      if (!target) return;
+      store.signOutEverywhere(target.id);
+      logAdmin(me, 'sign out everywhere', target);
+      showAdmin(response, me, { note: `${target.email} is signed out on every device.` });
+    },
+    'POST /admin/role': (request, response, form) => {
+      const me = adminOnly(request, response);
+      const target = me && adminTarget(response, me, form.id);
+      if (!target) return;
+      const role = form.role === 'admin' ? 'admin' : 'user';
+      store.setRole(target.id, role);
+      logAdmin(me, role === 'admin' ? 'make admin' : 'remove admin', target);
+      showAdmin(response, me, { note: `${target.email} is now ${role === 'admin' ? 'an administrator' : 'a normal user'}.` });
+    },
+    'POST /admin/delete': (request, response, form) => {
+      const me = adminOnly(request, response);
+      const target = me && adminTarget(response, me, form.id);
+      if (!target) return;
+      logAdmin(me, `delete account ${target.email}`, target);
+      store.removeUser(target.id);
+      showAdmin(response, me, { note: `The account of ${target.email} has been deleted.` });
+    },
+    'POST /admin/test-mail': (request, response) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const sent = sendMail(me.email, 'ZOOM Patch Studio: test email', 'If you can read this, the emails of ZOOM Patch Studio work.',
+        mailHtml({ title: 'Test email', intro: 'If you can read this, the emails of ZOOM Patch Studio work.' }));
+      logAdmin(me, 'test email', me);
+      showAdmin(response, me, sent ? { note: `Test email sent to ${me.email}: check the inbox (and the service log if it does not arrive).` } : { status: 503, error: 'Email is not configured.' });
+    }
+  };
 
   // ---- routes -----------------------------------------------------------------------------------
   const routes = {
@@ -262,12 +391,17 @@ export function createAccounts({ dataDir }) {
     }
   };
 
+  Object.assign(routes, adminRoutes);
+
   // Answers the request if it belongs to the accounts and returns true; false lets the server go on.
   async function handle(request, response, url) {
     const method = request.method === 'HEAD' ? 'GET' : request.method;
-    const route = routes[`${method} ${url.pathname}`];
+    let path = url.pathname;
+    const userPage = path.match(/^\/admin\/user\/([a-f0-9]{32})(\/export)?$/);
+    if (userPage) { path = `/admin/user${userPage[2] || ''}`; url.adminTarget = userPage[1]; }
+    const route = routes[`${method} ${path}`];
     if (!route) {
-      if (!Object.keys(routes).some(key => key.endsWith(` ${url.pathname}`))) return false;
+      if (!Object.keys(routes).some(key => key.endsWith(` ${path}`))) return false;
       response.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
       response.end('Method not allowed');
       return true;

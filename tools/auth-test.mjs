@@ -242,6 +242,46 @@ try {
     assert.deepEqual(await me(session), { signedIn: true, email: 'admin@example.com', name: 'Giovanni', verified: false, admin: true });
   });
 
+  await test('the user console is for admins only and never acts on the admin themselves', async () => {
+    assert.equal((await get('/admin')).headers.get('location'), '/login?next=%2Fadmin');
+    const userSession = sessionOf(await post('/login', { email: 'new1@example.com', password: PASSWORD }));
+    assert.equal((await get('/admin', { cookie: userSession })).status, 403);
+    const store = openDb(join(dataDir, 'studio.db'));
+    const idOf = email => store.userByEmail(email).id;
+    assert.equal((await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: userSession })).status, 403);
+    assert.equal(store.userByEmail('new2@example.com').role, 'user');
+    const admin = sessionOf(await post('/login', { email: 'admin@example.com', password: 'admin password 1' }));
+    const page = await (await get('/admin', { cookie: admin })).text();
+    assert.match(page, /Summary/);
+    assert.match(page, /new3@example\.com/);
+    const found = await (await get('/admin?q=PLAYER&sort=bogus&dir=up', { cookie: admin })).text();
+    assert.match(found, /Player@Example\.com/);
+    assert.doesNotMatch(found, /new3@example\.com/);
+    assert.match(await (await get('/admin?q=%25', { cookie: admin })).text(), /No accounts match this search/, '% is searched literally');
+
+    assert.match(await (await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: admin })).text(), /is now an administrator/);
+    assert.equal(store.userByEmail('new2@example.com').role, 'admin');
+    await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });
+    assert.equal(store.userByEmail('new2@example.com').role, 'user');
+    assert.match(await (await post('/admin/reset', { id: idOf('new1@example.com') }, { cookie: admin })).text(), /A new-password link was sent to new1@example\.com/);
+    await post('/admin/signout', { id: idOf('new1@example.com') }, { cookie: admin });
+    assert.equal((await me(userSession)).signedIn, false, 'signed out by the admin');
+    assert.equal((await post('/admin/delete', { id: idOf('admin@example.com') }, { cookie: admin })).status, 400, 'not their own account');
+    assert.equal((await post('/admin/role', { id: idOf('admin@example.com'), role: 'user' }, { cookie: admin })).status, 400);
+    assert.equal((await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: admin, headers: { 'Sec-Fetch-Site': 'cross-site' } })).status, 403);
+
+    const target = idOf('new3@example.com');
+    assert.match(await (await get(`/admin/user/${target}`, { cookie: admin })).text(), /MS-60B\+ patches \(0\)/);
+    assert.equal((await (await get(`/admin/user/${target}/export`, { cookie: admin })).json()).account.email, 'new3@example.com');
+    assert.equal((await get(`/admin/user/${target}`, { cookie: userSession })).headers.get('location'), `/login?next=%2Fadmin%2Fuser%2F${target}`);
+    assert.match(await (await get(`/admin?delete=${target}`, { cookie: admin })).text(), /Delete the account of <b>new3@example\.com<\/b>/);
+    assert.match(await (await post('/admin/delete', { id: target }, { cookie: admin })).text(), /The account of new3@example\.com has been deleted/);
+    assert.equal(store.userById(target), null);
+    const log = await (await get('/admin', { cookie: admin })).text();
+    for (const action of ['make admin', 'remove admin', 'reset link', 'sign out everywhere', 'download data', 'delete account new3@example.com']) assert.match(log, new RegExp(action));
+    store.close();
+  });
+
   await test('the account page: password change, export, sign out everywhere, delete', async () => {
     assert.equal((await get('/account')).headers.get('location'), '/login?next=/account', 'signed out: sign in first');
     const email = 'page@example.com';

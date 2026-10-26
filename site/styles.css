@@ -371,7 +371,7 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 .UnderlineNav { display: flex; gap: 8px; margin-top: 4px; overflow-x: auto; scrollbar-width: none; }
 .UnderlineNav-item {
   position: relative; display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 8px 12px; color: var(--fg); font-size: 14px; white-space: nowrap; border-radius: var(--radius);
+  padding: 8px 10px 12px; color: var(--fg); font-size: 16px; white-space: nowrap; border-radius: var(--radius);
 }
 .UnderlineNav-item:hover { text-decoration: none; background: var(--bg-hover); }
 .UnderlineNav-item[aria-current="page"] { font-weight: 600; }

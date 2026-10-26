@@ -190,7 +190,6 @@ function renderChain() {
   const list = $('#chain-list');
   const n = state.effects.length;
   $('#chain-count').textContent = `${n} / ${ZPTC.MAX_EFFECTS}`;
-  $('#tab-count').textContent = n;
   $('#add-effect').disabled = n >= ZPTC.MAX_EFFECTS;
   if (!n) {
     list.innerHTML = `<li class="blankslate"><h3>Empty patch</h3><p>Add the first effect: the signal flows from the top (INPUT) to the bottom (OUTPUT).</p><button class="btn btn-sm" data-action="open-picker">${icon(ICON_PLUS)} Add effect</button></li>`;
