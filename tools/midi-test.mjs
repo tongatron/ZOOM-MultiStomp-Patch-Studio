@@ -83,5 +83,18 @@ await test('renaming a patch changes only its names (the manager re-encodes it f
   assert.equal(JSON.stringify(back.effects), JSON.stringify(spec.effects));
   assert.equal(back._noBlank, true);
 });
+await test('an edited pedal patch keeps its patch data and recomputes the amp bits', () => {
+  const base = patches[2]; // "Big Black": AMPG SVT in slot 5 → PRM2 byte 20 = 0x40
+  const spec = ZPTC.decode(base);
+  const prm2 = spec._prm2;
+  const edited = spec.effects.slice(1).map(({ id, on, raw, tail }) => ({ id, on, raw, tail })); // first effect removed
+  const out = ZPTC.decode(ZPTC.encode({ ...spec, _prm2Refresh: true, effects: edited }).file);
+  const bytes = h => h.match(/../g).map(x => parseInt(x, 16));
+  const [before, after] = [bytes(prm2), bytes(out._prm2)];
+  assert.equal(before[20], 0x40);
+  assert.equal(after[20], 0x20, 'the amp moved to slot 4');
+  before.forEach((v, i) => { if (i !== 20 && i !== 10) assert.equal(after[i], v, `PRM2 byte ${i} kept`); });
+  assert.equal(out.effects.length, spec.effects.length - 1);
+});
 PEDALMIDI.disconnect();
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

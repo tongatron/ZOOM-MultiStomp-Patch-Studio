@@ -187,10 +187,13 @@ const ZPTC = (() => {
     if (dsp > 100) warnings.push(`Estimated DSP load ${dsp.toFixed(1)}%: the pedal will show PROCESS OVERFLOW`);
 
     const prm2 = hex(spec._prm2 ?? PRM2_TEMPLATE);
-    if (!spec._prm2) {
+    // _prm2Refresh: keep the patch data of an existing patch (_prm2) but recompute the bits that depend on the chain
+    if (!spec._prm2 || spec._prm2Refresh) {
       // byte 20: one bit per slot holding an amp (bit = slot + 1); byte 10, bits 5–7: slot selected for editing
+      if (spec._prm2Refresh) prm2[20] = 0;
       entries.forEach((e, i) => { if (byId.get(e.id)?.category === 'BASS AMP') prm2[20] |= 1 << (i + 1); });
-      const selected = spec.selected ?? 1;
+      const kept = prm2[10] >> 5;
+      const selected = spec.selected ?? (spec._prm2Refresh && kept >= 1 && kept <= list.length ? kept : 1);
       if (!(selected >= 1 && selected <= list.length)) throw new Error(`"selected" must be between 1 and ${list.length}`);
       prm2[10] = (prm2[10] & 0x1f) | (selected << 5);
     }

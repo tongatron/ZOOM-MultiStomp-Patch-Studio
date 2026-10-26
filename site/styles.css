@@ -824,3 +824,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-result[data-ok="true"] { border-color: rgba(63, 185, 80, .4); color: #3fb950; }
 .usb-warn { color: #d29922; }
 .usb-confirm-actions { justify-content: flex-end; margin: 0; padding: 0 20px 20px; }
+/* Builder: editing a pedal memory (from the pedal manager) */
+.pedal-edit-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 12px 0 0; padding: 10px 14px; background: var(--accent-subtle); border: 1px solid var(--accent); border-radius: 12px; font-size: 14px; }
+.pedal-edit-bar[hidden] { display: none; }
+.pedal-edit-actions { display: flex; gap: 8px; }

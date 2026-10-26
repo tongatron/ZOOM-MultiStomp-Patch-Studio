@@ -9,6 +9,7 @@
   const NO_MIDI = 'This browser has no Web MIDI. Use Chrome or Edge on a computer.';
   const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, updatedAt }]
   const DRAFT_KEY = `${PEDAL.id}-builder`;
+  const EDIT_KEY = `${PEDAL.id}-pedal-edit`; // { memory, name, base: base64 PTCF, at } while a memory is edited in the builder
   const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
   const MAX_BACKUPS = 30;
   const lines = [];
@@ -20,6 +21,9 @@
   let selected = null; // memory number where a local patch goes
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
   let renaming = null; // memory number whose rename field is open
+  // "Send to memory N" in the builder opens this page with #send=N: once the pedal is read, the builder's patch goes there
+  let pendingSend = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('send')) || null;
+  if (pendingSend) history.replaceState(null, '', location.pathname);
 
   // ---- log and status --------------------------------------------------------------------------------
   const showLog = () => { $('#usb-log').textContent = lines.join('\n'); };
@@ -76,11 +80,21 @@
     });
     return { name: decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim().slice(0, 28) || 'PEDAL', effects };
   }
-  // Builder patch → PTCF bytes, encoded like the builder's Download .zptc
-  function toFile(patch) {
+  // Builder patch → PTCF bytes, encoded like the builder's Download .zptc. With base (the PTCF of the pedal
+  // memory it was opened from), the data the builder does not edit is kept: description, header, slot layout and
+  // the patch data in PRM2 (the bits that follow the chain are recomputed).
+  function toFile(patch, base = null) {
     if (!patch.effects?.length) throw new Error('The patch has no effects.');
     if (!String(patch.name || '').trim()) throw new Error('The patch has no name. Give it one in the patch builder first.');
+    let kept = {};
+    if (base) {
+      const b = ZPTC.decode(base);
+      kept = { _version: b._version, _header: b._header, _txj1: b._txj1, _slot0: b._slot0, _noBlank: b._noBlank, _prm2: b._prm2, _prm2Refresh: true,
+        description: b.description, shortName: patch.name.trim() === b.name ? b.shortName : undefined };
+      Object.keys(kept).forEach(k => kept[k] === undefined && delete kept[k]);
+    }
     return ZPTC.encode({
+      ...kept,
       name: patch.name.trim(),
       effects: patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => ({
         effect: EFFECTS_DATA[e.index][0], on: e.on !== false,
@@ -161,6 +175,17 @@
     renderLocals();
     const failed = [...memories.values()].filter(m => m.state === 'error').length;
     status(failed ? `Read ${info.count} memories, ${failed} with errors (see the MIDI log)` : `Read ${info.count} memories`, failed ? 'danger' : 'ok');
+    if (pendingSend) sendPending();
+  }
+  function sendPending() {
+    const n = pendingSend;
+    pendingSend = null;
+    const item = localItems().find(i => i.key === 'draft');
+    if (!item?.bytes) { status(item?.error || 'The builder has no patch to send.', 'danger'); return; }
+    if (n > info.count) return;
+    if (selected !== n) select(n);
+    $(`#usb-memories [data-n="${n}"]`)?.scrollIntoView({ block: 'nearest' });
+    send(n, item.bytes);
   }
   $('#usb-refresh').addEventListener('click', () => { if (info) readAll(); });
 
@@ -182,7 +207,7 @@
           <button class="btn btn-sm btn-invisible" type="button" data-act="rename-cancel">Cancel</button>
         </form>` : ''}
         <div class="usb-row">
-          <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}">Open in builder</a>
+          <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}&m=${n}" data-act="edit">Edit in builder</a>
           <button class="btn btn-sm" data-act="rename" ${connected && !busy ? '' : 'disabled'}>Rename</button>
           <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
           <button class="btn btn-sm" data-act="download">Download .zptc</button>
@@ -217,6 +242,9 @@
     const m = memories.get(n);
     switch (button.dataset.act) {
       case 'select': renaming = null; select(n); break;
+      case 'edit': // remember where the patch comes from, so the builder can send it back to this memory
+        try { localStorage.setItem(EDIT_KEY, JSON.stringify({ memory: n, name: m.decoded.name, base: toBase64(m.data), at: new Date().toISOString(), pending: true })); } catch {}
+        break;
       case 'rename': renaming = n; renderMemory(n); $(`[data-rename="${n}"] input`)?.select(); break;
       case 'rename-cancel': renaming = null; renderMemory(n); break;
       case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
@@ -258,6 +286,8 @@
     send(n, bytes);
   });
 
+  const activeEdit = () => { const edit = readJson(EDIT_KEY, null); return edit?.memory && !edit.pending ? edit : null; };
+
   // ---- local patches ---------------------------------------------------------------------------------
   // [{ key, name, label, chain, bytes | error }]: the builder's open patch, a chosen .zptc file, then My patches
   function localItems() {
@@ -266,7 +296,8 @@
       try {
         const patch = getPatch();
         const chain = patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => EFFECTS_DATA[e.index][0]);
-        try { items.push({ key, label, name: patch.name || '(no name)', chain, bytes: toFile(patch) }); }
+        const edit = key === 'draft' ? activeEdit() : null;
+        try { items.push({ key, label, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null }); }
         catch (error) { items.push({ key, label, name: patch.name || '(no name)', chain, error: error.message }); }
       } catch {}
     };
@@ -275,7 +306,8 @@
       catch (error) { items.push({ key: 'file', label: `File ${fileItem.fileName}`, name: fileItem.fileName, chain: [], error: error.message }); }
     }
     const draft = readJson(DRAFT_KEY, null);
-    if (draft?.effects?.length) make('draft', 'Open in the builder', () => draft);
+    const edit = activeEdit();
+    if (draft?.effects?.length) make('draft', edit?.memory ? `Open in the builder · editing memory ${edit.memory}` : 'Open in the builder', () => draft);
     readJson(LIBRARY_KEY, []).forEach(entry => make(`lib:${entry.id}`, entry.updatedAt ? `Saved ${when(entry.updatedAt)}` : '', () => entry));
     return items;
   }
@@ -404,4 +436,8 @@
   $('#usb-clear-log').addEventListener('click', () => { lines.length = 0; showLog(); });
   if (!PEDALMIDI.supported()) status(NO_MIDI, 'danger');
   setConnected(false);
+  if (pendingSend) {
+    status(`Connect the pedal to send the builder's patch to memory ${pendingSend}`);
+    $('#usb-connect').click(); // works without a click when MIDI access was granted before; otherwise press Connect
+  }
 })();
