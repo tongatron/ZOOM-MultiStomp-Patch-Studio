@@ -503,7 +503,8 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .chip-filter .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .picker-list { margin: 0; padding: 4px 0; list-style: none; overflow: auto; }
 .picker-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
-.picker-item:hover, .picker-item:focus-visible { background: var(--bg-hover); }
+.picker-item:hover:not(:disabled), .picker-item:focus-visible { background: var(--bg-hover); }
+.picker-item:disabled { cursor: default; opacity: .55; }
 .picker-item .fx-thumb { width: 36px; }
 .picker-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .picker-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }

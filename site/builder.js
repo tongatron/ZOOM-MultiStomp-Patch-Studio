@@ -10,6 +10,7 @@ const ICON_UP = '<path fill="currentColor" d="M3.47 7.78a.75.75 0 0 1 0-1.06l4.2
 const ICON_DOWN = '<path fill="currentColor" d="M13.03 8.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.47 9.28a.75.75 0 0 1 1.06-1.06l2.97 2.97V3.75a.75.75 0 0 1 1.5 0v7.44l2.97-2.97a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_TRASH = '<path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/>';
 const ICON_CHEVRON = '<path fill="currentColor" d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/>';
+const ICON_SWAP = '<path fill="currentColor" d="M5.22 14.78a.75.75 0 0 0 1.06-1.06L4.56 12h8.69a.75.75 0 0 0 0-1.5H4.56l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3a.75.75 0 0 0 0 1.06l3 3Zm5.56-6.5a.75.75 0 1 1-1.06-1.06l1.72-1.72H2.75a.75.75 0 0 1 0-1.5h8.69L9.72 2.28a.75.75 0 0 1 1.06-1.06l3 3a.75.75 0 0 1 0 1.06l-3 3Z"/>';
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
 
 // Effect metadata: catalog data + parameter codecs
@@ -43,6 +44,17 @@ function slotFor(index, values = null) {
 }
 // Serializable patch shape: { name, effects: [{ index, on, values }] }
 const serialize = source => ({ name: source.name, effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })) });
+// Values of a replaced effect that the new effect can take over (same parameter name, valid in the new range)
+function carriedValues(slot, index) {
+  const old = catalog[slot.index];
+  return Object.fromEntries(catalog[index].params.filter(p => p.codec && old.params.some(o => o.name === p.name && o.codec)).flatMap(p => {
+    const v = slot.values[p.name];
+    const c = p.codec;
+    const ok = c.kind === 'enum' ? c.options.includes(v)
+      : (c.kind === 'off-number' && v === 'OFF') || (typeof v === 'number' && v >= c.min && v <= c.max);
+    return ok ? [[p.name, v]] : [];
+  }));
+}
 const sameContent = (a, b) => JSON.stringify(serialize(a)) === JSON.stringify(serialize(b));
 function hydrate(patch) {
   return (patch.effects || []).filter(e => catalog[e.index]).slice(0, ZPTC.MAX_EFFECTS)
@@ -200,6 +212,7 @@ function renderChain() {
           <label class="switch" title="Effect ${slot.on ? 'on' : 'off'}"><input type="checkbox" data-action="toggle-on" ${slot.on ? 'checked' : ''} /><span></span><b>${slot.on ? 'ON' : 'OFF'}</b></label>
           <button class="btn btn-sm btn-icon" data-action="up" ${i === 0 ? 'disabled' : ''} aria-label="Move towards the input" title="Move up">${icon(ICON_UP)}</button>
           <button class="btn btn-sm btn-icon" data-action="down" ${i === n - 1 ? 'disabled' : ''} aria-label="Move towards the output" title="Move down">${icon(ICON_DOWN)}</button>
+          <button class="btn btn-sm btn-icon" data-action="replace" aria-label="Replace ${escapeHtml(fx.name)}" title="Replace with another effect">${icon(ICON_SWAP)}</button>
           <button class="btn btn-sm btn-icon btn-danger" data-action="remove" aria-label="Remove ${escapeHtml(fx.name)}" title="Remove">${icon(ICON_TRASH)}</button>
           <button class="btn btn-sm btn-icon btn-invisible chain-chevron" data-action="toggle-open" aria-expanded="${slot.open}" aria-label="Show parameters">${icon(ICON_CHEVRON)}</button>
         </div>
@@ -319,6 +332,7 @@ $('#chain-list').addEventListener('click', event => {
   const item = button.closest('.chain-item');
   const i = state.effects.findIndex(slot => slot.uid === Number(item.dataset.uid));
   const slot = state.effects[i];
+  if (button.dataset.action === 'replace') { openPicker(slot); return; }
   switch (button.dataset.action) {
     case 'up': [state.effects[i - 1], state.effects[i]] = [state.effects[i], state.effects[i - 1]]; break;
     case 'down': [state.effects[i + 1], state.effects[i]] = [state.effects[i], state.effects[i + 1]]; break;
@@ -718,10 +732,13 @@ document.addEventListener('drop', event => {
 
 // ---- effect picker ----------------------------------------------------------------------------
 const picker = $('#picker');
-const pickerState = { query: '', category: null };
+const pickerState = { query: '', category: null, replace: null }; // replace: the slot being swapped, null when adding
+let addCategory = null; // category filter of "Add effect", restored after a replacement
 
 function renderPicker() {
-  const total = totalDsp();
+  const current = pickerState.replace;
+  const total = totalDsp() - (current ? catalog[current.index].dsp : 0);
+  $('#picker-title').textContent = current ? `Replace ${catalog[current.index].name}` : 'Add effect';
   $('#picker-cats').innerHTML = [[null, 'All'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
     .map(([key, label]) => `<button class="chip-filter" data-cat="${key ?? ''}" aria-pressed="${pickerState.category === key}">${key ? `<span class="dot" style="--c:${CATEGORIES[key].color}"></span>` : ''}${label}</button>`).join('');
   const items = catalog.filter(fx => fx.usable && (!pickerState.category || fx.category === pickerState.category)
@@ -729,21 +746,29 @@ function renderPicker() {
   $('#picker-list').innerHTML = items.length ? items.map(fx => {
     const over = total + fx.dsp > 100;
     const near = !over && total + fx.dsp > 95;
-    return `<li><button class="picker-item" data-index="${fx.index}">
+    const same = current?.index === fx.index;
+    return `<li><button class="picker-item" data-index="${fx.index}"${same ? ' disabled aria-current="true" title="Effect in this slot"' : ''}>
       <img class="fx-thumb" src="${fx.image}" alt="" loading="lazy" width="36" height="45" />
       <span class="picker-main"><span class="picker-name">${escapeHtml(fx.name)} ${categoryLabel(fx)}</span><span class="picker-desc" lang="en">${escapeHtml(fx.description)}</span></span>
       <span class="picker-dsp${over ? ' is-over' : near ? ' is-near' : ''}" title="${over ? 'With this effect the patch goes over 100%' : near ? 'With this effect the patch is close to 100%' : 'DSP load and resulting total'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}${over ? ' · over' : ''}</small></span>
     </button></li>`;
   }).join('') : '<li class="blankslate"><p>No effects found.</p></li>';
 }
-function openPicker() {
-  if (state.effects.length >= ZPTC.MAX_EFFECTS) return;
+// With a slot: replace that effect, starting from its own category
+function openPicker(slot = null) {
+  if (!slot && state.effects.length >= ZPTC.MAX_EFFECTS) return;
+  pickerState.replace = slot;
+  if (slot) { addCategory = pickerState.category; pickerState.category = catalog[slot.index].category; }
   renderPicker();
   picker.showModal();
   $('#picker-query').focus();
 }
-$('#add-effect').addEventListener('click', openPicker);
+$('#add-effect').addEventListener('click', () => openPicker());
 $('#picker-close').addEventListener('click', () => picker.close());
+picker.addEventListener('close', () => {
+  if (pickerState.replace) pickerState.category = addCategory;
+  pickerState.replace = null;
+});
 picker.addEventListener('click', event => {
   if (event.target === picker) { picker.close(); return; }
   const cat = event.target.closest('[data-cat]');
@@ -751,6 +776,17 @@ picker.addEventListener('click', event => {
   const item = event.target.closest('.picker-item');
   if (!item) return;
   const fx = catalog[Number(item.dataset.index)];
+  const old = pickerState.replace;
+  if (old) {
+    const i = state.effects.indexOf(old);
+    if (i === -1 || !fitsDsp(fx, catalog[old.index].dsp)) return;
+    picker.close();
+    const next = { ...slotFor(fx.index, carriedValues(old, fx.index)), on: old.on, open: old.open };
+    state.effects[i] = next;
+    announce(`${catalog[old.index].name} replaced with ${fx.name}`);
+    renderKeepingFocus(next.uid, 'replace');
+    return;
+  }
   if (!fitsDsp(fx)) return; // the picker stays open to choose a lighter effect
   picker.close();
   state.effects.forEach(slot => { slot.open = false; });
@@ -862,9 +898,10 @@ $('#advice').addEventListener('click', event => {
 const addChoice = $('#add-choice');
 let pendingAdd = null;
 // Asks before an addition that takes the estimated load over 100% (the pedal would show PROCESS OVERFLOW)
-function fitsDsp(fx) {
-  const after = totalDsp() + fx.dsp;
-  return after <= 100 || confirm(`Adding ${fx.name} takes the estimated load to ${pct(after)}. Above 100% the pedal shows PROCESS OVERFLOW and bypasses the effects. Add it anyway?`);
+// freed: the load of an effect that the new one replaces
+function fitsDsp(fx, freed = 0) {
+  const after = totalDsp() - freed + fx.dsp;
+  return after <= 100 || confirm(`With ${fx.name} the estimated load goes to ${pct(after)}. Above 100% the pedal shows PROCESS OVERFLOW and bypasses the effects. Continue anyway?`);
 }
 function appendEffect(fx) {
   if (!fitsDsp(fx)) return;

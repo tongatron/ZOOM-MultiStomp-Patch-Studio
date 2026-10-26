@@ -48,6 +48,20 @@ try {
     assert.equal(await page.evaluate(() => document.activeElement.dataset.action), 'up', 'focus stays on the moved effect');
   });
 
+  await test('replace an effect with another one in the same slot', async () => {
+    const before = await chain(page);
+    const first = page.locator('#chain-list .chain-item').first();
+    await first.locator('[data-action="replace"]').click();
+    assert.match(await page.textContent('#picker-title'), /^Replace /);
+    assert.equal(await page.locator('#picker-cats [data-cat=""][aria-pressed="true"]').count(), 0, 'the category of the effect is preselected');
+    await page.locator('#picker-cats [data-cat=""]').click();
+    await page.fill('#picker-query', 'OPTICAL COMPRESSOR');
+    await page.locator('.picker-item', { hasText: 'OPTICAL COMPRESSOR' }).first().click();
+    assert.equal(await chain(page), before);
+    assert.match(await page.locator('#chain-list .chain-item').first().innerText(), /OPTICAL COMPRESSOR/);
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.action), 'replace', 'focus stays on the replaced slot');
+  });
+
   await test('save the patch to My patches', async () => {
     await page.fill('#patch-name', 'E2E TEST');
     await page.click('#save-patch');
