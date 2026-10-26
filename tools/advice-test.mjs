@@ -199,6 +199,21 @@ test('rule pack fixes move or set, and only exist with mode each', () => {
   assert.match(RULEPACK.validate(packWith({ fix: { action: 'run', target: { role: 'drive' } } }), ADVICE).errors.join(' '), /fix action/);
   ADVICE.setUserRules([], {});
 });
+test('the pack editor form model round-trips and blank forms stay invalid until filled', () => {
+  const original = RULEPACK.validate(RULEPACK.EXAMPLE, ADVICE).pack;
+  const again = RULEPACK.validate(RULEPACK.fromForm(RULEPACK.toForm(original)), ADVICE);
+  assert.ok(again.pack, JSON.stringify(again.errors));
+  same(again.pack, original);
+  const blank = RULEPACK.blankForm();
+  assert.ok(RULEPACK.validate(RULEPACK.fromForm(blank), ADVICE).errors, 'an empty form is rejected');
+  Object.assign(blank, { name: 'My Pack' });
+  Object.assign(blank.sources[0], { key: 'src1', title: 'Some page', url: 'https://example.com/a' });
+  Object.assign(blank.rules[0], { title: 'No gate', why: 'because', message: 'add a gate', sources: ['src1'], mode: 'absent', match: { ...blank.rules[0].match, kind: 'effect', value: 'ZOOM NOISE REDUCTION' } });
+  const made = RULEPACK.validate(RULEPACK.fromForm(blank), ADVICE);
+  assert.ok(made.pack, JSON.stringify(made.errors));
+  assert.equal(made.pack.id, 'my-pack');
+  assert.equal(made.pack.rules[0].id, 'no-gate');
+});
 test('rule pack modes: once, absent and position', () => {
   const once = packWith({ id: 'two-drives', fix: undefined, mode: 'once', min: 2, match: { role: 'drive' }, message: '{count} drives: {effect}' });
   const drives = ADVICE.effects.filter(fx => fx.role === 'drive').slice(0, 2).map(fx => [fx.name, {}]);

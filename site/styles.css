@@ -708,3 +708,28 @@ body.is-dropping .drop-overlay { display: grid; }
 .pack-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pack-row small { color: var(--fg-muted); }
 .pack-tools { display: flex; gap: 2px; flex-shrink: 0; }
+
+/* Rule pack editor */
+.pack-editor { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); }
+.pack-editor .Overlay-body { flex: 1; min-height: 0; }
+.pe-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.pe-section h3 { margin: 0; font-size: 14px; }
+.pe-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.pe-row > * { flex: 1; min-width: 120px; }
+.pe-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.pe-field small, .pe-fieldset small { color: var(--fg-muted); font-size: 12px; }
+.pe-field textarea { resize: vertical; font: inherit; }
+.pe-source { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+.pe-rule { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-subtle); }
+.pe-rule > summary { padding: 10px 12px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+.pe-rule-body { display: flex; flex-direction: column; gap: 12px; padding: 4px 12px 12px; }
+.pe-fieldset { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border-muted); border-radius: 8px; margin: 0; }
+.pe-fieldset legend { padding: 0 6px; font-size: 12px; color: var(--fg-muted); }
+.pe-sub { display: flex; flex-direction: column; gap: 6px; padding-left: 10px; border-left: 2px solid var(--border); }
+.pe-selector { display: flex; flex-direction: column; gap: 8px; }
+.pe-check { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.pe-footer { border-top: 1px solid var(--border); padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.pe-errors { max-height: 120px; overflow: auto; color: #f85149; font-size: 13px; }
+.pe-errors ul { margin: 4px 0 0; padding-left: 18px; }
+.pe-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 640px) { .pe-source { grid-template-columns: 1fr; } }

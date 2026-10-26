@@ -1065,7 +1065,7 @@ function renderPacks() {
   $('#advice-packs-count').textContent = rulePacks.length;
   $('#advice-packs-list').innerHTML = rulePacks.map(({ pack, enabled }) => `<div class="pack-row">
     <label class="pref-row" title="${escapeHtml(pack.author ? `by ${pack.author}` : '')}"><input type="checkbox" data-pack="toggle" data-id="${pack.id}"${enabled ? ' checked' : ''} /> <span>${escapeHtml(pack.name)} <small>· ${pack.rules.length} rule${pack.rules.length === 1 ? '' : 's'}</small></span></label>
-    <span class="pack-tools"><button class="btn btn-sm btn-invisible" data-pack="export" data-id="${pack.id}">Export</button><button class="btn btn-sm btn-invisible btn-danger" data-pack="remove" data-id="${pack.id}">Remove</button></span>
+    <span class="pack-tools"><button class="btn btn-sm btn-invisible" data-pack="edit" data-id="${pack.id}">Edit</button><button class="btn btn-sm btn-invisible" data-pack="export" data-id="${pack.id}">Export</button><button class="btn btn-sm btn-invisible btn-danger" data-pack="remove" data-id="${pack.id}">Remove</button></span>
   </div>`).join('') || '<p class="field-hint">No rule packs yet.</p>';
 }
 const downloadPack = pack => downloadBytes(JSON.stringify(pack, null, 2), `${pack.id}.rulepack.json`, 'application/json');
@@ -1086,6 +1086,15 @@ async function importPacks(files) {
   savePacks();
 }
 $('#pack-files').addEventListener('change', event => { importPacks([...event.target.files]); event.target.value = ''; });
+$('#pack-new').addEventListener('click', () => RULEEDITOR.open(null, pack => {
+  const taken = new Set(rulePacks.map(e => e.pack.id));
+  let id = pack.id, n = 2;
+  while (taken.has(id)) id = `${pack.id.slice(0, 36)}-${n++}`;
+  if (rulePacks.length >= 20) { notify('danger', 'Too many rule packs: remove one first.'); return; }
+  rulePacks.push({ pack: { ...pack, id }, enabled: true });
+  savePacks();
+  notify('muted', `Created rule pack "${pack.name}".`);
+}));
 $('#pack-example').addEventListener('click', () => downloadPack(RULEPACK.EXAMPLE));
 $('#advice-packs').addEventListener('click', event => {
   const button = event.target.closest('button[data-pack]');
@@ -1093,6 +1102,7 @@ $('#advice-packs').addEventListener('click', event => {
   const entry = rulePacks.find(e => e.pack.id === button.dataset.id);
   if (!entry) return;
   if (button.dataset.pack === 'export') downloadPack(entry.pack);
+  if (button.dataset.pack === 'edit') RULEEDITOR.open(entry.pack, pack => { entry.pack = pack; savePacks(); notify('muted', `Saved rule pack "${pack.name}".`); });
   if (button.dataset.pack === 'remove' && confirm(`Remove the rule pack "${entry.pack.name}"? Export it first if you want to keep it.`)) { rulePacks = rulePacks.filter(e => e !== entry); savePacks(); }
 });
 $('#advice-packs').addEventListener('change', event => {

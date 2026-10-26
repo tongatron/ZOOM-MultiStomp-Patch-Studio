@@ -2,10 +2,10 @@
 // Everything is served from the cache first and refreshed in the background (stale-while-revalidate).
 // Cache keys ignore the ?v= query string so old versions do not pile up.
 
-const CACHE = 'ms60b-v4';
+const CACHE = 'ms60b-v5';
 const CORE = [
   './', 'index.html', 'builder.html', 'styles.css', 'stage.css', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
-  'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'library-merge.js', 'rule-packs.js', 'app.js', 'builder.js', 'pwa.js',
+  'effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'library-merge.js', 'rule-packs.js', 'rule-pack-editor.js', 'app.js', 'builder.js', 'pwa.js',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 

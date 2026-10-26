@@ -32,7 +32,7 @@ const RULEPACK = (() => {
     };
     if (!raw || typeof raw !== 'object' || raw.format !== FORMAT) return { errors: ['not a rule pack (format must be "ms60b-rule-pack")'] };
     if (raw.version !== 1) return { errors: [`unsupported version ${raw.version}`] };
-    if (typeof raw.id !== 'string' || !slug.test(raw.id)) fail('pack id must be lowercase letters, digits and dashes');
+    if (typeof raw.id !== 'string' || !slug.test(raw.id)) fail('pack id must be lowercase letters, digits and dashes (it is made from the pack name, so give the pack a name)');
 
     const roles = new Set([...advice.effects.map(fx => fx.role), ...Object.keys(advice.GROUPS)]);
     const selector = (sel, where, allowPosition) => {
@@ -167,7 +167,71 @@ const RULEPACK = (() => {
     ]
   };
 
-  return { FORMAT, LIMITS, validate, compile, EXAMPLE, prefix };
+  // ---- form model used by the pack editor (rule-pack-editor.js) -----------------------------------------
+  // Same data as a pack, but every field is a plain string/boolean so inputs can bind to it. fromForm() returns a raw pack
+  // that still goes through validate().
+  const slugify = text => String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  const toNumberIfNumeric = text => { const n = Number(text); return String(text).trim() !== '' && Number.isFinite(n) ? n : String(text); };
+  const blankSelector = () => ({ kind: 'role', value: 'drive', paramOn: false, pname: '', op: '>=', pvalue: '', position: '' });
+  const selToForm = sel => ({
+    kind: sel?.effect !== undefined ? 'effect' : 'role', value: sel?.effect ?? sel?.role ?? '', position: sel?.position ?? '',
+    paramOn: !!sel?.param, pname: sel?.param?.name ?? '', op: sel?.param?.op ?? '>=', pvalue: sel?.param ? String(sel.param.value) : ''
+  });
+  const selFromForm = f => {
+    const out = { [f.kind]: f.value };
+    if (f.paramOn) out.param = { name: f.pname.trim(), op: f.op, value: toNumberIfNumeric(f.pvalue) };
+    if (f.position) out.position = f.position;
+    return out;
+  };
+  const blankRule = () => ({ id: '', title: '', severity: 'tip', topic: '', why: '', message: '', sources: [], mode: 'each', min: 1, match: blankSelector(), after: null, before: null, fix: null });
+  const blankForm = () => ({ id: '', name: '', author: '', sources: [{ key: '', title: '', url: '' }], rules: [blankRule()] });
+
+  function toForm(pack) {
+    return {
+      id: pack.id, name: pack.name, author: pack.author || '',
+      sources: Object.entries(pack.sources).map(([key, src]) => ({ key, title: src.title, url: src.url })),
+      rules: pack.rules.map(r => ({
+        id: r.id, title: r.title, severity: r.severity, topic: r.topic === 'custom' ? '' : r.topic, why: r.why, message: r.message,
+        sources: [...r.sources], mode: r.mode, min: r.min,
+        match: selToForm(r.match), after: r.match.after ? selToForm(r.match.after) : null, before: r.match.before ? selToForm(r.match.before) : null,
+        fix: r.fix ? { action: r.fix.action, label: r.fix.label || '', param: r.fix.param || '', value: r.fix.value === undefined ? '' : String(r.fix.value), target: selToForm(r.fix.target) } : null
+      }))
+    };
+  }
+
+  function fromForm(form) {
+    const sources = {};
+    form.sources.forEach((src, i) => {
+      if (!src.title.trim() && !src.url.trim()) return; // an empty row is ignored
+      const key = src.key || `src${i + 1}`;
+      sources[key] = { title: src.title, url: src.url };
+    });
+    const used = new Set();
+    const rules = form.rules.map((r, i) => {
+      let id = r.id || slugify(r.title) || `rule-${i + 1}`;
+      while (used.has(id)) id = `${id.slice(0, 36)}-${i + 1}`;
+      used.add(id);
+      const match = selFromForm(r.match);
+      if (r.after) match.after = selFromForm({ ...r.after, position: '' });
+      if (r.before) match.before = selFromForm({ ...r.before, position: '' });
+      const out = {
+        id, severity: r.severity, title: r.title, why: r.why, message: r.message, mode: r.mode, match,
+        sources: r.sources.filter(key => sources[key])
+      };
+      if (r.topic.trim()) out.topic = r.topic.trim();
+      if (r.mode === 'once') out.min = Number(r.min);
+      if (r.fix && r.mode === 'each') {
+        out.fix = r.fix.action === 'set' ? { action: 'set', param: r.fix.param.trim(), value: toNumberIfNumeric(r.fix.value) } : { action: r.fix.action, target: selFromForm({ ...r.fix.target, position: '' }) };
+        if (r.fix.label.trim()) out.fix.label = r.fix.label.trim();
+      }
+      return out;
+    });
+    return { format: FORMAT, version: 1, id: form.id || slugify(form.name), name: form.name, author: form.author, sources, rules };
+  }
+
+  const roleNames = advice => [...new Set([...advice.effects.map(fx => fx.role), ...Object.keys(advice.GROUPS)])].sort();
+
+  return { FORMAT, LIMITS, validate, compile, EXAMPLE, prefix, toForm, fromForm, blankForm, blankRule, blankSelector, slugify, roleNames };
 })();
 
 if (typeof module !== 'undefined') module.exports = RULEPACK;

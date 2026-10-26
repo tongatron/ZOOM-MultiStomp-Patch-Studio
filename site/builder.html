@@ -14,8 +14,8 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=foot3-20261026" />
-    <link rel="stylesheet" href="stage.css?v=foot3-20261026" />
+    <link rel="stylesheet" href="styles.css?v=peditor-20261026" />
+    <link rel="stylesheet" href="stage.css?v=peditor-20261026" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
   <body>
@@ -90,6 +90,7 @@
               <summary>Rule packs <span class="Counter" id="advice-packs-count">0</span></summary>
               <p class="field-hint">Add your own advice rules from a <code>.json</code> file, or share yours. Every rule must cite a source. <button class="clear-link" id="pack-example">Download an example</button></p>
               <div id="advice-packs-list"></div>
+              <button class="btn btn-sm btn-primary" id="pack-new">New rule pack</button>
               <label class="btn btn-sm" for="pack-files">Import rule pack</label>
               <input type="file" id="pack-files" accept=".json,application/json" multiple hidden />
             </details>
@@ -231,6 +232,20 @@
       </div>
     </dialog>
 
+    <dialog class="Overlay pack-editor" id="pack-editor" aria-labelledby="pack-editor-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="pack-editor-title">New rule pack</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" id="pack-editor-close" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="Overlay-body" id="pack-editor-body"></div>
+      <div class="pe-footer">
+        <div class="pe-errors" id="pack-editor-errors" role="alert" hidden></div>
+        <div class="pe-actions"><button class="btn" id="pack-editor-cancel">Cancel</button><button class="btn btn-primary" id="pack-editor-save">Save pack</button></div>
+      </div>
+    </dialog>
+
     <dialog class="Overlay compare-dialog" id="compare" aria-labelledby="compare-title">
       <div class="Overlay-header">
         <h2 class="Overlay-title" id="compare-title">Compare patches</h2>
@@ -245,14 +260,15 @@
       <div class="Overlay-body compare-body" id="compare-body"></div>
     </dialog>
 
-    <script src="effects-data.js?v=foot3-20261026"></script>
-    <script src="firmware-data.js?v=foot3-20261026"></script>
-    <script src="library-merge.js?v=foot3-20261026"></script>
-    <script src="zptc.js?v=foot3-20261026"></script>
-    <script src="advice-engine.js?v=foot3-20261026"></script>
-    <script src="rule-packs.js?v=foot3-20261026"></script>
-    <script src="advice-rules.js?v=foot3-20261026"></script>
-    <script src="builder.js?v=foot3-20261026"></script>
-    <script src="pwa.js?v=foot3-20261026"></script>
+    <script src="effects-data.js?v=peditor-20261026"></script>
+    <script src="firmware-data.js?v=peditor-20261026"></script>
+    <script src="library-merge.js?v=peditor-20261026"></script>
+    <script src="zptc.js?v=peditor-20261026"></script>
+    <script src="advice-engine.js?v=peditor-20261026"></script>
+    <script src="rule-packs.js?v=peditor-20261026"></script>
+    <script src="advice-rules.js?v=peditor-20261026"></script>
+    <script src="rule-pack-editor.js?v=peditor-20261026"></script>
+    <script src="builder.js?v=peditor-20261026"></script>
+    <script src="pwa.js?v=peditor-20261026"></script>
   </body>
 </html>
