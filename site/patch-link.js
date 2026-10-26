@@ -1,5 +1,5 @@
 // Share links for patches, used by the builder (Share link) and the Tone ideas page (Open in builder).
-// The patch travels in the URL fragment (#p=…), which browsers never send to the server; &s=<style id> picks the advice style.
+// The patch travels in the URL fragment (#p=…), which browsers never send to the server.
 // Payload: [name, [[effectIndex, on 1|0, [values in Effects List parameter order]]]] as base64url JSON.
 // Requires EFFECTS_DATA.
 
@@ -23,12 +23,12 @@ const PATCHLINK = (() => {
     };
   }
 
-  // Reads #p=…&s=… from a location hash; returns null when there is no patch in it
+  // Reads #p=… from a location hash; returns null when there is no patch in it
   function fromHash(hash) {
     const params = new URLSearchParams(hash.replace(/^#/, ''));
-    return params.get('p') ? { code: params.get('p'), style: params.get('s') } : null;
+    return params.get('p') ? { code: params.get('p') } : null;
   }
-  const url = (patch, style = null, page = 'builder.html') => `${page}#p=${encode(patch)}${style ? `&s=${encodeURIComponent(style)}` : ''}`;
+  const url = (patch, page = 'builder.html') => `${page}#p=${encode(patch)}`;
 
   return { encode, decode, fromHash, url };
 })();

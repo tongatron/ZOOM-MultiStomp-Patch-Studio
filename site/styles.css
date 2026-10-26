@@ -565,9 +565,6 @@ body.is-dropping .drop-overlay { display: grid; }
 .advice-body { display: flex; flex-direction: column; }
 .advice-body[hidden], .advice-off[hidden] { display: none; }
 .advice-off { margin: 0; padding: 16px; color: var(--fg-muted); font-size: 13px; }
-.style-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-muted); background: var(--accent-subtle); }
-.style-card p { margin: 2px 0 0; font-size: 13px; color: var(--fg-muted); }
-.style-card .btn { flex: none; }
 .sources { margin-top: 6px; font-size: 12px; }
 .sources summary { cursor: pointer; color: var(--fg-muted); }
 .sources a, div.sources a { display: block; margin-top: 4px; }
@@ -596,7 +593,6 @@ body.is-dropping .drop-overlay { display: grid; }
 @media (max-width: 640px) {
   .advice-item { grid-template-columns: 20px minmax(0, 1fr); }
   .advice-actions { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }
-  .style-card { flex-direction: column; }
 }
 .tip-card { padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .tip-card p { margin: 8px 0 0; }
@@ -650,17 +646,6 @@ body.is-dropping .drop-overlay { display: grid; }
 .cmp-chg b { color: var(--accent-fg); font-weight: 600; }
 .cmp-note { margin: 0 0 6px; color: var(--accent-fg); }
 @media (max-width: 640px) { .cmp-head, .cmp-row { gap: 6px; } .cmp-cell { padding: 6px; } .cmp-cell .fx-thumb { display: none; } }
-
-/* Style ideas (builder advice panel) */
-.advice-ideas:empty { display: none; }
-.advice-ideas { display: flex; flex-direction: column; gap: 10px; margin: 0 12px 12px; }
-.idea { padding: 12px 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; }
-.idea-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.idea-note { margin: 6px 0 0; color: var(--fg-muted); font-size: 13px; }
-.idea-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.fit { font: 12px var(--mono); padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--fg-muted); }
-.fit[data-fit="high"] { color: #3fb950; border-color: rgba(63, 185, 80, .4); }
-.fit[data-fit="mid"] { color: #d29922; border-color: rgba(187, 128, 9, .4); }
 
 /* Let the builder columns shrink below their content so small screens never scroll sideways */
 .builder > * { min-width: 0; }

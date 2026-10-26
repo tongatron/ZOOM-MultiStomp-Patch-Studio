@@ -24,7 +24,7 @@ ZOOM MultiStomp pedals pack a lot into a tiny screen: around a hundred effects, 
 - **Find the right effect fast.** Every effect with the original ZOOM text, parameters and ranges, searchable by name, model or parameter.
 - **Never hit the DSP wall by surprise.** See the load of each effect and of the whole chain live, against the 100% limit.
 - **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources (full set on the MS-60B+, objective checks on the MS-50G+).
-- **Tailored to your rig.** Pick a style profile and say whether the pedal feeds an amp or a mixer, and the tips adapt (MS-60B+).
+- **Tailored to your rig.** Say whether the pedal feeds an amp or a mixer, and the tips adapt (MS-60B+).
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
 - **Keep your work.** Save patches in the browser, compare two versions, undo and redo, share a patch with a link, back up and restore, or sync them between your devices with a private code. Each pedal keeps its own library. Write your own advice rules in a form and share them as `.json` rule packs.
 - **Tone ideas.** Starting chains by style and by bassist, with a focus on alternative rock (grunge, post-punk, indie, alt-metal, fuzz rock: Krist Novoselic, Peter Hook, Kim Deal, Justin Chancellor, Mike Kerr, Chris Wolstenholme). Every gear fact cites its source; one click opens the chain in the builder (MS-60B+).
@@ -37,7 +37,7 @@ ZOOM MultiStomp pedals pack a lot into a tiny screen: around a hundred effects, 
 | Effects | 97 | 127 (24 are Handy Guitar Lab add-ons) |
 | Usable in the builder | 97 | 103 (add-on IDs are not known yet) |
 | Amp models | 11 bass amps | 22 amps (PREAMP category) |
-| Advice | Order, levels, low end, output, 12 styles | Objective checks only (DSP, levels, routing) |
+| Advice | Order, levels, low end, output | Objective checks only (DSP, levels, routing) |
 | Tone ideas | Yes | Not yet |
 | Tested on the pedal | Yes, firmware 1.20 | **No** |
 
@@ -60,7 +60,6 @@ What still needs checking is listed in [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md
 | **Effects library** | Every effect with the original ZOOM Effects List text, parameters and ranges. Search and filter by category and feature. |
 | **Patch builder** | Up to 6 effects, drag to reorder, every parameter editable, live DSP meter, undo and redo. |
 | **Advice engine** | Order, level and DSP checks plus placement tips. Order rules are warnings or tips, never errors. Every rule cites its sources. |
-| **Style profiles** | Starter chains and tuned advice per playing style (MS-60B+). |
 | **`.zptc` export / import** | Reverse-engineered format; every sample file round-trips byte for byte. |
 | **My patches** | Local library per pedal, comparison view, share links, backup and import, sync between devices. |
 

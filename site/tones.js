@@ -1,5 +1,5 @@
 // Tone ideas page: starting chains by style (advice styles with a starter) and by bassist (tone-ideas.js).
-// "Open in builder" passes the chain through a share link (patch-link.js) together with the matching advice style.
+// "Open in builder" passes the chain through a share link (patch-link.js).
 // Requires EFFECTS_DATA, CATEGORIES, ZPTC, ADVICE, TONE_IDEAS and PATCHLINK.
 
 (() => {
@@ -25,7 +25,7 @@
     }).join('')}</ol>
     <p class="tone-dsp">DSP ${dsp.toFixed(1)}% · ${patch.effects.length} effect${patch.effects.length === 1 ? '' : 's'}</p>`;
   }
-  const openButton = (chain, styleId) => `<a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(chain), styleId)}">Open in builder</a>`;
+  const openButton = chain => `<a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(chain))}">Open in builder</a>`;
 
   function styleCard(style) {
     const players = TONE_IDEAS.filter(t => t.style === style.id).map(t => t.name);
@@ -34,7 +34,7 @@
       <p>${escapeHtml(style.summary)}</p>
       ${chainHtml(style.starter)}
       ${players.length ? `<p class="tone-players">Bassists: ${players.map(escapeHtml).join(', ')}</p>` : ''}
-      <div class="tone-actions">${openButton(style.starter, style.id)}</div>
+      <div class="tone-actions">${openButton(style.starter)}</div>
       <details class="sources"><summary>Sources</summary>${style.sources.map(sourceLink).join('')}</details>
     </article>`;
   }
@@ -48,7 +48,7 @@
       <ul class="tone-facts">${idea.facts.map(f => `<li>${escapeHtml(f.text)} <span class="tone-cite">${sourceLink(f.source)}</span></li>`).join('')}</ul>
       ${chainHtml(chain)}
       <p class="tone-approach">${escapeHtml(idea.approach)}</p>
-      <div class="tone-actions">${openButton(chain, style.id)}<a class="btn btn-sm btn-invisible" href="#style-${style.id}">Style: ${escapeHtml(style.name)}</a></div>
+      <div class="tone-actions">${openButton(chain)}<a class="btn btn-sm btn-invisible" href="#style-${style.id}">Style: ${escapeHtml(style.name)}</a></div>
     </article>`;
   }
 

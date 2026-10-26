@@ -769,29 +769,11 @@ const SEVERITY_ICON = {
   tip: '<path fill="currentColor" d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/>'
 };
 const adviceSettings = (() => {
-  const defaults = { enabled: true, style: 'general', output: null, ignored: [], preferences: [], show: { error: true, warning: true, tip: true } };
+  const defaults = { enabled: true, output: null, ignored: [], preferences: [], show: { error: true, warning: true, tip: true } };
   try { return { ...defaults, ...JSON.parse(localStorage.getItem(`${PEDAL.id}-advice`) || '{}') }; } catch { return defaults; }
 })();
 const saveAdvice = () => { try { localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify(adviceSettings)); } catch {} };
 let findings = [];
-
-// Style ideas: how close the chain is to the selected style (and what is missing).
-const ROLE_LABEL = { comp: 'compressor', drive: 'drive', preamp: 'preamp', amp: 'amp model', envfilter: 'envelope filter', gate: 'noise reduction', eq: 'EQ', synth: 'synth or octaver', delay: 'delay', reverb: 'reverb', mod: 'modulation' };
-const roleName = role => ROLE_LABEL[role] || role;
-function renderIdeas() {
-  const box = $('#advice-ideas');
-  const style = ADVICE.styles.find(s => s.id === adviceSettings.style && s.starter);
-  if (!state.effects.length || !style) { box.innerHTML = ''; return; }
-  const { fit, missing, conflicts } = ADVICE.styleFit(serialize(state), style);
-  const full = state.effects.length >= ZPTC.MAX_EFFECTS;
-  box.innerHTML = `<div class="idea">
-      <div class="idea-head"><strong>${escapeHtml(style.name)}</strong><span class="fit" data-fit="${fit >= 75 ? 'high' : fit >= 40 ? 'mid' : 'low'}">${fit}% match</span></div>
-      ${conflicts.length ? `<p class="idea-note">Works against this style: ${conflicts.map(roleName).join(', ')}.</p>` : ''}
-      ${missing.length ? `<p class="idea-note">${escapeHtml(style.name)} usually has a ${missing.map(m => roleName(m.role)).join(', ')}:</p>
-        <div class="idea-actions">${missing.map(m => `<button class="btn btn-sm" data-advice="add-role" data-style="${style.id}" data-role="${m.role}" ${full ? 'disabled title="The chain is full"' : ''}>+ ${escapeHtml(m.entry.effect)}</button>`).join('')}</div>`
-        : '<p class="idea-note">The chain covers every part of this style\'s starter chain.</p>'}
-    </div>`;
-}
 
 function renderAdvice() {
   const on = adviceSettings.enabled;
@@ -799,27 +781,17 @@ function renderAdvice() {
   $('#advice-toggle-label').textContent = on ? 'ON' : 'OFF';
   $('#advice-body').hidden = !on;
   $('#advice-off').hidden = on;
-  $('#advice-style').disabled = !on;
   document.querySelectorAll('.advice-dot').forEach(dot => dot.remove());
   if (!on) { $('#advice-count').textContent = '–'; findings = []; return; }
 
-  const style = ADVICE.styles.find(s => s.id === adviceSettings.style) || ADVICE.styles[0];
-  $('#advice-style').innerHTML = ADVICE.styles.map(s => `<option value="${s.id}"${s.id === style.id ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
   const sourceLinks = list => list.map(src => `<a href="${escapeHtml(src.url)}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('');
-  $('#advice-style-card').innerHTML = style.id === 'general' ? '' : `
-    <div class="style-card">
-      <div class="style-card-main"><strong>${escapeHtml(style.name)}</strong><p>${escapeHtml(style.summary)}</p>
-        <details class="sources"><summary>Sources</summary>${sourceLinks(style.sources.map(k => ADVICE.sources[k]).filter(Boolean))}</details></div>
-      ${style.starter ? `<button class="btn btn-sm" data-advice="starter" title="Replace the current chain with a starting point for this style">Load starter chain</button>` : ''}
-    </div>`;
 
   $('#advice-prefs-count').textContent = adviceSettings.preferences.length;
   $('#advice-prefs-list').innerHTML = ADVICE.preferences.map(pref => `<label class="pref-row" title="${escapeHtml(pref.hint)}"><input type="checkbox" data-advice="pref" data-id="${pref.id}"${adviceSettings.preferences.includes(pref.id) ? ' checked' : ''} /> <span>${escapeHtml(pref.label)}</span></label>`).join('');
   $('#advice-output').innerHTML = `<span class="advice-output-label">Plugging into</span>${[['amp', PEDAL.amp], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
     `<button class="chip-filter" data-advice="output" data-id="${id}" aria-pressed="${adviceSettings.output === id}">${label}</button>`).join('')}`;
   renderPacks();
-  renderIdeas();
-  findings = ADVICE.analyze(serialize(state), { output: adviceSettings.output, style: style.id, ignored: adviceSettings.ignored, preferences: adviceSettings.preferences });
+  findings = ADVICE.analyze(serialize(state), { output: adviceSettings.output, ignored: adviceSettings.ignored, preferences: adviceSettings.preferences });
   const counts = Object.fromEntries(ADVICE.SEVERITIES.map(sev => [sev, findings.filter(f => f.severity === sev).length]));
   $('#advice-count').textContent = findings.length;
   $('#advice-filters').innerHTML = ADVICE.SEVERITIES.map(sev => `<button class="chip-filter sev-${sev}" data-advice="filter" data-sev="${sev}" aria-pressed="${adviceSettings.show[sev] !== false}">${icon(SEVERITY_ICON[sev], 14)} ${SEVERITY_LABEL[sev]} <span class="Counter">${counts[sev]}</span></button>`).join('');
@@ -855,7 +827,6 @@ function renderAdvice() {
 
 $('#advice-on').addEventListener('click', () => { adviceSettings.enabled = true; saveAdvice(); renderSummary(); });
 $('#advice-toggle').addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
-$('#advice-style').addEventListener('change', event => { adviceSettings.style = event.target.value; saveAdvice(); renderAdvice(); });
 $('#advice').addEventListener('click', event => {
   const button = event.target.closest('[data-advice]');
   if (!button) return;
@@ -869,19 +840,6 @@ $('#advice').addEventListener('click', event => {
     case 'ignore': adviceSettings.ignored = [...new Set([...adviceSettings.ignored, finding.ruleId])]; break;
     case 'restore': adviceSettings.ignored = []; break;
     case 'output': adviceSettings.output = adviceSettings.output === button.dataset.id ? null : button.dataset.id; break;
-    case 'add-role': {
-      const style = ADVICE.styles.find(s => s.id === button.dataset.style);
-      const patch = serialize(state);
-      const fit = ADVICE.styleFit(patch, style);
-      const entry = fit.missing.find(m => m.role === button.dataset.role)?.entry;
-      if (!entry || state.effects.length >= ZPTC.MAX_EFFECTS) return;
-      const index = catalog.find(fx => fx.name === entry.effect).index;
-      if (!fitsDsp(catalog[index])) return;
-      state.effects.forEach(slot => { slot.open = false; });
-      state.effects.splice(ADVICE.insertPosition(patch, fit, button.dataset.role), 0, slotFor(index, entry.values));
-      render();
-      return;
-    }
     case 'pref': {
       const id = button.dataset.id;
       adviceSettings.preferences = button.checked ? [...new Set([...adviceSettings.preferences, id])] : adviceSettings.preferences.filter(p => p !== id);
@@ -891,13 +849,6 @@ $('#advice').addEventListener('click', event => {
       const next = finding.fix.apply(serialize(state));
       state.effects = hydrate(next);
       render();
-      return;
-    }
-    case 'starter': {
-      const style = ADVICE.styles.find(s => s.id === adviceSettings.style);
-      if (!style?.starter || !confirmDiscard()) return;
-      const effects = style.starter.effects.map(e => ({ index: catalog.find(fx => fx.name === e.effect).index, on: true, values: e.values }));
-      loadPatch({ name: style.starter.name, effects });
       return;
     }
     default: return;
@@ -1135,7 +1086,6 @@ if (sharedLink) {
     shared.effects = shared.effects.filter(e => catalog[e.index].usable);
     if (!shared.effects.length) throw new Error('empty');
     if (confirmDiscard()) {
-      if (ADVICE.styles.some(st => st.id === sharedLink.style)) { adviceSettings.style = sharedLink.style; saveAdvice(); }
       loadPatch(shared);
       notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`);
     }

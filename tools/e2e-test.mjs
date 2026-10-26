@@ -101,7 +101,7 @@ try {
     await laptop.context.close();
   });
 
-  await test('a tone idea opens in the builder with its chain and advice style', async () => {
+  await test('a tone idea opens in the builder with its chain', async () => {
     const fresh = await device();
     await fresh.page.goto(`${base}/tones.html`);
     assert.ok(await fresh.page.locator('#tone-styles .tone-card').count() >= 5);
@@ -109,7 +109,6 @@ try {
     await fresh.page.waitForURL(/builder\.html/);
     assert.equal(await fresh.page.inputValue('#patch-name'), 'FUZZ SYNTH');
     assert.equal(await chain(fresh.page), 2);
-    assert.equal(await fresh.page.inputValue('#advice-style'), 'fuzzrock');
     await fresh.context.close();
   });
 
