@@ -266,6 +266,11 @@ test('new sourced rules: delay, reverb tail, deep lows, compression ratio, gate 
   fires('1176 LIMITER', { RATIO: '4:1' }, 'comp.ratio-high', false);
   fires('ZOOM NOISE REDUCTION', { THRSHLD: 85 }, 'gate.threshold-high');
   fires('ZOOM NOISE REDUCTION', { THRSHLD: 30 }, 'gate.threshold-high', false);
+  fires('BASS SYNTHESIZER', { BALANCE: 100 }, 'synth.no-dry');
+  fires('BASS SYNTHESIZER', { BALANCE: 60 }, 'synth.no-dry', false);
+  fires('DYNAMIC COMPRESSOR', { SENSE: 10 }, 'comp.heavy');
+  fires('DYNAMIC COMPRESSOR', { SENSE: 5 }, 'comp.heavy', false);
+  fires('BLACK OPTICAL COMPRESSOR', { COMP: 95 }, 'comp.heavy');
   const fix = find(patch(['DELAY', { REPEAT: 90, MIX: 20 }]), 'delay.repeat-high').fix;
   assert.equal(fix.apply(patch(['DELAY', { REPEAT: 90, MIX: 20 }])).effects[0].values.REPEAT, 30);
 });

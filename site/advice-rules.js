@@ -37,6 +37,7 @@
     musicGuyEq: { title: 'Music Guy Mixing — 7 bass guitar EQ tips', url: 'https://www.musicguymixing.com/bass-guitar-eq-tips/' },
     musicGuyReverb: { title: 'Music Guy Mixing — How to use reverb on bass guitar', url: 'https://www.musicguymixing.com/reverb-on-bass-guitar/' },
     neuralDelay: { title: 'Neural DSP — How to use a delay pedal', url: 'https://neuraldsp.com/articles/how-to-use-a-delay-pedal' },
+    guitarchalkSynth: { title: 'Guitarchalk — MXR Bass Synth settings', url: 'https://www.guitarchalk.com/mxr-bass-synth-settings/' },
     zoomManual: { title: 'ZOOM MS-60B+ Operation Manual', url: 'https://zoomcorp.com/manuals/ms-60bplus-en/' },
     zoomFxList: { title: 'ZOOM MS-60B+ Effects List', url: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf' }
   });
@@ -307,6 +308,25 @@
       sources: ['yamahaComp'],
       check: ctx => ctx.active.filter(s => (s.fx.name === '160 COMPRESSOR' && (s.num('RATIO') ?? 0) >= 8) || (s.fx.name === '1176 LIMITER' && ['12:1', '20:1'].includes(String(s.v('RATIO')))))
         .map(s => ({ slots: [s.i], message: `${s.label} has RATIO ${s.v('RATIO')}${s.fx.name === '160 COMPRESSOR' ? ':1' : ''}. Try 4:1 or lower for a natural bass.` }))
+    },
+    {
+      id: 'synth.no-dry', severity: 'tip', topic: 'low end', title: 'Synth with no clean bass under it',
+      why: 'With the balance all the way to the synth, the low-end definition and fundamentals of the bass can get lost. Set the blend so some clean bass stays underneath.',
+      sources: ['guitarchalkSynth'],
+      check: ctx => ctx.of('synth').filter(s => s.has('BALANCE') && (s.num('BALANCE') ?? 0) >= 95).map(s => ({
+        slots: [s.i], message: `${s.label} has BALANCE at ${s.num('BALANCE')}: almost no clean bass is left.`,
+        fix: { label: 'Set BALANCE to 70', apply: p => setValue(p, s.i, 'BALANCE', 70) }
+      }))
+    },
+    {
+      id: 'comp.heavy', severity: 'tip', topic: 'dynamics', title: 'Compression set very hard',
+      why: 'Compression evens out the notes, but too much of it can be overwhelming and leave an unappealing, flat sound. On bass a light touch usually works best.',
+      sources: ['yamahaComp'],
+      check: ctx => {
+        const HARD = { 'DYNAMIC COMPRESSOR': ['SENSE', 9], 'OPTICAL COMPRESSOR': ['DRIVE', 9], 'BLACK OPTICAL COMPRESSOR': ['COMP', 90], 'MULTIBAND COMPRESSOR': ['COMP', 90], 'GLAM COMPRESSOR': ['COMP', 90] };
+        return ctx.active.filter(s => HARD[s.fx.name] && (s.num(HARD[s.fx.name][0]) ?? 0) >= HARD[s.fx.name][1])
+          .map(s => ({ slots: [s.i], message: `${s.label} has ${HARD[s.fx.name][0]} at ${s.num(HARD[s.fx.name][0])}. Back it off if the bass sounds flat or loses its attack.` }));
+      }
     },
     {
       id: 'gate.threshold-high', severity: 'tip', topic: 'noise', title: 'Noise reduction may cut long notes',
