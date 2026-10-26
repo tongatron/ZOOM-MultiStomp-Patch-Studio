@@ -57,7 +57,8 @@
     $('#tone-filter').innerHTML = [['alt', 'Alternative rock'], ['all', 'All styles']]
       .map(([id, label]) => `<button class="chip-filter" data-filter="${id}" aria-pressed="${state.filter === id}">${label}</button>`).join('');
     $('#tone-styles').innerHTML = styles.map(styleCard).join('');
-    $('#tone-bassists').innerHTML = TONE_IDEAS.filter(t => state.filter === 'all' || ALT_ROCK.includes(t.style)).map(bassistCard).join('');
+    // An idea whose style is unknown (e.g. an older advice-rules.js) is skipped instead of breaking the page
+    $('#tone-bassists').innerHTML = TONE_IDEAS.filter(t => styleById(t.style)?.starter && (state.filter === 'all' || ALT_ROCK.includes(t.style))).map(bassistCard).join('');
   }
 
   $('#tone-filter').addEventListener('click', event => {
