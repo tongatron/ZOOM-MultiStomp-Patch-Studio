@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Design B, Punk — Zoom MS-60B+ Patch Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <style>
+      :root { --ink: #0b0b0b; --paper: #f2ecdc; --pink: #ff2e88; --yellow: #ffe100; --fg: #f2ecdc; --cut: "Impact", "Haettenschweiler", "Arial Narrow Bold", "Franklin Gothic Bold", sans-serif; --type: "Courier New", Courier, monospace; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; color: var(--fg); font: 15px/1.45 var(--type); background-color: var(--ink);
+        background-image: radial-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px);
+        background-size: 3px 3px, 7px 7px; background-position: 0 0, 1px 2px;
+      }
+      button, input { font: inherit; color: inherit; }
+      .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+
+      /* masthead */
+      .mast { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 24px; padding-bottom: 18px; border-bottom: 6px solid var(--yellow); }
+      .mast a { color: var(--ink); background: var(--yellow); font: 18px var(--cut); padding: 4px 10px; transform: rotate(-3deg); text-decoration: none; display: inline-block; }
+      .mast input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font: clamp(48px, 10vw, 120px)/.9 var(--cut); color: var(--yellow); text-transform: uppercase; letter-spacing: -.01em; text-shadow: 4px 4px 0 var(--pink); }
+      .mast .issue { font: 14px var(--type); background: var(--paper); color: var(--ink); padding: 4px 8px; transform: rotate(2deg); }
+      h2 { font: 34px/1 var(--cut); text-transform: uppercase; color: var(--paper); margin: 36px 0 14px; letter-spacing: .02em; }
+      h2 span { background: var(--pink); color: var(--ink); padding: 0 8px; }
+
+      /* buttons */
+      .stamp { border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); font: 20px var(--cut); text-transform: uppercase; padding: 8px 16px; cursor: pointer; box-shadow: 4px 4px 0 var(--pink); transform: rotate(-1deg); }
+      .stamp:hover { transform: rotate(1deg) scale(1.04); }
+      .stamp.pink { background: var(--pink); box-shadow: 4px 4px 0 var(--yellow); }
+      .stamp.small { font-size: 15px; padding: 4px 10px; box-shadow: 3px 3px 0 var(--pink); }
+      .bar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 20px; }
+      .bar a.stamp { text-decoration: none; }
+
+      /* pedalboard */
+      .board { display: flex; gap: 0; align-items: stretch; overflow-x: auto; padding: 18px 6px 26px; scroll-snap-type: x mandatory; }
+      .jack { flex: 0 0 auto; align-self: center; font: 20px var(--cut); color: var(--yellow); writing-mode: vertical-rl; transform: rotate(180deg); padding: 0 6px; }
+      .cable { flex: 0 0 34px; align-self: center; height: 8px; background: repeating-linear-gradient(90deg, var(--paper) 0 6px, transparent 6px 10px); }
+      .pedal { position: relative; flex: 0 0 210px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); box-shadow: 6px 6px 0 var(--c); }
+      .pedal:nth-child(4n+2) { transform: rotate(-1.2deg); }
+      .pedal:nth-child(4n) { transform: rotate(1deg); }
+      .pedal::before { content: ""; position: absolute; top: -12px; left: 50%; width: 70px; height: 22px; margin-left: -35px; background: rgba(255, 225, 0, .75); transform: rotate(-4deg); }
+      .pedal.off { filter: grayscale(1) contrast(.8); opacity: .7; }
+      .pedal .no { position: absolute; top: 6px; right: 8px; font: 22px var(--cut); color: var(--c); -webkit-text-stroke: 1px var(--ink); }
+      .pedal h3 { margin: 6px 0 0; font: 24px/1 var(--cut); text-transform: uppercase; word-break: break-word; }
+      .pedal .cat { font-size: 12px; text-transform: uppercase; background: var(--ink); color: var(--paper); align-self: flex-start; padding: 0 6px; }
+      .knobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .knob { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; text-transform: uppercase; }
+      .dial { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); border: 3px solid var(--ink); }
+      .dial::after { content: ""; position: absolute; left: 50%; top: 4px; width: 3px; height: 15px; margin-left: -1.5px; background: var(--yellow); transform-origin: 50% 15px; transform: rotate(var(--a)); }
+      .knob .val { font: 14px var(--cut); }
+      .knob .pm { display: flex; gap: 2px; }
+      .knob .pm button { width: 20px; height: 20px; border: 2px solid var(--ink); background: none; cursor: pointer; line-height: 1; padding: 0; font-weight: 700; }
+      .switch { align-self: center; width: 62px; height: 62px; border-radius: 50%; border: 4px solid var(--ink); background: radial-gradient(circle at 35% 35%, #9a9a9a, #3a3a3a 70%); cursor: pointer; box-shadow: 0 4px 0 var(--ink); }
+      .switch:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+      .led { align-self: center; width: 12px; height: 12px; border-radius: 50%; background: #400; border: 2px solid var(--ink); }
+      .on .led { background: #ff2a2a; box-shadow: 0 0 10px #ff2a2a; }
+      .moves { display: flex; justify-content: space-between; }
+      .moves button { border: 0; background: none; font: 20px var(--cut); cursor: pointer; padding: 0 4px; }
+      .moves button:hover { color: var(--pink); }
+      .empty { font: 28px var(--cut); color: var(--paper); padding: 40px; border: 4px dashed var(--paper); }
+
+      /* meter */
+      .meter { position: relative; height: 40px; border: 4px solid var(--paper); background: var(--ink); margin-top: 8px; }
+      .meter i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(-45deg, var(--yellow) 0 14px, var(--ink) 14px 28px); }
+      .meter b { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 26px var(--cut); color: var(--paper); text-shadow: 2px 2px 0 var(--ink); }
+      .overload { display: inline-block; margin-top: 10px; font: 40px var(--cut); color: var(--pink); border: 5px solid var(--pink); padding: 0 12px; transform: rotate(-4deg); }
+
+      /* notes */
+      .notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
+      .note { position: relative; padding: 16px; background: var(--yellow); color: var(--ink); box-shadow: 5px 5px 0 rgba(0, 0, 0, .6); transform: rotate(var(--r)); }
+      .note.warning, .note.error { background: var(--pink); }
+      .note strong { display: block; font: 22px/1 var(--cut); text-transform: uppercase; margin-bottom: 6px; }
+      .note p { margin: 0 0 8px; font-size: 14px; }
+      .note .src { font-size: 11px; }
+      .note .src a { color: var(--ink); }
+      .note .bang { position: absolute; top: -14px; right: 10px; font: 30px var(--cut); color: var(--paper); -webkit-text-stroke: 2px var(--ink); }
+
+      /* scenes */
+      .scenes { display: flex; flex-wrap: wrap; gap: 10px; }
+      .scene { border: 3px solid var(--paper); background: none; padding: 6px 12px; font: 18px var(--cut); text-transform: uppercase; cursor: pointer; }
+      .scene[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+      .scene-card { margin-top: 14px; padding: 14px; border: 3px dashed var(--paper); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+      .scene-card p { margin: 0; flex: 1 1 300px; }
+
+      /* picker */
+      .picker { position: fixed; inset: 0; display: none; background: rgba(11, 11, 11, .92); z-index: 5; overflow: auto; }
+      .picker.open { display: block; }
+      .picker .wrap { padding-top: 32px; }
+      .picker input { width: 100%; padding: 10px 14px; border: 4px solid var(--yellow); background: var(--ink); font: 28px var(--cut); text-transform: uppercase; outline: none; }
+      .picks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+      .pick { border: 0; padding: 6px 10px; background: var(--paper); color: var(--ink); font: 18px var(--cut); text-transform: uppercase; cursor: pointer; box-shadow: 4px 4px 0 var(--c); transform: rotate(var(--r)); }
+      .pick:hover { background: var(--yellow); }
+      .pick small { font: 11px var(--type); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="mast">
+        <a href="./" title="Design lab">ZOOM MS-60B+ // DIY</a>
+        <input id="name" aria-label="Patch name" maxlength="10" />
+        <span class="issue">ISSUE #1 · NO RULES, JUST SOURCES</span>
+      </header>
+      <div class="bar">
+        <button class="stamp pink" id="add">+ Add noise</button>
+        <a class="stamp" id="open-builder" href="#">Take it to the builder</a>
+      </div>
+
+      <h2><span>The board</span> input → output</h2>
+      <div class="board" id="board"></div>
+
+      <h2><span>Gain meter</span> DSP load</h2>
+      <div class="meter"><i id="meter-fill"></i><b id="meter-text"></b></div>
+      <div id="overload"></div>
+
+      <h2><span>Zine notes</span> advice</h2>
+      <div class="notes" id="notes"></div>
+
+      <h2><span>Scene</span> style</h2>
+      <div class="scenes" id="scenes"></div>
+      <div class="scene-card" id="scene-card"></div>
+    </div>
+
+    <div class="picker" id="picker" role="dialog" aria-label="Add an effect">
+      <div class="wrap">
+        <div class="bar" style="margin:0 0 14px"><button class="stamp small" id="close">✕ Close</button></div>
+        <input id="q" placeholder="Pick your poison…" autocomplete="off" />
+        <div class="picks" id="picks"></div>
+      </div>
+    </div>
+
+    <script src="../effects-data.js"></script>
+    <script src="../firmware-data.js"></script>
+    <script src="../zptc.js"></script>
+    <script src="../advice-engine.js"></script>
+    <script src="../advice-rules.js"></script>
+    <script src="../patch-link.js"></script>
+    <script src="proto.js"></script>
+    <script>
+      const P = PROTO, esc = P.escapeHtml, $ = s => document.querySelector(s);
+      const tilt = n => `${((n * 37) % 7) - 3}deg`;
+
+      function knobs(e, i) {
+        return P.effects[e.index].params.map(p => ({ p, c: P.control(p) })).filter(x => x.c?.type === 'range').slice(0, 3).map(({ p, c }) => {
+          const v = Number(e.values[p.name]) || 0;
+          const angle = -135 + 270 * ((v - c.min) / (c.max - c.min || 1));
+          return `<div class="knob"><div class="dial" style="--a:${angle}deg"></div><span class="val">${esc(v)}</span><span>${esc(p.name)}</span>
+            <span class="pm"><button data-knob="${i}" data-p="${esc(p.name)}" data-d="-1" aria-label="${esc(p.name)} down">−</button><button data-knob="${i}" data-p="${esc(p.name)}" data-d="1" aria-label="${esc(p.name)} up">+</button></span></div>`;
+        }).join('');
+      }
+      function render(s) {
+        if (document.activeElement !== $('#name')) $('#name').value = s.name;
+        $('#open-builder').href = P.builderLink();
+        const pedals = s.chain.map((e, i) => `${i ? '<span class="cable"></span>' : ''}<article class="pedal${e.on ? ' on' : ' off'}" style="--c:${P.color(e.index)}">
+            <span class="no">#${i + 1}</span><span class="cat">${esc(P.categoryLabel(e.index))}</span><h3>${esc(P.effects[e.index].name)}</h3>
+            <div class="knobs">${knobs(e, i)}</div><span class="led"></span>
+            <button class="switch" data-toggle="${i}" aria-label="${e.on ? 'Turn off' : 'Turn on'} ${esc(P.effects[e.index].name)}" title="Stomp to turn ${e.on ? 'off' : 'on'}"></button>
+            <div class="moves"><button data-move="${i}" data-d="-1" aria-label="Move left">◀</button><button data-remove="${i}" aria-label="Remove">✕</button><button data-move="${i}" data-d="1" aria-label="Move right">▶</button></div>
+          </article>`).join('');
+        $('#board').innerHTML = s.chain.length ? `<span class="jack">IN</span>${pedals}<span class="jack">OUT</span>` : '<div class="empty">NO PEDALS. MAKE SOME NOISE →</div>';
+
+        const total = P.dsp();
+        $('#meter-fill').style.width = `${Math.min(100, total)}%`;
+        $('#meter-text').textContent = `${total.toFixed(1)}%`;
+        $('#overload').innerHTML = total > 100 ? '<span class="overload">OVERLOAD!!</span>' : '';
+
+        const findings = P.advice();
+        $('#notes').innerHTML = findings.map((f, n) => `<div class="note ${f.severity}" style="--r:${tilt(n)}"><span class="bang">${f.severity === 'tip' ? '?!' : '!!'}</span>
+            <strong>${esc(f.title)}</strong><p>${esc(f.message)}</p><p>${esc(f.why)}</p>
+            ${f.fix ? `<button class="stamp small" data-fix="${n}">Do it: ${esc(f.fix.label)}</button>` : ''}
+            <div class="src">${f.sources.map(src => `<a href="${esc(src.url)}" target="_blank" rel="noreferrer">${esc(src.title)}</a>`).join(' · ')}</div></div>`).join('') || '<div class="empty">NOTHING TO COMPLAIN ABOUT.</div>';
+
+        const styles = P.styles();
+        $('#scenes').innerHTML = styles.map(st => `<button class="scene" data-scene="${st.id}" aria-pressed="${st.id === s.style}">${esc(st.name)}</button>`).join('');
+        const current = styles.find(st => st.id === s.style);
+        $('#scene-card').innerHTML = current ? `<p>${esc(current.summary)}</p><button class="stamp small" data-steal="${current.id}">Steal this rig</button>` : '';
+      }
+
+      function renderPicks() {
+        $('#picks').innerHTML = P.search($('#q').value).map((fx, n) => `<button class="pick" data-add="${fx.index}" style="--c:${P.color(fx.index)};--r:${tilt(n)}">${esc(fx.name)} <small>${fx.dsp.toFixed(1)}%</small></button>`).join('') || '<div class="empty">NOTHING. TRY AGAIN.</div>';
+      }
+      const openPicker = () => { $('#picker').classList.add('open'); $('#q').value = ''; renderPicks(); $('#q').focus(); };
+      const closePicker = () => $('#picker').classList.remove('open');
+
+      document.addEventListener('click', e => {
+        const t = e.target.closest('button');
+        if (!t) return;
+        const d = t.dataset;
+        if (t.id === 'add') openPicker();
+        else if (t.id === 'close') closePicker();
+        else if (d.add) { if (!P.actions.add(+d.add)) alert(`The board is full: ${P.MAX} pedals max.`); closePicker(); }
+        else if (d.toggle) P.actions.toggle(+d.toggle);
+        else if (d.move) P.actions.move(+d.move, +d.d);
+        else if (d.remove) P.actions.remove(+d.remove);
+        else if (d.knob) {
+          const slot = P.state.chain[+d.knob];
+          const c = P.control(P.effects[slot.index].params.find(p => p.name === d.p));
+          const next = Math.max(c.min, Math.min(c.max, (Number(slot.values[d.p]) || 0) + Math.sign(+d.d) * Math.max(c.step, (c.max - c.min) / 20)));
+          P.actions.set(+d.knob, d.p, Math.round(next / c.step) * c.step);
+        }
+        else if (d.fix) P.actions.applyFix(P.advice()[+d.fix]);
+        else if (d.scene) P.actions.style(d.scene);
+        else if (d.steal) P.actions.loadStyle(d.steal);
+      });
+      document.addEventListener('input', e => { if (e.target.id === 'name') P.actions.rename(e.target.value); if (e.target.id === 'q') renderPicks(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
+      P.onChange(render);
+    </script>
+  </body>
+</html>

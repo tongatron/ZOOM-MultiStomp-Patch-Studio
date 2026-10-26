@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Design lab — Zoom MS-60B+ Patch Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <style>
+      :root { --bg: #0a0c0c; --panel: #121615; --border: #2a302e; --fg: #e8ece9; --muted: #8b948f; --accent: #d2f95a; --mono: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      a { color: var(--accent); }
+      button, textarea { font: inherit; color: inherit; }
+      header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 16px 24px; border-bottom: 1px solid var(--border); }
+      header h1 { margin: 0; font: 700 20px var(--mono); color: var(--accent); }
+      header p { margin: 0; color: var(--muted); flex: 1 1 320px; }
+      .seg { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); }
+      .seg button { border: 0; background: none; padding: 5px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); }
+      .seg button[aria-pressed="true"] { background: var(--accent); color: #11160a; font-weight: 600; }
+      .seg button:disabled { opacity: .4; cursor: default; }
+      .btn { border: 1px solid var(--border); background: var(--panel); padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+      .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--border); }
+      .bar .spacer { flex: 1; }
+      .bar small { color: var(--muted); }
+      kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; }
+      main { padding: 16px 24px 40px; }
+
+      /* frames */
+      .stage { display: grid; gap: 16px; align-items: start; }
+      .stage.single { grid-template-columns: minmax(0, 1fr) 320px; }
+      .stage.side { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .frame { position: relative; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; }
+      .frame .scaler { position: relative; overflow: hidden; }
+      .frame iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: #000; }
+      .frame .tag { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 13px; }
+      .frame .tag b { color: var(--accent); }
+      .frame .tag span { color: var(--muted); }
+      .frame .tag a { font-size: 12px; }
+
+      /* notes */
+      .card { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+      .card h2 { margin: 0 0 4px; font-size: 16px; color: var(--accent); }
+      .card .kind { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+      .card ul { margin: 0 0 12px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+      .card label { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; font-weight: 600; }
+      .card textarea { width: 100%; min-height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); resize: vertical; }
+      .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+      .pick { color: var(--accent); font-size: 12px; }
+
+      @media (max-width: 1000px) {
+        .stage.single, .stage.side, .cards { grid-template-columns: 1fr; }
+        header, .bar, main { padding-left: 16px; padding-right: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Design lab</h1>
+      <p>Three directions for the patch builder, each with its own look and its own way of working. They run on the real effects, DSP and advice, and share one patch: a change in one shows up in the others.</p>
+      <a href="../builder.html">Current builder</a>
+    </header>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="View"><button data-view="single">One at a time</button><button data-view="side">Side by side</button></div>
+      <div class="seg" role="group" aria-label="Design" id="which"></div>
+      <div class="seg" role="group" aria-label="Screen"><button data-device="desktop">Desktop</button><button data-device="phone">Phone</button></div>
+      <span class="spacer"></span>
+      <small>Keys <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> switch design</small>
+      <button class="btn" id="reset" title="Load the Grunge starter chain in all three designs">Reset sample patch</button>
+    </div>
+    <main>
+      <div class="stage" id="stage"></div>
+      <div class="cards" id="cards"></div>
+    </main>
+
+    <script>
+      const DESIGNS = [
+        { id: 'repo', name: 'A · Repo', kind: 'GitHub style, yellow titles', points: [
+          'The patch is a repository: tabs for Chain, Advice and Styles instead of one long page.',
+          'Effects are listed like files; click a name to open its parameters as lines of code.',
+          'Advice shows up as issues with labels; styles are repositories with a match score.',
+          'Add effects from a command palette (/ or Ctrl+K), with the keyboard only.',
+          'DSP is a languages bar in the sidebar.'] },
+        { id: 'punk', name: 'B · Punk', kind: 'Xerox zine, loud and physical', points: [
+          'A horizontal pedalboard: big pedals with knobs, a stomp switch and an LED.',
+          'Knobs move in steps with − and +, no small sliders.',
+          'Advice is a wall of sticky notes with a "Do it" fix button.',
+          'DSP is a hazard-tape gain meter that stamps OVERLOAD.',
+          'Styles are "scenes"; "Steal this rig" loads the starter chain.'] },
+        { id: 'stage', name: 'C · Stage', kind: 'Hardware console for rehearsals', points: [
+          'Works like the pedal: an LCD with the 6 slots, the patch name and a DSP bar.',
+          'Four big knobs edit the selected effect (drag up and down, or use the arrow keys).',
+          'Effects are added by browsing categories with ▲▼ and ◀▶, then ENTER.',
+          'Six large footswitches turn effects on and off: made for touch screens.',
+          'Advice scrolls on the LCD like a ticker.'] }
+      ];
+      const SIZE = { desktop: { w: 1280, h: 900 }, phone: { w: 390, h: 844 } };
+      const load = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
+      const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* per-viewer convenience only */ } };
+      const ui = { view: 'single', which: 'repo', device: 'desktop', ...(load('ms60b-design-lab-view') || {}) };
+      const notes = load('ms60b-design-lab-notes') || {};
+      const $ = s => document.querySelector(s);
+      const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      const frame = d => `<div class="frame"><div class="tag"><b>${d.name}</b><span>${d.kind}</span><a href="${d.id}.html" target="_blank" rel="noopener">Open full page ↗</a></div><div class="scaler" data-scaler><iframe src="${d.id}.html" title="${d.name}"></iframe></div></div>`;
+      const card = d => `<div class="card"><h2>${d.name}${notes.pick === d.id ? ' <span class="pick">★ my pick</span>' : ''}</h2><p class="kind">${d.kind}</p><ul>${d.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+        <label><input type="radio" name="pick" value="${d.id}"${notes.pick === d.id ? ' checked' : ''} /> My favourite</label>
+        <textarea data-note="${d.id}" placeholder="Notes on ${d.name}: what works, what does not…">${esc(notes[d.id] || '')}</textarea></div>`;
+
+      // Each design renders at its real width (desktop 1280 px or phone 390 px) and is scaled down to fit the column
+      function fit() {
+        const { w, h } = SIZE[ui.device];
+        document.querySelectorAll('[data-scaler]').forEach(box => {
+          const scale = Math.min(1, box.clientWidth / w);
+          const iframe = box.querySelector('iframe');
+          Object.assign(iframe.style, { width: `${w}px`, height: `${h}px`, transform: `scale(${scale})`, left: `${Math.max(0, (box.clientWidth - w * scale) / 2)}px` });
+          box.style.height = `${h * scale}px`;
+        });
+      }
+      function render() {
+        save('ms60b-design-lab-view', ui);
+        document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === ui.view)));
+        document.querySelectorAll('[data-device]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.device === ui.device)));
+        $('#which').innerHTML = DESIGNS.map((d, n) => `<button data-which="${d.id}" aria-pressed="${ui.view === 'single' && ui.which === d.id}"${ui.view === 'side' ? ' disabled' : ''}>${n + 1}. ${d.name.split(' · ')[1]}</button>`).join('');
+        const current = DESIGNS.find(d => d.id === ui.which) || DESIGNS[0];
+        $('#stage').className = `stage ${ui.view}`;
+        $('#stage').innerHTML = ui.view === 'side' ? DESIGNS.map(frame).join('') : frame(current) + card(current);
+        $('#cards').innerHTML = ui.view === 'side' ? DESIGNS.map(card).join('') : '';
+        fit();
+      }
+
+      document.addEventListener('click', e => {
+        const b = e.target.closest('[data-view],[data-which],[data-device],#reset');
+        if (!b) return;
+        if (b.dataset.view) ui.view = b.dataset.view;
+        if (b.dataset.which) ui.which = b.dataset.which;
+        if (b.dataset.device) ui.device = b.dataset.device;
+        if (b.id === 'reset') { try { localStorage.removeItem('ms60b-design-lab'); } catch { /* nothing stored */ } }
+        render(); // recreates the frames, which reload the shared patch
+      });
+      document.addEventListener('change', e => { if (e.target.name === 'pick') { notes.pick = e.target.value; save('ms60b-design-lab-notes', notes); render(); } });
+      document.addEventListener('input', e => { if (e.target.dataset.note) { notes[e.target.dataset.note] = e.target.value; save('ms60b-design-lab-notes', notes); } });
+      document.addEventListener('keydown', e => {
+        if (e.target.matches?.('textarea, input')) return;
+        const d = DESIGNS[Number(e.key) - 1];
+        if (d) { ui.view = 'single'; ui.which = d.id; render(); }
+      });
+      window.addEventListener('resize', fit);
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Design A, Repo — Zoom MS-60B+ Patch Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        --bg: #0d1117; --bg-inset: #010409; --bg-subtle: #161b22; --bg-hover: #1c2128;
+        --border: #30363d; --border-muted: #21262d; --fg: #e6edf3; --fg-muted: #8d96a0;
+        --yellow: #e3d04f; --yellow-soft: rgba(227, 208, 79, .15); --green: #3fb950; --red: #f85149; --orange: #d29922;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
+      a { color: var(--yellow); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      button, input, select { font: inherit; color: inherit; }
+      .btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: #21262d; cursor: pointer; font-weight: 500; white-space: nowrap; }
+      .btn:hover { background: #30363d; text-decoration: none; }
+      .btn-primary { background: var(--yellow); color: #1a1a00; border-color: transparent; }
+      .btn-primary:hover { background: #f0dc5a; }
+      .btn-sm { padding: 2px 8px; font-size: 12px; }
+      .btn-icon { padding: 2px 6px; background: transparent; border-color: transparent; color: var(--fg-muted); }
+      .btn-icon:hover { color: var(--fg); background: var(--bg-hover); }
+      kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; color: var(--fg-muted); }
+
+      /* header */
+      .top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; background: var(--bg-inset); border-bottom: 1px solid var(--border-muted); }
+      .top img { width: 32px; height: 32px; }
+      .crumbs { display: flex; align-items: center; gap: 6px; font-size: 18px; min-width: 0; }
+      .crumbs .owner { color: var(--fg-muted); }
+      .crumbs input { width: 12ch; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 0 4px; color: var(--yellow); font-weight: 600; }
+      .crumbs input:hover, .crumbs input:focus { border-color: var(--border); outline: none; }
+      .pill { font-size: 12px; border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; color: var(--fg-muted); }
+      .spacer { flex: 1; }
+      .search { display: flex; align-items: center; gap: 8px; width: 260px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--fg-muted); background: var(--bg); cursor: text; }
+
+      /* tabs */
+      .tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--bg-inset); border-bottom: 1px solid var(--border-muted); overflow-x: auto; }
+      .tab { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 0; background: none; border-bottom: 2px solid transparent; color: var(--fg); cursor: pointer; }
+      .tab[aria-selected="true"] { border-bottom-color: var(--yellow); font-weight: 600; }
+      .tab:hover { background: var(--bg-hover); border-radius: 6px 6px 0 0; }
+      .count { font-size: 12px; min-width: 20px; padding: 0 6px; border-radius: 999px; background: rgba(110, 118, 129, .4); text-align: center; }
+
+      /* layout */
+      .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 296px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 24px; }
+      h1, h2, h3 { color: var(--yellow); margin: 0; }
+      h2 { font-size: 16px; }
+      .box { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+      .box-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-subtle); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--fg-muted); }
+      .box-head b { color: var(--fg); }
+
+      /* chain rows (files) */
+      .row { display: grid; grid-template-columns: 22px 28px minmax(140px, 220px) minmax(0, 1fr) 70px auto; align-items: center; gap: 12px; padding: 8px 16px; border-top: 1px solid var(--border-muted); }
+      .row:first-child { border-top: 0; }
+      .row:hover { background: var(--bg-hover); }
+      .row.off { opacity: .55; }
+      .row .n { color: var(--fg-muted); font: 12px var(--mono); }
+      .row img { width: 22px; height: auto; border-radius: 3px; }
+      .row .name { font-weight: 600; color: var(--yellow); cursor: pointer; background: none; border: 0; padding: 0; text-align: left; }
+      .row .msg { color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .row .dsp { font: 12px var(--mono); color: var(--fg-muted); text-align: right; }
+      .row .tools { display: flex; gap: 2px; }
+      .sw { font: 11px var(--mono); padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); background: none; cursor: pointer; color: var(--fg-muted); }
+      .sw.on { color: var(--green); border-color: rgba(63, 185, 80, .5); }
+      .code { border-top: 1px solid var(--border-muted); background: var(--bg-inset); font: 12px var(--mono); }
+      .line { display: grid; grid-template-columns: 40px 90px minmax(0, 1fr) 70px; align-items: center; gap: 12px; padding: 3px 16px 3px 0; }
+      .line .ln { color: #484f58; text-align: right; user-select: none; }
+      .line .k { color: #79c0ff; }
+      .line .v { color: #ffa657; text-align: right; }
+      .line input[type=range] { width: 100%; accent-color: var(--yellow); }
+      .line select { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 4px; }
+      .empty { padding: 32px; text-align: center; color: var(--fg-muted); }
+
+      /* advice as issues */
+      .issue { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border-muted); }
+      .issue:first-child { border-top: 0; }
+      .issue .ico { font-size: 14px; margin-top: 1px; }
+      .issue.warning .ico { color: var(--orange); }
+      .issue.error .ico { color: var(--red); }
+      .issue.tip .ico { color: var(--green); }
+      .issue .t { font-weight: 600; color: var(--fg); }
+      .issue .meta { color: var(--fg-muted); font-size: 12px; margin-top: 2px; }
+      .label { display: inline-block; font-size: 12px; font-weight: 500; padding: 0 7px; border-radius: 999px; border: 1px solid; margin-left: 6px; }
+      .label.warning { color: var(--orange); border-color: rgba(210, 153, 34, .5); }
+      .label.error { color: var(--red); border-color: rgba(248, 81, 73, .5); }
+      .label.tip { color: var(--green); border-color: rgba(63, 185, 80, .5); }
+      .label.topic { color: var(--yellow); border-color: rgba(227, 208, 79, .4); background: var(--yellow-soft); }
+      .issue details { margin-top: 6px; color: var(--fg-muted); font-size: 13px; }
+      .issue details a { display: block; font-size: 12px; }
+
+      /* styles as repositories */
+      .repos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+      .repo { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--border); border-radius: 6px; }
+      .repo h3 { font-size: 14px; }
+      .repo p { margin: 0; color: var(--fg-muted); font-size: 13px; flex: 1; }
+      .repo .foot { display: flex; align-items: center; justify-content: space-between; color: var(--fg-muted); font-size: 12px; }
+
+      /* sidebar */
+      .side { display: flex; flex-direction: column; gap: 20px; }
+      .side section { padding-bottom: 20px; border-bottom: 1px solid var(--border-muted); }
+      .side p { margin: 8px 0 0; color: var(--fg-muted); }
+      .langbar { display: flex; height: 8px; margin: 12px 0 10px; border-radius: 6px; overflow: hidden; background: var(--border-muted); }
+      .langbar span { height: 100%; }
+      .langbar span + span { border-left: 2px solid var(--bg); }
+      .langs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; }
+      .langs li { display: flex; align-items: center; gap: 6px; }
+      .langs i { width: 8px; height: 8px; border-radius: 50%; }
+      .langs b { color: var(--fg); font-weight: 600; }
+      .over { color: var(--red); font-weight: 600; }
+      .topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .topics span { font-size: 12px; font-weight: 500; padding: 0 10px; line-height: 22px; border-radius: 999px; background: var(--yellow-soft); color: var(--yellow); }
+      .side select { width: 100%; margin-top: 8px; padding: 5px 8px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; }
+
+      /* command palette */
+      .palette { position: fixed; inset: 0; display: none; align-items: flex-start; justify-content: center; padding-top: 12vh; background: rgba(1, 4, 9, .7); z-index: 10; }
+      .palette.open { display: flex; }
+      .pal { width: min(640px, calc(100vw - 32px)); background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 48px rgba(0, 0, 0, .6); overflow: hidden; }
+      .pal input { width: 100%; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--border); background: transparent; outline: none; font-size: 16px; }
+      .pal ul { max-height: 52vh; overflow: auto; margin: 0; padding: 6px; list-style: none; }
+      .pal li button { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; text-align: left; cursor: pointer; }
+      .pal li button:hover, .pal li button.active { background: var(--yellow-soft); }
+      .pal li img { width: 20px; }
+      .pal li small { color: var(--fg-muted); }
+      .pal .hint { padding: 8px 16px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 12px; }
+
+      @media (max-width: 900px) {
+        .wrap { grid-template-columns: 1fr; padding: 16px; }
+        .top { padding: 12px 16px; flex-wrap: wrap; }
+        .search { display: none; }
+        .tabs { padding: 0 16px; }
+        .row { grid-template-columns: 22px 24px minmax(0, 1fr) auto; }
+        .row .msg, .row .dsp { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <a href="./" title="Design lab"><img src="../favicon.svg" alt="" /></a>
+      <div class="crumbs"><span class="owner">patches /</span><input id="name" aria-label="Patch name" maxlength="10" /><span class="pill">Draft</span></div>
+      <span class="spacer"></span>
+      <button class="search" id="open-palette" type="button">Type <kbd>/</kbd> to add an effect</button>
+      <a class="btn btn-primary" id="open-builder" href="#">Open in builder</a>
+    </header>
+    <nav class="tabs" role="tablist" aria-label="Patch sections">
+      <button class="tab" role="tab" data-tab="chain">&lt;&gt; Chain <span class="count" id="count-chain">0</span></button>
+      <button class="tab" role="tab" data-tab="advice">⊙ Advice <span class="count" id="count-advice">0</span></button>
+      <button class="tab" role="tab" data-tab="styles">☆ Styles <span class="count" id="count-styles">0</span></button>
+    </nav>
+    <div class="wrap">
+      <main id="main"></main>
+      <aside class="side" id="side"></aside>
+    </div>
+    <div class="palette" id="palette" role="dialog" aria-label="Add effect">
+      <div class="pal"><input id="pal-q" placeholder="Search 97 effects by name, model or category…" autocomplete="off" /><ul id="pal-list"></ul><div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> to choose · <kbd>Enter</kbd> to add · <kbd>Esc</kbd> to close</div></div>
+    </div>
+
+    <script src="../effects-data.js"></script>
+    <script src="../firmware-data.js"></script>
+    <script src="../zptc.js"></script>
+    <script src="../advice-engine.js"></script>
+    <script src="../advice-rules.js"></script>
+    <script src="../patch-link.js"></script>
+    <script src="proto.js"></script>
+    <script>
+      const P = PROTO, esc = P.escapeHtml, $ = s => document.querySelector(s);
+      let tab = 'chain', open = null, palIndex = 0, palItems = [];
+      const ICON = { error: '⊘', warning: '⊙', tip: '◎' };
+
+      function chainTab(s) {
+        const rows = s.chain.map((e, i) => {
+          const fx = P.effects[e.index];
+          const params = open === i ? `<div class="code">${fx.params.map((p, n) => {
+            const c = P.control(p), v = e.values[p.name];
+            const input = c?.type === 'range' ? `<input type="range" min="${c.min}" max="${c.max}" step="${c.step}" value="${esc(v)}" data-set="${i}" data-p="${esc(p.name)}" />`
+              : c?.type === 'options' ? `<select data-set="${i}" data-p="${esc(p.name)}">${c.options.map(o => `<option${String(v) === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>` : `<span style="color:#484f58">${esc(p.range)}</span>`;
+            return `<div class="line"><span class="ln">${n + 1}</span><span class="k">${esc(p.name)}</span>${input}<span class="v">${esc(v)}</span></div>`;
+          }).join('')}</div>` : '';
+          return `<div class="row${e.on ? '' : ' off'}"><span class="n">${i + 1}</span><img src="${P.thumb(e.index)}" alt="" />
+            <button class="name" data-open="${i}" title="Show parameters">${esc(fx.name)}</button><span class="msg">${esc(P.desc(e.index))}</span>
+            <span class="dsp">${fx.dsp.toFixed(1)}%</span>
+            <span class="tools"><button class="sw${e.on ? ' on' : ''}" data-toggle="${i}">${e.on ? 'ON' : 'OFF'}</button><button class="btn-icon btn" data-move="${i}" data-d="-1" aria-label="Move up">↑</button><button class="btn-icon btn" data-move="${i}" data-d="1" aria-label="Move down">↓</button><button class="btn-icon btn" data-remove="${i}" aria-label="Remove">✕</button></span></div>${params}`;
+        }).join('');
+        return `<div class="box"><div class="box-head"><b>main</b> · ${s.chain.length} / ${P.MAX} effects · INPUT → OUTPUT<span class="spacer"></span><button class="btn btn-sm" data-palette>+ Add effect</button></div>
+          ${rows || '<div class="empty">No effects yet. Press <kbd>/</kbd> to add one.</div>'}</div>`;
+      }
+      function adviceTab() {
+        const list = P.advice();
+        return `<div class="box"><div class="box-head"><b>${list.length} open</b> · checked against the ${esc(P.styles().find(x => x.id === P.state.style)?.name || 'General')} style</div>
+          ${list.map((f, n) => `<div class="issue ${f.severity}"><span class="ico">${ICON[f.severity]}</span><div><div class="t">${esc(f.title)}<span class="label ${f.severity}">${f.severity}</span><span class="label topic">${esc(f.topic)}</span></div>
+            <div class="meta">${esc(f.message)}</div><details><summary>Why</summary>${esc(f.why)}${f.sources.map(src => `<a href="${esc(src.url)}" target="_blank" rel="noreferrer">${esc(src.title)}</a>`).join('')}</details></div>
+            ${f.fix ? `<button class="btn btn-sm" data-fix="${n}">${esc(f.fix.label)}</button>` : '<span></span>'}</div>`).join('') || '<div class="empty">No open issues: the chain looks good.</div>'}</div>`;
+      }
+      function stylesTab(s) {
+        return `<div class="repos">${P.styles().map(st => {
+          const fit = ADVICE.styleFit({ effects: s.chain }, st).fit;
+          return `<div class="repo"><h3>${esc(st.name)}</h3><p>${esc(st.summary)}</p><div class="foot"><span>★ ${fit}% match</span><button class="btn btn-sm" data-load="${st.id}">Use starter</button></div></div>`;
+        }).join('')}</div>`;
+      }
+      function side(s) {
+        const total = P.dsp();
+        const style = P.styles().find(x => x.id === s.style);
+        const roles = [...new Set(s.chain.map(e => P.effects[e.index].role))];
+        return `<section><h2>About</h2><p>${esc(style?.summary || 'A patch for the Zoom MS-60B+.')}</p>
+            <div class="topics">${roles.map(r => `<span>${esc(r)}</span>`).join('')}</div></section>
+          <section><h2>DSP <span class="${total > 100 ? 'over' : ''}" style="font-weight:400;color:var(--fg-muted)">${total.toFixed(1)}%</span></h2>
+            <div class="langbar">${s.chain.map(e => `<span style="width:${P.effects[e.index].dsp}%;background:${P.color(e.index)}"></span>`).join('')}</div>
+            <ul class="langs">${s.chain.map(e => `<li><i style="background:${P.color(e.index)}"></i><b>${esc(P.effects[e.index].name)}</b> ${P.effects[e.index].dsp.toFixed(1)}%</li>`).join('')}<li><i style="background:var(--border)"></i>Free ${Math.max(0, 100 - total).toFixed(1)}%</li></ul></section>
+          <section><h2>Style</h2><select id="style">${P.styles().map(st => `<option value="${st.id}"${st.id === s.style ? ' selected' : ''}>${esc(st.name)}</option>`).join('')}</select></section>`;
+      }
+      function render(s) {
+        document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === tab)));
+        $('#count-chain').textContent = s.chain.length;
+        $('#count-advice').textContent = P.advice().length;
+        $('#count-styles').textContent = P.styles().length;
+        if (document.activeElement !== $('#name')) $('#name').value = s.name;
+        $('#open-builder').href = P.builderLink();
+        $('#main').innerHTML = tab === 'chain' ? chainTab(s) : tab === 'advice' ? adviceTab() : stylesTab(s);
+        $('#side').innerHTML = side(s);
+      }
+
+      function renderPalette() {
+        palItems = P.search($('#pal-q').value).slice(0, 60);
+        palIndex = Math.min(palIndex, palItems.length - 1);
+        $('#pal-list').innerHTML = palItems.map((fx, n) => `<li><button class="${n === palIndex ? 'active' : ''}" data-add="${fx.index}"><img src="${P.thumb(fx.index)}" alt="" /><span>${esc(fx.name)} <small>${esc(fx.model || P.categoryLabel(fx.index))}</small></span><small>${fx.dsp.toFixed(1)}%</small></button></li>`).join('') || '<li class="empty">No effects found.</li>';
+      }
+      const openPalette = () => { $('#palette').classList.add('open'); $('#pal-q').value = ''; palIndex = 0; renderPalette(); $('#pal-q').focus(); };
+      const closePalette = () => $('#palette').classList.remove('open');
+      const add = index => { if (!P.actions.add(index)) alert(`A patch holds up to ${P.MAX} effects.`); closePalette(); tab = 'chain'; render(P.state); };
+
+      document.addEventListener('click', e => {
+        const t = e.target.closest('[data-tab],[data-open],[data-toggle],[data-move],[data-remove],[data-fix],[data-load],[data-add],[data-palette],#open-palette');
+        if (!t) { if (e.target.id === 'palette') closePalette(); return; }
+        if (t.dataset.tab) { tab = t.dataset.tab; render(P.state); }
+        else if (t.dataset.open) { open = open === +t.dataset.open ? null : +t.dataset.open; render(P.state); }
+        else if (t.dataset.toggle) P.actions.toggle(+t.dataset.toggle);
+        else if (t.dataset.move) P.actions.move(+t.dataset.move, +t.dataset.d);
+        else if (t.dataset.remove) { open = null; P.actions.remove(+t.dataset.remove); }
+        else if (t.dataset.fix) P.actions.applyFix(P.advice()[+t.dataset.fix]);
+        else if (t.dataset.load) { P.actions.loadStyle(t.dataset.load); tab = 'chain'; render(P.state); }
+        else if (t.dataset.add) add(+t.dataset.add);
+        else openPalette();
+      });
+      document.addEventListener('input', e => {
+        // While dragging only the number changes; the value is stored on release (change), which re-renders
+        if (e.target.dataset.set && e.target.type === 'range') e.target.closest('.line').querySelector('.v').textContent = e.target.value;
+        if (e.target.id === 'name') P.actions.rename(e.target.value);
+        if (e.target.id === 'pal-q') { palIndex = 0; renderPalette(); }
+      });
+      document.addEventListener('change', e => {
+        if (e.target.id === 'style') P.actions.style(e.target.value);
+        if (e.target.dataset.set) P.actions.set(+e.target.dataset.set, e.target.dataset.p, e.target.type === 'range' ? Number(e.target.value) : e.target.value);
+      });
+      document.addEventListener('keydown', e => {
+        const typing = e.target.matches?.('input, select, textarea');
+        if ($('#palette').classList.contains('open')) {
+          if (e.key === 'Escape') closePalette();
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); palIndex = Math.max(0, Math.min(palItems.length - 1, palIndex + (e.key === 'ArrowDown' ? 1 : -1))); renderPalette(); }
+          if (e.key === 'Enter' && palItems[palIndex]) add(palItems[palIndex].index);
+          return;
+        }
+        if ((e.key === '/' && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); openPalette(); }
+      });
+      P.onChange(render);
+    </script>
+  </body>
+</html>

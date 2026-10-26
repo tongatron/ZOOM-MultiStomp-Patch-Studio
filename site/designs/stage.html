@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Design C, Stage — Zoom MS-60B+ Patch Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <style>
+      :root { --metal: #1b1e20; --metal-2: #26292c; --edge: #3a3f44; --lcd: #0c120a; --glow: #d2f95a; --dim: #5d7a2a; --fg: #e8ece6; --muted: #8a9196; --red: #ff3b30; --mono: "SFMono-Regular", Menlo, Consolas, monospace; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; color: var(--fg); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0a0b0c; display: flex; justify-content: center; }
+      button { font: inherit; color: inherit; cursor: pointer; }
+      .unit { width: min(980px, 100%); margin: 24px 16px; padding: 22px; border-radius: 22px; border: 1px solid var(--edge);
+        background: linear-gradient(180deg, var(--metal-2), var(--metal)), repeating-linear-gradient(90deg, rgba(255, 255, 255, .015) 0 1px, transparent 1px 3px);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 30px 60px rgba(0, 0, 0, .6); }
+      .brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; font: 700 13px var(--mono); letter-spacing: .2em; color: var(--muted); }
+      .brand a { color: var(--glow); text-decoration: none; }
+      .brand .model { color: var(--fg); }
+
+      /* LCD */
+      .lcd { position: relative; padding: 16px 18px; border-radius: 10px; border: 3px solid #050605; background: var(--lcd); font: 15px var(--mono); color: var(--glow); text-shadow: 0 0 6px rgba(210, 249, 90, .55); overflow: hidden; min-height: 210px; }
+      .lcd::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .25) 0 1px, transparent 1px 3px); }
+      .lcd .row1 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+      .lcd .pname { font-size: clamp(28px, 6vw, 44px); letter-spacing: .08em; }
+      .lcd .meta { color: var(--dim); font-size: 12px; text-align: right; }
+      .slots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 14px 0 10px; }
+      .slot { padding: 6px 4px; border: 1px solid var(--dim); border-radius: 4px; text-align: center; font-size: 12px; min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 2px; background: none; color: inherit; text-shadow: inherit; }
+      .slot.sel { background: var(--glow); color: var(--lcd); text-shadow: none; }
+      .slot.off { opacity: .45; text-decoration: line-through; }
+      .slot.empty { border-style: dashed; color: var(--dim); }
+      .dspbar { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+      .dspbar .track { flex: 1; height: 10px; border: 1px solid var(--dim); position: relative; }
+      .dspbar .fill { position: absolute; inset: 1px auto 1px 1px; background: var(--glow); }
+      .dspbar.over { color: var(--red); text-shadow: 0 0 6px var(--red); }
+      .dspbar.over .fill { background: var(--red); }
+      .ticker { margin-top: 10px; white-space: nowrap; overflow: hidden; font-size: 13px; border-top: 1px dashed var(--dim); padding-top: 8px; }
+      .ticker span { display: inline-block; padding-left: 100%; animation: tick 22s linear infinite; }
+      @keyframes tick { to { transform: translateX(-100%); } }
+      @media (prefers-reduced-motion: reduce) { .ticker span { animation: none; padding-left: 0; white-space: normal; } }
+      .browse { font-size: 16px; display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+      .browse .big { font-size: clamp(24px, 5vw, 36px); }
+      .browse .dim { color: var(--dim); font-size: 12px; }
+
+      /* controls */
+      .controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 22px; margin-top: 20px; align-items: start; }
+      .knobs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      .knob { display: flex; flex-direction: column; align-items: center; gap: 6px; user-select: none; touch-action: none; }
+      .cap { position: relative; width: 86px; height: 86px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4a4f54, #15181a 70%); border: 2px solid #0c0d0e; box-shadow: 0 6px 12px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .1); cursor: ns-resize; }
+      .cap::after { content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 22px; margin-left: -2px; border-radius: 2px; background: var(--glow); box-shadow: 0 0 8px var(--glow); transform-origin: 50% 35px; transform: rotate(var(--a)); }
+      .cap.disabled { opacity: .25; cursor: default; }
+      .knob .lbl { font: 700 11px var(--mono); letter-spacing: .1em; color: var(--muted); }
+      .knob .v { font: 16px var(--mono); color: var(--fg); }
+      .keys { display: grid; grid-template-columns: repeat(3, 56px); gap: 8px; }
+      .key { height: 46px; border-radius: 10px; border: 1px solid #0c0d0e; background: linear-gradient(180deg, #3a3f44, #24282b); box-shadow: 0 3px 0 #0c0d0e; font: 700 12px var(--mono); letter-spacing: .06em; }
+      .key:active { transform: translateY(2px); box-shadow: 0 1px 0 #0c0d0e; }
+      .key.accent { background: linear-gradient(180deg, #cde85a, #9fbd2c); color: #111; }
+      .key.wide { grid-column: span 3; }
+
+      /* footswitches */
+      .feet { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--edge); }
+      .foot { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .foot .led { width: 12px; height: 12px; border-radius: 50%; background: #3a0d0b; }
+      .foot.on .led { background: var(--red); box-shadow: 0 0 12px var(--red); }
+      .foot button { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #0c0d0e; background: radial-gradient(circle at 35% 30%, #c9ced2, #6f757a 60%, #3c4145); box-shadow: 0 6px 0 #0c0d0e; }
+      .foot button:active { transform: translateY(4px); box-shadow: 0 2px 0 #0c0d0e; }
+      .foot button:disabled { opacity: .2; }
+      .foot small { font: 11px var(--mono); color: var(--muted); text-align: center; }
+      .out { display: flex; justify-content: flex-end; margin-top: 18px; }
+      .out a { color: var(--glow); font: 700 12px var(--mono); letter-spacing: .1em; text-decoration: none; border: 1px solid var(--dim); padding: 8px 12px; border-radius: 8px; }
+
+      @media (max-width: 720px) {
+        .unit { padding: 14px; margin: 12px; }
+        .controls { grid-template-columns: 1fr; }
+        .knobs { grid-template-columns: repeat(2, 1fr); }
+        .feet { grid-template-columns: repeat(3, 1fr); }
+        .slots { grid-template-columns: repeat(3, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="unit">
+      <div class="brand"><a href="./" title="Design lab">◀ LAB</a><span class="model">ZOOM MS-60B+ · STAGE</span><span>LIVE</span></div>
+      <div class="lcd" id="lcd" aria-live="polite"></div>
+      <div class="controls">
+        <div class="knobs" id="knobs"></div>
+        <div class="keys" aria-label="Navigation">
+          <button class="key" data-key="left" aria-label="Previous">◀</button>
+          <button class="key" data-key="up" aria-label="Move earlier">▲</button>
+          <button class="key" data-key="right" aria-label="Next">▶</button>
+          <button class="key" data-key="add">ADD</button>
+          <button class="key" data-key="down" aria-label="Move later">▼</button>
+          <button class="key" data-key="del">DEL</button>
+          <button class="key accent wide" data-key="enter">ENTER</button>
+          <button class="key wide" data-key="style">STYLE ▸</button>
+        </div>
+      </div>
+      <div class="feet" id="feet"></div>
+      <div class="out"><a id="open-builder" href="#">OPEN IN BUILDER ▸</a></div>
+    </div>
+
+    <script src="../effects-data.js"></script>
+    <script src="../firmware-data.js"></script>
+    <script src="../zptc.js"></script>
+    <script src="../advice-engine.js"></script>
+    <script src="../advice-rules.js"></script>
+    <script src="../patch-link.js"></script>
+    <script src="proto.js"></script>
+    <script>
+      const P = PROTO, esc = P.escapeHtml, $ = s => document.querySelector(s);
+      const CATS = Object.keys(CATEGORIES);
+      // ui.sel: selected slot · ui.browse: null or { cat, i } while adding an effect, like the pedal's effect browser
+      const ui = { sel: 0, browse: null };
+      const numeric = slot => P.effects[slot.index].params.map(p => ({ p, c: P.control(p) })).filter(x => x.c?.type === 'range').slice(0, 4);
+      const inCat = cat => P.effects.filter(fx => fx.category === CATS[cat]);
+
+      function lcd(s) {
+        if (ui.browse) {
+          const list = inCat(ui.browse.cat), fx = list[ui.browse.i];
+          return `<div class="browse"><span class="dim">ADD EFFECT · ▲▼ CATEGORY · ◀▶ EFFECT · ENTER TO ADD · ADD TO CANCEL</span>
+            <span>CAT ${ui.browse.cat + 1}/${CATS.length}: ${esc(P.categoryLabel(fx.index).toUpperCase())}</span>
+            <span class="big">◀ ${esc(fx.name)} ▶</span>
+            <span class="dim">${ui.browse.i + 1}/${list.length} · DSP ${fx.dsp.toFixed(1)}% → TOTAL ${(P.dsp() + fx.dsp).toFixed(1)}%</span></div>`;
+        }
+        const total = P.dsp();
+        const slots = Array.from({ length: P.MAX }, (_, i) => {
+          const e = s.chain[i];
+          if (!e) return `<span class="slot empty">${i + 1}<br>—</span>`;
+          return `<button class="slot${i === ui.sel ? ' sel' : ''}${e.on ? '' : ' off'}" data-sel="${i}">${i + 1}<br>${esc(P.effects[e.index].lcd || P.effects[e.index].name.slice(0, 8))}</button>`;
+        }).join('');
+        const findings = P.advice();
+        const ticker = findings.length ? findings.map(f => `${f.severity.toUpperCase()}: ${f.title}. ${f.message}`).join('   ///   ') : 'NO ADVICE. READY TO PLAY.';
+        return `<div class="row1"><span class="pname">${esc(s.name || 'UNTITLED')}</span><span class="meta">${esc(P.styles().find(x => x.id === s.style)?.name || 'GENERAL').toUpperCase()}<br>${s.chain.length}/${P.MAX} FX</span></div>
+          <div class="slots">${slots}</div>
+          <div class="dspbar${total > 100 ? ' over' : ''}"><span>DSP</span><span class="track"><span class="fill" style="width:calc(${Math.min(100, total)}% - 2px)"></span></span><span>${total.toFixed(1)}%${total > 100 ? ' OVERFLOW' : ''}</span></div>
+          <div class="ticker"><span>${esc(ticker)}</span></div>`;
+      }
+      function knobs(s) {
+        const slot = s.chain[ui.sel];
+        const list = slot ? numeric(slot) : [];
+        return Array.from({ length: 4 }, (_, n) => {
+          const k = list[n];
+          if (!k) return `<div class="knob"><div class="cap disabled"></div><span class="lbl">—</span><span class="v">&nbsp;</span></div>`;
+          const v = Number(slot.values[k.p.name]) || 0;
+          return `<div class="knob"><div class="cap" data-knob="${esc(k.p.name)}" data-min="${k.c.min}" data-max="${k.c.max}" data-step="${k.c.step}" data-v="${v}" style="--a:${-135 + 270 * (v - k.c.min) / (k.c.max - k.c.min || 1)}deg" role="slider" aria-label="${esc(k.p.name)}" aria-valuemin="${k.c.min}" aria-valuemax="${k.c.max}" aria-valuenow="${v}" tabindex="0"></div><span class="lbl">${esc(k.p.name)}</span><span class="v">${esc(v)}</span></div>`;
+        }).join('');
+      }
+      function feet(s) {
+        return Array.from({ length: P.MAX }, (_, i) => {
+          const e = s.chain[i];
+          return `<div class="foot${e?.on ? ' on' : ''}"><span class="led"></span><button data-foot="${i}" ${e ? '' : 'disabled'} aria-label="Footswitch ${i + 1}"></button><small>${e ? esc(P.effects[e.index].name) : 'EMPTY'}</small></div>`;
+        }).join('');
+      }
+      function render(s) {
+        ui.sel = Math.max(0, Math.min(ui.sel, s.chain.length - 1));
+        $('#lcd').innerHTML = lcd(s);
+        $('#knobs').innerHTML = knobs(s);
+        $('#feet').innerHTML = feet(s);
+        $('#open-builder').href = P.builderLink();
+      }
+
+      function key(name) {
+        const s = P.state;
+        if (ui.browse) {
+          const list = inCat(ui.browse.cat);
+          if (name === 'left' || name === 'right') ui.browse.i = (ui.browse.i + (name === 'right' ? 1 : -1) + list.length) % list.length;
+          if (name === 'up' || name === 'down') { ui.browse.cat = (ui.browse.cat + (name === 'down' ? 1 : -1) + CATS.length) % CATS.length; ui.browse.i = 0; }
+          if (name === 'enter') { const fx = list[ui.browse.i]; ui.browse = null; if (P.actions.add(fx.index)) ui.sel = P.state.chain.length - 1; render(P.state); return; }
+          if (name === 'add' || name === 'del') ui.browse = null;
+          render(s);
+          return;
+        }
+        if (name === 'left' || name === 'right') ui.sel = Math.max(0, Math.min(s.chain.length - 1, ui.sel + (name === 'right' ? 1 : -1)));
+        if (name === 'up' || name === 'down') {
+          const to = ui.sel + (name === 'down' ? 1 : -1);
+          if (to < 0 || to >= s.chain.length) return;
+          ui.sel = to;
+          P.actions.move(to - (name === 'down' ? 1 : -1), name === 'down' ? 1 : -1);
+          return;
+        }
+        if (name === 'add') { if (s.chain.length >= P.MAX) { alert(`All ${P.MAX} slots are in use.`); return; } ui.browse = { cat: 0, i: 0 }; }
+        if (name === 'del' && s.chain[ui.sel]) { P.actions.remove(ui.sel); return; }
+        if (name === 'enter' && s.chain[ui.sel]) { P.actions.toggle(ui.sel); return; }
+        if (name === 'style') { const st = P.styles(); const i = st.findIndex(x => x.id === s.style); P.actions.style(st[(i + 1) % st.length].id); return; }
+        render(s);
+      }
+
+      document.addEventListener('click', e => {
+        const t = e.target.closest('[data-key],[data-sel],[data-foot]');
+        if (!t) return;
+        if (t.dataset.key) key(t.dataset.key);
+        else if (t.dataset.sel) { ui.sel = +t.dataset.sel; render(P.state); }
+        else if (t.dataset.foot) P.actions.toggle(+t.dataset.foot);
+      });
+      document.addEventListener('keydown', e => {
+        const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'enter', Backspace: 'del', '+': 'add' };
+        if (e.target.matches?.('.cap, button')) return;
+        if (map[e.key]) { e.preventDefault(); key(map[e.key]); }
+      });
+
+      // Knobs: drag up/down (or the arrow keys when focused). The value is shown live and stored on release.
+      let drag = null;
+      const knobValue = (cap, v) => {
+        const min = +cap.dataset.min, max = +cap.dataset.max, step = +cap.dataset.step;
+        v = Math.round(Math.max(min, Math.min(max, v)) / step) * step;
+        cap.dataset.v = v;
+        cap.style.setProperty('--a', `${-135 + 270 * (v - min) / (max - min || 1)}deg`);
+        cap.setAttribute('aria-valuenow', v);
+        cap.parentElement.querySelector('.v').textContent = v;
+        return v;
+      };
+      document.addEventListener('pointerdown', e => {
+        const cap = e.target.closest('.cap[data-knob]');
+        if (!cap) return;
+        drag = { cap, y: e.clientY, start: +cap.dataset.v };
+        cap.setPointerCapture(e.pointerId);
+      });
+      document.addEventListener('pointermove', e => {
+        if (!drag) return;
+        const range = +drag.cap.dataset.max - +drag.cap.dataset.min;
+        knobValue(drag.cap, drag.start + (drag.y - e.clientY) * range / 160);
+      });
+      document.addEventListener('pointerup', () => {
+        if (!drag) return;
+        const { cap } = drag;
+        drag = null;
+        P.actions.set(ui.sel, cap.dataset.knob, +cap.dataset.v);
+      });
+      document.addEventListener('keydown', e => {
+        const cap = e.target.closest?.('.cap[data-knob]');
+        if (!cap || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+        e.preventDefault();
+        const range = +cap.dataset.max - +cap.dataset.min;
+        const name = cap.dataset.knob;
+        const v = knobValue(cap, +cap.dataset.v + (e.key === 'ArrowUp' || e.key === 'ArrowRight' ? 1 : -1) * Math.max(+cap.dataset.step, range / 50));
+        P.actions.set(ui.sel, name, v);
+        document.querySelector(`.cap[data-knob="${CSS.escape(name)}"]`)?.focus();
+      });
+      P.onChange(render);
+    </script>
+  </body>
+</html>
