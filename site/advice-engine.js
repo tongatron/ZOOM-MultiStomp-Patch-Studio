@@ -114,6 +114,13 @@ const ADVICE = (() => {
       rules.push(rule);
     });
   }
+  // Rules and sources from imported rule packs (ids start with 'user.'): replaces the previous set, built-in rules stay.
+  function setUserRules(list, sourceMap) {
+    for (let i = rules.length - 1; i >= 0; i--) if (rules[i].id.startsWith('user.')) rules.splice(i, 1);
+    Object.keys(sources).filter(key => key.startsWith('user.')).forEach(key => { delete sources[key]; });
+    addRules(list);
+    addSources(sourceMap);
+  }
   const addStyles = list => { styles.push(...list); };
   // Preference shape: { id, label, hint, silences: [ruleId] } — a pinned choice that hides the matching rules.
   const addPreferences = list => {
@@ -163,7 +170,7 @@ const ADVICE = (() => {
 
   return {
     SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
-    analyze, addRules, addStyles, addPreferences, styleFit, suggestStyles, insertPosition, addSources, addRoleTips, effectTips,
+    analyze, addRules, setUserRules, addStyles, addPreferences, styleFit, suggestStyles, insertPosition, addSources, addRoleTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();

@@ -800,7 +800,7 @@ function renderAdvice() {
 
   const style = ADVICE.styles.find(s => s.id === adviceSettings.style) || ADVICE.styles[0];
   $('#advice-style').innerHTML = ADVICE.styles.map(s => `<option value="${s.id}"${s.id === style.id ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
-  const sourceLinks = list => list.map(src => `<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('');
+  const sourceLinks = list => list.map(src => `<a href="${escapeHtml(src.url)}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('');
   $('#advice-style-card').innerHTML = style.id === 'general' ? '' : `
     <div class="style-card">
       <div class="style-card-main"><strong>${escapeHtml(style.name)}</strong><p>${escapeHtml(style.summary)}</p>
@@ -812,6 +812,7 @@ function renderAdvice() {
   $('#advice-prefs-list').innerHTML = ADVICE.preferences.map(pref => `<label class="pref-row" title="${escapeHtml(pref.hint)}"><input type="checkbox" data-advice="pref" data-id="${pref.id}"${adviceSettings.preferences.includes(pref.id) ? ' checked' : ''} /> <span>${escapeHtml(pref.label)}</span></label>`).join('');
   $('#advice-output').innerHTML = `<span class="advice-output-label">Plugging into</span>${[['amp', 'Bass amp'], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
     `<button class="chip-filter" data-advice="output" data-id="${id}" aria-pressed="${adviceSettings.output === id}">${label}</button>`).join('')}`;
+  renderPacks();
   renderIdeas();
   findings = ADVICE.analyze(serialize(state), { output: adviceSettings.output, style: style.id, ignored: adviceSettings.ignored, preferences: adviceSettings.preferences });
   const counts = Object.fromEntries(ADVICE.SEVERITIES.map(sev => [sev, findings.filter(f => f.severity === sev).length]));
@@ -1043,6 +1044,63 @@ $('#sync-stop').addEventListener('click', () => {
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncNow(); });
 window.addEventListener('online', syncNow);
+
+// ---- rule packs -----------------------------------------------------------------------------------
+// Extra advice rules imported from .json files (see rule-packs.js). Data only; every pack is validated again when loaded.
+const PACKS_KEY = 'ms60b-rulepacks';
+let rulePacks = (() => {
+  const stored = readJson(PACKS_KEY, []);
+  return (Array.isArray(stored) ? stored : []).flatMap(e => { const checked = RULEPACK.validate(e?.pack, ADVICE); return checked.pack ? [{ pack: checked.pack, enabled: e.enabled !== false }] : []; });
+})();
+function applyRulePacks() {
+  const compiled = RULEPACK.compile(rulePacks.filter(e => e.enabled).map(e => e.pack));
+  ADVICE.setUserRules(compiled.rules, compiled.sources);
+}
+function savePacks() {
+  try { localStorage.setItem(PACKS_KEY, JSON.stringify(rulePacks)); } catch { notify('danger', 'Cannot save the rule packs: this browser does not allow this site to store data.'); }
+  applyRulePacks();
+  renderAdvice();
+}
+function renderPacks() {
+  $('#advice-packs-count').textContent = rulePacks.length;
+  $('#advice-packs-list').innerHTML = rulePacks.map(({ pack, enabled }) => `<div class="pack-row">
+    <label class="pref-row" title="${escapeHtml(pack.author ? `by ${pack.author}` : '')}"><input type="checkbox" data-pack="toggle" data-id="${pack.id}"${enabled ? ' checked' : ''} /> <span>${escapeHtml(pack.name)} <small>· ${pack.rules.length} rule${pack.rules.length === 1 ? '' : 's'}</small></span></label>
+    <span class="pack-tools"><button class="btn btn-sm btn-invisible" data-pack="export" data-id="${pack.id}">Export</button><button class="btn btn-sm btn-invisible btn-danger" data-pack="remove" data-id="${pack.id}">Remove</button></span>
+  </div>`).join('') || '<p class="field-hint">No rule packs yet.</p>';
+}
+const downloadPack = pack => downloadBytes(JSON.stringify(pack, null, 2), `${pack.id}.rulepack.json`, 'application/json');
+async function importPacks(files) {
+  for (const file of files) {
+    try {
+      if (file.size > RULEPACK.LIMITS.bytes) throw new Error('the file is too large');
+      const checked = RULEPACK.validate(JSON.parse(await file.text()), ADVICE);
+      if (!checked.pack) throw new Error(checked.errors.join('; '));
+      const at = rulePacks.findIndex(e => e.pack.id === checked.pack.id);
+      if (at < 0 && rulePacks.length >= 20) throw new Error('too many rule packs: remove one first');
+      if (at >= 0) rulePacks[at] = { pack: checked.pack, enabled: true }; else rulePacks.push({ pack: checked.pack, enabled: true });
+      notify('muted', `${at >= 0 ? 'Updated' : 'Imported'} rule pack "${checked.pack.name}" (${checked.pack.rules.length} rules).`);
+    } catch (error) {
+      notify('danger', `${file.name}: ${error instanceof SyntaxError ? 'not valid JSON' : error.message}`);
+    }
+  }
+  savePacks();
+}
+$('#pack-files').addEventListener('change', event => { importPacks([...event.target.files]); event.target.value = ''; });
+$('#pack-example').addEventListener('click', () => downloadPack(RULEPACK.EXAMPLE));
+$('#advice-packs').addEventListener('click', event => {
+  const button = event.target.closest('button[data-pack]');
+  if (!button) return;
+  const entry = rulePacks.find(e => e.pack.id === button.dataset.id);
+  if (!entry) return;
+  if (button.dataset.pack === 'export') downloadPack(entry.pack);
+  if (button.dataset.pack === 'remove' && confirm(`Remove the rule pack "${entry.pack.name}"? Export it first if you want to keep it.`)) { rulePacks = rulePacks.filter(e => e !== entry); savePacks(); }
+});
+$('#advice-packs').addEventListener('change', event => {
+  if (event.target.dataset.pack !== 'toggle') return;
+  const entry = rulePacks.find(e => e.pack.id === event.target.dataset.id);
+  if (entry) { entry.enabled = event.target.checked; savePacks(); }
+});
+applyRulePacks();
 
 load();
 const addSlug = new URLSearchParams(location.search).get('add');

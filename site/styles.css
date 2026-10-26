@@ -702,3 +702,7 @@ body.is-dropping .drop-overlay { display: grid; }
 
 .cmp-copy { margin-left: 6px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--fg-muted); font: inherit; line-height: 1.4; cursor: pointer; }
 .cmp-copy:hover, .cmp-copy:focus-visible { color: var(--fg); border-color: var(--accent); }
+
+.pack-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pack-row small { color: var(--fg-muted); }
+.pack-tools { display: flex; gap: 2px; flex-shrink: 0; }

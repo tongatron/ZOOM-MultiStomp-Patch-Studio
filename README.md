@@ -21,7 +21,7 @@ The MS-60B+ is a great pedal, but its 97 effects, tight DSP budget and 6-slot ch
 - **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources.
 - **Tailored to your rig.** Pick a style profile and say whether the pedal feeds a bass amp or a mixer, and the tips adapt.
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
-- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore, or sync them between your devices with a private code.
+- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, back up and restore, or sync them between your devices with a private code. Share your own advice rules as `.json` rule packs.
 - **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
 
 ## Features

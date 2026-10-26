@@ -8,9 +8,9 @@ import assert from 'node:assert/strict';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({ console });
-const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js'];
-vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC;`, ctx);
-const { ADVICE, ZPTC } = ctx;
+const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'rule-packs.js'];
+vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC; globalThis.RULEPACK = RULEPACK;`, ctx);
+const { ADVICE, ZPTC, RULEPACK } = ctx;
 // Values created inside the vm context have their own Array prototype: compare as plain JSON
 const same = (actual, expected, message) => assert.equal(JSON.stringify(actual), JSON.stringify(expected), message);
 
@@ -165,6 +165,57 @@ test('several loud gain stages get a level tip, a single one does not', () => {
   assert.ok(find(patch(...drives.map(n => [n, { VOL: 100 }])), 'level.stacked-boosts'));
   assert.ok(!find(patch([drives[0], { VOL: 100 }]), 'level.stacked-boosts'));
   assert.ok(!find(patch(...drives.map(n => [n, { VOL: 50 }])), 'level.stacked-boosts'));
+});
+
+// ---- rule packs -----------------------------------------------------------------------------------------
+const packWith = (rule, extra = {}) => ({ ...RULEPACK.EXAMPLE, ...extra, rules: [{ ...RULEPACK.EXAMPLE.rules[0], ...rule }] });
+const userFindings = (pack, p) => {
+  const checked = RULEPACK.validate(pack, ADVICE);
+  assert.ok(checked.pack, JSON.stringify(checked.errors));
+  const compiled = RULEPACK.compile([checked.pack]);
+  ADVICE.setUserRules(compiled.rules, compiled.sources);
+  return ADVICE.analyze(p).filter(f => f.ruleId.startsWith('user.'));
+};
+test('the example rule pack is valid and its rules fire', () => {
+  const drive = ADVICE.effects.find(fx => fx.role === 'drive' && fx.params.some(p => p.name === 'GAIN')).name;
+  const found = userFindings(RULEPACK.EXAMPLE, patch([drive, { GAIN: 95 }], ['DYNAMIC COMPRESSOR', {}]));
+  same(found.map(f => f.ruleId).sort(), ['user.example.comp-after-drive', 'user.example.drive-gain-high']);
+  assert.ok(found.every(f => f.sources.length === 1 && f.sources[0].url.startsWith('https://')), 'sources resolve');
+  same(userFindings(RULEPACK.EXAMPLE, patch(['DYNAMIC COMPRESSOR', {}], [drive, { GAIN: 20 }])), []);
+  ADVICE.setUserRules([], {});
+  assert.equal(ADVICE.rules.some(r => r.id.startsWith('user.')), false, 'removing a pack removes its rules');
+});
+test('rule pack modes: once, absent and position', () => {
+  const once = packWith({ id: 'two-drives', mode: 'once', min: 2, match: { role: 'drive' }, message: '{count} drives: {effect}' });
+  const drives = ADVICE.effects.filter(fx => fx.role === 'drive').slice(0, 2).map(fx => [fx.name, {}]);
+  assert.equal(userFindings(once, patch(...drives)).length, 1);
+  assert.equal(userFindings(once, patch(drives[0])).length, 0);
+  const absent = packWith({ id: 'no-comp', mode: 'absent', match: { role: 'comp' }, message: 'Add a compressor.' });
+  assert.equal(userFindings(absent, patch(drives[0])).length, 1);
+  assert.equal(userFindings(absent, patch(['DYNAMIC COMPRESSOR', {}])).length, 0);
+  const last = packWith({ id: 'comp-last', match: { role: 'comp', position: 'last' }, message: '{effect} last' });
+  assert.equal(userFindings(last, patch(drives[0], ['DYNAMIC COMPRESSOR', {}])).length, 1);
+  assert.equal(userFindings(last, patch(['DYNAMIC COMPRESSOR', {}], drives[0])).length, 0);
+  ADVICE.setUserRules([], {});
+});
+test('rule packs reject unsafe or incomplete content', () => {
+  const bad = rule => RULEPACK.validate(packWith(rule), ADVICE).errors?.join(' ') ?? '';
+  assert.match(bad({ severity: 'error' }), /severity/);
+  assert.match(bad({ sources: [] }), /source/);
+  assert.match(bad({ sources: ['nope'] }), /unknown source/);
+  assert.match(bad({ match: { role: 'nonsense' } }), /unknown role/);
+  assert.match(bad({ match: { effect: 'NOT AN EFFECT' } }), /unknown effect/);
+  assert.match(bad({ match: { role: 'drive', param: { name: 'GAIN', op: 'eval', value: 1 } } }), /param/);
+  assert.match(bad({ id: 'Bad Id' }), /id/);
+  assert.match(RULEPACK.validate(packWith({}, { sources: { boss: { title: 'x', url: 'javascript:alert(1)' } } }), ADVICE).errors.join(' '), /url/);
+  assert.match(RULEPACK.validate({ format: 'other' }, ADVICE).errors[0], /not a rule pack/);
+  assert.ok(RULEPACK.validate(packWith({ message: 'x'.repeat(500) }), ADVICE).errors);
+});
+test('imported rules take the same severity filter as built-in ones and can be ignored by id', () => {
+  const p = patch(['DYNAMIC COMPRESSOR', {}], [ADVICE.effects.find(fx => fx.role === 'drive').name, {}]);
+  userFindings(RULEPACK.EXAMPLE, p);
+  assert.equal(ADVICE.analyze(p, { ignored: ['user.example.comp-after-drive'] }).some(f => f.ruleId === 'user.example.comp-after-drive'), false);
+  ADVICE.setUserRules([], {});
 });
 
 test('a pinned preference silences its rules', () => {
