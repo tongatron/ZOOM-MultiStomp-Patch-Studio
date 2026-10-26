@@ -49,7 +49,7 @@ The MS-50G+ section is built from the official ZOOM documentation and assumes th
 
 1. Build a simple patch in the [MS-50G+ builder](https://zoom.tongatron.org/ms-50g/builder.html), or use the ready-made [`patches/generated/ms50g-test.zptc`](patches/generated/ms50g-test.zptc) (COMPRESSOR, MS1959 DRIVE, DELAY).
 2. Import it in Handy Guitar Lab and copy it to a free memory.
-3. [Open an issue](https://github.com/tongatron/Zoom_MSB60-_STUDIO/issues) with what you see: the effects, the values on the pedal, the "Processor %" in the app. A patch exported from your pedal helps even more.
+3. [Open an issue](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues) with what you see: the effects, the values on the pedal, the "Processor %" in the app. A patch exported from your pedal helps even more.
 
 What still needs checking is listed in [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md) (section 0).
 
