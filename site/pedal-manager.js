@@ -10,6 +10,7 @@
   const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, updatedAt }]
   const DRAFT_KEY = `${PEDAL.id}-builder`;
   const EDIT_KEY = `${PEDAL.id}-pedal-edit`; // { memory, name, base: base64 PTCF, at } while a memory is edited in the builder
+  const CLEARED_NAME = 'Empty'; // name of a cleared memory: no effects, only the BLANK slot
   const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
   const MAX_BACKUPS = 30;
   const lines = [];
@@ -64,9 +65,9 @@
   const chainCards = d => d.effects.length ? `<ol class="usb-fx">${d.effects.map(e => {
     const index = EFFECTS_DATA.findIndex(fx => fx[0] === e.effect);
     const category = CATEGORIES[EFFECTS_DATA[index]?.[1]];
-    return `<li class="${e.on ? '' : 'is-off'}" style="--c:${category?.color ?? 'var(--border)'}">
+    return `<li class="${e.on ? '' : 'is-off'}">
       ${index === -1 ? '' : `<img class="fx-thumb" src="assets/effects/fx-${String(index).padStart(3, '0')}.png" alt="" width="40" height="50" loading="lazy" />`}
-      <span><b>${escapeHtml(e.effect)}</b><small>${escapeHtml(category?.label ?? '')}${e.on ? '' : ' · off'}</small></span>
+      <span><b>${escapeHtml(e.effect)}</b><span class="usb-fx-tags">${category ? `<span class="Label">${escapeHtml(category.label)}</span>` : ''}${e.on ? '' : '<span class="Label">Off</span>'}</span></span>
     </li>`;
   }).join('')}</ol>` : '<p class="usb-chain-line">No effects.</p>';
 
@@ -212,6 +213,7 @@
           <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
           <button class="btn btn-sm" data-act="download">Download .zptc</button>
           <button class="btn btn-sm btn-invisible" data-act="reread">Read again</button>
+          <button class="btn btn-sm btn-danger usb-clear" data-act="clear" ${connected && !busy && d.effects.length ? '' : 'disabled'}>Clear patch</button>
         </div>
       </div>` : ''}
     </li>`;
@@ -248,6 +250,7 @@
       case 'rename': renaming = n; renderMemory(n); $(`[data-rename="${n}"] input`)?.select(); break;
       case 'rename-cancel': renaming = null; renderMemory(n); break;
       case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
+      case 'clear': send(n, ZPTC.encode({ name: CLEARED_NAME, empty: true, effects: [] }).file, true); break;
       case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
       case 'copy': {
         const patch = toPatch(m.decoded);
@@ -269,7 +272,7 @@
   function renamed(bytes, name) {
     if (!ZPTC.roundtrip(bytes)) throw new Error('This patch cannot be re-encoded byte for byte yet, so it is not renamed.');
     const spec = ZPTC.decode(bytes);
-    return ZPTC.encode({ ...spec, name, shortName: name, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
+    return ZPTC.encode({ ...spec, name, shortName: name, empty: !spec.effects.length, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }
   $('#usb-memories').addEventListener('submit', event => {
     const form = event.target.closest('[data-rename]');
@@ -382,13 +385,13 @@
       : { ok: false, text: `Memory ${number} was read back but differs from what was sent. Restore the backup if the patch is wrong.` };
   }
 
-  async function send(number, bytes) {
+  async function send(number, bytes, clearing = false) {
     if (busy) return;
     busy = true;
     renderLocals();
-    try { await sendNow(number, bytes); } finally { busy = false; renderLocals(); }
+    try { await sendNow(number, bytes, clearing); } finally { busy = false; renderLocals(); }
   }
-  async function sendNow(number, bytes) {
+  async function sendNow(number, bytes, clearing = false) {
     result(true, '');
     let d;
     try { d = ZPTC.decode(bytes); } catch (error) { status(`Not a patch: ${error.message}`, 'danger'); return; }
@@ -403,14 +406,14 @@
     renderBackups();
     // 2. Confirmation
     status('Waiting for your confirmation');
-    const yes = await confirmWrite(`<p>Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?</p>
+    const yes = await confirmWrite(`<p>${clearing ? `Clear <b>memory ${number}</b>: it becomes <b>${escapeHtml(d.name)}</b>, with no effects.` : `Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?`}</p>
       <p>It replaces <b>${escapeHtml(old.decoded.name || '(no name)')}</b>. A backup of it ${stored ? 'is in Backups on this page and ' : ''}was downloaded as a <code>.zptc</code> file.</p>
-      ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, `Write to memory ${number}`);
+      ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, clearing ? `Clear memory ${number}` : `Write to memory ${number}`);
     if (!yes) { status('Nothing written'); return; }
     // 3. Write and read back
     const r = await writeAndCheck(number, bytes);
     result(r.ok, r.text);
-    status(r.ok ? 'Written' : 'Check the pedal', r.ok ? 'ok' : 'danger');
+    status(r.ok ? (clearing ? 'Cleared' : 'Written') : 'Check the pedal', r.ok ? 'ok' : 'danger');
   }
 
   $('#usb-backups').addEventListener('click', async event => {

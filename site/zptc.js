@@ -163,7 +163,8 @@ const ZPTC = (() => {
     if (!name) throw new Error('The patch needs a name');
     if (!NAME_CHARS.test(name)) throw new Error('The name contains characters the pedal does not accept');
     const list = spec.effects ?? [];
-    if (list.length < 1 || list.length > MAX_EFFECTS) throw new Error(`A patch holds 1 to ${MAX_EFFECTS} effects`);
+    // empty: a cleared memory, only the BLANK slot
+    if ((list.length < 1 && !spec.empty) || list.length > MAX_EFFECTS) throw new Error(`A patch holds 1 to ${MAX_EFFECTS} effects`);
     const warnings = [];
     const entries = spec._noBlank ? [] : [spec._slot0 ?? { on: true, id: 0, raw: [] }];
     for (const item of list) {
@@ -188,7 +189,7 @@ const ZPTC = (() => {
 
     const prm2 = hex(spec._prm2 ?? PRM2_TEMPLATE);
     // _prm2Refresh: keep the patch data of an existing patch (_prm2) but recompute the bits that depend on the chain
-    if (!spec._prm2 || spec._prm2Refresh) {
+    if ((!spec._prm2 || spec._prm2Refresh) && list.length) {
       // byte 20: one bit per slot holding an amp (bit = slot + 1); byte 10, bits 5–7: slot selected for editing
       if (spec._prm2Refresh) prm2[20] = 0;
       entries.forEach((e, i) => { if (byId.get(e.id)?.category === 'BASS AMP') prm2[20] |= 1 << (i + 1); });
@@ -218,7 +219,7 @@ const ZPTC = (() => {
   function roundtrip(input) {
     const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
     const spec = decode(bytes);
-    const { file } = encode({ ...spec, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) });
+    const { file } = encode({ ...spec, empty: !spec.effects.length, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) });
     return equal(file, bytes);
   }
 

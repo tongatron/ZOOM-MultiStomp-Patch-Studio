@@ -96,5 +96,18 @@ await test('an edited pedal patch keeps its patch data and recomputes the amp bi
   before.forEach((v, i) => { if (i !== 20 && i !== 10) assert.equal(after[i], v, `PRM2 byte ${i} kept`); });
   assert.equal(out.effects.length, spec.effects.length - 1);
 });
+await test('clearing a memory writes an empty patch (BLANK slot only) that decodes and round-trips', async () => {
+  assert.throws(() => ZPTC.encode({ name: 'Empty', effects: [] }), /1 to/);
+  const { file } = ZPTC.encode({ name: 'Empty', empty: true, effects: [] });
+  const d = ZPTC.decode(file);
+  assert.equal(d.name, 'Empty');
+  assert.equal(d.effects.length, 0);
+  assert.ok(ZPTC.roundtrip(file));
+  const info = await PEDALMIDI.patchInfo();
+  await PEDALMIDI.writeMemory(7, info, file);
+  const back = await PEDALMIDI.readMemory(7, info);
+  assert.ok(back.crcOk);
+  assert.deepEqual([...back.data], [...file]);
+});
 PEDALMIDI.disconnect();
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

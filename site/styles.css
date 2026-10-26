@@ -798,11 +798,12 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-meta { color: var(--fg-muted); font: 12px var(--mono); }
 .usb-mem-detail { padding: 0 16px 10px 62px; }
 .usb-fx { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; list-style: none; counter-reset: fx; }
-.usb-fx li { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; background: var(--bg-subtle); border: 1px solid var(--border); border-left: 3px solid var(--c); border-radius: 10px; }
+.usb-fx li { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; }
 .usb-fx li.is-off { opacity: .5; }
 .usb-fx .fx-thumb { width: 32px; height: auto; }
 .usb-fx b { display: block; font-size: 12px; }
-.usb-fx small { color: var(--fg-muted); font-size: 11px; }
+.usb-fx-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.usb-clear { margin-left: auto; }
 .usb-rename input { width: 220px; }
 .usb-chain-line { display: block; margin: 2px 0 0; color: var(--fg-muted); font-size: 12px; }
 .usb-local { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; }
