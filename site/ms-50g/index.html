@@ -16,130 +16,121 @@
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="stylesheet" href="../styles.css?v=zoom48-20261027" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs11-20261027" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
-  <body>
-    <header class="gh-header">
-      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, home">
-        <img src="../favicon.svg" alt="" width="32" height="32" />
+<body>
+    <header class="gh-header fs-top">
+      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, effects">
+        <img src="../favicon.svg" alt="" width="24" height="24" />
         <span class="gh-brand-name">ZOOM MultiStomp <span>PATCH STUDIO</span></span>
       </a>
-      <label class="gh-search" for="search">
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.060ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/></svg>
-        <input id="search" type="search" aria-label="Search effect, model or parameter" placeholder="Search effect, model or parameter" autocomplete="off" spellcheck="false" />
-        <kbd class="gh-kbd" aria-hidden="true">/</kbd>
-      </label>
+      <nav class="fs-nav" aria-label="Sections">
+          <div class="fs-menu">
+            <button class="fs-menu-button" type="button" aria-expanded="false" aria-controls="pedal-menu" title="Change pedal"><span class="sr-only">Pedal: </span><span class="fs-menu-current">MS-50G+ guitar</span> <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <ul class="fs-menu-list" id="pedal-menu" hidden>
+              <li><a href="../">MS-60B+ bass</a></li>
+              <li><a href="./" aria-current="true">MS-50G+ guitar <span class="Label">Not tested</span></a></li>
+            </ul>
+          </div>
+          <a href="./" aria-current="page">Effects</a>
+          <a href="builder.html">Patch builder</a>
+      </nav>
+      <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
     </header>
+    <div class="fs-note" role="note"><p><b>Not tested yet.</b> No generated patch has been checked on a real MS-50G+ (the format comes from the MS-60B+). Have one? Import a simple patch with Handy Guitar Lab and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>.</p></div>
 
-    <div class="repo-head repo-head--tabs">
-      <div class="container">
-        <div class="repo-title">
-          <h1>ZOOM MultiStomp Patch Studio</h1>
-          <span class="Label Label--muted">Effects List 2024</span>
-          <nav class="pedal-switch" aria-label="Pedal"><a href="../">MS-60B+ bass</a><a href="./" aria-current="page">MS-50G+ guitar <span class="Label">Not tested</span></a></nav>
-        </div>
-        <p class="repo-desc"><b>ZOOM MS-50G+ (guitar).</b> Explore all 127 effects with the original Effects List text, then build patches with the same builder as the MS-60B+ (basic checks only: levels and DSP load). 24 of the effects are Handy Guitar Lab add-ons that the builder cannot use yet. Export <code>.zptc</code> files for Handy Guitar Lab. A patch holds up to 6 effects within 100% load.</p>
-        <div class="untested-banner" role="note"><p><b>Not tested yet.</b> This section is built from the official MS-50G+ documentation and the same file format as the MS-60B+, but no generated patch has been checked on a real MS-50G+.</p><p>Have an MS-50G+? Build a simple patch, import it with Handy Guitar Lab and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>.</p></div>
-        <a class="btn btn-sm repo-resources" href="resources.html">Resources</a>
-      </div>
-    </div>
-
-    <div class="tabs-bar">
-      <div class="container">
-        <nav class="UnderlineNav" aria-label="Sections">
-          <a class="UnderlineNav-item" href="./" aria-current="page">Effects</a>
-          <a class="UnderlineNav-item" href="builder.html">Patch builder</a>
-        </nav>
-      </div>
-    </div>
-
-    <main class="container layout">
-      <aside class="sidebar" aria-label="Filters">
-        <nav class="filter-group" aria-labelledby="cat-heading">
-          <h2 class="filter-heading" id="cat-heading">Categories</h2>
-          <ul class="filter-list" id="category-list"></ul>
-        </nav>
-        <div class="filter-group">
-          <h2 class="filter-heading">Features</h2>
-          <ul class="filter-list" id="feature-list"></ul>
-        </div>
-        <div class="flash">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
-          <p>How to add, replace and adjust effects is explained in the <a href="https://zoomcorp.com/manuals/ms-50gplus-en/" target="_blank" rel="noreferrer">official manual</a>.</p>
+    <main class="fs-main fs-effects">
+      <aside class="Box fs-pane sidebar" aria-label="Filters">
+        <div class="fs-pane-body" tabindex="0" aria-label="Filters">
+          <nav class="filter-group" aria-labelledby="cat-heading">
+            <h2 class="filter-heading" id="cat-heading">Categories</h2>
+            <ul class="filter-list" id="category-list"></ul>
+          </nav>
+          <div class="filter-group">
+            <h2 class="filter-heading">Features</h2>
+            <ul class="filter-list" id="feature-list"></ul>
+          </div>
+          <div class="flash">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></svg>
+            <p>How to add, replace and adjust effects is explained in the <a href="https://zoomcorp.com/manuals/ms-50gplus-en/" target="_blank" rel="noreferrer">official manual</a>.</p>
+          </div>
         </div>
       </aside>
 
-      <section class="results" aria-label="Effects">
-        <div class="Box">
-          <div class="Box-header toolbar">
-            <div class="toolbar-left">
-              <strong id="result-count">127 effects</strong>
-              <span class="active-filters" id="active-filters"></span>
-            </div>
-            <div class="toolbar-right">
-              <label class="select-wrap">
-                <span class="sr-only">Sort</span>
-                <select id="sort" class="btn btn-sm">
-                  <option value="zoom">Zoom order</option>
-                  <option value="az">Name A–Z</option>
-                  <option value="params">Most parameters</option>
-                  <option value="dsp-asc">DSP: lightest</option>
-                  <option value="dsp-desc">DSP: heaviest</option>
-                </select>
-              </label>
-              <div class="segmented" role="group" aria-label="View">
-                <button class="btn btn-sm" data-view="list" aria-pressed="true" title="List view">
-                  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm3.75-1.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5ZM3 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
-                </button>
-                <button class="btn btn-sm" data-view="grid" aria-pressed="false" title="Grid view">
-                  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h2.5C6.216 1 7 1.784 7 2.750v2.5A1.75 1.75 0 0 1 5.25 7h-2.5A1.75 1.75 0 0 1 1 5.25Zm8 0C9 1.784 9.784 1 10.75 1h2.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 13.25 7h-2.5A1.75 1.75 0 0 1 9 5.25Zm-8 8C1 9.784 1.784 9 2.75 9h2.5C6.216 9 7 9.784 7 10.75v2.5A1.75 1.75 0 0 1 5.25 15h-2.5A1.75 1.75 0 0 1 1 13.25Zm8 0c0-.966.784-1.75 1.75-1.75h2.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 13.25 15h-2.5A1.75 1.75 0 0 1 9 13.25Z"/></svg>
-                </button>
-              </div>
+      <section class="Box fs-pane results" aria-label="Effects">
+        <div class="Box-header toolbar">
+          <div class="toolbar-left">
+            <strong id="result-count">127 effects</strong>
+            <span class="active-filters" id="active-filters"></span>
+          </div>
+          <div class="toolbar-right">
+            <label class="select-wrap">
+              <span class="sr-only">Sort</span>
+              <select id="sort" class="btn btn-sm">
+                <option value="zoom">Zoom order</option>
+                <option value="az">Name A–Z</option>
+                <option value="params">Most parameters</option>
+                <option value="dsp-asc">DSP: lightest</option>
+                <option value="dsp-desc">DSP: heaviest</option>
+              </select>
+            </label>
+            <div class="segmented" role="group" aria-label="View">
+              <button class="btn btn-sm" data-view="list" aria-pressed="true" title="List view">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm3.75-1.5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5Zm0 5a.75.75 0 0 0 0 1.5h8.5a.75.75 0 0 0 0-1.5h-8.5ZM3 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-1 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>
+              </button>
+              <button class="btn btn-sm" data-view="grid" aria-pressed="false" title="Grid view">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M1 2.75C1 1.784 1.784 1 2.75 1h2.5C6.216 1 7 1.784 7 2.750v2.5A1.75 1.75 0 0 1 5.25 7h-2.5A1.75 1.75 0 0 1 1 5.25Zm8 0C9 1.784 9.784 1 10.75 1h2.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 13.25 7h-2.5A1.75 1.75 0 0 1 9 5.25Zm-8 8C1 9.784 1.784 9 2.75 9h2.5C6.216 9 7 9.784 7 10.75v2.5A1.75 1.75 0 0 1 5.25 15h-2.5A1.75 1.75 0 0 1 1 13.25Zm8 0c0-.966.784-1.75 1.750-1.75h2.5c.966 0 1.75.784 1.75 1.75v2.5A1.75 1.75 0 0 1 13.25 15h-2.5A1.75 1.75 0 0 1 9 13.25Z"/></svg>
+              </button>
             </div>
           </div>
+        </div>
+        <div class="fs-searchbar">
+          <label class="gh-search" for="search">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.060ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/></svg>
+            <input id="search" type="search" aria-label="Search effect, model or parameter" placeholder="Search effect, model or parameter" autocomplete="off" spellcheck="false" />
+            <kbd class="gh-kbd" aria-hidden="true">/</kbd>
+          </label>
+        </div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Effect list">
           <ul class="fx-list" id="fx-list" data-view="list"></ul>
         </div>
       </section>
+
+      <dialog class="Overlay fs-pane" id="fx-dialog" aria-labelledby="dialog-title">
+        <div class="Overlay-header">
+          <div class="Overlay-nav">
+            <button class="btn btn-sm btn-icon" id="dialog-prev" aria-label="Previous effect" title="Previous (←)">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.470 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 1.06L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z"/></svg>
+            </button>
+            <span class="muted" id="dialog-pos"></span>
+            <button class="btn btn-sm btn-icon" id="dialog-next" aria-label="Next effect" title="Next (→)">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-sm btn-icon btn-invisible" id="dialog-close" aria-label="Close" title="Close (Esc)">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+          </button>
+        </div>
+        <div class="Overlay-body fs-pane-body" id="dialog-body" tabindex="0" aria-label="Effect detail"></div>
+      </dialog>
     </main>
 
-    <footer class="gh-footer container">
-      <div class="gh-footer-left">
-        <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
-        <a class="btn gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
-      </div>
-      <div class="gh-footer-right">
-        <span class="gh-data">Data: <a href="https://zoomcorp.com/media/documents/E_MS-50Gplus_EffectsList.pdf" target="_blank" rel="noreferrer">Zoom MS-50G+ Effects List</a> © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.</span>
-        <div class="gh-footer-meta">
-          <a class="gh-privacy" href="../privacy.html">Privacy</a>
-          <time class="gh-updated" datetime="2026-10-27T20:53Z">Last update 27 October 2026 21:53</time>
-        </div>
-      </div>
+    <footer class="fs-status">
+      <a href="../privacy.html">Privacy</a>
+      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
+      <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
+      <span class="fs-data">Data: <a href="https://zoomcorp.com/media/documents/E_MS-50Gplus_EffectsList.pdf" target="_blank" rel="noreferrer">Zoom MS-50G+ Effects List</a> © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.</span>
+      <time class="gh-updated" datetime="2026-10-27T21:16Z">Last update 27 October 2026 22:16</time>
     </footer>
 
-    <dialog class="Overlay" id="fx-dialog" aria-labelledby="dialog-title">
-      <div class="Overlay-header">
-        <div class="Overlay-nav">
-          <button class="btn btn-sm btn-icon" id="dialog-prev" aria-label="Previous effect" title="Previous (←)">
-            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 1.06L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z"/></svg>
-          </button>
-          <span class="muted" id="dialog-pos"></span>
-          <button class="btn btn-sm btn-icon" id="dialog-next" aria-label="Next effect" title="Next (→)">
-            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/></svg>
-          </button>
-        </div>
-        <button class="btn btn-sm btn-icon btn-invisible" id="dialog-close" aria-label="Close" title="Close (Esc)">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
-        </button>
-      </div>
-      <div class="Overlay-body" id="dialog-body"></div>
-    </dialog>
-
     <script src="pedal.js?v=zoom24-20261026"></script>
+    <script src="../fullscreen.js?v=fs4-20261027"></script>
     <script src="effects-data.js?v=zoom24-20261026"></script>
     <script src="firmware-data.js?v=zoom24-20261026"></script>
     <script src="../advice-engine.js?v=zoom24-20261026"></script>
     <script src="advice-rules.js?v=zoom43-20261027"></script>
-    <script src="../app.js?v=zoom51-20261027"></script>
+    <script src="../app.js?v=zoom53-20261027"></script>
     <script src="../library-merge.js?v=zoom28-20261027"></script>
     <script src="../account.js?v=zoom46-20261027"></script>
     <script src="../pwa.js?v=zoom24-20261026"></script>

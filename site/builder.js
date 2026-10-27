@@ -21,7 +21,7 @@ const catalog = EFFECTS_DATA.map(([name, category, , description, , params], ind
   lcd: ZPTC.effects[index].lcd,
   usable: ZPTC.effects[index].id !== null, // false for add-ons whose effect ID is unknown
   slug: name.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-  image: `${PEDAL.base ?? ''}assets/effects/fx-${String(index).padStart(3, '0')}.png`
+  image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`
 }));
 const color = fx => CATEGORIES[fx.category].color;
 const categoryLabel = fx => `<span class="Label Label--cat" style="--c:${color(fx)}">${CATEGORIES[fx.category].label}</span>`;
@@ -252,9 +252,6 @@ function renderSummary() {
   if (!state.effects.length) notices.push(['muted', 'Add at least one effect.']);
   if (!state.name.trim()) notices.push(['muted', 'Give the patch a name.']);
   else if (!ZPTC.NAME_CHARS.test(state.name)) notices.push(['danger', 'The name contains characters the pedal does not accept.']);
-  // With advice on, the DSP warnings appear in the Advice panel instead
-  if (!adviceOn() && total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
-  else if (!adviceOn() && total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
   const unverified = [];
   const raw = [];
   state.effects.forEach(slot => catalog[slot.index].params.forEach(p => {
@@ -804,24 +801,14 @@ const SEVERITY_ICON = {
   tip: '<path fill="currentColor" d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/>'
 };
 const adviceSettings = (() => {
-  const defaults = { enabled: true, output: null, ignored: [], preferences: [], show: { error: true, warning: true, tip: true } };
+  const defaults = { output: null, ignored: [], preferences: [], show: { error: true, warning: true, tip: true } };
   try { return { ...defaults, ...JSON.parse(localStorage.getItem(`${PEDAL.id}-advice`) || '{}') }; } catch { return defaults; }
 })();
 const saveAdvice = () => { try { localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify(adviceSettings)); } catch {} };
 let findings = [];
-// The full-screen builder has no advice switch: there the advice is always on, whatever the saved setting says
-const adviceOn = () => adviceSettings.enabled || !$('#advice-toggle');
 
 function renderAdvice() {
-  const on = adviceOn();
-  if ($('#advice-toggle')) {
-    $('#advice-toggle').checked = on;
-    $('#advice-toggle-label').textContent = on ? 'ON' : 'OFF';
-  }
-  $('#advice-body').hidden = !on;
-  if ($('#advice-off')) $('#advice-off').hidden = on;
   document.querySelectorAll('.advice-dot').forEach(dot => dot.remove());
-  if (!on) { $('#advice-count').textContent = '–'; findings = []; return; }
 
   const sourceLinks = list => list.map(src => `<a href="${escapeHtml(src.url)}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('');
 
@@ -864,8 +851,6 @@ function renderAdvice() {
   });
 }
 
-$('#advice-on')?.addEventListener('click', () => { adviceSettings.enabled = true; saveAdvice(); renderSummary(); });
-$('#advice-toggle')?.addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
 $('#advice').addEventListener('click', event => {
   const button = event.target.closest('[data-advice]');
   if (!button) return;

@@ -74,7 +74,7 @@
     const index = EFFECTS_DATA.findIndex(fx => fx[0] === e.effect);
     const category = CATEGORIES[EFFECTS_DATA[index]?.[1]];
     return `<li class="${e.on ? '' : 'is-off'}">
-      ${index === -1 ? '' : `<img class="fx-thumb" src="${PEDAL.base ?? ''}assets/effects/fx-${String(index).padStart(3, '0')}.png" alt="" width="40" height="50" loading="lazy" />`}
+      ${index === -1 ? '' : `<img class="fx-thumb" src="assets/effects/fx-${String(index).padStart(3, '0')}.png" alt="" width="40" height="50" loading="lazy" />`}
       <span><b>${escapeHtml(e.effect)}</b><span class="usb-fx-tags">${category ? `<span class="Label">${escapeHtml(category.label)}</span>` : ''}${e.on ? '' : '<span class="Label">Off</span>'}</span></span>
     </li>`;
   }).join('')}</ol>` : '<p class="usb-chain-line">No effects.</p>';

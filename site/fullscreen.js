@@ -1,7 +1,4 @@
-// Full-screen version (site/_fullscreen/): helpers shared by its pages. Load right after ../pedal.js.
-
-// The pages sit one folder below the pedal folder: the shared scripts build the effect image paths from PEDAL.base
-PEDAL.base = '../';
+// Layout helpers shared by the pages of the site (pedal menu, Patch box, contents list). Load right after pedal.js.
 
 // Pedal menu in the top bar: a button that opens a list of links; it closes with Esc, a click elsewhere or when focus leaves it
 document.querySelectorAll('.fs-menu').forEach(menu => {

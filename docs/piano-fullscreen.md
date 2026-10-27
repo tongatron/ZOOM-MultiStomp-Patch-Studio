@@ -1,6 +1,6 @@
-# Piano: versione di test `_fullscreen` (ogni pagina in una schermata)
+# Piano: vista a schermo intero (ogni pagina in una schermata)
 
-Stato: **versione full screen MS-60B+ pronta (Panels)**, da provare dal vivo. Data: 2026-10-27.
+Stato: **promossa a interfaccia di tutto il sito, MS-60B+ e MS-50G+ (2026-10-27)**: vedi la fase 6. Le pagine classiche e il laboratorio non ci sono più (restano nella cronologia di git, fino al commit `b2ecd1c`); `site/_fullscreen/` contiene solo reindirizzamenti dai vecchi indirizzi di prova. Il resto del documento racconta com'è nata la versione di prova e il suo percorso (gli indirizzi `_fullscreen/` e le pagine "classiche" citati sotto sono quelli di allora).
 Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
 
 ## Decisioni prese (2026-10-27)
@@ -181,8 +181,27 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 - [ ] `tools/e2e-test.mjs` con una base configurabile per farlo girare anche su `/_fullscreen/` (gli id sono gli stessi).
 - [ ] Tastiera e lettore di schermo: pannelli raggiungibili e scorribili, focus visibile, `prefers-reduced-motion`.
 
-### Fase 6 — MS-50G+, pubblicazione, decisione
+### Fase 6 — Promozione al sito principale (decisa il 2026-10-27: la vista a schermo intero sostituisce quella classica, MS-60B+ e MS-50G+)
 
-- [ ] Pagine `site/_fullscreen/ms-50g/` (stesse regole di `site/ms-50g/`: niente consigli da basso).
-- [ ] Deploy (`node tools/stamp-update.mjs`, commit, rsync via Tailscale) e prova su portatile, iPad e telefono.
-- [ ] Decidere: promuovere la nuova struttura al sito principale, tenerla come vista alternativa o archiviarla. Se si promuove: aggiornare CLAUDE.md, `privacy.html` se cambia qualcosa di ciò che è salvato (non previsto) e i test.
+Piano:
+
+1. **Rilievo.** Pagine classiche = stesse pagine della versione full screen (stessi id e script). Differenze da portare: `<head>` SEO (description, Open Graph, manifest, icone), `pwa.js`/service worker, testo della privacy (oggi la pagina full screen lo carica da quella classica), percorsi (`PEDAL.base`), MS-50G+ (solo Effects, Patch builder, Resources; nessun Pedal manager né Tone ideas; banner "Not tested").
+2. **MS-60B+ in radice.** Le pagine di `site/_fullscreen/` prendono il posto di quelle classiche (`index`, `builder`, `tones`, `pedal-manager`, `resources`, `technical-notes`, `privacy`) più `guide.html`; `fullscreen.css` e `fullscreen.js` passano in `site/`. Il `<head>` è quello classico (indicizzabile, manifest, icone) più `fullscreen.css`; si aggiunge `pwa.js`. La privacy diventa testo statico nella pagina (niente `fetch`).
+3. **MS-50G+.** `site/ms-50g/{index,builder,resources,guide}.html` nello stesso layout: menu del pedale con le due voci (la stessa pagina dell'altro pedale quando esiste), navigazione senza Pedal manager né Tone ideas, riga "Not tested" sotto la barra, dati e link del pedale (127 effetti, manuale e PDF MS-50G+), Guida adattata (niente Pedal manager né Tone ideas).
+4. **Telefono.** Sotto i 760 × 560 px le pagine tornano a scorrere: il dettaglio di un effetto non può restare "docked" in fondo a una lista lunga, quindi su schermi piccoli si apre come finestra (come nel sito classico), con chiudi/avanti/indietro.
+5. **Indirizzi vecchi.** `site/_fullscreen/` diventa una cartella di piccoli reindirizzamenti verso le pagine nuove (come `usb.html`); laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) rimosso, resta nella cronologia di git.
+6. **Pulizia.** `PEDAL.base` non serve più; `sw.js` (elenco `CORE`, versione della cache), `stamp-update.mjs`, README, CLAUDE.md, `privacy.html` (nuova preferenza: Patch box aperto/chiuso).
+7. **Test.** `tools/fullscreen-test.mjs` gira sulle pagine in radice e su quelle MS-50G+ (adattamento ai due pedali, menu, banner); `e2e-test.mjs`, `sync-test.mjs`, `auth-test.mjs`, `advice-test.mjs` restano verdi.
+8. **Deploy** (solo quando lo chiede l'utente): `node tools/stamp-update.mjs`, commit, rsync via Tailscale; sul server vanno tolti i file del laboratorio.
+
+Stato:
+
+- [x] 1 Rilievo
+- [x] 2 MS-60B+ in radice (`index`, `builder`, `tones`, `pedal-manager`, `resources`, `technical-notes`, `privacy`, `guide`)
+- [x] 3 MS-50G+ (`ms-50g/` `index`, `builder`, `resources`, `guide`)
+- [x] 4 Telefono: finestra per il dettaglio sotto i 760 × 560 px (`dockedQuery` in `app.js`)
+- [x] 5 Indirizzi vecchi: `_fullscreen/*.html` reindirizzano (anche `?add=` e `#effetto`)
+- [x] 6 Pulizia: `PEDAL.base` e l'interruttore Advice tolti dal codice, `sw.js` (cache v15, `guide.html`, `privacy.html`), `stamp-update.mjs`, `privacy.html`, CLAUDE.md
+- [x] 7 Test: `fullscreen-test.mjs` 80/80 (due pedali, telefono, reindirizzamenti), e2e 15/15, sync 11/11, auth 18/18, advice 52/52, midi 9/9
+- [ ] 8 Deploy (su richiesta): `node tools/stamp-update.mjs`, commit, rsync, poi sul server togliere `_fullscreen/lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`, `fullscreen.css`, `fullscreen.js` (rsync senza `--delete` non li rimuove)
+- [ ] Tablet in verticale e telefono "un pannello per volta" (fase 4) restano da fare: per ora vale il ripiego con scroll.

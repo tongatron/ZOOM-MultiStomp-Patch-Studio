@@ -1,7 +1,7 @@
-// Full-screen version (site/_fullscreen/): every page must fit the window at each target size without scrolling.
+// Layout of the site, both pedals (MS-60B+ in site/, MS-50G+ in site/ms-50g/): every page must fit the window at each target size without scrolling.
 // The page and the work area are never cut, every pane fits, the main controls are on screen and each work area keeps
-// a useful height. Below 760 × 560 px the pages scroll on purpose (phone layout, later): there only sideways overflow
-// is an error. The builder is also checked with a full chain of 6 effects, signed out (with the account notice).
+// a useful height. Below 760 × 560 px the pages scroll on purpose (phone fallback): there only sideways overflow
+// is an error, and the effect detail opens as a window. The builder is also checked with a full chain of 6 effects, signed out (with the account notice).
 // Run: npm install && npx playwright install chromium && node tools/fullscreen-test.mjs
 // Locally you can use the installed Chrome instead of downloading Chromium: PW_CHANNEL=chrome node tools/fullscreen-test.mjs
 import assert from 'node:assert/strict';
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const port = 18198;
-const base = `http://127.0.0.1:${port}/_fullscreen`;
+const base = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), 'ms60b-fullscreen-'));
 const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, PBKDF2_ITER: '1000', MAIL_OUTBOX: join(dataDir, 'mail') }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise(resolve => server.stdout.once('data', resolve));
@@ -32,6 +32,14 @@ const PAGES = {
   'privacy.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]],
   'guide.html': [['.fs-guide', 'Guide button'], ['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]]
 };
+// The MS-50G+ has Effects, Patch builder, Resources and the Guide (no Pedal manager, no Tone ideas)
+const PAGES_50G = {
+  'ms-50g/index.html': PAGES['index.html'],
+  'ms-50g/builder.html': PAGES['builder.html'].filter(([selector]) => !selector.includes('tones.html')),
+  'ms-50g/resources.html': PAGES['resources.html'],
+  'ms-50g/guide.html': PAGES['guide.html']
+};
+const ALL_PAGES = { ...PAGES, ...PAGES_50G };
 
 // Runs in the page: what is cut, off screen or too small
 function check(keys) {
@@ -88,13 +96,13 @@ page.on('console', message => { if (message.type() === 'error' && !/Failed to lo
 const open = async (file, [width, height]) => {
   await page.setViewportSize({ width, height });
   await page.goto(`${base}/${file}`);
-  if (['technical-notes.html', 'privacy.html', 'guide.html'].includes(file)) await page.waitForSelector('#toc a', { state: 'attached' });
+  if (/(technical-notes|privacy|guide)\.html$/.test(file)) await page.waitForSelector('#toc a', { state: 'attached' });
   await page.waitForSelector('.account-slot > *', { timeout: 3000 }).catch(() => {}); // the Sign in button is part of the bar
   await page.waitForTimeout(150);
 };
 
 try {
-  for (const [file, keys] of Object.entries(PAGES)) {
+  for (const [file, keys] of Object.entries(ALL_PAGES)) {
     for (const size of SIZES) {
       await test(`${file} fits ${size.join(' × ')}`, async () => {
         await open(file, size);
@@ -187,13 +195,13 @@ try {
   });
 
   await test('the status bar: Privacy, Source on GitHub and tongatron.org on the left, the data note and the update time on the right', async () => {
-    for (const file of Object.keys(PAGES)) {
+    for (const file of Object.keys(ALL_PAGES)) {
       for (const size of SIZES) {
         await open(file, size);
         const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
         assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
         assert.deepEqual(labels.slice(0, 3), ['Privacy', 'Source on GitHub', 'tongatron.org'], file);
-        assert.match(labels[3], /^Data: Zoom MS-60B\+ Effects List © 2024 ZOOM CORPORATION/, file);
+        assert.match(labels[3], new RegExp(`^Data: Zoom ${file.startsWith('ms-50g') ? 'MS-50G' : 'MS-60B'}\\+ Effects List © 2024 ZOOM CORPORATION`), file);
         assert.match(labels[4], /^Last update /, file);
         const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
         edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
@@ -223,7 +231,7 @@ try {
   });
 
   await test('the header has no "Full screen" tag; the Guide button comes right before the account menu on every page and opens the guide', async () => {
-    for (const file of Object.keys(PAGES)) {
+    for (const file of Object.keys(ALL_PAGES)) {
       await open(file, SIZES[1]);
       assert.equal(await page.locator('.fs-badge').count(), 0, `${file}: no "Full screen" tag`);
       assert.equal(await page.locator('.fs-top .gh-search').count(), 0, `${file}: no search box in the top bar`);
@@ -236,7 +244,7 @@ try {
       });
       assert.deepEqual(place, { onlyAccountAfter: true, rightOfNav: true, atRight: true }, `${file}: Guide at the right, before the account menu`);
       assert.equal(await page.locator('.fs-guide').getAttribute('href'), 'guide.html');
-      assert.equal(await page.locator('.fs-guide[aria-current="page"]').count(), file === 'guide.html' ? 1 : 0, `${file}: highlighted only on the guide`);
+      assert.equal(await page.locator('.fs-guide[aria-current="page"]').count(), file.endsWith('guide.html') ? 1 : 0, `${file}: highlighted only on the guide`);
       assert.equal(await page.locator('.fs-guide').getAttribute('aria-label'), 'Guide');
     }
     await open('builder.html', SIZES[1]);
@@ -281,7 +289,7 @@ try {
     const items = await page.locator('.fs-menu-list a').allTextContents();
     assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
     assert.equal((await page.locator('.fs-menu-list a[aria-current]').textContent()).trim(), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
-    assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/"]').count(), 1);
+    assert.equal(await page.locator('.fs-menu-list a[href="ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
     // the open menu floats over the page: it stays inside the window
     const box = await page.locator('.fs-menu-list').boundingBox();
     assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= SIZES[1][0] && box.y + box.height <= SIZES[1][1], 'the menu is inside the window');
@@ -300,6 +308,7 @@ try {
   await test('effects: the detail pane shows the first effect, follows the list and the arrows', async () => {
     await open('index.html', SIZES[1]);
     assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').open && !document.querySelector('#fx-dialog').matches(':modal')), true, 'docked detail open, not modal');
+    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').contains(document.activeElement)), false, 'the pane that opens by itself does not take the focus');
     const first = await page.locator('.fx-link .fx-name').first().textContent();
     assert.equal(await page.locator('#dialog-title').textContent(), first);
     await page.locator('.fx-link').nth(3).click();
@@ -333,7 +342,8 @@ try {
   await test('effects: the detail has no previous/next buttons and "Add to patch" sits right under the description', async () => {
     await open('index.html', SIZES[1]);
     await page.locator('.fx-link').nth(3).click();
-    assert.equal(await page.locator('#fx-dialog #dialog-prev, #fx-dialog #dialog-next, #fx-dialog #dialog-pos, #fx-dialog #dialog-close, #fx-dialog .Overlay-header').count(), 0, 'the buttons that are at the top of the page are not repeated');
+    assert.equal(await page.locator('#fx-dialog .Overlay-header').isHidden(), true, 'the buttons that are at the top of the page are not repeated in the pane');
+    for (const id of ['#dialog-prev', '#dialog-next', '#dialog-pos', '#dialog-close']) assert.equal(await page.locator(id).isHidden(), true, id);
     const place = await page.evaluate(() => {
       const body = document.querySelector('#dialog-body');
       const top = selector => body.querySelector(selector)?.getBoundingClientRect().top;
@@ -403,6 +413,105 @@ try {
     assert.equal(await page.locator('#patch-name').isVisible(), true, 'the arrow opens it again');
     assert.equal(await page.locator('#patch-summary').isHidden(), true);
     await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-fs-patch-collapsed`));
+  });
+
+  await test('the pedal menu switches to the same page of the other pedal', async () => {
+    await open('builder.html', SIZES[1]);
+    await page.locator('.fs-menu-button').click();
+    await page.locator('.fs-menu-list a[href="ms-50g/builder.html"]').click();
+    await page.waitForURL(/\/ms-50g\/builder\.html$/);
+    await page.locator('.fs-menu-button').click();
+    await page.locator('.fs-menu-list a[href="../builder.html"]').click();
+    await page.waitForURL(url => url.pathname === '/builder.html');
+  });
+
+  await test('MS-50G+: the same layout with its own data, no Pedal manager or Tone ideas, and the "Not tested" bar', async () => {
+    await open('ms-50g/index.html', SIZES[1]);
+    assert.equal(await page.locator('.fs-menu-current').textContent(), 'MS-50G+ guitar');
+    assert.deepEqual(await page.locator('.fs-nav > a').allTextContents(), ['Effects', 'Patch builder']);
+    assert.match(await page.locator('.fs-note').textContent(), /^Not tested yet\./);
+    assert.equal(await page.locator('#result-count').textContent(), '127 effects');
+    assert.equal(await page.evaluate(() => PEDAL.id), 'ms50g');
+    assert.equal(await page.locator('.fx-thumb').first().getAttribute('src'), 'assets/effects/fx-000.png');
+    await page.locator('.fx-thumb').first().evaluate(img => img.decode());
+    assert.equal(await page.locator('.fx-thumb').first().evaluate(img => img.naturalWidth > 0), true, 'the MS-50G+ effect images load');
+    assert.match(await page.locator('.flash a').getAttribute('href'), /ms-50gplus-en/);
+    await page.locator('.fs-menu-button').click();
+    const items = await page.locator('.fs-menu-list a').allTextContents();
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.equal(await page.locator('.fs-menu-list a[href="../"]').count(), 1);
+    await page.keyboard.press('Escape');
+
+    // the builder: six effects fit every size, and the data are kept apart from the MS-60B+ ones
+    await open('ms-50g/builder.html', SIZES[0]);
+    assert.equal(await page.locator('.builder-chain a[href="tones.html"], #pedal-edit-bar').count(), 0);
+    await page.evaluate(() => {
+      state.effects = catalog.filter(fx => fx.dsp !== null).sort((a, b) => a.dsp - b.dsp).slice(0, 6).map(fx => slotFor(fx.index));
+      render();
+    });
+    await page.fill('#patch-name', 'GTR TEST');
+    assert.equal(await page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith('ms50g-'))), true, 'ms50g- keys');
+    for (const size of SIZES) {
+      await open('ms-50g/builder.html', size);
+      assert.equal(await page.locator('#chain-list .chain-item').count(), 6);
+      assert.deepEqual((await page.evaluate(check, PAGES_50G['ms-50g/builder.html'])).issues, [], size.join(' × '));
+    }
+    await page.evaluate(() => { state.effects = []; state.name = ''; render(); save(); });
+
+    // the guide and resources: the pedal's own text and links
+    await open('ms-50g/guide.html', SIZES[1]);
+    assert.equal(await page.locator('#toc a[href="#pedal-manager"], #toc a[href="#tone-ideas"]').count(), 0, 'no Pedal manager or Tone ideas section');
+    assert.equal(await page.locator('#doc').getByText('Pedal manager').count(), 0);
+    assert.match(await page.locator('#load-on-pedal ~ p a[href*="HandyGuitarLab"]').first().getAttribute('href'), /MS-50Gplus/);
+    assert.equal(await page.locator('#toc a[href="#resources"]').count(), 1);
+    await page.locator('#doc a[href="resources.html"]').click();
+    await page.waitForURL(/\/ms-50g\/resources\.html$/);
+    assert.deepEqual(await page.locator('.resource a[aria-label^="Official manual"]').evaluateAll(links => links.map(a => a.href)), ['https://zoomcorp.com/manuals/ms-50gplus-en/', 'https://zoomcorp.com/manuals/ms-50gplus-it/']);
+    assert.match(await page.locator('.check-list').textContent(), /The whole format on an MS-50G\+/);
+    assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
+  });
+
+  await test('on a phone the effect detail opens as a window with its own buttons, and becomes the pane again on a big screen', async () => {
+    await open('index.html', PHONE);
+    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').open), false, 'nothing is open at first');
+    assert.equal(await page.locator('#fx-dialog').isVisible(), false, 'and nothing of it is shown');
+    await page.locator('.fx-link').nth(2).click();
+    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').matches(':modal')), true, 'a window');
+    assert.equal(await page.locator('#dialog-close').isVisible(), true);
+    assert.equal(await page.locator('#dialog-pos').textContent(), '3 of 97');
+    await page.locator('#dialog-next').click();
+    assert.equal(await page.locator('#dialog-pos').textContent(), '4 of 97');
+    assert.equal(await page.locator('#dialog-body .detail-add a').count(), 1, 'Add to patch is under the description here too');
+    assert.equal(await page.locator('[data-advice-off]').count(), 0, 'and the advice has no switch');
+    await page.locator('#dialog-close').click();
+    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').open), false);
+    // an address that names an effect opens it
+    const slug = await page.evaluate(() => effects[5].slug);
+    await page.goto(`${base}/index.html#${slug}`);
+    await page.waitForFunction(() => document.querySelector('#fx-dialog').matches(':modal'));
+    assert.equal(await page.locator('#dialog-title').textContent(), await page.evaluate(() => effects[5].name));
+    // the window gets big: the same detail becomes the pane next to the list
+    await page.setViewportSize({ width: 1280, height: 680 });
+    await page.waitForFunction(() => { const d = document.querySelector('#fx-dialog'); return d.open && !d.matches(':modal'); });
+    assert.equal(await page.locator('#dialog-title').textContent(), await page.evaluate(() => effects[5].name), 'still the same effect');
+    assert.equal(await page.locator('#dialog-close').isHidden(), true);
+    const layout = await page.evaluate(() => ({ list: document.querySelector('.results .fs-pane-body').getBoundingClientRect().height, detail: document.querySelector('#dialog-body').getBoundingClientRect().height, scrolls: document.documentElement.scrollHeight > innerHeight }));
+    assert.ok(layout.list >= 240 && layout.detail >= 240 && !layout.scrolls, `the panes fit again: ${JSON.stringify(layout)}`);
+  });
+
+  await test('the old addresses of the test version redirect to the site', async () => {
+    // (the Effects page adds the first effect to the address)
+    for (const [from, to] of [['_fullscreen/index.html', '/'], ['_fullscreen/guide.html#shortcuts', '/guide.html#shortcuts'], ['_fullscreen/privacy.html', '/privacy.html']]) {
+      await page.goto(`${base}/${from}`);
+      await page.waitForURL(url => (url.pathname + url.search + url.hash).startsWith(to) && !url.pathname.includes('_fullscreen'));
+    }
+    // ?add=<effect> still reaches the builder (which uses it and cleans the address)
+    await open('index.html', SIZES[1]);
+    const slug = await page.evaluate(() => { localStorage.clear(); return effects[3].slug; });
+    await page.goto(`${base}/_fullscreen/builder.html?add=${slug}`);
+    await page.waitForURL(url => url.pathname === '/builder.html');
+    await page.waitForSelector('#chain-list .chain-item');
+    assert.equal(await page.locator('#chain-list .chain-item').count(), 1, 'the effect named in the old address is in the chain');
   });
 
   await test('no errors in the browser console', async () => { assert.deepEqual(errors, []); });

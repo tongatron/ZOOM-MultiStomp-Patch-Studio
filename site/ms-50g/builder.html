@@ -16,69 +16,117 @@
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="stylesheet" href="../styles.css?v=zoom48-20261027" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs11-20261027" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
-  <body data-account-notice>
-    <header class="gh-header">
-      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, home">
-        <img src="../favicon.svg" alt="" width="32" height="32" />
+<body data-account-notice>
+    <header class="gh-header fs-top">
+      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, effects">
+        <img src="../favicon.svg" alt="" width="24" height="24" />
         <span class="gh-brand-name">ZOOM MultiStomp <span>PATCH STUDIO</span></span>
       </a>
-      <span class="gh-spacer"></span>
-    </header>
-
-    <div class="repo-head repo-head--tabs">
-      <div class="container">
-        <div class="repo-title">
-          <h1>Patch builder</h1>
-          <span class="Label">Experimental</span>
-          <nav class="pedal-switch" aria-label="Pedal"><a href="../builder.html">MS-60B+ bass</a><a href="builder.html" aria-current="page">MS-50G+ guitar <span class="Label">Not tested</span></a></nav>
-        </div>
-        <p class="repo-desc"><b>ZOOM MS-50G+ (guitar).</b> Pick up to 6 effects, order them and set their parameters. The <code>.zptc</code> file imports into Handy Guitar Lab; DSP load is estimated on the same scale as its "Processor" meter.</p>
-        <div class="untested-banner" role="note"><p><b>Not tested yet.</b> This section is built from the official MS-50G+ documentation and the same file format as the MS-60B+, but no generated patch has been checked on a real MS-50G+.</p><p>Have an MS-50G+? Build a simple patch, import it with Handy Guitar Lab and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>.</p></div>
-        <a class="btn btn-sm repo-resources" href="resources.html">Resources</a>
-      </div>
-    </div>
-
-    <div class="tabs-bar">
-      <div class="container">
-        <nav class="UnderlineNav" aria-label="Sections">
-          <a class="UnderlineNav-item" href="./">Effects</a>
-          <a class="UnderlineNav-item" href="builder.html" aria-current="page">Patch builder</a>
-        </nav>
-      </div>
-    </div>
-
-    <main class="container builder">
-      <section class="builder-chain" aria-labelledby="chain-title">
-        <div class="Box">
-          <div class="Box-header">
-            <h2 class="Box-title" id="chain-title">Chain <span class="muted" id="chain-count">0 / 6</span></h2>
-            <div class="toolbar-right">
-              <button class="btn btn-sm btn-icon" id="undo" aria-label="Undo" title="Undo (Ctrl/⌘ + Z)" disabled><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
-              <button class="btn btn-sm btn-icon" id="redo" aria-label="Redo" title="Redo (Shift + Ctrl/⌘ + Z)" disabled><svg class="flip" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
-              <label class="btn btn-sm" for="import-files" title="Import .zptc patches from Handy Guitar Lab or a .json backup">
-                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>
-                <span>Import</span>
-              </label>
-              <button class="btn btn-sm" id="add-effect">
-                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
-                <span>Add effect</span>
-              </button>
-            </div>
+      <nav class="fs-nav" aria-label="Sections">
+          <div class="fs-menu">
+            <button class="fs-menu-button" type="button" aria-expanded="false" aria-controls="pedal-menu" title="Change pedal"><span class="sr-only">Pedal: </span><span class="fs-menu-current">MS-50G+ guitar</span> <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <ul class="fs-menu-list" id="pedal-menu" hidden>
+              <li><a href="../builder.html">MS-60B+ bass</a></li>
+              <li><a href="./" aria-current="true">MS-50G+ guitar <span class="Label">Not tested</span></a></li>
+            </ul>
           </div>
+          <a href="./">Effects</a>
+          <a href="builder.html" aria-current="page">Patch builder</a>
+      </nav>
+      <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
+    </header>
+    <div class="fs-note" role="note"><p><b>Not tested yet.</b> No generated patch has been checked on a real MS-50G+ (the format comes from the MS-60B+). Have one? Import a simple patch with Handy Guitar Lab and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>.</p></div>
+
+
+    <main class="fs-main fs-builder">
+      <section class="Box fs-pane builder-chain" aria-labelledby="chain-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="chain-title">Chain <span class="muted" id="chain-count">0 / 6</span></h2>
+          <div class="toolbar-right">
+            <button class="btn btn-sm btn-icon" id="undo" aria-label="Undo" title="Undo (Ctrl/⌘ + Z)" disabled><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <button class="btn btn-sm btn-icon" id="redo" aria-label="Redo" title="Redo (Shift + Ctrl/⌘ + Z)" disabled><svg class="flip" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <label class="btn btn-sm" for="import-files" title="Import .zptc patches from Handy Guitar Lab or a .json backup">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>
+              <span>Import</span>
+            </label>
+            <button class="btn btn-sm" id="add-effect">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+              <span>Add effect</span>
+            </button>
+          </div>
+        </div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Chain">
           <div class="signal-end">INPUT</div>
           <ol class="chain-list" id="chain-list"></ol>
           <div class="signal-end signal-end--out">OUTPUT</div>
         </div>
+      </section>
 
-        <section class="Box advice" id="advice" aria-labelledby="advice-title">
-          <div class="Box-header">
-            <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
-            <div class="toolbar-right">
-              <label class="switch" title="Turn advice on or off"><input type="checkbox" id="advice-toggle" checked /><span></span><b id="advice-toggle-label">ON</b></label>
+      <aside class="fs-col builder-side" aria-label="Patch summary">
+        <div class="Box fs-pane side-box patch-box">
+          <div class="Box-header patch-head">
+            <button class="patch-toggle" id="patch-toggle" type="button" aria-expanded="true" aria-controls="patch-body" title="Close the patch box">
+              <svg class="patch-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>
+              <span class="Box-title">Patch</span>
+            </button>
+            <span class="patch-summary" id="patch-summary" hidden></span>
+          </div>
+          <div class="fs-pane-body side-box-body" id="patch-body">
+            <label class="field">
+              <span class="field-label">Patch name</span>
+              <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />
+            </label>
+
+            <div class="field">
+              <div class="field-label field-label--row"><span>DSP load</span><strong id="dsp-total">0%</strong></div>
+              <div class="dsp-stack" id="dsp-stack" aria-hidden="true"></div>
+              <ul class="dsp-legend" id="dsp-legend"></ul>
+            </div>
+
+            <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
+
+            <div class="save-row">
+              <button class="btn btn-sm" id="save-patch" title="Save to My patches (Ctrl/⌘ + S)">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 2.75C3 1.784 3.784 1 4.75 1h6.5c.966 0 1.75.784 1.75 1.75v11.5a.75.75 0 0 1-1.227.579L8 11.722l-3.773 3.107A.751.751 0 0 1 3 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.91l3.023-2.489a.75.75 0 0 1 .954 0l3.023 2.49V2.75a.25.25 0 0 0-.25-.25Z"/></svg>
+                <span id="save-label">Save</span>
+              </button>
+              <button class="btn btn-sm btn-primary" id="download" disabled>
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                Download .zptc
+              </button>
+            </div>
+            <div class="save-status" id="save-status" aria-live="polite"></div>
+            <div class="save-extra">
+              <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
+              <button class="btn btn-sm btn-invisible" id="share-patch" title="Copy a link that opens this patch in the builder" disabled>Share link</button>
             </div>
           </div>
+        </div>
+
+        <section class="Box fs-pane side-box library" aria-labelledby="library-title">
+          <div class="library-head">
+            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
+            <div class="library-actions">
+              <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
+              <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
+              <label class="btn btn-sm" for="import-files">Import</label>
+              <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
+            </div>
+          </div>
+          <ul class="library-list fs-pane-body" id="library-list" tabindex="0" aria-label="My patches"></ul>
+          <input type="file" id="import-files" accept=".zptc,.json,application/json" multiple hidden />
+        </section>
+      </aside>
+
+      <section class="Box fs-pane advice" id="advice" aria-labelledby="advice-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
+        </div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Advice">
+          <ul class="notices" id="notices" aria-live="polite"></ul>
           <div class="advice-body" id="advice-body">
             <details class="advice-prefs" id="advice-prefs">
               <summary>My preferences <span class="Counter" id="advice-prefs-count">0</span></summary>
@@ -98,82 +146,18 @@
             <div class="advice-foot" id="advice-foot"></div>
             <div class="advice-output" id="advice-output" role="group" aria-label="Where do you plug in?"></div>
           </div>
-          <div class="advice-off" id="advice-off" hidden><p>Advice is off. Turn it on to check order, levels, and DSP load.</p><button class="btn btn-sm" id="advice-on">Turn advice on</button></div>
-        </section>
-      </section>
-
-      <aside class="builder-side" aria-label="Patch summary">
-        <div class="Box side-box">
-          <label class="field">
-            <span class="field-label">Patch name</span>
-            <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />          </label>
-
-          <div class="field">
-            <div class="field-label field-label--row"><span>DSP load</span><strong id="dsp-total">0%</strong></div>
-            <div class="dsp-stack" id="dsp-stack" aria-hidden="true"></div>
-            <ul class="dsp-legend" id="dsp-legend"></ul>
-          </div>
-
-          <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
-          <ul class="notices" id="notices" aria-live="polite"></ul>
-
-          <div class="save-row">
-            <button class="btn" id="save-patch" title="Save to My patches (Ctrl/⌘ + S)">
-              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 2.75C3 1.784 3.784 1 4.75 1h6.5c.966 0 1.75.784 1.75 1.75v11.5a.75.75 0 0 1-1.227.579L8 11.722l-3.773 3.107A.751.751 0 0 1 3 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.91l3.023-2.489a.75.75 0 0 1 .954 0l3.023 2.49V2.75a.25.25 0 0 0-.25-.25Z"/></svg>
-              <span id="save-label">Save</span>
-            </button>
-            <button class="btn btn-primary" id="download" disabled>
-              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
-              Download .zptc
-            </button>
-          </div>
-          <div class="save-status" id="save-status" aria-live="polite"></div>
-          <div class="save-extra">
-            <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
-            <button class="btn btn-sm btn-invisible" id="share-patch" title="Copy a link that opens this patch in the builder" disabled>Share link</button>
-          </div>
         </div>
-
-        <section class="Box side-box library" aria-labelledby="library-title">
-          <div class="library-head">
-            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
-            <div class="library-actions">
-              <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
-              <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
-              <label class="btn btn-sm" for="import-files">Import</label>
-              <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
-            </div>
-          </div>
-          <ul class="library-list" id="library-list"></ul>
-          <p class="field-hint">Stored in this browser. Use <b>Sync</b> to keep them the same on all your devices, or <b>Backup</b> and <b>Import</b> to move them by hand; you can also drop <code>.zptc</code> or <code>.json</code> files onto the page.</p>
-          <input type="file" id="import-files" accept=".zptc,.json,application/json" multiple hidden />
-        </section>
-
-        <details class="Box side-box import-help">
-          <summary>How to load it on the pedal</summary>
-          <ol>
-            <li>In Handy Guitar Lab open <b>Patch</b>, tap the import icon and pick the <code>.zptc</code> file: it lands in the <b>Pool</b>.</li>
-            <li>In the Pool tap <b>Select</b>, choose the patch and tap <b>Copy to Device</b>.</li>
-            <li>Pick a free memory: copying <b>overwrites</b> the destination patch.</li>
-          </ol>
-          <a href="https://zoomcorp.com/media/documents/E_HandyGuitarLab_for_MS-50Gplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide (PDF)</a>
-        </details>
-      </aside>
+      </section>
     </main>
 
     <div class="drop-overlay" id="drop-overlay" aria-hidden="true"><span>Drop <code>.zptc</code> or <code>.json</code> files to import them</span></div>
 
-    <footer class="gh-footer container">
-      <div class="gh-footer-left">
-        <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
-        <a class="btn gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
-      </div>
-      <div class="gh-footer-right">
-        <div class="gh-footer-meta">
-          <a class="gh-privacy" href="../privacy.html">Privacy</a>
-          <time class="gh-updated" datetime="2026-10-27T20:53Z">Last update 27 October 2026 21:53</time>
-        </div>
-      </div>
+    <footer class="fs-status">
+      <a href="../privacy.html">Privacy</a>
+      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
+      <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
+      <span class="fs-data">Data: <a href="https://zoomcorp.com/media/documents/E_MS-50Gplus_EffectsList.pdf" target="_blank" rel="noreferrer">Zoom MS-50G+ Effects List</a> © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.</span>
+      <time class="gh-updated" datetime="2026-10-27T21:16Z">Last update 27 October 2026 22:16</time>
     </footer>
 
     <dialog class="Overlay" id="picker" aria-labelledby="picker-title">
@@ -202,7 +186,6 @@
       </div>
       <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
     </dialog>
-
 
     <dialog class="Overlay pack-editor" id="pack-editor" aria-labelledby="pack-editor-title">
       <div class="Overlay-header">
@@ -233,6 +216,7 @@
     </dialog>
 
     <script src="pedal.js?v=zoom24-20261026"></script>
+    <script src="../fullscreen.js?v=fs4-20261027"></script>
     <script src="effects-data.js?v=zoom24-20261026"></script>
     <script src="firmware-data.js?v=zoom24-20261026"></script>
     <script src="../library-merge.js?v=zoom28-20261027"></script>
@@ -242,7 +226,7 @@
     <script src="../rule-packs.js?v=zoom24-20261026"></script>
     <script src="advice-rules.js?v=zoom43-20261027"></script>
     <script src="../rule-pack-editor.js?v=zoom24-20261026"></script>
-    <script src="../builder.js?v=zoom50-20261027"></script>
+    <script src="../builder.js?v=zoom51-20261027"></script>
     <script src="../account.js?v=zoom46-20261027"></script>
     <script src="../pwa.js?v=zoom24-20261026"></script>
   </body>

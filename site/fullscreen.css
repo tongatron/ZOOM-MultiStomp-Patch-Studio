@@ -40,6 +40,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 
 /* Bars that scripts add under the header stay compact */
 .account-notice { flex: none; padding: 6px 16px; }
+/* "Not tested yet" bar under the header of the MS-50G+ pages */
+.fs-note { flex: none; padding: 6px 16px; background: rgba(248, 81, 73, .1); border-bottom: 1px solid rgba(248, 81, 73, .4); font-size: 13px; line-height: 1.5; }
+.fs-note p { margin: 0; }
+.fs-note b { color: #ff7b72; }
 .fs-editbar { flex: none; padding: 0 16px; }
 .fs-editbar .pedal-edit-bar { margin: 8px 0 0; }
 
@@ -83,10 +87,15 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* The search box sits in the list pane, under its toolbar */
 .fs-searchbar { flex: none; padding: 8px 12px; border-bottom: 1px solid var(--border-muted); }
 .fs-searchbar .gh-search { max-width: none; margin: 0; }
-/* The effect dialog is a pane that is always there; the list and the arrow keys move between effects, so it has no buttons of its own */
-dialog.Overlay[data-docked] { position: static; inset: auto; width: auto; max-width: none; height: auto; max-height: none; margin: 0; background: var(--bg); color: var(--fg); border-radius: var(--radius); box-shadow: none; animation: none; }
-.fs-effects [data-docked]:not([open]) { display: flex; }
-.fs-effects [data-docked] .Overlay-body { padding: 16px; }
+/* The effect detail is a pane that is always there; the list and the arrow keys move between effects, so its own close and
+   previous/next buttons are hidden. Below 760 × 560 px, where the page scrolls, it is a window again (see app.js) */
+.fs-effects dialog.Overlay:not([open]) { display: none; }
+@media (min-width: 760px) and (min-height: 560px) {
+  .fs-effects dialog.Overlay { position: static; inset: auto; width: auto; max-width: none; height: auto; max-height: none; margin: 0; background: var(--bg); color: var(--fg); border-radius: var(--radius); box-shadow: none; animation: none; }
+  .fs-effects dialog.Overlay:not([open]) { display: flex; }
+  .fs-effects dialog.Overlay .Overlay-header { display: none; }
+  .fs-effects dialog.Overlay .Overlay-body { padding: 16px; }
+}
 .fs-effects .detail-add { margin-top: 12px; }
 .fs-effects .detail-head { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; }
 .fs-effects .detail-head .fx-thumb { width: 72px; }
