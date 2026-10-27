@@ -10,7 +10,7 @@ Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
 
 ## Versione full screen (`site/_fullscreen/`)
 
-Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
+Otto pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 
 | Pagina | Pannelli |
 |---|---|
@@ -21,12 +21,13 @@ Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 | `resources.html` | manuali, Effects List, note e "About the patch files" \| Still to check |
 | `technical-notes.html` | indice \| testo (da `technical-notes.md`) |
 | `privacy.html` | indice \| testo (caricato da `site/privacy.html`, così le due versioni non divergono) |
+| `guide.html` (pulsante **Guide**, in alto a sinistra) | indice \| guida con gli how-to: Quick start, Find an effect, Build a patch, Read the advice, Save/share/compare, **How to load it on the pedal** (spostato dal pannello My patches del builder), Pedal manager, Tone ideas, account, scorciatoie, More help |
 
 - `fullscreen.css` (guscio + pannelli), `fullscreen.js` (`PEDAL.base = '../'` e l'indice dei documenti).
-- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con il selettore del pedale (mostra il pedale scelto, "MS-60B+ bass", con la freccia; elenca i due pedali Zoom; l'MS-50G+ apre per ora la vista classica), Effects, Patch builder e Pedal manager, la sezione attiva in una pillola blu (Tone ideas si apre dal builder, con un pulsante nella catena); barra di stato con attribuzione ZOOM, Resources, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
+- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con il pulsante Guide accanto al logo (icona sola sotto 900 px), il selettore del pedale (mostra il pedale scelto, "MS-60B+ bass", con la freccia; elenca i due pedali Zoom; l'MS-50G+ apre per ora la vista classica), Effects, Patch builder e Pedal manager, la sezione attiva in una pillola blu (Tone ideas si apre dal builder, con un pulsante nella catena); barra di stato con attribuzione ZOOM, Resources, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
 - `noindex`, niente service worker (`pwa.js` non caricato), nessun link dal sito classico.
 - `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Il sito classico non cambia.
-- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), gli avvisi della patch nel pannello Advice e Save/Download piccoli, con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 35/35 al 2026-10-27.
+- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo e con la barra in alto senza sovrapposizioni (anche a 800 px), il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), gli avvisi della patch nel pannello Advice e Save/Download piccoli, con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 49/49 al 2026-10-27. Sotto i 1000 px il badge "Full screen" sparisce e la ricerca cede spazio alle voci della barra.
 - Il laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) resta come archivio del confronto.
 
 ## Laboratorio (`site/_fullscreen/lab.html`)

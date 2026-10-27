@@ -29,7 +29,8 @@ const PAGES = {
   'tones.html': [['#tone-filter', 'filter'], ['#tone-styles-title', 'By style'], ['#tone-bassists-title', 'By bassist'], ['.tone-pane .fs-pane-body', 'tone list', 200]],
   'resources.html': [['.resource-list', 'manuals'], ['#check-title', 'Still to check'], ['.check-pane .fs-pane-body', 'checks', 200]],
   'technical-notes.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]],
-  'privacy.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]]
+  'privacy.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]],
+  'guide.html': [['.fs-guide', 'Guide button'], ['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]]
 };
 
 // Runs in the page: what is cut, off screen or too small
@@ -60,6 +61,20 @@ function check(keys) {
   return { scrolls: false, issues };
 }
 
+// Runs in the page: the items of the top bar sit one after the other, inside the window, and the links are not clipped
+function barIssues() {
+  const items = [...document.querySelectorAll('.fs-top > *')].filter(el => el.getClientRects().length && getComputedStyle(el).display !== 'none');
+  const rects = items.map(el => [el.className.split(' ')[0] || el.tagName.toLowerCase(), el.getBoundingClientRect()]);
+  const issues = [];
+  rects.forEach(([name, r], i) => {
+    if (r.right > innerWidth + 1) issues.push(`${name} runs off the right edge`);
+    if (i && r.left < rects[i - 1][1].right - 1) issues.push(`${name} overlaps ${rects[i - 1][0]}`);
+  });
+  const nav = document.querySelector('.fs-nav');
+  if (nav.scrollWidth > nav.clientWidth + 1) issues.push('the links are clipped');
+  return issues;
+}
+
 let passed = 0;
 const failures = [];
 const errors = [];
@@ -73,7 +88,8 @@ page.on('console', message => { if (message.type() === 'error' && !/Failed to lo
 const open = async (file, [width, height]) => {
   await page.setViewportSize({ width, height });
   await page.goto(`${base}/${file}`);
-  if (file === 'technical-notes.html' || file === 'privacy.html') await page.waitForSelector('#toc a', { state: 'attached' });
+  if (['technical-notes.html', 'privacy.html', 'guide.html'].includes(file)) await page.waitForSelector('#toc a', { state: 'attached' });
+  await page.waitForSelector('.account-slot > *', { timeout: 3000 }).catch(() => {}); // the Sign in button is part of the bar
   await page.waitForTimeout(150);
 };
 
@@ -85,8 +101,13 @@ try {
         const result = await page.evaluate(check, keys);
         assert.equal(result.scrolls, false, 'the page scrolls');
         assert.deepEqual(result.issues, []);
+        assert.deepEqual(await page.evaluate(barIssues), [], 'top bar');
       });
     }
+    await test(`${file} top bar fits at 800 px`, async () => {
+      await open(file, [800, 700]);
+      assert.deepEqual(await page.evaluate(barIssues), []);
+    });
     await test(`${file} at ${PHONE.join(' × ')} scrolls only down, never sideways`, async () => {
       await open(file, PHONE);
       const result = await page.evaluate(check, keys);
@@ -161,6 +182,42 @@ try {
     await page.locator('.builder-chain a[href="tones.html"]').click();
     await page.waitForURL(/tones\.html$/);
     assert.equal(await page.locator('.fs-nav > a[aria-current="page"]').textContent(), 'Patch builder');
+  });
+
+  await test('the Guide button is right after the logo on every page and opens the guide', async () => {
+    for (const file of Object.keys(PAGES)) {
+      await open(file, SIZES[1]);
+      assert.equal(await page.evaluate(() => document.querySelector('.fs-top > .gh-brand + .fs-guide') !== null), true, `${file}: Guide right after the brand`);
+      assert.equal(await page.locator('.fs-guide').getAttribute('href'), 'guide.html');
+      assert.equal(await page.locator('.fs-guide[aria-current="page"]').count(), file === 'guide.html' ? 1 : 0, `${file}: highlighted only on the guide`);
+      assert.equal(await page.locator('.fs-guide').getAttribute('aria-label'), 'Guide');
+    }
+    await open('builder.html', SIZES[1]);
+    await page.locator('.fs-guide').click();
+    await page.waitForURL(/guide\.html$/);
+    await page.waitForSelector('#toc a', { state: 'attached' });
+    assert.equal(await page.locator('#doc-title').textContent(), 'Guide');
+    const sections = await page.locator('#doc h2').count();
+    assert.ok(sections >= 8, `${sections} sections`);
+    assert.equal(await page.locator('#toc a').count(), sections, 'one contents entry per section');
+  });
+
+  await test('the guide has the how-to that left the builder, and the contents list scrolls the guide', async () => {
+    await open('guide.html', SIZES[1]);
+    const steps = await page.locator('#load-on-pedal + ol > li').allTextContents();
+    assert.equal(steps.length, 3);
+    assert.match(steps[0], /Handy Guitar Lab/);
+    assert.match(steps[1], /Copy to Device/);
+    assert.match(steps[2], /overwrites/);
+    await page.locator('#toc a[href="#shortcuts"]').click();
+    const where = await page.evaluate(() => {
+      const pane = document.querySelector('.fs-doc .fs-pane-body');
+      return { pane: pane.scrollTop, page: document.scrollingElement.scrollTop, top: document.querySelector('#shortcuts').getBoundingClientRect().top - pane.getBoundingClientRect().top };
+    });
+    assert.ok(where.pane > 0 && where.page === 0 && where.top < 80, `the guide scrolled, the page did not: ${JSON.stringify(where)}`);
+    await open('builder.html', SIZES[1]);
+    assert.equal(await page.locator('.import-help').count(), 0, 'the how-to is not in the builder any more');
+    assert.equal(await page.getByText('How to load it on the pedal').count(), 0);
   });
 
   await test('the Pedal menu comes first, lists the two Zoom pedals and closes', async () => {
