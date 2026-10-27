@@ -662,11 +662,13 @@ body.is-dropping .drop-overlay { display: grid; }
 .cmp-head .btn { align-self: flex-start; margin-top: 6px; }
 .gh-footer-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 /* tongatron.org badge, variant A2 of https://tongatron.org/pulsanti/ (outline, accent dot), with its hover effect */
-.site-badge { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; transition: transform .2s ease-out, opacity .2s ease-out; }
-.site-badge:hover { text-decoration: none; transform: scale(1.08); opacity: .95; }
+.site-badge { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; transition: background-color .12s; }
+.site-badge:hover { text-decoration: none; }
 .site-badge .mark { flex-shrink: 0; display: inline-flex; }
 .site-badge .mark-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
-.site-badge.A2 { border: 1px solid var(--accent); padding: 6px 10px; border-radius: 6px; }
+.site-badge.A2 { height: 32px; padding: 0 12px; background: var(--btn-bg); border: 1px solid var(--accent); border-radius: var(--radius); }
+/* Same hover as the GitHub button next to it: the background lightens, nothing moves */
+.site-badge.A2:hover { background: var(--btn-hover); }
 .gh-footer .gh-repo { gap: 8px; }
 .gh-footer .gh-repo svg { flex-shrink: 0; }
 
