@@ -6,7 +6,6 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* ---- Shell: one top bar, the work area, a status bar ---- */
 .fs-top { position: static; flex: none; gap: 12px; height: 48px; padding: 0 16px; }
 .fs-top .gh-brand-name { white-space: nowrap; }
-.fs-top .gh-search { min-width: 0; max-width: 340px; height: 30px; }
 .fs-nav { display: flex; flex: none; gap: 2px; }
 .fs-nav { align-items: center; }
 .fs-nav > a, .fs-menu-button { padding: 5px 12px; border-radius: 2em; color: var(--fg); white-space: nowrap; }
@@ -14,8 +13,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* The section you are in is a blue pill; the others are plain text */
 .fs-nav > a[aria-current="page"] { font-weight: 600; color: var(--accent-fg); background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-muted); }
 
-/* Guide button, top left next to the logo: opens the how-to page */
-.fs-guide { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 10px; border-radius: 2em; background: var(--bg-muted); color: var(--fg); white-space: nowrap; }
+/* Guide button, top right just before the account menu: opens the how-to page */
+.fs-guide { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 10px; border-radius: 2em; background: var(--bg-muted); color: var(--fg); white-space: nowrap; }
 .fs-guide:hover { background: var(--btn-hover); text-decoration: none; }
 .fs-guide[aria-current="page"] { font-weight: 600; color: var(--accent-fg); background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-muted); }
 @media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; } }
@@ -37,11 +36,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-menu-list a:hover { background: var(--bg-hover); text-decoration: none; }
 .fs-menu-list .Label { margin-left: auto; }
 .fs-menu-note { margin-top: 4px; padding: 8px 10px 6px; border-top: 1px solid var(--border-muted); color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
-.fs-badge { margin-left: auto; white-space: nowrap; }
-.gh-search + .fs-badge { margin-left: 0; }
 @media (max-width: 1239px) { .fs-top .gh-brand-name { display: none; } }
-/* The links never shrink: on a narrow bar the search gives way, and below 1000 px the badge goes */
-@media (max-width: 999px) { .fs-badge { display: none; } }
 
 /* Bars that scripts add under the header stay compact */
 .account-notice { flex: none; padding: 6px 16px; }
@@ -56,8 +51,16 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-pane-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .fs-pane-body:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
+/* Status bar: Privacy, Source on GitHub and the tongatron.org button on the left; the data note and the update time on the right */
 .fs-status { flex: none; display: flex; align-items: center; gap: 16px; height: 28px; padding: 0 16px; overflow: hidden; background: var(--bg-inset); border-top: 1px solid var(--border-muted); font-size: 11px; color: var(--fg-muted); white-space: nowrap; }
-.fs-status .fs-data { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fs-status > a, .fs-status > time { flex: none; }
+.fs-status .fs-data { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+/* tongatron.org button (B3 of tongatron.org/pulsanti): yellow dot with a glow and the name, on the bar's own background.
+   No hover animation: on hover it is highlighted */
+.fs-b3 { display: inline-flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px; border-radius: 6px; background: transparent; color: var(--fg); font-size: 12px; transition: background .15s; }
+.fs-b3-dot { width: 11px; height: 11px; border-radius: 50%; background: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, .8); transition: box-shadow .15s; }
+.fs-b3:hover { background: var(--bg-hover); text-decoration: none; }
+.fs-b3:hover .fs-b3-dot { box-shadow: 0 0 12px 2px rgba(255, 204, 0, .95); }
 
 .Overlay { max-height: calc(100dvh - 32px); }
 
@@ -77,12 +80,14 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-effects .fx-link[aria-current] { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
 .fs-effects .fx-list[data-view="grid"] { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; padding: 12px; }
 .fs-effects .fx-list[data-view="grid"] .fx-link[aria-current] { border-color: var(--accent); }
-/* The effect dialog is a pane that is always there */
+/* The search box sits in the list pane, under its toolbar */
+.fs-searchbar { flex: none; padding: 8px 12px; border-bottom: 1px solid var(--border-muted); }
+.fs-searchbar .gh-search { max-width: none; margin: 0; }
+/* The effect dialog is a pane that is always there; the list and the arrow keys move between effects, so it has no buttons of its own */
 dialog.Overlay[data-docked] { position: static; inset: auto; width: auto; max-width: none; height: auto; max-height: none; margin: 0; background: var(--bg); color: var(--fg); border-radius: var(--radius); box-shadow: none; animation: none; }
 .fs-effects [data-docked]:not([open]) { display: flex; }
-.fs-effects #dialog-close { display: none; }
-.fs-effects [data-docked] .Overlay-header { flex: none; background: var(--bg-subtle); }
 .fs-effects [data-docked] .Overlay-body { padding: 16px; }
+.fs-effects .detail-add { margin-top: 12px; }
 .fs-effects .detail-head { grid-template-columns: 72px minmax(0, 1fr); gap: 14px; }
 .fs-effects .detail-head .fx-thumb { width: 72px; }
 .fs-effects .detail-head h2 { font-size: 20px; }
@@ -99,12 +104,23 @@ dialog.Overlay[data-docked] { position: static; inset: auto; width: auto; max-wi
   .fs-effects .filter-heading { display: none; }
 }
 
-/* ---- Patch builder: chain | advice | patch and My patches ---- */
-.fs-builder { grid-template-columns: minmax(0, 1fr) minmax(300px, 30%) 320px; }
+/* ---- Patch builder: chain | patch and My patches | advice ---- */
+.fs-builder { grid-template-columns: minmax(0, 1fr) 320px minmax(300px, 30%); }
 .fs-builder .advice { margin: 0; }
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
 .fs-builder .side-box { flex: 0 1 auto; padding: 0; gap: 0; }
 .fs-builder .side-box-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
+.fs-builder .side-box-body[hidden] { display: none; }
+/* The arrow in the Patch header folds the box away, so My patches gets the room; closed, it still shows the name and the load */
+.fs-builder .patch-head { flex-wrap: nowrap; gap: 8px; padding: 6px 12px 6px 8px; }
+.fs-builder .patch-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 4px; background: none; border: 0; border-radius: var(--radius); color: var(--fg); font: inherit; cursor: pointer; }
+.fs-builder .patch-toggle:hover { background: var(--bg-hover); }
+.fs-builder .patch-chevron { transition: transform .12s; }
+.fs-builder .patch-box.is-collapsed .patch-chevron { transform: rotate(-90deg); }
+.fs-builder .patch-box.is-collapsed > .Box-header { border-bottom: 0; border-radius: var(--radius); }
+.fs-builder .patch-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-muted); font: 12px var(--mono); }
+/* A thin DSP load bar */
+.fs-builder .dsp-stack { height: 6px; border-radius: 3px; }
 /* Save and Download are small buttons right under the name and the DSP load */
 .fs-builder .save-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .fs-builder .save-row, .fs-builder .save-status, .fs-builder .save-extra { order: 1; }

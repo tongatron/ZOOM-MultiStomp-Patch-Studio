@@ -253,8 +253,8 @@ function renderSummary() {
   if (!state.name.trim()) notices.push(['muted', 'Give the patch a name.']);
   else if (!ZPTC.NAME_CHARS.test(state.name)) notices.push(['danger', 'The name contains characters the pedal does not accept.']);
   // With advice on, the DSP warnings appear in the Advice panel instead
-  if (!adviceSettings.enabled && total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
-  else if (!adviceSettings.enabled && total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
+  if (!adviceOn() && total > 100) notices.push(['danger', `Estimated load ${pct(total)}: above 100% the pedal shows PROCESS OVERFLOW. Remove or replace an effect.`]);
+  else if (!adviceOn() && total > 95) notices.push(['attention', 'Close to the limit: the estimate is accurate to about ±1%.']);
   const unverified = [];
   const raw = [];
   state.effects.forEach(slot => catalog[slot.index].params.forEach(p => {
@@ -809,13 +809,17 @@ const adviceSettings = (() => {
 })();
 const saveAdvice = () => { try { localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify(adviceSettings)); } catch {} };
 let findings = [];
+// The full-screen builder has no advice switch: there the advice is always on, whatever the saved setting says
+const adviceOn = () => adviceSettings.enabled || !$('#advice-toggle');
 
 function renderAdvice() {
-  const on = adviceSettings.enabled;
-  $('#advice-toggle').checked = on;
-  $('#advice-toggle-label').textContent = on ? 'ON' : 'OFF';
+  const on = adviceOn();
+  if ($('#advice-toggle')) {
+    $('#advice-toggle').checked = on;
+    $('#advice-toggle-label').textContent = on ? 'ON' : 'OFF';
+  }
   $('#advice-body').hidden = !on;
-  $('#advice-off').hidden = on;
+  if ($('#advice-off')) $('#advice-off').hidden = on;
   document.querySelectorAll('.advice-dot').forEach(dot => dot.remove());
   if (!on) { $('#advice-count').textContent = '–'; findings = []; return; }
 
@@ -860,8 +864,8 @@ function renderAdvice() {
   });
 }
 
-$('#advice-on').addEventListener('click', () => { adviceSettings.enabled = true; saveAdvice(); renderSummary(); });
-$('#advice-toggle').addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
+$('#advice-on')?.addEventListener('click', () => { adviceSettings.enabled = true; saveAdvice(); renderSummary(); });
+$('#advice-toggle')?.addEventListener('change', event => { adviceSettings.enabled = event.target.checked; saveAdvice(); renderSummary(); });
 $('#advice').addEventListener('click', event => {
   const button = event.target.closest('[data-advice]');
   if (!button) return;

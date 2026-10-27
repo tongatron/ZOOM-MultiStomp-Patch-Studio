@@ -14,20 +14,20 @@ Otto pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 
 | Pagina | Pannelli |
 |---|---|
-| `index.html` (Effects) | filtri \| lista \| dettaglio fisso (`<dialog data-docked>`, opzione di `app.js`) |
-| `builder.html` | catena \| Advice (con in cima gli avvisi della patch, es. "Check on the pedal") \| patch (nome, DSP, Save e Download piccoli) e My patches |
+| `index.html` (Effects) | filtri \| lista (con la casella di ricerca sotto la testata) \| dettaglio fisso (`<dialog data-docked>`, opzione di `app.js`; senza frecce avanti/indietro, con "Add to patch" subito dopo la descrizione) |
+| `builder.html` | catena \| patch (nome, DSP con barra sottile, Save e Download piccoli; una freccia nella testata chiude il box e la scelta resta nel browser) e My patches \| Advice (sempre attivo, senza interruttore; in cima gli avvisi della patch, es. "Check on the pedal"). Sotto i 1280 px due colonne: Advice sotto la catena |
 | `pedal-manager.html` | My patches \| On the pedal \| connessione, Backups, MIDI log |
 | `tones.html` | filtro in alto; By style \| By bassist |
 | `resources.html` | manuali, Effects List, note e "About the patch files" \| Still to check |
 | `technical-notes.html` | indice \| testo (da `technical-notes.md`) |
 | `privacy.html` | indice \| testo (caricato da `site/privacy.html`, così le due versioni non divergono) |
-| `guide.html` (pulsante **Guide**, in alto a sinistra) | indice \| guida con gli how-to: Quick start, Find an effect, Build a patch, Read the advice, Save/share/compare, **How to load it on the pedal** (spostato dal pannello My patches del builder), Pedal manager, Tone ideas, account, scorciatoie, More help |
+| `guide.html` (pulsante **Guide**, in alto a destra, subito prima del menu dell'utente) | indice \| guida con gli how-to: Quick start, Find an effect, Build a patch, Read the advice, Save/share/compare, **How to load it on the pedal** (spostato dal pannello My patches del builder), Pedal manager, Tone ideas, account, scorciatoie, **Resources** (il link alla pagina Resources non è più nella barra di stato) |
 
 - `fullscreen.css` (guscio + pannelli), `fullscreen.js` (`PEDAL.base = '../'` e l'indice dei documenti).
-- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con il pulsante Guide accanto al logo (icona sola sotto 900 px), il selettore del pedale (mostra il pedale scelto, "MS-60B+ bass", con la freccia; elenca i due pedali Zoom; l'MS-50G+ apre per ora la vista classica), Effects, Patch builder e Pedal manager, la sezione attiva in una pillola blu (Tone ideas si apre dal builder, con un pulsante nella catena); barra di stato con attribuzione ZOOM, Resources, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
+- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto (senza il tag "Full screen") con il selettore del pedale (mostra il pedale scelto, "MS-60B+ bass", con la freccia; elenca i due pedali Zoom; l'MS-50G+ apre per ora la vista classica), Effects, Patch builder e Pedal manager, la sezione attiva in una pillola blu (Tone ideas si apre dal builder, con un pulsante nella catena), poi il pulsante Guide a destra, subito prima dell'account (icona sola sotto 900 px). Barra di stato: a sinistra Privacy, Source on GitHub e il pulsante tongatron.org (B3 di tongatron.org/pulsanti: pallino giallo con alone, sfondo della barra, nessuna animazione, evidenziato al passaggio del mouse); a destra l'attribuzione ZOOM e "Last update" (le pagine sono in `tools/stamp-update.mjs`). Resources si apre dalla Guida; il link "Classic view" non c'è più.
 - `noindex`, niente service worker (`pwa.js` non caricato), nessun link dal sito classico.
-- `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Il sito classico non cambia.
-- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo e con la barra in alto senza sovrapposizioni (anche a 800 px), il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), gli avvisi della patch nel pannello Advice e Save/Download piccoli, con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 49/49 al 2026-10-27. Sotto i 1000 px il badge "Full screen" sparisce e la ricerca cede spazio alle voci della barra.
+- `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Non ha pulsanti avanti/indietro né "Turn advice off" e mette "Add to patch" dopo la descrizione. `builder.js` tratta l'interruttore Advice come facoltativo: dove non c'è (full screen) l'advice è sempre acceso, qualunque cosa sia salvata. Il sito classico non cambia.
+- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo e con la barra in alto senza sovrapposizioni (anche a 800 px), il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), gli avvisi della patch nel pannello Advice e Save/Download piccoli, con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale, e poi: barra di stato (ordine, tongatron.org B3 con solo l'evidenziazione al passaggio, nessun Resources/Classic view), nessun tag "Full screen" e Guide prima dell'account, ricerca nel pannello della lista, dettaglio senza frecce e con "Add to patch" sotto la descrizione, advice non spegnibile (anche se la pagina classica l'ha salvato spento), colonne del builder, barra DSP sottile, freccia del box Patch. 56/56 al 2026-10-27.
 - Il laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) resta come archivio del confronto.
 
 ## Laboratorio (`site/_fullscreen/lab.html`)
@@ -161,7 +161,7 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 ### Fase 3 — Pagine MS-60B+ (una per volta, ognuna con il suo controllo a tutti i viewport)
 
 - [x] Effects: filtri | lista | dettaglio fisso.
-- [x] Patch builder: catena | Advice | patch e My patches; dialog alti al massimo quanto la finestra.
+- [x] Patch builder: catena | patch e My patches | Advice (2026-10-27: Advice a destra, patch al centro, box Patch richiudibile); dialog alti al massimo quanto la finestra.
 - [x] Pedal manager: My patches | On the pedal | connessione, Backups e MIDI log (pannelli invece di cassetti).
 - [x] Tone ideas: By style | By bassist.
 - [x] Resources: manuali e note | "Still to check".

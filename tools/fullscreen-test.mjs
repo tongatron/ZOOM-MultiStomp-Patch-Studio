@@ -23,8 +23,8 @@ const SIZES = [[1440, 820], [1280, 680], [1024, 700]];
 const PHONE = [390, 700];
 // [selector, label, least useful height in px]: the controls must be on screen
 const PAGES = {
-  'index.html': [['#search', 'search'], ['#sort', 'sort'], ['.fx-link', 'effect list'], ['#fx-dialog .Overlay-nav', 'detail pane'], ['.results .fs-pane-body', 'effect list', 240], ['#dialog-body', 'effect detail', 240]],
-  'builder.html': [['#add-effect', 'Add effect'], ['.builder-chain a[href="tones.html"]', 'Tone ideas'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['.advice .switch', 'advice switch'], ['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200], ['#library-list', 'My patches list', 48]],
+  'index.html': [['#search', 'search'], ['#sort', 'sort'], ['.fx-link', 'effect list'], ['#fx-dialog .detail-head', 'detail pane'], ['.results .fs-pane-body', 'effect list', 240], ['#dialog-body', 'effect detail', 240]],
+  'builder.html': [['#add-effect', 'Add effect'], ['.builder-chain a[href="tones.html"]', 'Tone ideas'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['#patch-toggle', 'Patch box arrow'],['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200], ['#library-list', 'My patches list', 48]],
   'pedal-manager.html': [['#usb-connect', 'Connect the pedal'], ['#usb-local-title', 'My patches'], ['#usb-pedal-title', 'On the pedal'], ['#usb-locals', 'My patches list', 160], ['#usb-memories', 'memory list', 160]],
   'tones.html': [['#tone-filter', 'filter'], ['#tone-styles-title', 'By style'], ['#tone-bassists-title', 'By bassist'], ['.tone-pane .fs-pane-body', 'tone list', 200]],
   'resources.html': [['.resource-list', 'manuals'], ['#check-title', 'Still to check'], ['.check-pane .fs-pane-body', 'checks', 200]],
@@ -173,21 +173,68 @@ try {
     }
   });
 
-  await test('the status bar links Resources; Tone ideas opens from the builder', async () => {
+  await test('Tone ideas opens from the builder; Resources opens from the Guide', async () => {
     await open('index.html', SIZES[1]);
     assert.equal(await page.locator('.fs-nav > a').count(), 3);
-    await page.locator('.fs-status a[href="resources.html"]').click();
-    await page.waitForURL(/resources\.html$/);
     await open('builder.html', SIZES[1]);
     await page.locator('.builder-chain a[href="tones.html"]').click();
     await page.waitForURL(/tones\.html$/);
     assert.equal(await page.locator('.fs-nav > a[aria-current="page"]').textContent(), 'Patch builder');
+    await open('guide.html', SIZES[1]);
+    assert.equal(await page.locator('#toc a[href="#resources"]').count(), 1, 'Resources is a section of the guide');
+    await page.locator('#doc a[href="resources.html"]').click();
+    await page.waitForURL(/resources\.html$/);
   });
 
-  await test('the Guide button is right after the logo on every page and opens the guide', async () => {
+  await test('the status bar: Privacy, Source on GitHub and tongatron.org on the left, the data note and the update time on the right', async () => {
+    for (const file of Object.keys(PAGES)) {
+      for (const size of SIZES) {
+        await open(file, size);
+        const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
+        assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
+        assert.deepEqual(labels.slice(0, 3), ['Privacy', 'Source on GitHub', 'tongatron.org'], file);
+        assert.match(labels[3], /^Data: Zoom MS-60B\+ Effects List © 2024 ZOOM CORPORATION/, file);
+        assert.match(labels[4], /^Last update /, file);
+        const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
+        edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
+        assert.ok(edges[4][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
+        assert.ok(edges[2][1] < size[0] / 2, `${file}: the tongatron.org button is on the left`);
+      }
+      assert.equal(await page.locator('.fs-status a[href="resources.html"]').count(), 0, `${file}: no Resources in the status bar`);
+      assert.equal(await page.locator('.fs-status').getByText('Classic view').count(), 0, `${file}: no Classic view in the status bar`);
+    }
+  });
+
+  await test('the tongatron.org button is B3: no animation, only a highlight on hover', async () => {
+    await open('index.html', SIZES[1]);
+    const button = page.locator('.fs-status a.fs-b3');
+    assert.equal(await button.getAttribute('href'), 'https://tongatron.org');
+    assert.equal(await page.locator('.fs-b3-dot').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 204, 0)', 'the yellow dot');
+    assert.notEqual(await page.locator('.fs-b3-dot').evaluate(el => getComputedStyle(el).boxShadow), 'none', 'with a glow');
+    const style = () => button.evaluate(el => { const s = getComputedStyle(el); return { background: s.backgroundColor, transform: s.transform, animation: s.animationName }; });
+    const plain = await style();
+    assert.equal(plain.background, 'rgba(0, 0, 0, 0)', 'on the bar background');
+    await button.hover();
+    await page.waitForTimeout(300);
+    const hover = await style();
+    assert.notEqual(hover.background, plain.background, 'highlighted on hover');
+    assert.equal(hover.transform, 'none', 'it does not move or grow');
+    assert.equal(hover.animation, 'none');
+  });
+
+  await test('the header has no "Full screen" tag; the Guide button comes right before the account menu on every page and opens the guide', async () => {
     for (const file of Object.keys(PAGES)) {
       await open(file, SIZES[1]);
-      assert.equal(await page.evaluate(() => document.querySelector('.fs-top > .gh-brand + .fs-guide') !== null), true, `${file}: Guide right after the brand`);
+      assert.equal(await page.locator('.fs-badge').count(), 0, `${file}: no "Full screen" tag`);
+      assert.equal(await page.locator('.fs-top .gh-search').count(), 0, `${file}: no search box in the top bar`);
+      const place = await page.evaluate(() => {
+        const items = [...document.querySelectorAll('.fs-top > *')];
+        const at = items.findIndex(el => el.classList.contains('fs-guide'));
+        const guide = items[at]?.getBoundingClientRect();
+        const nav = document.querySelector('.fs-nav').getBoundingClientRect();
+        return { onlyAccountAfter: at >= 0 && items.slice(at + 1).every(el => el.classList.contains('account-slot')), rightOfNav: !!guide && guide.left > nav.right, atRight: !!guide && guide.right > innerWidth / 2 };
+      });
+      assert.deepEqual(place, { onlyAccountAfter: true, rightOfNav: true, atRight: true }, `${file}: Guide at the right, before the account menu`);
       assert.equal(await page.locator('.fs-guide').getAttribute('href'), 'guide.html');
       assert.equal(await page.locator('.fs-guide[aria-current="page"]').count(), file === 'guide.html' ? 1 : 0, `${file}: highlighted only on the guide`);
       assert.equal(await page.locator('.fs-guide').getAttribute('aria-label'), 'Guide');
@@ -228,7 +275,6 @@ try {
     assert.equal(await page.locator('.fs-menu-button svg').count(), 1, 'the arrow');
     assert.match(await page.locator('.fs-menu-button').getAttribute('title'), /Change pedal/);
     assert.equal(await page.locator('.fs-menu-button .sr-only').textContent(), 'Pedal: ', 'a screen reader still hears that it is the pedal');
-    assert.equal(await page.locator('.fs-badge').textContent(), 'Full screen', 'the badge does not repeat the pedal');
     assert.equal(await page.locator('.fs-menu-list').isHidden(), true);
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
@@ -268,6 +314,95 @@ try {
     assert.equal(await page.locator('#dialog-title').textContent(), fifth, 'arrows in the search box move the caret, not the effect');
     await page.locator('#search').press('Escape');
     assert.equal(await page.locator('#result-count').textContent(), '97 effects');
+  });
+
+  await test('effects: the search box is in the list pane and "/" reaches it', async () => {
+    await open('index.html', SIZES[1]);
+    assert.equal(await page.locator('.fs-top #search').count(), 0);
+    assert.equal(await page.locator('.results .fs-searchbar #search').count(), 1);
+    const [pane, search] = await page.evaluate(() => ['.results', '#search'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.right]; }));
+    assert.ok(search[0] >= pane[0] && search[1] <= pane[1], 'inside the list pane');
+    await page.locator('.fx-link').first().focus();
+    await page.keyboard.press('/');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'search');
+    await page.fill('#search', 'chorus');
+    assert.notEqual(await page.locator('#result-count').textContent(), '97 effects', 'it filters the list');
+    await page.fill('#search', '');
+  });
+
+  await test('effects: the detail has no previous/next buttons and "Add to patch" sits right under the description', async () => {
+    await open('index.html', SIZES[1]);
+    await page.locator('.fx-link').nth(3).click();
+    assert.equal(await page.locator('#fx-dialog #dialog-prev, #fx-dialog #dialog-next, #fx-dialog #dialog-pos, #fx-dialog #dialog-close, #fx-dialog .Overlay-header').count(), 0, 'the buttons that are at the top of the page are not repeated');
+    const place = await page.evaluate(() => {
+      const body = document.querySelector('#dialog-body');
+      const top = selector => body.querySelector(selector)?.getBoundingClientRect().top;
+      const bottom = selector => body.querySelector(selector)?.getBoundingClientRect().bottom;
+      const add = body.querySelector('.detail-add a');
+      return { text: add?.textContent.trim(), href: add?.getAttribute('href'), afterDescription: top('.detail-add') >= bottom('.detail-desc'), beforeSections: top('.detail-add') < top('.detail-section'), inFoot: [...body.querySelectorAll('.detail-foot a')].some(a => /Add to patch/.test(a.textContent)) };
+    });
+    assert.match(place.href, /^builder\.html\?add=/);
+    assert.deepEqual({ ...place, href: null }, { text: 'Add to patch', href: null, afterDescription: true, beforeSections: true, inFoot: false });
+    // the arrow keys still move between effects
+    const before = await page.locator('#dialog-title').textContent();
+    await page.locator('body').press('ArrowRight');
+    assert.notEqual(await page.locator('#dialog-title').textContent(), before);
+  });
+
+  await test('the advice cannot be turned off: no switch in the builder or in the effect detail, even if the classic page saved it off', async () => {
+    await open('index.html', SIZES[1]);
+    await page.evaluate(() => localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify({ enabled: false })));
+    const slug = await page.evaluate(() => effects.find(effect => ADVICE.effectTips(effect.index)).slug);
+    await page.goto(`${base}/index.html#${slug}`);
+    await page.reload();
+    await page.waitForSelector('#dialog-title');
+    assert.equal(await page.locator('#dialog-body .tip-card').count(), 1, 'the placement tips are shown');
+    assert.equal(await page.locator('[data-advice-off], [data-advice-on], .advice-off-note').count(), 0);
+    await open('builder.html', SIZES[1]);
+    assert.equal(await page.locator('#advice-toggle, #advice-off, #advice-on, .advice .switch').count(), 0);
+    assert.equal(await page.locator('#advice-body').isVisible(), true);
+    await page.evaluate(() => { state.effects = [slotFor(catalog.find(fx => fx.dsp !== null).index)]; render(); });
+    assert.equal(await page.locator('#advice-list .advice-item, #advice-list .advice-empty').first().isVisible(), true);
+    assert.equal(await page.locator('#notices .notice--danger, #notices .notice--attention').filter({ hasText: /DSP|load|limit/i }).count(), 0, 'no second DSP notice next to the advice');
+    await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-advice`));
+  });
+
+  await test('builder: the patch box is in the middle and Advice on the right; the DSP bar is thin', async () => {
+    // below 1280 px the builder has two columns (Advice under the chain), so the three columns are checked from there up
+    for (const size of SIZES.filter(([width]) => width >= 1280)) {
+      await open('builder.html', size);
+      const left = await page.evaluate(() => ['.builder-chain', '.patch-box', '#advice'].map(s => document.querySelector(s).getBoundingClientRect().left));
+      assert.ok(left[0] < left[1] && left[1] < left[2], `${size.join(' × ')}: chain, patch box, advice from left to right (${left.map(Math.round)})`);
+    }
+    await open('builder.html', SIZES[0]);
+    await page.evaluate(() => { state.effects = catalog.filter(fx => fx.dsp !== null).slice(0, 3).map(fx => slotFor(fx.index)); render(); });
+    const bar = await page.locator('#dsp-stack').boundingBox();
+    assert.ok(bar.height <= 8 && bar.height >= 3, `the DSP bar is ${bar.height} px tall`);
+    assert.ok(bar.width > 150, 'and still as wide as the box');
+  });
+
+  await test('builder: the arrow closes the Patch box, My patches takes the room, and the choice is remembered', async () => {
+    await open('builder.html', SIZES[1]);
+    await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-fs-patch-collapsed`));
+    await page.reload();
+    const list = () => page.locator('#library-list').boundingBox();
+    const before = await list();
+    assert.equal(await page.locator('#patch-toggle').getAttribute('aria-expanded'), 'true');
+    assert.equal(await page.locator('#patch-name').isVisible(), true);
+    await page.fill('#patch-name', 'FOLD ME');
+    await page.locator('#patch-toggle').click();
+    assert.equal(await page.locator('#patch-toggle').getAttribute('aria-expanded'), 'false');
+    assert.equal(await page.locator('#patch-body').isHidden(), true, 'the name, the load and the buttons are folded away');
+    assert.match(await page.locator('#patch-summary').textContent(), /^FOLD ME · \d/, 'the header keeps the name and the load');
+    assert.ok((await list()).height > before.height + 100, 'My patches takes the room');
+    assert.equal(await page.evaluate(() => document.querySelector('.fs-main').scrollHeight <= document.querySelector('.fs-main').clientHeight + 1), true, 'nothing is cut');
+    await open('builder.html', SIZES[1]);
+    assert.equal(await page.locator('#patch-body').isHidden(), true, 'still closed after a reload');
+    assert.match(await page.locator('#patch-summary').textContent(), /· \d/);
+    await page.locator('#patch-toggle').click();
+    assert.equal(await page.locator('#patch-name').isVisible(), true, 'the arrow opens it again');
+    assert.equal(await page.locator('#patch-summary').isHidden(), true);
+    await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-fs-patch-collapsed`));
   });
 
   await test('no errors in the browser console', async () => { assert.deepEqual(errors, []); });

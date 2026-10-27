@@ -128,11 +128,12 @@ function setAdviceEnabled(enabled) {
   } catch {}
 }
 function placementTips(effect) {
-  if (!adviceEnabled()) return `<section class="detail-section"><p class="advice-off-note">Placement tips are off. <button class="clear-link" data-advice-on>Turn advice on</button></p></section>`;
+  // The docked detail (full-screen pages) has no advice switch: the tips are always on
+  if (!docked && !adviceEnabled()) return `<section class="detail-section"><p class="advice-off-note">Placement tips are off. <button class="clear-link" data-advice-on>Turn advice on</button></p></section>`;
   const tip = ADVICE.effectTips(effect.index);
   if (!tip) return '';
   return `<section class="detail-section">
-      <h3>Placement &amp; tips <button class="clear-link" data-advice-off>Turn advice off</button></h3>
+      <h3>Placement &amp; tips${docked ? '' : ' <button class="clear-link" data-advice-off>Turn advice off</button>'}</h3>
       <div class="tip-card">
         <span class="Label">${escapeHtml(tip.place)}</span>
         <p>${escapeHtml(tip.text)}</p>
@@ -152,9 +153,13 @@ function openEffect(effect) {
   current = effect;
   const pos = state.visible.indexOf(effect);
   const pages = Math.ceil(effect.params.length / KNOBS);
-  $('#dialog-pos').textContent = pos >= 0 ? `${pos + 1} of ${state.visible.length}` : `#${effect.index + 1}`;
-  $('#dialog-prev').disabled = pos <= 0;
-  $('#dialog-next').disabled = pos < 0 || pos >= state.visible.length - 1;
+  // The docked detail has no previous/next buttons: the list and the arrow keys move between effects
+  if (!docked) {
+    $('#dialog-pos').textContent = pos >= 0 ? `${pos + 1} of ${state.visible.length}` : `#${effect.index + 1}`;
+    $('#dialog-prev').disabled = pos <= 0;
+    $('#dialog-next').disabled = pos < 0 || pos >= state.visible.length - 1;
+  }
+  const addToPatch = effect.extra ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`;
   $('#dialog-body').innerHTML = `
     <div class="detail-head">
       <img class="fx-thumb" src="${effect.image}" alt="${escapeHtml(effect.name)} icon on the pedal display" width="96" height="120" />
@@ -163,6 +168,7 @@ function openEffect(effect) {
         <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
         <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
         ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b></p>` : ''}
+        ${docked && addToPatch ? `<div class="detail-add">${addToPatch}</div>` : ''}
       </div>
     </div>
     ${placementTips(effect)}
@@ -193,7 +199,7 @@ function openEffect(effect) {
       <p class="page-hint">${pages > 1 ? `On the pedal the parameters span ${pages} pages of ${KNOBS} knobs.` : `All parameters fit on the ${KNOBS} knobs of the first page.`}${effect.tags.includes('sync') ? ' The ♩ symbol means the value is synced to the tempo.' : ''}</p>
     </section>
     <div class="detail-foot">
-      ${effect.extra ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`}
+      ${docked ? '' : addToPatch}
       <a class="btn btn-sm" href="${PDF_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Effects List PDF</a>
       <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Using it on the pedal</a>
     </div>`;
@@ -222,13 +228,13 @@ dialog.addEventListener('click', event => {
   if (event.target.closest('[data-advice-off]') && current) { setAdviceEnabled(false); openEffect(current); }
   if (event.target.closest('[data-advice-on]') && current) { setAdviceEnabled(true); openEffect(current); }
 });
-$('#dialog-close').addEventListener('click', closeEffect);
+$('#dialog-close')?.addEventListener('click', closeEffect);
 const step = delta => {
   const next = current && state.visible[state.visible.indexOf(current) + delta];
   if (next) openEffect(next);
 };
-$('#dialog-prev').addEventListener('click', () => step(-1));
-$('#dialog-next').addEventListener('click', () => step(1));
+$('#dialog-prev')?.addEventListener('click', () => step(-1));
+$('#dialog-next')?.addEventListener('click', () => step(1));
 
 // Filters and controls
 const search = $('#search');
