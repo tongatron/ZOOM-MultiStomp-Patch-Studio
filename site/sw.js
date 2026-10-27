@@ -4,9 +4,9 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v13';
+const CACHE = 'ms60b-v14';
 const CORE = [
-  './', 'index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'resources.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
+  './', 'index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'resources.html', 'technical-notes.html', 'technical-notes.md', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 

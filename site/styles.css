@@ -889,3 +889,20 @@ body.is-dropping .drop-overlay { display: grid; }
 .resource h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
 .resource p { margin: 0 0 10px; color: var(--fg-muted); font-size: 14px; line-height: 1.5; }
 .resource-links { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- rendered Markdown (technical-notes.html) ---- */
+.markdown-body { max-width: 860px; font-size: 15px; line-height: 1.6; }
+.markdown-body h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-muted); font-size: 22px; font-weight: 600; }
+.markdown-body h2:first-child { margin-top: 8px; }
+.markdown-body h3 { margin: 24px 0 8px; font-size: 17px; font-weight: 600; }
+.markdown-body p, .markdown-body ul, .markdown-body ol { margin: 0 0 14px; }
+.markdown-body ul, .markdown-body ol { padding-left: 24px; }
+.markdown-body li + li { margin-top: 4px; }
+.markdown-body code { padding: 1px 5px; background: var(--bg-muted); border-radius: var(--radius); font-family: var(--mono); font-size: 85%; }
+.markdown-body pre { margin: 0 0 16px; padding: 14px 16px; overflow-x: auto; background: var(--bg-subtle); border: 1px solid var(--border-muted); border-radius: var(--radius); }
+.markdown-body pre code { padding: 0; background: none; font-size: 13px; line-height: 1.5; }
+.md-table { margin: 0 0 16px; overflow-x: auto; }
+.markdown-body table { border-collapse: collapse; font-size: 14px; }
+.markdown-body th, .markdown-body td { padding: 6px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+.markdown-body th { background: var(--bg-subtle); font-weight: 600; }
+.markdown-body tr:nth-child(even) td { background: rgba(110, 118, 129, .06); }
