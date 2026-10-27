@@ -20,7 +20,7 @@ const effects = EFFECTS_DATA.map(([name, category, model, description, tags, par
     extra: !fxId,
     dsp: dspRaw === null ? null : dspRaw * DSP_SCALE,
     slug: slugify(name),
-    image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
+    image: `${PEDAL.base ?? ''}assets/effects/fx-${String(index).padStart(3, '0')}.png`,
     haystack: [name, lcd, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
   };
 });

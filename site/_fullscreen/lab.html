@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en" data-color-mode="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>Full-screen lab — ZOOM MultiStomp Patch Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../styles.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
+    <style>
+      .lab-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; padding: 16px 24px; border-bottom: 1px solid var(--border-muted); }
+      .lab-head h1 { margin: 0; font-size: 20px; }
+      .lab-head p { flex: 1 1 420px; margin: 0; color: var(--fg-muted); }
+      .lab-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 24px; border-bottom: 1px solid var(--border-muted); }
+      .lab-bar .spacer { flex: 1; }
+      .seg { display: inline-flex; padding: 2px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 2em; }
+      .seg button { padding: 4px 12px; background: none; border: 0; border-radius: 2em; color: var(--fg-muted); cursor: pointer; white-space: nowrap; }
+      .seg button[aria-pressed="true"] { background: var(--bg-muted); color: var(--fg); font-weight: 600; box-shadow: inset 0 0 0 1px #8b949e; }
+      .seg button:disabled { opacity: .4; cursor: default; }
+      .seg-label { font-size: 12px; color: var(--fg-muted); margin-right: -8px; }
+      main.lab { padding: 16px 24px 40px; }
+      .stage { display: grid; gap: 16px; align-items: start; }
+      .stage.single { grid-template-columns: minmax(0, 1fr) 320px; }
+      .stage.side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .frame { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-inset); }
+      .frame .tag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 12px; background: var(--bg-subtle); border-bottom: 1px solid var(--border); font-size: 13px; }
+      .frame .tag > span { color: var(--fg-muted); }
+      .frame .tag a { margin-left: auto; font-size: 12px; }
+      .frame .scaler { position: relative; overflow: hidden; }
+      .frame iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; background: var(--bg); }
+      .fit { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 2em; font-size: 12px; color: var(--fg-muted); border: 1px solid var(--border); }
+      .fit[data-state="ok"] { color: #3fb950; border-color: rgba(63, 185, 80, .5); }
+      .fit[data-state="bad"] { color: #f85149; border-color: rgba(248, 81, 73, .5); }
+      .fit[data-state="fallback"] { color: #d29922; border-color: rgba(210, 153, 34, .5); }
+      .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+      .card { padding: 16px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; }
+      .card h2 { margin: 0 0 2px; font-size: 16px; }
+      .card .kind { margin: 0 0 10px; color: var(--fg-muted); font-size: 13px; }
+      .card ul { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; padding-left: 18px; }
+      .card label { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; font-weight: 600; }
+      .card textarea { width: 100%; min-height: 84px; padding: 8px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); font: inherit; resize: vertical; }
+      .pick { color: #3fb950; font-size: 12px; font-weight: 400; }
+      .check { margin-top: 16px; }
+      .check h2 { margin: 0 0 4px; font-size: 16px; }
+      .check p { margin: 0 0 10px; color: var(--fg-muted); font-size: 13px; }
+      .check table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 13px; }
+      .check th, .check td { padding: 6px 10px; text-align: left; vertical-align: top; border-top: 1px solid var(--border-muted); }
+      .check th { color: var(--fg-muted); font-weight: 600; }
+      .criteria { margin: 0; padding-left: 18px; color: var(--fg-muted); font-size: 13px; }
+      .probe { position: absolute; left: -20000px; top: 0; }
+      @media (max-width: 1100px) {
+        .stage.single, .stage.side, .cards { grid-template-columns: 1fr; }
+        .lab-head, .lab-bar, main.lab { padding-left: 16px; padding-right: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="lab-head">
+      <h1>Full-screen lab</h1>
+      <p>Two layouts for pages that never scroll: only a long list may scroll, inside its own pane. Both run on the real effects, builder and advice, and use the patches saved in this browser, like the site.</p>
+      <a href="../">Classic site</a>
+    </header>
+    <div class="lab-bar">
+      <span class="seg-label">View</span>
+      <div class="seg" role="group" aria-label="View"><button data-view="single">One at a time</button><button data-view="side">Side by side</button></div>
+      <span class="seg-label">Layout</span>
+      <div class="seg" role="group" aria-label="Layout" id="which"></div>
+      <span class="seg-label">Page</span>
+      <div class="seg" role="group" aria-label="Page" id="pages"></div>
+      <span class="seg-label">Screen</span>
+      <div class="seg" role="group" aria-label="Screen" id="sizes"></div>
+      <span class="spacer"></span>
+      <small class="muted">Keys <kbd class="gh-kbd">1</kbd> <kbd class="gh-kbd">2</kbd> layout · <kbd class="gh-kbd">E</kbd> <kbd class="gh-kbd">B</kbd> page</small>
+    </div>
+    <main class="lab">
+      <div class="stage" id="stage"></div>
+      <div class="cards" id="cards"></div>
+      <section class="card check" aria-labelledby="check-title">
+        <h2 id="check-title">Every page at every size</h2>
+        <p>Opens each layout and page at each screen size and checks that nothing is cut: the page, the work area and every pane fit, and the main controls are on screen. On a phone the page scrolls on purpose for now (phone layout: phase 4 of the plan).</p>
+        <button class="btn btn-sm" id="check-all">Check all sizes</button>
+        <div id="results"></div>
+      </section>
+      <section class="card check" aria-labelledby="criteria-title">
+        <h2 id="criteria-title">What to look at</h2>
+        <ul class="criteria">
+          <li>At 1280 × 680 (a laptop with the browser bars) nothing is cut and no control is hidden.</li>
+          <li>Clicks for the usual round: find an effect, add it, set it, save and download the <code>.zptc</code>.</li>
+          <li>Text stays readable (13 px or more); on a tablet the buttons are easy to tap.</li>
+          <li>Which panes scroll, and whether that feels natural.</li>
+          <li>How much would change for the MS-50G+ pages and for Pedal manager, Tone ideas and Resources.</li>
+        </ul>
+      </section>
+      <div class="probe" id="probe" aria-hidden="true"></div>
+    </main>
+
+    <script>
+      const LAYOUTS = [
+        { id: 'a', name: 'A · Panels', kind: 'Everything side by side', points: [
+          'Effects: filters, list and effect detail are three panes; the detail never covers the list.',
+          'The arrow keys browse the effects while the detail stays open; / jumps to the search.',
+          'Builder: chain, advice and the patch (name, DSP, save, download) in three columns, My patches under the patch.',
+          'The effect list, the chain, the advice and My patches scroll inside their pane.',
+          'Below 1280 px the advice moves under the chain.'] },
+        { id: 'b', name: 'B · Pedalboard', kind: 'One main area, the rest on demand', points: [
+          'Effects: filter chips in one bar, then a full-width gallery; the detail opens over it, as today.',
+          'Builder: the 6 slots side by side like pedals, INPUT on the left and OUTPUT on the right; a free slot adds an effect.',
+          'Click a slot to edit it: its parameters fill the space under the board, one effect at a time.',
+          'Name, DSP load, Save and Download sit in a strip above the board.',
+          'Advice and My patches slide in from the right; a dot on a slot shows it has advice.',
+          'The arrows on a slot move it towards the input (left) or the output (right); dragging is off.'] }
+      ];
+      const PAGES = [{ id: 'effects', label: 'Effects', file: 'index.html' }, { id: 'builder', label: 'Patch builder', file: 'builder.html' }];
+      const SIZES = [
+        { id: 'l', label: '1440 × 820', w: 1440, h: 820, note: 'Large laptop' },
+        { id: 'm', label: '1280 × 680', w: 1280, h: 680, note: 'Laptop with browser bars' },
+        { id: 't', label: '1024 × 700', w: 1024, h: 700, note: 'iPad, landscape' },
+        { id: 'p', label: '390 × 700', w: 390, h: 700, note: 'Phone' }
+      ];
+      // Controls that must stay on screen, per page and per layout; a third value is the least useful height of a work area
+      const KEYS = {
+        effects: [['#search', 'search'], ['#sort', 'sort'], ['.fx-link', 'effect list'], ['.results .fs-pane-body', 'effect list', 240]],
+        builder: [['#add-effect', 'Add effect'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc']],
+        'a-effects': [['#fx-dialog .Overlay-nav', 'detail pane'], ['#dialog-body', 'effect detail', 240]],
+        'a-builder': [['.advice .switch', 'advice switch'], ['#clear-chain', 'My patches'], ['.builder-chain .fs-pane-body', 'chain', 200]],
+        'b-builder': [['[aria-controls="advice"]', 'Advice button'], ['[aria-controls="fs-library"]', 'My patches button'], ['.param-grid', 'parameters', 140]]
+      };
+      const STORE = 'ms60b-fullscreen-lab';
+      const stored = (() => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } })();
+      const ui = { view: 'single', which: 'a', page: 'effects', size: 'm', ...(stored.ui || {}) };
+      const notes = stored.notes || {};
+      const save = () => { try { localStorage.setItem(STORE, JSON.stringify({ ui, notes })); } catch { /* notes are a per-viewer convenience */ } };
+      const $ = s => document.querySelector(s);
+      const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const sizeOf = id => SIZES.find(s => s.id === id) || SIZES[1];
+      const pageOf = id => PAGES.find(p => p.id === id) || PAGES[0];
+
+      // Fit check, run inside a prototype frame (same origin)
+      function check(frame, layout, page) {
+        const doc = frame.contentDocument;
+        const win = frame.contentWindow;
+        if (!doc?.body || doc.readyState === 'loading') return { state: 'wait', text: 'Loading…' };
+        if (win.getComputedStyle(doc.body).overflowY !== 'hidden') return { state: 'fallback', text: 'Page scrolls (below the minimum size)' };
+        const issues = [];
+        const cut = (el, label) => {
+          const tall = el.scrollHeight - el.clientHeight;
+          const wide = el.scrollWidth - el.clientWidth;
+          if (tall > 1) issues.push(`${label} cut by ${tall} px`);
+          if (wide > 1) issues.push(`${label} ${wide} px too wide`);
+        };
+        cut(doc.body, 'Page');
+        const main = doc.querySelector('.fs-main');
+        if (main) cut(main, 'Work area');
+        doc.querySelectorAll('.fs-pane').forEach(pane => {
+          if (!pane.getClientRects().length) return;
+          const name = pane.getAttribute('aria-label') || pane.querySelector('h2')?.textContent.trim().split(/\s+/).slice(0, 2).join(' ') || pane.id || 'Pane';
+          cut(pane, name);
+        });
+        const vw = win.innerWidth;
+        const vh = win.innerHeight;
+        [...KEYS[page], ...(KEYS[`${layout}-${page}`] || [])].forEach(([selector, label, least]) => {
+          const el = doc.querySelector(selector);
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          if (least && r.height < least) issues.push(`${label} only ${Math.round(r.height)} px tall`);
+          const x = r.left + Math.min(r.width / 2, 12);
+          const y = r.top + r.height / 2;
+          const hit = r.width > 0 && x >= 0 && y >= 0 && x < vw && y < vh ? doc.elementFromPoint(x, y) : null;
+          if (!hit || !(el === hit || el.contains(hit) || hit.contains(el))) issues.push(`${label} off screen`);
+        });
+        return issues.length ? { state: 'bad', text: issues.join(' · ') } : { state: 'ok', text: 'Fits, nothing cut' };
+      }
+      const fitBadge = result => `<span class="fit" data-state="${result.state}">${result.state === 'ok' ? '✓' : result.state === 'bad' ? '✗' : result.state === 'fallback' ? '↕' : '…'} ${esc(result.text)}</span>`;
+
+      const frame = (layout, page, size) => `<div class="frame"><div class="tag"><b>${layout.name}</b><span>${page.label} · ${size.label} · ${size.note}</span><span data-fit></span><a href="${layout.id}/${page.file}" target="_blank" rel="noopener">Open full page ↗</a></div>
+        <div class="scaler" data-scaler data-layout="${layout.id}" data-page="${page.id}"><iframe src="${layout.id}/${page.file}" title="${layout.name}, ${page.label}"></iframe></div></div>`;
+      const card = layout => `<div class="card"><h2>${layout.name}${notes.pick === layout.id ? ' <span class="pick">★ my pick</span>' : ''}</h2><p class="kind">${layout.kind}</p>
+        <ul>${layout.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+        <label><input type="radio" name="pick" value="${layout.id}"${notes.pick === layout.id ? ' checked' : ''} /> My favourite</label>
+        <textarea data-note="${layout.id}" aria-label="Notes on ${layout.name}" placeholder="Notes on ${layout.name}: what works, what does not…">${esc(notes[layout.id] || '')}</textarea></div>`;
+
+      // Each prototype renders at its real size and is scaled down to fit the column
+      function fit() {
+        const { w, h } = sizeOf(ui.size);
+        document.querySelectorAll('[data-scaler]').forEach(box => {
+          const scale = Math.min(1, box.clientWidth / w);
+          Object.assign(box.querySelector('iframe').style, { width: `${w}px`, height: `${h}px`, transform: `scale(${scale})`, left: `${Math.max(0, (box.clientWidth - w * scale) / 2)}px` });
+          box.style.height = `${h * scale}px`;
+        });
+      }
+      function updateFits() {
+        document.querySelectorAll('[data-scaler]').forEach(box => {
+          const badge = box.closest('.frame').querySelector('[data-fit]');
+          badge.innerHTML = fitBadge(check(box.querySelector('iframe'), box.dataset.layout, box.dataset.page));
+        });
+      }
+      const pressed = (selector, attr, value) => document.querySelectorAll(selector).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === value)));
+      function render() {
+        save();
+        pressed('[data-view]', 'view', ui.view);
+        $('#which').innerHTML = LAYOUTS.map((l, n) => `<button data-which="${l.id}" aria-pressed="${ui.view === 'single' && ui.which === l.id}"${ui.view === 'side' ? ' disabled' : ''}>${n + 1}. ${l.name.split(' · ')[1]}</button>`).join('');
+        $('#pages').innerHTML = PAGES.map(p => `<button data-page="${p.id}" aria-pressed="${ui.page === p.id}">${p.label}</button>`).join('');
+        $('#sizes').innerHTML = SIZES.map(s => `<button data-size="${s.id}" aria-pressed="${ui.size === s.id}" title="${s.note}">${s.label}</button>`).join('');
+        const page = pageOf(ui.page);
+        const size = sizeOf(ui.size);
+        const current = LAYOUTS.find(l => l.id === ui.which) || LAYOUTS[0];
+        $('#stage').className = `stage ${ui.view}`;
+        $('#stage').innerHTML = ui.view === 'side' ? LAYOUTS.map(l => frame(l, page, size)).join('') : frame(current, page, size) + card(current);
+        $('#cards').innerHTML = ui.view === 'side' ? LAYOUTS.map(card).join('') : '';
+        document.querySelectorAll('[data-scaler] iframe').forEach(f => f.addEventListener('load', () => setTimeout(updateFits, 700)));
+        fit();
+        updateFits();
+      }
+
+      // Every layout, page and size, one hidden frame at a time
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      async function checkAll() {
+        const button = $('#check-all');
+        button.disabled = true;
+        const rows = [];
+        let n = 0;
+        const total = LAYOUTS.length * PAGES.length * SIZES.length;
+        for (const layout of LAYOUTS) for (const page of PAGES) {
+          const row = { layout, page, cells: [] };
+          rows.push(row);
+          for (const size of SIZES) {
+            button.textContent = `Checking ${++n} / ${total}…`;
+            const probe = document.createElement('iframe');
+            Object.assign(probe.style, { width: `${size.w}px`, height: `${size.h}px`, border: 0 });
+            const loaded = new Promise(resolve => probe.addEventListener('load', resolve, { once: true }));
+            probe.src = `${layout.id}/${page.file}`;
+            $('#probe').append(probe);
+            await loaded;
+            await wait(700);
+            row.cells.push(check(probe, layout.id, page.id));
+            probe.remove();
+          }
+        }
+        $('#results').innerHTML = `<table><thead><tr><th>Layout · page</th>${SIZES.map(s => `<th>${s.label}<br /><small class="muted">${s.note}</small></th>`).join('')}</tr></thead><tbody>
+          ${rows.map(r => `<tr><th>${r.layout.name}<br /><small class="muted">${r.page.label}</small></th>${r.cells.map(c => `<td>${fitBadge(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+        button.textContent = 'Check all sizes';
+        button.disabled = false;
+      }
+
+      document.addEventListener('click', event => {
+        const b = event.target.closest('[data-view],[data-which],[data-page],[data-size]');
+        if (b?.closest('.lab-bar')) {
+          if (b.dataset.view) ui.view = b.dataset.view;
+          if (b.dataset.which) ui.which = b.dataset.which;
+          if (b.dataset.page) ui.page = b.dataset.page;
+          if (b.dataset.size) ui.size = b.dataset.size;
+          render();
+        }
+      });
+      $('#check-all').addEventListener('click', checkAll);
+      document.addEventListener('change', event => { if (event.target.name === 'pick') { notes.pick = event.target.value; render(); } });
+      document.addEventListener('input', event => { if (event.target.dataset.note) { notes[event.target.dataset.note] = event.target.value; save(); } });
+      document.addEventListener('keydown', event => {
+        if (event.target.matches?.('textarea, input, select')) return;
+        const layout = LAYOUTS[Number(event.key) - 1];
+        if (layout) { ui.view = 'single'; ui.which = layout.id; render(); }
+        if (event.key === 'e' || event.key === 'b') { ui.page = event.key === 'e' ? 'effects' : 'builder'; render(); }
+      });
+      window.addEventListener('resize', fit);
+      setInterval(updateFits, 1500);
+      render();
+    </script>
+  </body>
+</html>

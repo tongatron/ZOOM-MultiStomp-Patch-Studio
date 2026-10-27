@@ -21,7 +21,7 @@ const catalog = EFFECTS_DATA.map(([name, category, , description, , params], ind
   lcd: ZPTC.effects[index].lcd,
   usable: ZPTC.effects[index].id !== null, // false for add-ons whose effect ID is unknown
   slug: name.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-  image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`
+  image: `${PEDAL.base ?? ''}assets/effects/fx-${String(index).padStart(3, '0')}.png`
 }));
 const color = fx => CATEGORIES[fx.category].color;
 const categoryLabel = fx => `<span class="Label Label--cat" style="--c:${color(fx)}">${CATEGORIES[fx.category].label}</span>`;

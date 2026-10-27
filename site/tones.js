@@ -13,7 +13,7 @@
     name: chain.name,
     effects: chain.effects.map(e => ({ index: ADVICE.byName.get(e.effect).index, on: true, values: e.values }))
   });
-  const thumb = index => `assets/effects/fx-${String(index).padStart(3, '0')}.png`;
+  const thumb = index => `${PEDAL.base ?? ''}assets/effects/fx-${String(index).padStart(3, '0')}.png`;
   const sourceLink = key => { const src = ADVICE.sources[key]; return src ? `<a href="${escapeHtml(src.url)}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>` : ''; };
 
   function chainHtml(chain) {

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en" data-color-mode="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>Patch builder · A Panels — Full-screen lab</title>
+    <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../../styles.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../../theme.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../shell.css?v=fs6-20261027" />
+    <link rel="stylesheet" href="a.css?v=fs6-20261027" />
+  </head>
+  <body class="fs-a" data-fs-base="../../" data-account-notice>
+    <header class="gh-header fs-top">
+      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Patch Studio, effects">
+        <img src="../../favicon.svg" alt="" width="24" height="24" />
+        <span class="gh-brand-name">MS-60B+ <span>PATCH STUDIO</span></span>
+      </a>
+      <nav class="fs-nav" aria-label="Sections">
+        <a href="./">Effects</a>
+        <a href="builder.html" aria-current="page">Patch builder</a>
+        <a href="../../pedal-manager.html">Pedal manager</a>
+      </nav>
+      <span class="Label fs-proto" title="Full-screen lab prototype">Lab · A Panels</span>
+    </header>
+
+    <div class="fs-editbar"><div class="pedal-edit-bar" id="pedal-edit-bar" role="status" hidden></div></div>
+
+    <main class="fs-main bd-a">
+      <section class="Box fs-pane builder-chain" aria-labelledby="chain-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="chain-title">Chain <span class="muted" id="chain-count">0 / 6</span></h2>
+          <div class="toolbar-right">
+            <button class="btn btn-sm btn-icon" id="undo" aria-label="Undo" title="Undo (Ctrl/⌘ + Z)" disabled><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <button class="btn btn-sm btn-icon" id="redo" aria-label="Redo" title="Redo (Shift + Ctrl/⌘ + Z)" disabled><svg class="flip" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <label class="btn btn-sm" for="import-files" title="Import .zptc patches from Handy Guitar Lab or a .json backup">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>
+              <span>Import</span>
+            </label>
+            <button class="btn btn-sm" id="add-effect">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+              <span>Add effect</span>
+            </button>
+          </div>
+        </div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Chain">
+          <div class="signal-end">INPUT</div>
+          <ol class="chain-list" id="chain-list"></ol>
+          <div class="signal-end signal-end--out">OUTPUT</div>
+        </div>
+      </section>
+
+      <section class="Box fs-pane advice" id="advice" aria-labelledby="advice-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
+          <div class="toolbar-right">
+            <label class="switch" title="Turn advice on or off"><input type="checkbox" id="advice-toggle" checked /><span></span><b id="advice-toggle-label">ON</b></label>
+          </div>
+        </div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Advice">
+          <div class="advice-body" id="advice-body">
+            <details class="advice-prefs" id="advice-prefs">
+              <summary>My preferences <span class="Counter" id="advice-prefs-count">0</span></summary>
+              <p class="field-hint">Pin choices you make on purpose: the matching advice stays hidden.</p>
+              <div id="advice-prefs-list"></div>
+            </details>
+            <details class="advice-prefs" id="advice-packs">
+              <summary>Rule packs <span class="Counter" id="advice-packs-count">0</span></summary>
+              <p class="field-hint">Add your own advice rules from a <code>.json</code> file, or share yours. Every rule must cite a source. <button class="clear-link" id="pack-example">Download an example</button></p>
+              <div id="advice-packs-list"></div>
+              <button class="btn btn-sm btn-primary" id="pack-new">New rule pack</button>
+              <label class="btn btn-sm" for="pack-files">Import rule pack</label>
+              <input type="file" id="pack-files" accept=".json,application/json" multiple hidden />
+            </details>
+            <div class="advice-filters" id="advice-filters" role="group" aria-label="Show"></div>
+            <ul class="advice-list" id="advice-list" aria-live="polite"></ul>
+            <div class="advice-foot" id="advice-foot"></div>
+            <div class="advice-output" id="advice-output" role="group" aria-label="Where do you plug in?"></div>
+          </div>
+          <div class="advice-off" id="advice-off" hidden><p>Advice is off. Turn it on to check order, levels, and DSP load.</p><button class="btn btn-sm" id="advice-on">Turn advice on</button></div>
+        </div>
+      </section>
+
+      <aside class="fs-col builder-side" aria-label="Patch summary">
+        <div class="Box fs-pane side-box">
+          <div class="fs-pane-body side-box-body">
+            <label class="field">
+              <span class="field-label">Patch name</span>
+              <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />
+            </label>
+
+            <div class="field">
+              <div class="field-label field-label--row"><span>DSP load</span><strong id="dsp-total">0%</strong></div>
+              <div class="dsp-stack" id="dsp-stack" aria-hidden="true"></div>
+              <ul class="dsp-legend" id="dsp-legend"></ul>
+            </div>
+
+            <div class="sr-only" id="sr-status" role="status" aria-live="polite"></div>
+            <ul class="notices" id="notices" aria-live="polite"></ul>
+
+            <div class="save-row">
+              <button class="btn" id="save-patch" title="Save to My patches (Ctrl/⌘ + S)">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 2.75C3 1.784 3.784 1 4.75 1h6.5c.966 0 1.75.784 1.75 1.75v11.5a.75.75 0 0 1-1.227.579L8 11.722l-3.773 3.107A.751.751 0 0 1 3 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.91l3.023-2.489a.75.75 0 0 1 .954 0l3.023 2.49V2.75a.25.25 0 0 0-.25-.25Z"/></svg>
+                <span id="save-label">Save</span>
+              </button>
+              <button class="btn btn-primary" id="download" disabled>
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/></svg>
+                Download .zptc
+              </button>
+            </div>
+            <div class="save-status" id="save-status" aria-live="polite"></div>
+            <div class="save-extra">
+              <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
+              <button class="btn btn-sm btn-invisible" id="share-patch" title="Copy a link that opens this patch in the builder" disabled>Share link</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="Box fs-pane side-box library" aria-labelledby="library-title">
+          <div class="library-head">
+            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
+            <div class="library-actions">
+              <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
+              <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
+              <label class="btn btn-sm" for="import-files">Import</label>
+              <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
+            </div>
+          </div>
+          <ul class="library-list fs-pane-body" id="library-list" tabindex="0" aria-label="My patches"></ul>
+          <details class="import-help">
+            <summary>How to load it on the pedal</summary>
+            <ol>
+              <li>In Handy Guitar Lab open <b>Patch</b>, tap the import icon and pick the <code>.zptc</code> file: it lands in the <b>Pool</b>.</li>
+              <li>In the Pool tap <b>Select</b>, choose the patch and tap <b>Copy to Device</b>.</li>
+              <li>Pick a free memory: copying <b>overwrites</b> the destination patch.</li>
+            </ol>
+            <a href="https://zoomcorp.com/documents/3025/E_HandyGuitarLab_for_MS-60Bplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide (PDF)</a>
+          </details>
+          <input type="file" id="import-files" accept=".zptc,.json,application/json" multiple hidden />
+        </section>
+      </aside>
+    </main>
+
+    <div class="drop-overlay" id="drop-overlay" aria-hidden="true"><span>Drop <code>.zptc</code> or <code>.json</code> files to import them</span></div>
+
+    <footer class="fs-status">
+      <span class="fs-data">Data: <a href="https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf" target="_blank" rel="noreferrer">Zoom MS-60B+ Effects List</a> © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.</span>
+      <a href="../../tones.html">Tone ideas</a>
+      <a href="../lab.html">Full-screen lab</a>
+      <a href="../../builder.html">Classic view</a>
+      <a href="../../privacy.html">Privacy</a>
+      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
+    </footer>
+
+    <dialog class="Overlay" id="picker" aria-labelledby="picker-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="picker-title">Add effect</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" id="picker-close" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="picker-search">
+        <label class="gh-search" for="picker-query">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.06ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/></svg>
+          <input id="picker-query" type="search" aria-label="Search effects" placeholder="Search effects" autocomplete="off" spellcheck="false" />
+        </label>
+        <div class="picker-cats" id="picker-cats"></div>
+      </div>
+      <ul class="picker-list" id="picker-list"></ul>
+    </dialog>
+
+    <dialog class="Overlay Overlay--small" id="add-choice" aria-labelledby="add-choice-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="add-choice-title">Add effect</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" data-choice="cancel" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="Overlay-body add-choice-body" id="add-choice-body"></div>
+    </dialog>
+
+    <dialog class="Overlay pack-editor" id="pack-editor" aria-labelledby="pack-editor-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="pack-editor-title">New rule pack</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" id="pack-editor-close" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="Overlay-body" id="pack-editor-body"></div>
+      <div class="pe-footer">
+        <div class="pe-errors" id="pack-editor-errors" role="alert" hidden></div>
+        <div class="pe-actions"><button class="btn" id="pack-editor-cancel">Cancel</button><button class="btn btn-primary" id="pack-editor-save">Save pack</button></div>
+      </div>
+    </dialog>
+
+    <dialog class="Overlay compare-dialog" id="compare" aria-labelledby="compare-title">
+      <div class="Overlay-header">
+        <h2 class="Overlay-title" id="compare-title">Compare patches</h2>
+        <button class="btn btn-sm btn-icon btn-invisible" id="compare-close" aria-label="Close" title="Close (Esc)">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/></svg>
+        </button>
+      </div>
+      <div class="compare-pick">
+        <label>A <select id="compare-a" class="btn"></select></label>
+        <label>B <select id="compare-b" class="btn"></select></label>
+      </div>
+      <div class="Overlay-body compare-body" id="compare-body"></div>
+    </dialog>
+
+    <script src="../../pedal.js?v=zoom49-20261027"></script>
+    <script src="../lab-shims.js?v=fs6-20261027"></script>
+    <script src="../../effects-data.js?v=zoom24-20261026"></script>
+    <script src="../../firmware-data.js?v=zoom24-20261026"></script>
+    <script src="../../library-merge.js?v=zoom28-20261027"></script>
+    <script src="../../patch-link.js?v=zoom24-20261026"></script>
+    <script src="../../zptc.js?v=zoom43-20261027"></script>
+    <script src="../../advice-engine.js?v=zoom24-20261026"></script>
+    <script src="../../rule-packs.js?v=zoom24-20261026"></script>
+    <script src="../../advice-rules.js?v=zoom43-20261027"></script>
+    <script src="../../rule-pack-editor.js?v=zoom24-20261026"></script>
+    <script src="../../builder.js?v=zoom49-20261027"></script>
+    <script src="../../account.js?v=zoom46-20261027"></script>
+  </body>
+</html>
