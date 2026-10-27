@@ -24,7 +24,7 @@ const PHONE = [390, 700];
 // [selector, label, least useful height in px]: the controls must be on screen
 const PAGES = {
   'index.html': [['#search', 'search'], ['#sort', 'sort'], ['.fx-link', 'effect list'], ['#fx-dialog .Overlay-nav', 'detail pane'], ['.results .fs-pane-body', 'effect list', 240], ['#dialog-body', 'effect detail', 240]],
-  'builder.html': [['#add-effect', 'Add effect'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['.advice .switch', 'advice switch'], ['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200]],
+  'builder.html': [['#add-effect', 'Add effect'], ['.builder-chain a[href="tones.html"]', 'Tone ideas'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['.advice .switch', 'advice switch'], ['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200], ['#library-list', 'My patches list', 48]],
   'pedal-manager.html': [['#usb-connect', 'Connect the pedal'], ['#usb-local-title', 'My patches'], ['#usb-pedal-title', 'On the pedal'], ['#usb-locals', 'My patches list', 160], ['#usb-memories', 'memory list', 160]],
   'tones.html': [['#tone-filter', 'filter'], ['#tone-styles-title', 'By style'], ['#tone-bassists-title', 'By bassist'], ['.tone-pane .fs-pane-body', 'tone list', 200]],
   'resources.html': [['.resource-list', 'manuals'], ['#check-title', 'Still to check'], ['.check-pane .fs-pane-body', 'checks', 200]],
@@ -108,6 +108,42 @@ try {
       const result = await page.evaluate(check, PAGES['builder.html']);
       assert.deepEqual(result.issues, [], size.join(' × '));
     }
+  });
+
+  await test('with 30 saved patches every one can be reached in My patches (builder and pedal manager)', async () => {
+    await open('builder.html', SIZES[1]);
+    await page.evaluate(() => {
+      const list = readLibrary();
+      for (let i = 1; i <= 30; i++) addToLibrary({ ...state, name: `TEST ${i}` }, list);
+      writeLibrary(list);
+    });
+    for (const size of SIZES) {
+      for (const [file, list, item] of [['builder.html', '#library-list', '.library-item'], ['pedal-manager.html', '#usb-locals', '.usb-local']]) {
+        await open(file, size);
+        const result = await page.evaluate(check, PAGES[file]);
+        assert.deepEqual(result.issues, [], `${file} ${size.join(' × ')}`);
+        const last = await page.evaluate(([list, item]) => {
+          const box = document.querySelector(list);
+          box.scrollTop = box.scrollHeight;
+          const items = box.querySelectorAll(item);
+          const r = items[items.length - 1].getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + 20, r.top + r.height / 2);
+          return { count: items.length, visible: !!hit && items[items.length - 1].contains(hit) };
+        }, [list, item]);
+        assert.ok(last.count >= 30 && last.visible, `${file} ${size.join(' × ')}: the last patch cannot be reached (${JSON.stringify(last)})`);
+      }
+    }
+  });
+
+  await test('the status bar links Resources; Tone ideas opens from the builder', async () => {
+    await open('index.html', SIZES[1]);
+    assert.equal(await page.locator('.fs-nav a').count(), 3);
+    await page.locator('.fs-status a[href="resources.html"]').click();
+    await page.waitForURL(/resources\.html$/);
+    await open('builder.html', SIZES[1]);
+    await page.locator('.builder-chain a[href="tones.html"]').click();
+    await page.waitForURL(/tones\.html$/);
+    assert.equal(await page.locator('.fs-nav a[aria-current="page"]').textContent(), 'Patch builder');
   });
 
   await test('effects: the detail pane shows the first effect, follows the list and the arrows', async () => {

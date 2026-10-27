@@ -23,10 +23,10 @@ Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 | `privacy.html` | indice \| testo (caricato da `site/privacy.html`, così le due versioni non divergono) |
 
 - `fullscreen.css` (guscio + pannelli), `fullscreen.js` (`PEDAL.base = '../'` e l'indice dei documenti).
-- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con tutte le sezioni, barra di stato con attribuzione ZOOM, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
+- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con Effects, Patch builder e Pedal manager (Tone ideas si apre dal builder, con un pulsante nella catena); barra di stato con attribuzione ZOOM, Resources, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
 - `noindex`, niente service worker (`pwa.js` non caricato), nessun link dal sito classico.
 - `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Il sito classico non cambia.
-- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", a 390×700 solo scroll verticale. 31/31 al 2026-10-27.
+- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 33/33 al 2026-10-27.
 - Il laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) resta come archivio del confronto.
 
 ## Laboratorio (`site/_fullscreen/lab.html`)
