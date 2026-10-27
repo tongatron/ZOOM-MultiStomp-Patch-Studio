@@ -359,7 +359,8 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 .repo-head--tabs .repo-resources { margin-bottom: 16px; }
 .gh-footer .gh-data { max-width: 260px; padding: 8px 10px; border: 1px solid var(--border-muted); border-radius: 6px; font-size: 11px; line-height: 1.4; }
 .gh-footer { align-items: flex-start; }
-.gh-footer-right { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 370px; margin-left: auto; }
+.gh-footer-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; max-width: 370px; margin-left: auto; }
+.gh-footer-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .gh-footer .gh-data--note { max-width: none; text-align: left; }
 .repo-desc code, .gh-footer code, .import-help code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
 .UnderlineNav { display: flex; gap: 8px; margin-top: 4px; overflow-x: auto; scrollbar-width: none; }
@@ -859,7 +860,8 @@ body.is-dropping .drop-overlay { display: grid; }
 .privacy ul { padding-left: 22px; }
 .privacy li { margin: 4px 0; }
 .privacy code { font: 13px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
-.gh-footer .gh-privacy { color: var(--fg-muted); font-size: 13px; }
+.gh-footer .gh-privacy { color: var(--accent-fg); font-size: 13px; }
+.gh-footer .gh-privacy:hover { text-decoration: underline; }
 .usb-send { width: 32px; height: 32px; flex: none; }
 .usb-send.btn-primary { color: #fff; }
 .usb-move select { width: 240px; }
