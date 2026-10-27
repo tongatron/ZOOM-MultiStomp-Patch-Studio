@@ -1,7 +1,7 @@
 // Layout of the site, both pedals (MS-60B+ in site/, MS-50G+ in site/ms-50g/): every page must fit the window at each target size without scrolling.
 // The page and the work area are never cut, every pane fits, the main controls are on screen and each work area keeps
-// a useful height. Below 760 × 560 px the pages scroll on purpose (phone fallback): there only sideways overflow
-// is an error, and the effect detail opens as a window. The builder is also checked with a full chain of 6 effects, signed out (with the account notice).
+// a useful height. Below 800 × 640 px there is no layout: a notice replaces the page (no phone version, by decision).
+// The builder is also checked with a full chain of 6 effects, signed out (with the account notice).
 // Run: npm install && npx playwright install chromium && node tools/fullscreen-test.mjs
 // Locally you can use the installed Chrome instead of downloading Chromium: PW_CHANNEL=chrome node tools/fullscreen-test.mjs
 import assert from 'node:assert/strict';
@@ -69,6 +69,17 @@ function check(keys) {
   return { scrolls: false, issues };
 }
 
+// Runs in the page: is the small-screen notice what is shown (and nothing else), and does it fit sideways
+function smallScreen() {
+  const notice = document.querySelector('.fs-small');
+  const others = [...document.body.children].filter(el => el !== notice && el.tagName !== 'SCRIPT' && !el.matches('.account-notice, .update-bar'));
+  return {
+    notice: !!notice && getComputedStyle(notice).display === 'flex' && notice.getBoundingClientRect().height > 100,
+    restHidden: others.every(el => getComputedStyle(el).display === 'none') && getComputedStyle(document.body).overflowX !== 'scroll',
+    sideways: Math.max(0, document.documentElement.scrollWidth - innerWidth)
+  };
+}
+
 // Runs in the page: the items of the top bar sit one after the other, inside the window, and the links are not clipped
 function barIssues() {
   const items = [...document.querySelectorAll('.fs-top > *')].filter(el => el.getClientRects().length && getComputedStyle(el).display !== 'none');
@@ -97,7 +108,7 @@ const open = async (file, [width, height]) => {
   await page.setViewportSize({ width, height });
   await page.goto(`${base}/${file}`);
   if (/(technical-notes|privacy|guide)\.html$/.test(file)) await page.waitForSelector('#toc a', { state: 'attached' });
-  await page.waitForSelector('.account-slot > *', { timeout: 3000 }).catch(() => {}); // the Sign in button is part of the bar
+  await page.waitForSelector('.account-slot > *', { state: 'attached', timeout: 3000 }).catch(() => {}); // the Sign in button is part of the bar
   await page.waitForTimeout(150);
 };
 
@@ -116,11 +127,9 @@ try {
       await open(file, [800, 700]);
       assert.deepEqual(await page.evaluate(barIssues), []);
     });
-    await test(`${file} at ${PHONE.join(' × ')} scrolls only down, never sideways`, async () => {
+    await test(`${file} at ${PHONE.join(' × ')} shows the small-screen notice instead of the page`, async () => {
       await open(file, PHONE);
-      const result = await page.evaluate(check, keys);
-      assert.equal(result.scrolls, true, 'the page should fall back to scrolling');
-      assert.ok(result.wide <= 1, `${result.wide} px too wide`);
+      assert.deepEqual(await page.evaluate(smallScreen), { notice: true, restHidden: true, sideways: 0 });
     });
   }
 
@@ -342,8 +351,7 @@ try {
   await test('effects: the detail has no previous/next buttons and "Add to patch" sits right under the description', async () => {
     await open('index.html', SIZES[1]);
     await page.locator('.fx-link').nth(3).click();
-    assert.equal(await page.locator('#fx-dialog .Overlay-header').isHidden(), true, 'the buttons that are at the top of the page are not repeated in the pane');
-    for (const id of ['#dialog-prev', '#dialog-next', '#dialog-pos', '#dialog-close']) assert.equal(await page.locator(id).isHidden(), true, id);
+    assert.equal(await page.locator('#fx-dialog .Overlay-header, #dialog-prev, #dialog-next, #dialog-pos, #dialog-close').count(), 0, 'the buttons that are at the top of the page are not repeated in the pane');
     const place = await page.evaluate(() => {
       const body = document.querySelector('#dialog-body');
       const top = selector => body.querySelector(selector)?.getBoundingClientRect().top;
@@ -471,32 +479,32 @@ try {
     assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
   });
 
-  await test('on a phone the effect detail opens as a window with its own buttons, and becomes the pane again on a big screen', async () => {
+  await test('under 800 × 640 px a notice says so, suggests a bigger screen or full screen, and says what the site does', async () => {
     await open('index.html', PHONE);
-    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').open), false, 'nothing is open at first');
-    assert.equal(await page.locator('#fx-dialog').isVisible(), false, 'and nothing of it is shown');
-    await page.locator('.fx-link').nth(2).click();
-    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').matches(':modal')), true, 'a window');
-    assert.equal(await page.locator('#dialog-close').isVisible(), true);
-    assert.equal(await page.locator('#dialog-pos').textContent(), '3 of 97');
-    await page.locator('#dialog-next').click();
-    assert.equal(await page.locator('#dialog-pos').textContent(), '4 of 97');
-    assert.equal(await page.locator('#dialog-body .detail-add a').count(), 1, 'Add to patch is under the description here too');
-    assert.equal(await page.locator('[data-advice-off]').count(), 0, 'and the advice has no switch');
-    await page.locator('#dialog-close').click();
-    assert.equal(await page.evaluate(() => document.querySelector('#fx-dialog').open), false);
-    // an address that names an effect opens it
-    const slug = await page.evaluate(() => effects[5].slug);
-    await page.goto(`${base}/index.html#${slug}`);
-    await page.waitForFunction(() => document.querySelector('#fx-dialog').matches(':modal'));
-    assert.equal(await page.locator('#dialog-title').textContent(), await page.evaluate(() => effects[5].name));
-    // the window gets big: the same detail becomes the pane next to the list
+    const text = await page.locator('.fs-small').innerText();
+    assert.match(text, /This window is too small/);
+    assert.match(text, /at least 800 × 640 px; this one is 390 × 700 px/, 'it says how big the window is');
+    assert.match(text, /full screen/i, 'and suggests the full-screen mode');
+    assert.match(text, /F11/);
+    for (const word of ['MS-60B+', 'MS-50G+', 'Effects', 'Patch builder', 'Pedal manager', 'Tone ideas', '.zptc', 'Handy Guitar Lab', 'free account']) assert.ok(text.includes(word), `what the site does: ${word}`);
+    assert.equal(await page.locator('.fs-small a[href$="/landing/"]').count(), 1, 'a link to the presentation page');
+    // the notice follows the window
+    await page.setViewportSize({ width: 500, height: 640 });
+    assert.match(await page.locator('.fs-small [data-size]').textContent(), /^500 × 640 px$/);
+    // every edge of the limit, on the two main pages and with the other pedal
+    for (const file of ['index.html', 'builder.html', 'ms-50g/index.html']) {
+      for (const [size, small] of [[[799, 700], true], [[1280, 639], true], [[800, 640], false], [[1024, 640], false], [[800, 700], false]]) {
+        await open(file, size);
+        const shown = await page.evaluate(smallScreen);
+        assert.equal(shown.notice, small, `${file} ${size.join(' × ')}: notice ${small ? 'shown' : 'hidden'}`);
+        if (small) assert.deepEqual(shown, { notice: true, restHidden: true, sideways: 0 }, `${file} ${size.join(' × ')}`);
+        else assert.deepEqual((await page.evaluate(check, ALL_PAGES[file])).issues, [], `${file} ${size.join(' × ')}: the layout fits`);
+      }
+    }
+    // back to a big window: the page is there again
     await page.setViewportSize({ width: 1280, height: 680 });
-    await page.waitForFunction(() => { const d = document.querySelector('#fx-dialog'); return d.open && !d.matches(':modal'); });
-    assert.equal(await page.locator('#dialog-title').textContent(), await page.evaluate(() => effects[5].name), 'still the same effect');
-    assert.equal(await page.locator('#dialog-close').isHidden(), true);
-    const layout = await page.evaluate(() => ({ list: document.querySelector('.results .fs-pane-body').getBoundingClientRect().height, detail: document.querySelector('#dialog-body').getBoundingClientRect().height, scrolls: document.documentElement.scrollHeight > innerHeight }));
-    assert.ok(layout.list >= 240 && layout.detail >= 240 && !layout.scrolls, `the panes fit again: ${JSON.stringify(layout)}`);
+    assert.equal(await page.locator('.fs-main').isVisible(), true);
+    assert.equal(await page.locator('.fs-small').isVisible(), false);
   });
 
   await test('the old addresses of the test version redirect to the site', async () => {

@@ -46,7 +46,7 @@ ZOOM MultiStomp pedals pack about a hundred effects, a tight DSP budget and a 6-
 | 🔌 **Pedal manager** *(experimental)* | Over USB in Chrome or Edge: see the pedal's 100 memories next to My patches, read them, send patches, move or swap memories, and **Arrange** the whole list with drag & drop and block moves. Every write keeps a backup and is checked by reading it back. |
 | 📖 **Resources** | The official ZOOM manual (English and Italian) and the Effects List PDF, one tab away. |
 | ☁️ **Free account** *(optional)* | Sign in to sync patches, settings, rule packs and pedal backups across devices. Without an account everything stays in your browser. |
-| 📱 **Anywhere** | Installable offline PWA for phone, tablet and desktop. |
+| 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |
 
 ## 🆚 The two pedals
 

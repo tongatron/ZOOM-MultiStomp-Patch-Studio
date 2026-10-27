@@ -124,7 +124,7 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 - **Id e classi da non toccare**: gli script cercano gli elementi per id (`app.js`, `builder.js`, `pedal-manager.js`, `tones.js`); `account.js` aggancia il menu a `.gh-header` e l'avviso a `<body data-account-notice>`; `tools/stamp-update.mjs` aggiorna `<time class="gh-updated">`. Si spostano i contenitori, non i componenti.
 - **Percorsi delle immagini**: oggi sono relativi e fissi (`assets/effects/fx-NNN.png` in `app.js:23`, `builder.js:24`, `pedal-manager.js:77`, `tones.js:16`). Da `_fullscreen/` si rompono: aggiungere un prefisso opzionale (es. `PEDAL.base`, vuoto di default, `'../'` nelle pagine di test) invece di copiare le immagini.
 - **Layout**: `html, body { height: 100dvh; overflow: hidden }`, griglia `auto 1fr auto`; ogni pannello `min-height: 0; overflow: auto; overscroll-behavior: contain`, con `tabindex="0"` e `aria-label` perché si possa scorrere da tastiera.
-- **Soglia di ripiego**: sotto una dimensione minima (da decidere, es. altezza < 560 px) la pagina torna a scorrere, invece di tagliare i contenuti.
+- **Soglia**: sotto una dimensione minima la pagina non ha layout. Deciso: 800 × 640 px, con un avviso al posto della pagina (era un ripiego con scroll, tolto il 2026-10-27).
 - **Footer**: diventa la barra di stato (Data © ZOOM Effects List, Privacy, Last update, GitHub). L'attribuzione a ZOOM resta sempre visibile. La descrizione del `repo-head` va in un popover "About" o sparisce.
 - **Telefono**: un pannello per volta con una barra di schede in basso (Effects: lista → dettaglio; Builder: Chain | Params | Advice | Patches).
 - **Test interno, non indicizzato**: `<meta name="robots" content="noindex">`, niente link dal sito principale finché non si decide (solo un link "Classic view" dal test verso il sito attuale), pagine fuori da `CORE` in `sw.js`. `pwa.js` registra `sw.js` accanto a sé, quindi funziona anche da `_fullscreen/`.
@@ -134,7 +134,7 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 ### Fase 0 — Decisioni (con te)
 
 - [x] Significato di "senza scroll": regola 1 (pannelli che scorrono), deciso il 2026-10-27.
-- [ ] Viewport target (`innerWidth × innerHeight`) e soglia di ripiego.
+- [x] Viewport target (`innerWidth × innerHeight`) e soglia: 800 × 640 px, misurata.
 - [ ] Pagine incluse: Effects, Builder, Pedal manager, Tone ideas, Resources, Technical notes, Privacy. Landing sì o no (è una pagina di presentazione, lo scroll lì è naturale).
 - [ ] Solo MS-60B+ all'inizio, MS-50G+ dopo la scelta (proposta).
 - [ ] Link alla versione di test: nessuno (URL diretto) o un link discreto nella barra di stato del sito attuale.
@@ -172,8 +172,8 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 
 - [x] Tablet in orizzontale (1024×700): colonne ridotte, controllato dal test.
 - [ ] Tablet in verticale (768×1000) e target al tocco 44 px: da provare su un iPad vero.
-- [ ] Telefono: un pannello per volta, barra di schede in basso.
-- [x] Ripiego allo scroll sotto 760 × 560 px (il test controlla che non ci sia scroll laterale).
+- [x] Telefono: non si fa (nessuna versione mobile, vedi la fase 6).
+- [x] Sotto 800 × 640 px l'avviso al posto della pagina (il test controlla tutte le pagine, i bordi della soglia e la dimensione mostrata).
 
 ### Fase 5 — Test
 
@@ -188,7 +188,7 @@ Piano:
 1. **Rilievo.** Pagine classiche = stesse pagine della versione full screen (stessi id e script). Differenze da portare: `<head>` SEO (description, Open Graph, manifest, icone), `pwa.js`/service worker, testo della privacy (oggi la pagina full screen lo carica da quella classica), percorsi (`PEDAL.base`), MS-50G+ (solo Effects, Patch builder, Resources; nessun Pedal manager né Tone ideas; banner "Not tested").
 2. **MS-60B+ in radice.** Le pagine di `site/_fullscreen/` prendono il posto di quelle classiche (`index`, `builder`, `tones`, `pedal-manager`, `resources`, `technical-notes`, `privacy`) più `guide.html`; `fullscreen.css` e `fullscreen.js` passano in `site/`. Il `<head>` è quello classico (indicizzabile, manifest, icone) più `fullscreen.css`; si aggiunge `pwa.js`. La privacy diventa testo statico nella pagina (niente `fetch`).
 3. **MS-50G+.** `site/ms-50g/{index,builder,resources,guide}.html` nello stesso layout: menu del pedale con le due voci (la stessa pagina dell'altro pedale quando esiste), navigazione senza Pedal manager né Tone ideas, riga "Not tested" sotto la barra, dati e link del pedale (127 effetti, manuale e PDF MS-50G+), Guida adattata (niente Pedal manager né Tone ideas).
-4. **Telefono.** Sotto i 760 × 560 px le pagine tornano a scorrere: il dettaglio di un effetto non può restare "docked" in fondo a una lista lunga, quindi su schermi piccoli si apre come finestra (come nel sito classico), con chiudi/avanti/indietro.
+4. **Telefono.** (Superato lo stesso giorno: vedi "Nessuna versione mobile".) Prima soluzione: sotto i 760 × 560 px le pagine scorrevano e il dettaglio di un effetto si apriva come finestra.
 5. **Indirizzi vecchi.** `site/_fullscreen/` diventa una cartella di piccoli reindirizzamenti verso le pagine nuove (come `usb.html`); laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) rimosso, resta nella cronologia di git.
 6. **Pulizia.** `PEDAL.base` non serve più; `sw.js` (elenco `CORE`, versione della cache), `stamp-update.mjs`, README, CLAUDE.md, `privacy.html` (nuova preferenza: Patch box aperto/chiuso).
 7. **Test.** `tools/fullscreen-test.mjs` gira sulle pagine in radice e su quelle MS-50G+ (adattamento ai due pedali, menu, banner); `e2e-test.mjs`, `sync-test.mjs`, `auth-test.mjs`, `advice-test.mjs` restano verdi.
@@ -199,9 +199,10 @@ Stato:
 - [x] 1 Rilievo
 - [x] 2 MS-60B+ in radice (`index`, `builder`, `tones`, `pedal-manager`, `resources`, `technical-notes`, `privacy`, `guide`)
 - [x] 3 MS-50G+ (`ms-50g/` `index`, `builder`, `resources`, `guide`)
-- [x] 4 Telefono: finestra per il dettaglio sotto i 760 × 560 px (`dockedQuery` in `app.js`)
+- [x] 4 Telefono: tolto, vedi sotto
 - [x] 5 Indirizzi vecchi: `_fullscreen/*.html` reindirizzano (anche `?add=` e `#effetto`)
 - [x] 6 Pulizia: `PEDAL.base` e l'interruttore Advice tolti dal codice, `sw.js` (cache v15, `guide.html`, `privacy.html`), `stamp-update.mjs`, `privacy.html`, CLAUDE.md
-- [x] 7 Test: `fullscreen-test.mjs` 80/80 (due pedali, telefono, reindirizzamenti), e2e 15/15, sync 11/11, auth 18/18, advice 52/52, midi 9/9
+- [x] 7 Test: `fullscreen-test.mjs` 80/80 (due pedali, avviso sotto 800 × 640 px, reindirizzamenti), e2e 15/15, sync 11/11, auth 18/18, advice 52/52, midi 9/9
 - [ ] 8 Deploy (su richiesta): `node tools/stamp-update.mjs`, commit, rsync, poi sul server togliere `_fullscreen/lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`, `fullscreen.css`, `fullscreen.js` (rsync senza `--delete` non li rimuove)
-- [ ] Tablet in verticale e telefono "un pannello per volta" (fase 4) restano da fare: per ora vale il ripiego con scroll.
+- [x] **Nessuna versione mobile (decisione del 2026-10-27).** Il ripiego con scroll e la finestra per il dettaglio sono stati tolti. Sotto 800 × 640 px (la dimensione minima a cui tutte le pagine entrano, misurata) `fullscreen.js` mostra un avviso al posto della pagina: dice che la finestra è troppo piccola e quanto è grande, suggerisce uno schermo più grande o il tutto schermo (F11) e spiega cosa fa il sito. La regola è in CLAUDE.md. Il tablet in verticale (768 px di larghezza) vede quindi l'avviso; in orizzontale (1024 × 768) la pagina intera.
+- [ ] Da provare dal vivo su un iPad in orizzontale (target al tocco, tastiera, Safari).

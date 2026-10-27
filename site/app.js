@@ -113,7 +113,7 @@ function renderList() {
       </div>
     </a></li>`;
   }).join('');
-  if (docked) markCurrent();
+  markCurrent();
 }
 
 function render() { renderFilters(); renderList(); }
@@ -134,20 +134,13 @@ function placementTips(effect) {
 
 // Effect detail
 const dialog = $('#fx-dialog');
-// The detail is a pane next to the list ("docked"): it opens without a backdrop, stays open and shows the first effect
-// when the address names none. On a small screen, where the page scrolls and the list is long, it opens as a window
-// with its own close and previous/next buttons. The size is the one where fullscreen.css switches layout.
-const dockedQuery = matchMedia('(min-width: 760px) and (min-height: 560px)');
-let docked = dockedQuery.matches;
+// The detail is a pane next to the list: it stays open and shows the first effect when the address names none.
+// The list and the arrow keys move between effects, so it has no buttons of its own.
 let current = null;
 
 function openEffect(effect) {
   current = effect;
-  const pos = state.visible.indexOf(effect);
   const pages = Math.ceil(effect.params.length / KNOBS);
-  $('#dialog-pos').textContent = pos >= 0 ? `${pos + 1} of ${state.visible.length}` : `#${effect.index + 1}`;
-  $('#dialog-prev').disabled = pos <= 0;
-  $('#dialog-next').disabled = pos < 0 || pos >= state.visible.length - 1;
   const addToPatch = effect.extra ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`;
   $('#dialog-body').innerHTML = `
     <div class="detail-head">
@@ -193,16 +186,14 @@ function openEffect(effect) {
     </div>`;
   $('#dialog-body').scrollTop = 0;
   if (!dialog.open) {
-    if (docked) {
-      dialog.show();
-      if (dialog.contains(document.activeElement)) document.activeElement.blur(); // a pane that opens by itself keeps the focus where it was
-    } else dialog.showModal();
+    dialog.show();
+    if (dialog.contains(document.activeElement)) document.activeElement.blur(); // a pane that opens by itself keeps the focus where it was
   }
   if (location.hash !== `#${effect.slug}`) history.replaceState(null, '', `#${effect.slug}`);
-  if (docked) markCurrent();
+  markCurrent();
 }
 
-// Docked detail: the effect it shows is marked in the list
+// The effect the detail shows is marked in the list
 function markCurrent() {
   document.querySelectorAll('.fx-link').forEach(link => {
     const here = link.dataset.slug === current?.slug;
@@ -211,28 +202,10 @@ function markCurrent() {
   });
 }
 
-const closeEffect = () => { if (dialog.open && !docked) dialog.close(); };
-dialog.addEventListener('close', () => {
-  if (dialog.open) return; // closed and shown again before this event ran (a change of layout, or a new address)
-  current = null;
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-});
-dialog.addEventListener('click', event => {
-  if (event.target === dialog && !docked) closeEffect();
-});
-$('#dialog-close').addEventListener('click', closeEffect);
 const step = delta => {
   const next = current && state.visible[state.visible.indexOf(current) + delta];
   if (next) openEffect(next);
 };
-$('#dialog-prev').addEventListener('click', () => step(-1));
-$('#dialog-next').addEventListener('click', () => step(1));
-// The window is resized or turned across the size where the layout changes: the detail becomes a pane or a window
-dockedQuery.addEventListener('change', () => {
-  docked = dockedQuery.matches;
-  if (dialog.open) dialog.close();
-  if (docked) openFromHash();
-});
 
 // Filters and controls
 const search = $('#search');
@@ -282,11 +255,10 @@ document.querySelectorAll('button[data-view]').forEach(button => button.addEvent
 
 document.addEventListener('keydown', event => {
   const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
-  // A docked detail leaves the arrows to the field being typed in, and the search keys keep working
-  if (dialog.open && !(docked && typing)) {
+  // The arrows belong to the field being typed in; elsewhere they move to the previous or next effect
+  if (dialog.open && !typing) {
     if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
     if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
-    if (!docked) return;
   }
   if (event.key === '/' && !typing) { event.preventDefault(); search.focus(); search.select(); }
   if (event.key === 'Escape' && document.activeElement === search && search.value) { search.value = ''; state.query = ''; render(); }
@@ -296,8 +268,7 @@ function openFromHash() {
   const slug = decodeURIComponent(location.hash.slice(1));
   const effect = effects.find(item => item.slug === slug);
   if (effect) openEffect(effect);
-  else if (docked && state.visible.length) openEffect(state.visible[0]);
-  else closeEffect();
+  else if (state.visible.length) openEffect(state.visible[0]);
 }
 window.addEventListener('hashchange', openFromHash);
 
