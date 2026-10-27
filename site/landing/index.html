@@ -31,8 +31,6 @@
       /* Pedal cards */
       .lp-pedals { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
       .lp-pedal { display: flex; flex-direction: column; gap: 18px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); transition: border-color .12s; }
-      .lp-pedal:hover { border-color: #8b949e; }
-      .lp-pedal--untested:hover { border-color: rgba(248, 81, 73, .6); }
       .lp-pedal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
       .lp-pedal h3 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
       .lp-pedal h3 small { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: var(--fg-muted); letter-spacing: 0; }
@@ -44,8 +42,6 @@
       .lp-facts { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--fg-muted); }
       .lp-facts strong { color: var(--fg); font-size: 15px; }
       .lp-pedal p { margin: 0; font-size: 14px; color: var(--fg-muted); }
-      .lp-pedal .lp-cta { margin-top: auto; }
-      .lp-pedal .lp-cta .btn { height: 38px; font-size: 14px; }
 
       /* Steps */
       .lp-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
@@ -104,7 +100,7 @@
         <span class="gh-brand-name">ZOOM MultiStomp <span>PATCH STUDIO</span></span>
       </a>
       <span class="gh-spacer"></span>
-      <a class="btn btn-sm btn-primary gh-header-link" href="#pedals">Open the app</a>
+      <a class="btn btn-sm btn-primary gh-header-link" href="../">Open the studio</a>
     </header>
 
     <main class="container lp">
@@ -113,7 +109,7 @@
         <h1>Design your patches on a <em>big screen</em>, then send them to the pedal.</h1>
         <p class="lp-lead">Browse every effect with the original ZOOM text, build a 6-effect chain with a live DSP meter, then export a <code>.zptc</code> file for Handy Guitar Lab or write it to the MS-60B+ over USB. A free account keeps your patches safe on every device.</p>
         <div class="lp-cta">
-          <a class="btn btn-primary" href="#pedals">Choose your pedal</a>
+          <a class="btn btn-primary" href="../">Open the studio</a>
           <a class="btn" href="/register?next=/builder.html">Create a free account</a>
           <a class="btn btn-invisible" href="#how">How it works</a>
         </div>
@@ -121,8 +117,8 @@
 
       <section id="pedals" aria-labelledby="pedals-title">
         <p class="lp-eyebrow">Pedals</p>
-        <h2 id="pedals-title">Pick your pedal</h2>
-        <p class="lp-lead">Both pedals use the same studio. The bass version is tested on a real pedal; the guitar version is new and waiting for testers.</p>
+        <h2 id="pedals-title">Two pedals, one studio</h2>
+        <p class="lp-lead">Switch between them at the top of every page of the studio. The bass version is tested on a real pedal; the guitar version is new and waiting for testers.</p>
         <div class="lp-pedals">
           <article class="lp-pedal">
             <div class="lp-pedal-head">
@@ -141,11 +137,6 @@
               <li><strong>12</strong> advice styles</li>
             </ul>
             <p>The full studio: advice on effect order and levels with sources, style profiles, Tone ideas by bassist, and the Pedal manager to read and write the pedal over USB.</p>
-            <div class="lp-cta">
-              <a class="btn btn-primary" href="../builder.html">Patch builder</a>
-              <a class="btn" href="../">Effects</a>
-              <a class="btn" href="../pedal-manager.html">Pedal manager</a>
-            </div>
           </article>
 
           <article class="lp-pedal lp-pedal--untested">
@@ -165,11 +156,10 @@
               <li><strong>103</strong> usable in the builder</li>
             </ul>
             <p>Built from the official MS-50G+ documentation with the same file format as the MS-60B+. Generated patches have not been checked on a real pedal yet.</p>
-            <div class="lp-cta">
-              <a class="btn btn-primary" href="../ms-50g/builder.html">Patch builder</a>
-              <a class="btn" href="../ms-50g/">Effects</a>
-            </div>
           </article>
+        </div>
+        <div class="lp-cta" style="margin-top: 24px;">
+          <a class="btn btn-primary" href="../">Open the studio</a>
         </div>
       </section>
 
@@ -309,7 +299,7 @@
         <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
         <a class="btn gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
         <a class="gh-privacy" href="../privacy.html">Privacy</a>
-        <time class="gh-updated" datetime="2026-10-27T00:36Z">Last update 27 October 2026 01:36</time>
+        <time class="gh-updated" datetime="2026-10-27T00:41Z">Last update 27 October 2026 01:41</time>
       </div>
       <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
     </footer>
