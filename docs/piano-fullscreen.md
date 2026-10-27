@@ -1,11 +1,33 @@
 # Piano: versione di test `_fullscreen` (ogni pagina in una schermata)
 
-Stato: **laboratorio pronto, struttura da scegliere**. Data: 2026-10-27.
+Stato: **versione full screen MS-60B+ pronta (Panels)**, da provare dal vivo. Data: 2026-10-27.
 Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
 
 ## Decisioni prese (2026-10-27)
 
 - **"Senza scroll" = regola 1**: la pagina non scorre mai, una lista lunga può scorrere dentro il suo pannello. La struttura B "a pagine" (regola 2) è quindi uscita dal confronto; al suo posto il laboratorio prova **B · Pedalboard**, che rispetta la regola 1.
+- **Struttura scelta: A · Panels.**
+
+## Versione full screen (`site/_fullscreen/`)
+
+Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
+
+| Pagina | Pannelli |
+|---|---|
+| `index.html` (Effects) | filtri \| lista \| dettaglio fisso (`<dialog data-docked>`, opzione di `app.js`) |
+| `builder.html` | catena \| Advice \| patch (nome, DSP, Save, Download, avvisi) e My patches |
+| `pedal-manager.html` | My patches \| On the pedal \| connessione, Backups, MIDI log |
+| `tones.html` | filtro in alto; By style \| By bassist |
+| `resources.html` | manuali, Effects List, note e "About the patch files" \| Still to check |
+| `technical-notes.html` | indice \| testo (da `technical-notes.md`) |
+| `privacy.html` | indice \| testo (caricato da `site/privacy.html`, così le due versioni non divergono) |
+
+- `fullscreen.css` (guscio + pannelli), `fullscreen.js` (`PEDAL.base = '../'` e l'indice dei documenti).
+- Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con tutte le sezioni, barra di stato con attribuzione ZOOM, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
+- `noindex`, niente service worker (`pwa.js` non caricato), nessun link dal sito classico.
+- `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Il sito classico non cambia.
+- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", a 390×700 solo scroll verticale. 31/31 al 2026-10-27.
+- Il laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) resta come archivio del confronto.
 
 ## Laboratorio (`site/_fullscreen/lab.html`)
 
@@ -122,37 +144,39 @@ Sul modello di `site/designs/index.html` (iframe in scala, note e preferito salv
 - [x] Prototipo A · Panels su Effects e Builder (pagine vere, `shell.css` + `a/a.css`).
 - [x] Prototipo B · Pedalboard su Effects e Builder (al posto della paginazione, dopo la decisione sulla regola 1).
 - [ ] (Opzionale) C collegando `site/designs/stage.html`.
-- [ ] Prova sul portatile, sull'iPad e (per confronto) sul telefono; deploy del laboratorio per provarlo da `zoom.tongatron.org/_fullscreen/lab.html`.
-- [ ] Valutazione con i criteri sopra, note nel laboratorio, scelta.
+- [x] Deploy del laboratorio su `zoom.tongatron.org/_fullscreen/lab.html` (2026-10-27).
+- [x] Scelta: A · Panels (2026-10-27).
 
 ### Fase 2 — Guscio comune
 
-- [ ] Barra unica in alto (`.gh-header`): marchio, scelta pedale, sezioni, ricerca, account.
-- [ ] Barra di stato al posto del footer, con `gh-updated` e attribuzione ZOOM.
-- [ ] Componenti `pane` (testata + corpo che scorre), `drawer`, `pager`.
+- [x] Barra unica in alto (`.gh-header`): marchio, sezioni, ricerca, account.
+- [ ] Scelta del pedale (MS-60B+ / MS-50G+) nella barra, quando esisterà la versione MS-50G+.
+- [x] Barra di stato al posto del footer, con `gh-updated` e attribuzione ZOOM.
+- [x] Componenti `fs-pane` / `fs-pane-body` (testata + corpo che scorre) e `fs-toc`; cassetti e paginazione non servono con Panels.
 - [x] Prefisso dei percorsi delle immagini negli script condivisi (`PEDAL.base`); il sito attuale non cambia (e2e 15/15).
-- [ ] Trasformare gli adattatori di `lab-shims.js` della struttura scelta in opzioni di `app.js` / `builder.js`.
-- [ ] `noindex`, link "Classic view", `?v=` nuovi, pagine aggiunte a `tools/stamp-update.mjs`.
+- [x] L'unico adattatore che serviva a Panels (dettaglio docked) è ora un'opzione di `app.js` (`data-docked`); il builder non ne ha bisogno.
+- [x] `noindex`, link "Classic view", `?v=` nuovi, pagine aggiunte a `tools/stamp-update.mjs`.
 
 ### Fase 3 — Pagine MS-60B+ (una per volta, ognuna con il suo controllo a tutti i viewport)
 
-- [ ] Effects: filtri | lista | dettaglio fisso (il dialog resta per il telefono).
-- [ ] Patch builder: catena a 6 slot, parametri, Advice, colonna patch/My patches; dialog (picker, compare, rule pack editor) alti al massimo quanto la finestra.
-- [ ] Pedal manager: due pannelli, Backups e MIDI log in cassetto; avviso "not connected" sempre visibile.
-- [ ] Tone ideas: elenco | dettaglio.
-- [ ] Resources: card in griglia, "Still to check" in pannello.
-- [ ] Technical notes: indice | testo.
-- [ ] Privacy: sezioni in colonne o indice | testo.
+- [x] Effects: filtri | lista | dettaglio fisso.
+- [x] Patch builder: catena | Advice | patch e My patches; dialog alti al massimo quanto la finestra.
+- [x] Pedal manager: My patches | On the pedal | connessione, Backups e MIDI log (pannelli invece di cassetti).
+- [x] Tone ideas: By style | By bassist.
+- [x] Resources: manuali e note | "Still to check".
+- [x] Technical notes: indice | testo.
+- [x] Privacy: indice | testo, caricato dalla pagina classica.
 
 ### Fase 4 — Schermi piccoli
 
-- [ ] Tablet (1024×700 e 768×1000): colonne ridotte, target al tocco 44 px.
+- [x] Tablet in orizzontale (1024×700): colonne ridotte, controllato dal test.
+- [ ] Tablet in verticale (768×1000) e target al tocco 44 px: da provare su un iPad vero.
 - [ ] Telefono: un pannello per volta, barra di schede in basso.
-- [ ] Ripiego allo scroll sotto la soglia.
+- [x] Ripiego allo scroll sotto 760 × 560 px (il test controlla che non ci sia scroll laterale).
 
 ### Fase 5 — Test
 
-- [ ] `tools/fullscreen-test.mjs` (Playwright, come `tools/e2e-test.mjs`): per ogni pagina × viewport, `scrollHeight ≤ innerHeight`, `scrollWidth ≤ innerWidth`, comandi chiave dentro la finestra, dialog che entrano.
+- [x] `tools/fullscreen-test.mjs` (Playwright): ogni pagina × viewport senza tagli, comandi chiave e aree di lavoro visibili, builder con 6 effetti, dettaglio docked (31/31).
 - [ ] `tools/e2e-test.mjs` con una base configurabile per farlo girare anche su `/_fullscreen/` (gli id sono gli stessi).
 - [ ] Tastiera e lettore di schermo: pannelli raggiungibili e scorribili, focus visibile, `prefers-reduced-motion`.
 

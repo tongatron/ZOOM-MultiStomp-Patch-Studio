@@ -114,6 +114,7 @@ function renderList() {
       </div>
     </a></li>`;
   }).join('');
+  if (docked) markCurrent();
 }
 
 function render() { renderFilters(); renderList(); }
@@ -142,6 +143,9 @@ function placementTips(effect) {
 
 // Effect detail
 const dialog = $('#fx-dialog');
+// A docked detail (data-docked, on the full-screen pages) is a pane next to the list: it opens without a backdrop,
+// stays open and shows the first effect when the address names none
+const docked = dialog.hasAttribute('data-docked');
 let current = null;
 
 function openEffect(effect) {
@@ -194,17 +198,27 @@ function openEffect(effect) {
       <a class="btn btn-sm" href="${MANUAL_URL}" target="_blank" rel="noreferrer">${icon(ICON_LINK)} Using it on the pedal</a>
     </div>`;
   $('#dialog-body').scrollTop = 0;
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) docked ? dialog.show() : dialog.showModal();
   if (location.hash !== `#${effect.slug}`) history.replaceState(null, '', `#${effect.slug}`);
+  if (docked) markCurrent();
 }
 
-const closeEffect = () => { if (dialog.open) dialog.close(); };
+// Docked detail: the effect it shows is marked in the list
+function markCurrent() {
+  document.querySelectorAll('.fx-link').forEach(link => {
+    const here = link.dataset.slug === current?.slug;
+    link.toggleAttribute('aria-current', here);
+    if (here) link.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+const closeEffect = () => { if (dialog.open && !docked) dialog.close(); };
 dialog.addEventListener('close', () => {
   current = null;
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 });
 dialog.addEventListener('click', event => {
-  if (event.target === dialog) { closeEffect(); return; }
+  if (event.target === dialog && !docked) { closeEffect(); return; }
   if (event.target.closest('[data-advice-off]') && current) { setAdviceEnabled(false); openEffect(current); }
   if (event.target.closest('[data-advice-on]') && current) { setAdviceEnabled(true); openEffect(current); }
 });
@@ -263,12 +277,13 @@ document.querySelectorAll('button[data-view]').forEach(button => button.addEvent
 }));
 
 document.addEventListener('keydown', event => {
-  if (dialog.open) {
+  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+  // A docked detail leaves the arrows to the field being typed in, and the search keys keep working
+  if (dialog.open && !(docked && typing)) {
     if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
     if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
-    return;
+    if (!docked) return;
   }
-  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
   if (event.key === '/' && !typing) { event.preventDefault(); search.focus(); search.select(); }
   if (event.key === 'Escape' && document.activeElement === search && search.value) { search.value = ''; state.query = ''; render(); }
 });
@@ -276,7 +291,9 @@ document.addEventListener('keydown', event => {
 function openFromHash() {
   const slug = decodeURIComponent(location.hash.slice(1));
   const effect = effects.find(item => item.slug === slug);
-  if (effect) openEffect(effect); else closeEffect();
+  if (effect) openEffect(effect);
+  else if (docked && state.visible.length) openEffect(state.visible[0]);
+  else closeEffect();
 }
 window.addEventListener('hashchange', openFromHash);
 
