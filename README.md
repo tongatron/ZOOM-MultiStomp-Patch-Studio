@@ -26,7 +26,7 @@ ZOOM MultiStomp pedals pack a lot into a tiny screen: around a hundred effects, 
 - **Get advice, not just a form.** Rules flag a bad effect order, hot levels or a heavy chain, and explain what to change and why, with cited sources (full set on the MS-60B+, objective checks on the MS-50G+).
 - **Tailored to your rig.** Say whether the pedal feeds an amp or a mixer, and the tips adapt (MS-60B+).
 - **Straight to the pedal.** Export a `.zptc` file and import it into Handy Guitar Lab, no manual re-typing of parameters.
-- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, share a patch with a link, back up and restore, or sync them between your devices with a private code. Each pedal keeps its own library. Write your own advice rules in a form and share them as `.json` rule packs.
+- **Keep your work.** Save patches in the browser, compare two versions, undo and redo, share a patch with a link, back up and restore, or sign in to keep them in a free account on every device (without an account they stay in the browser). Each pedal keeps its own library. Write your own advice rules in a form and share them as `.json` rule packs.
 - **Tone ideas.** Starting chains by style and by bassist, with a focus on alternative rock (grunge, post-punk, indie, alt-metal, fuzz rock: Krist Novoselic, Peter Hook, Kim Deal, Justin Chancellor, Mike Kerr, Chris Wolstenholme). Every gear fact cites its source; one click opens the chain in the builder (MS-60B+).
 - **Anywhere.** Installable as an offline PWA, works on phone, tablet and desktop.
 
@@ -61,7 +61,7 @@ What still needs checking is listed in [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md
 | **Patch builder** | Up to 6 effects, drag to reorder, every parameter editable, live DSP meter, undo and redo. |
 | **Advice engine** | Order, level and DSP checks plus placement tips. Order rules are warnings or tips, never errors. Every rule cites its sources. |
 | **`.zptc` export / import** | Reverse-engineered format; every sample file round-trips byte for byte. |
-| **My patches** | Local library per pedal, comparison view, share links, backup and import, sync between devices. |
+| **My patches** | Library per pedal, comparison view, share links, backup and import; kept in your account when signed in. |
 | **Pedal manager** (experimental) | Over USB in Chrome: lists the pedal's 100 memories next to My patches, opens them in the builder, sends patches to a chosen memory with backup and read-back check (MS-60B+). |
 
 ## Under the hood: reverse-engineering `.zptc`
@@ -107,11 +107,11 @@ Effect IDs and DSP load figures come from the open-source [zoom-zt2](https://git
 site/            The static site (HTML, CSS, vanilla JS). No build step. MS-60B+ data and the shared scripts.
 site/ms-50g/     MS-50G+ pages and data (effects, firmware table, advice rules, effect images).
 site/landing/    Landing page for both pedals.
-tools/           .zptc codec CLI, Effects List extractor, advice/sync/browser tests, source-link checker.
+tools/           .zptc codec CLI, Effects List extractor, advice/sync/account/browser tests, source-link checker.
 patches/         Sample .zptc patches for the codec round-trip test, plus generated test patches.
 docs/            Notes on the .zptc format and the open work list.
 documentazione/  Official ZOOM documents used as the source of the data (MS-50G+ in ms-50gplus/).
-deploy/          Node server (static files + sync API) and its systemd unit.
+deploy/          Node server (static files, accounts, account sync, admin console), set-up scripts, backup, systemd unit.
 ```
 
 ## Run it locally
@@ -120,8 +120,9 @@ deploy/          Node server (static files + sync API) and its systemd unit.
 node deploy/server.mjs
 ```
 
-Then open <http://localhost:8097>. The Node server also runs the Sync API; a plain static server
-(`python3 -m http.server 8766 --directory site`) works too, without Sync.
+Then open <http://localhost:8097>. The Node server (Node 22 or newer, for its built-in SQLite) also runs the
+accounts, with the database in `sync-data/studio.db`; emails are not sent unless configured (`MAIL_OUTBOX=dir` writes
+them to files). A plain static server (`python3 -m http.server 8766 --directory site`) works too, without accounts.
 
 ## Checks
 
@@ -135,10 +136,13 @@ ZPTC_PEDAL=ms-50g node tools/zptc.mjs decode file.zptc
 # advice rules and starter chains (both pedals)
 node tools/advice-test.mjs
 
-# patch sync: merge rules and server API
+# patch sync: merge rules and the account sync API
 node tools/sync-test.mjs
 
-# the builder in a real browser: build, save, share, compare, download, sync
+# accounts: sign-up, sign-in, reset, cookies, CSRF, rate limits, account page, admin console, backup
+node tools/auth-test.mjs
+
+# the builder in a real browser: build, save, share, compare, download, accounts
 npm install && npx playwright install chromium && node tools/e2e-test.mjs
 # (or use your installed Chrome: PW_CHANNEL=chrome node tools/e2e-test.mjs)
 
@@ -149,8 +153,9 @@ node tools/check-sources.mjs
 python3 tools/extract-effects-list.py documentazione/ms-50gplus/E_MS-50Gplus_EffectsList.pdf > effects.json
 ```
 
-On the server, `deploy/backup-sync-data.sh` runs every day at 03:30 from the user crontab and keeps 30 days of
-the sync data in `/srv/apps/zoom-ms60b-backups`.
+On the server, `deploy/backup-data.sh` runs every day at 03:30 from the user crontab: it copies the accounts
+database while the server runs and keeps 30 days of archives in `/srv/apps/zoom-ms60b-backups`.
+What is stored and why: [`site/privacy.html`](site/privacy.html).
 
 ## Notes
 

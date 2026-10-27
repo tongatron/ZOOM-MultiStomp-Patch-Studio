@@ -272,3 +272,22 @@ rsync -a --exclude '.DS_Store' site/ hp-ubuntu:/srv/apps/zoom-ms60b/
 ## 10. Domande aperte
 
 Nessuna: tutte le domande hanno una risposta (vedi "Decisioni prese" in cima). Il piano è pronto per la fase 1.
+
+## 11. Stato (2026-10-27)
+
+Fasi 1–5 implementate e testate (`auth-test` 18, `sync-test` 11, e2e 15, `advice-test`), commit su `main`, **non ancora in produzione**.
+
+Checklist del primo deploy su `hp-ubuntu`:
+
+1. Backup manuale: `tar -czf ~/zoom-before-accounts.tar.gz -C /srv/apps zoom-ms60b-data zoom-ms60b-app`.
+2. In locale: tutti i test, `node tools/stamp-update.mjs`, commit, push.
+3. File del server: `rsync -a deploy/*.mjs deploy/backup-data.sh hp-ubuntu:/srv/apps/zoom-ms60b-app/`.
+4. Sito: `rsync -a --exclude '.DS_Store' site/ hp-ubuntu:/srv/apps/zoom-ms60b/` (prima del riavvio: `server.mjs` carica `library-merge.js` dalla web root).
+5. Segreti, in `/srv/apps/zoom-ms60b-app/` (permessi 600):
+   - `.env` con `SITE_URL=https://zoom.tongatron.org`, `SESSION_SECRET=` (da `openssl rand -hex 32`), `MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json`, `TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json`;
+   - `node set-mail.mjs` (casella Gmail e password per le app di PatternMachine), poi `node set-mail.mjs --test <email>`;
+   - `node set-telegram.mjs` (bot e chat di PatternMachine), poi `node set-telegram.mjs --test`.
+6. Unità systemd aggiornata (`deploy/zoom-ms60b.service`: `EnvironmentFile`, `--disable-warning`), `sudo systemctl daemon-reload && sudo systemctl restart zoom-ms60b`.
+7. Admin: `cd /srv/apps/zoom-ms60b-app && DATA_DIR=/srv/apps/zoom-ms60b-data node --disable-warning=ExperimentalWarning add-user.mjs --email <la tua email> --name Giovanni --admin`.
+8. Crontab: sostituire `backup-sync-data.sh` con `backup-data.sh` nella riga delle 03:30; lanciarlo una volta a mano; cancellare il vecchio `backup-sync-data.sh` dal server.
+9. Controlli: registrazione di prova, mail ricevuta, notifica Telegram, `/admin`, "Send me a test email", ultimo backup visibile nella console.

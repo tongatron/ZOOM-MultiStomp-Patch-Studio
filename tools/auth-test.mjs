@@ -2,11 +2,12 @@
 // Run: node tools/auth-test.mjs  (emails and Telegram notices go to temporary outbox folders)
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { connect, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { hashPassword, hashToken, makeSession, newToken, newUserId } from '../deploy/auth.mjs';
 import { openDb } from '../deploy/db.mjs';
 import { buildMessage, smtpSend } from '../deploy/mail.mjs';
@@ -318,6 +319,26 @@ try {
     const store = openDb(join(dataDir, 'studio.db'));
     assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM patches WHERE id = ?').get('p1').n, 0, 'its patches are gone too');
     store.close();
+  });
+
+  await test('the daily backup copies the live database into a private archive', async () => {
+    const backupDir = join(dataDir, 'backups');
+    const run = promisify(execFile);
+    const { stdout } = await run('sh', [deploy('backup-data.sh')], { env: { ...process.env, APP_DIR: fileURLToPath(new URL('../deploy', import.meta.url)), DATA_DIR: dataDir, BACKUP_DIR: backupDir, NODE: process.execPath } });
+    assert.match(stdout, /backup written to .*data-\d{4}-\d{2}-\d{2}\.tar\.gz/);
+    const [archive] = await readdir(backupDir);
+    assert.equal((await stat(join(backupDir, archive))).mode & 0o077, 0, 'only the owner can read it');
+    const restored = join(dataDir, 'restored');
+    await mkdir(restored);
+    await run('tar', ['-xzf', join(backupDir, archive), '-C', restored]);
+    const live = openDb(join(dataDir, 'studio.db'));
+    const copy = openDb(join(restored, 'studio.db'));
+    const count = store => store.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+    assert.ok(count(copy) > 5);
+    assert.equal(count(copy), count(live));
+    live.close();
+    copy.close();
+    await assert.rejects(run('sh', [deploy('backup-data.sh')], { env: { ...process.env, APP_DIR: fileURLToPath(new URL('../deploy', import.meta.url)), DATA_DIR: join(dataDir, 'nothing'), BACKUP_DIR: backupDir, NODE: process.execPath } }), 'no database: the script fails');
   });
 
   await test('the static site works next to the accounts; the old sync codes answer 410', async () => {

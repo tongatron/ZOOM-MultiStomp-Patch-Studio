@@ -79,7 +79,8 @@ export const registerPage = ({ error = '', email = '', name = '', next = '/', mi
   <input type="hidden" name="next" value="${esc(next)}">
   <button class="btn btn-primary" type="submit">Create account</button>
 </form>
-<div class="auth-alt">Already have an account? <a href="/login${esc(nextQuery(next))}">Sign in</a></div>
+<div class="auth-alt">Already have an account? <a href="/login${esc(nextQuery(next))}">Sign in</a>
+  <p>What an account stores and how to delete it: <a href="/privacy.html">Privacy</a></p></div>
 ${later(next)}`);
 
 export const forgotPage = ({ error = '', done = false, email = '' } = {}) => page('Reset your password', done
@@ -153,4 +154,4 @@ export const accountPage = ({ user, counts = {}, done = '', error = '', minPassw
   <input id="delete-password" name="password" type="password" autocomplete="current-password" required>
   <button class="btn btn-danger" type="submit">Delete my account</button>
 </form>
-<div class="auth-alt"><a href="/">Back to the site</a></div>`);
+<div class="auth-alt"><a href="/">Back to the site</a> · <a href="/privacy.html">Privacy</a></div>`);
