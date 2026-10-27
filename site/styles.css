@@ -359,14 +359,10 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 .gh-spacer { flex: 1; }
 .repo-head--tabs { padding-bottom: 0; }
 .repo-head--tabs .repo-stats { margin-bottom: 16px; }
-.gh-footer .tt-badge { display: inline-flex; align-items: center; gap: 12px; padding: 9px 15px; border-radius: 8px; background: #000; color: #fff; font-size: 18px; transition: transform .2s, box-shadow .2s; }
-.gh-footer .tt-badge:hover { text-decoration: none; transform: translateY(-2px) scale(1.04); box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(0, 0, 0, .5); }
 .gh-footer .gh-data { max-width: 260px; padding: 8px 10px; border: 1px solid var(--border-muted); border-radius: 6px; font-size: 11px; line-height: 1.4; }
 .gh-footer { align-items: flex-start; }
 .gh-footer-right { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 370px; margin-left: auto; }
 .gh-footer .gh-data--note { max-width: none; text-align: left; }
-.tt-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-.tt-cursor { color: var(--accent); }
 .repo-desc code, .gh-footer code, .import-help code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
 .UnderlineNav { display: flex; gap: 8px; margin-top: 4px; overflow-x: auto; scrollbar-width: none; }
 .UnderlineNav-item {
@@ -666,11 +662,15 @@ body.is-dropping .drop-overlay { display: grid; }
 .advice-output-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); margin-right: 2px; }
 
 .cmp-head .btn { align-self: flex-start; margin-top: 6px; }
-.gh-footer-left { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
-.gh-footer .tt-dot { margin: 0 3px; }
-.gh-footer .gh-repo { display: inline-flex; align-items: center; gap: 12px; padding: 7px 15px; border-radius: 8px; background: #000; color: #fff; font-size: 15px; transition: transform .2s, box-shadow .2s; }
-.gh-footer .gh-repo svg { width: 20px; height: 20px; flex-shrink: 0; }
-.gh-footer .gh-repo:hover { color: #fff; text-decoration: none; transform: translateY(-2px) scale(1.04); box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(0, 0, 0, .5); }
+.gh-footer-left { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+/* tongatron.org badge, variant A2 of https://tongatron.org/pulsanti/ (outline, accent dot), with its hover effect */
+.site-badge { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; transition: transform .2s ease-out, opacity .2s ease-out; }
+.site-badge:hover { text-decoration: none; transform: scale(1.08); opacity: .95; }
+.site-badge .mark { flex-shrink: 0; display: inline-flex; }
+.site-badge .mark-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+.site-badge.A2 { border: 1px solid var(--accent); padding: 6px 10px; border-radius: 6px; }
+.gh-footer .gh-repo { gap: 8px; }
+.gh-footer .gh-repo svg { flex-shrink: 0; }
 
 /* Sync dialog */
 
