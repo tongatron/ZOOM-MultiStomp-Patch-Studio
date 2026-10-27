@@ -22,6 +22,7 @@
   let selected = null; // memory number where a local patch goes
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
   let renaming = null; // memory number whose rename field is open
+  let moving = null; // { n, swap } while the move or swap form of memory n is open
   // "Send to memory N" in the builder opens this page with #send=N: once the pedal is read, the builder's patch goes there
   let pendingSend = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('send')) || null;
   if (pendingSend) history.replaceState(null, '', location.pathname);
@@ -209,9 +210,18 @@
           <button class="btn btn-sm btn-primary" type="submit">Rename on the pedal</button>
           <button class="btn btn-sm btn-invisible" type="button" data-act="rename-cancel">Cancel</button>
         </form>` : ''}
+        ${moving?.n === n ? `<form class="usb-row usb-move" data-move="${n}" data-swap="${moving.swap}">
+          <label>${moving.swap ? 'Swap with memory' : 'Move to memory'} <select class="form-control form-control--sm" name="target" required>
+            ${Array.from({ length: info.count }, (_, i) => i + 1).filter(t => t !== n).map(t => `<option value="${t}">${t} · ${escapeHtml(memoryName(t))}</option>`).join('')}
+          </select></label>
+          <button class="btn btn-sm btn-primary" type="submit">${moving.swap ? 'Swap' : 'Move'}</button>
+          <button class="btn btn-sm btn-invisible" type="button" data-act="move-cancel">Cancel</button>
+        </form>` : ''}
         <div class="usb-row">
           <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}&m=${n}" data-act="edit">Edit in builder</a>
           <button class="btn btn-sm" data-act="rename" ${connected && !busy ? '' : 'disabled'}>Rename</button>
+          <button class="btn btn-sm" data-act="move" ${connected && !busy ? '' : 'disabled'}>Move to…</button>
+          <button class="btn btn-sm" data-act="swap" ${connected && !busy ? '' : 'disabled'}>Swap with…</button>
           <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
           <button class="btn btn-sm" data-act="download">Download .zptc</button>
           <button class="btn btn-sm btn-invisible" data-act="reread">Read again</button>
@@ -245,12 +255,14 @@
     const n = Number(button.closest('[data-n]').dataset.n);
     const m = memories.get(n);
     switch (button.dataset.act) {
-      case 'select': renaming = null; select(n); break;
+      case 'select': renaming = null; moving = null; select(n); break;
       case 'edit': // remember where the patch comes from, so the builder can send it back to this memory
         try { localStorage.setItem(EDIT_KEY, JSON.stringify({ memory: n, name: m.decoded.name, base: toBase64(m.data), at: new Date().toISOString(), pending: true })); } catch {}
         break;
       case 'rename': renaming = n; renderMemory(n); $(`[data-rename="${n}"] input`)?.select(); break;
       case 'rename-cancel': renaming = null; renderMemory(n); break;
+      case 'move': case 'swap': renaming = null; moving = { n, swap: button.dataset.act === 'swap' }; renderMemory(n); $(`[data-move="${n}"] select`)?.focus(); break;
+      case 'move-cancel': moving = null; renderMemory(n); break;
       case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
       case 'clear': send(n, ZPTC.encode({ name: CLEARED_NAME, empty: true, effects: [] }).file, true); break;
       case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
@@ -277,6 +289,15 @@
     return ZPTC.encode({ ...spec, name, shortName: name, empty: !spec.effects.length, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }
   $('#usb-memories').addEventListener('submit', event => {
+    const move = event.target.closest('[data-move]');
+    if (move) {
+      event.preventDefault();
+      const n = Number(move.dataset.move);
+      const target = Number(move.elements.target.value);
+      moving = null;
+      relocate(n, target, move.dataset.swap === 'true');
+      return;
+    }
     const form = event.target.closest('[data-rename]');
     if (!form) return;
     event.preventDefault();
@@ -387,6 +408,50 @@
     note(`Read back memory ${number}: ${ok ? 'identical' : 'DIFFERENT'} (${back.data.length} bytes)`);
     return ok ? { ok: true, text: `Memory ${number} now holds “${back.decoded.name}”: read back and identical.` }
       : { ok: false, text: `Memory ${number} was read back but differs from what was sent. Restore the backup if the patch is wrong.` };
+  }
+
+  const memoryName = n => { const m = memories.get(n); return m?.state === 'ok' ? m.decoded.name || '(no name)' : m?.state === 'empty' ? '(empty)' : m?.state === 'loading' ? 'reading…' : 'unreadable'; };
+
+  // Move (a → b, then a is cleared) or swap (a ↔ b). Both memories are read fresh and backed up first; b is written
+  // before a, so if anything fails the patch of a is still on the pedal (in a, or in b as well).
+  async function relocate(a, b, swap) {
+    if (busy) return;
+    busy = true;
+    renderLocals();
+    try { await relocateNow(a, b, swap); } finally { busy = false; renderLocals(); renderMemory(a); renderMemory(b); }
+  }
+  async function relocateNow(a, b, swap) {
+    result(true, '');
+    await step(`Backing up memories ${a} and ${b}`, async () => { await readOne(a); await readOne(b); });
+    renderMemory(a);
+    renderMemory(b);
+    const A = memories.get(a), B = memories.get(b);
+    const unsafe = [[a, A], [b, B]].find(([, m]) => m.state !== 'ok' || !m.crcOk);
+    if (unsafe) { status(`Memory ${unsafe[0]} could not be read safely, so nothing was written.`, 'danger'); return; }
+    const nameA = A.decoded.name || '(no name)', nameB = B.decoded.name || '(no name)';
+    const at = new Date().toISOString();
+    const stored = writeBackups([
+      { id: `${Date.now()}-${a}`, memory: a, name: nameA, at, data: toBase64(A.memory) },
+      { id: `${Date.now()}-${b}`, memory: b, name: nameB, at, data: toBase64(B.memory) }, ...readBackups()]);
+    renderBackups();
+    status('Waiting for your confirmation');
+    const yes = await confirmWrite((swap
+      ? `<p>Swap <b>memory ${a}</b> (<b>${escapeHtml(nameA)}</b>) and <b>memory ${b}</b> (<b>${escapeHtml(nameB)}</b>)?</p>`
+      : `<p>Move <b>${escapeHtml(nameA)}</b> from <b>memory ${a}</b> to <b>memory ${b}</b>?</p><p>It replaces <b>${escapeHtml(nameB)}</b> in memory ${b}, and memory ${a} is cleared.</p>`)
+      + `<p>${stored ? `Backups of both memories are in Backups on this page.` : 'This browser could not keep the backups: download both memories first if you need them.'}</p>`,
+      swap ? `Swap memories ${a} and ${b}` : `Move to memory ${b}`);
+    if (!yes) { status('Nothing written'); return; }
+    const first = await writeAndCheck(b, A.memory);
+    if (!first.ok) { result(false, `${first.text} Memory ${a} was not changed.`); status('Check the pedal', 'danger'); return; }
+    const second = await writeAndCheck(a, swap ? B.memory : ZPTC.encode({ name: CLEARED_NAME, empty: true, effects: [] }).file);
+    if (!second.ok) {
+      result(false, `Memory ${b} now holds “${nameA}”, but memory ${a} could not be ${swap ? 'written' : 'cleared'}: ${second.text}${swap ? ` “${nameB}” is in Backups.` : ''}`);
+      status('Check the pedal', 'danger');
+      return;
+    }
+    result(true, swap ? `Memories ${a} and ${b} swapped: both read back and identical.` : `“${nameA}” moved to memory ${b} and memory ${a} cleared: both read back and checked.`);
+    status(swap ? 'Swapped' : 'Moved', 'ok');
+    if (!swap) select(b);
   }
 
   async function send(number, bytes, clearing = false) {
