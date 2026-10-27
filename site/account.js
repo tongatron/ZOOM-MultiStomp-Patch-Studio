@@ -194,7 +194,7 @@ const ACCOUNT = (() => {
     // ---- sign out ----
     function clearBrowser() {
       for (const pedal of PEDALS) {
-        for (const kind of ['library', 'deleted', 'library-aside', 'account-sync', 'pedal-edit', ...KINDS]) localStorage.removeItem(`${pedal}-${kind}`);
+        for (const kind of ['library', 'deleted', 'library-aside', 'account-sync', 'pedal-edit', 'usb-last-read', ...KINDS]) localStorage.removeItem(`${pedal}-${kind}`);
       }
       localStorage.removeItem(OWNER_KEY);
     }

@@ -13,11 +13,16 @@
   const CLEARED_NAME = 'Empty'; // name of a cleared memory: no effects, only the BLANK slot
   const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
   const MAX_BACKUPS = 30;
+  // The memories as last read, so the list stays visible (greyed, read-only) while the pedal is not connected:
+  // { at, count, memories: { n: base64 of the PTCF file | null for an empty memory } }
+  const LAST_READ_KEY = `${PEDAL.id}-usb-last-read`;
+  const PEDAL_HINT = 'Select a memory: it is where a patch from the left goes.';
   const lines = [];
   let info = null; // { count, size, bankSize } from the pedal
   let connected = false;
   let reading = 0; // bumps on every full read, so an older read stops
   let busy = false; // a full read or a write is running: one exchange with the pedal at a time
+  let fullRead = false; // readAll() is running: the last-read list is saved once, at the end
   const memories = new Map(); // number → { state: 'loading' | 'ok' | 'empty' | 'error', data, memory, decoded, error }
   let selected = null; // memory number where a local patch goes
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
@@ -162,21 +167,47 @@
       memories.set(number, { state: 'error', error: e.message });
       note(`Memory ${number}: ${e.message}`);
     }
+    if (!fullRead) saveLastRead();
+  }
+  function saveLastRead() {
+    if (!info) return;
+    const saved = readJson(LAST_READ_KEY, null);
+    const list = saved?.count === info.count ? { ...saved.memories } : {};
+    memories.forEach((m, n) => { if (m.state === 'ok') list[n] = toBase64(m.data); else if (m.state === 'empty') list[n] = null; });
+    try { localStorage.setItem(LAST_READ_KEY, JSON.stringify({ at: new Date().toISOString(), count: info.count, memories: list })); } catch {}
+  }
+  // Rows of the last-read list: name and summary of each memory, decoded again from the saved files
+  function lastRead() {
+    const saved = readJson(LAST_READ_KEY, null);
+    if (!saved?.count) return null;
+    const rows = Array.from({ length: saved.count }, (_, i) => {
+      const n = i + 1, data = saved.memories?.[n];
+      if (data === null) return { n, state: 'empty', name: '(empty)', meta: '' };
+      if (!data) return { n, state: 'empty', name: 'Not read', meta: '' };
+      try {
+        const d = ZPTC.decode(fromBase64(data));
+        return { n, state: 'ok', name: d.name || '(no name)', meta: `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%` };
+      } catch { return { n, state: 'error', name: 'Unreadable', meta: '' }; }
+    });
+    return { at: saved.at, rows };
   }
   async function readAll() {
     const run = ++reading;
     busy = true;
+    fullRead = true;
     renderLocals();
     memories.clear();
     for (let n = 1; n <= info.count; n++) memories.set(n, { state: 'loading' });
     renderMemories();
     for (let n = 1; n <= info.count; n++) {
-      if (run !== reading || !connected) { busy = false; return; }
+      if (run !== reading || !connected) { busy = false; fullRead = false; return; }
       status(`Reading memory ${n} of ${info.count}…`);
       await readOne(n);
       renderMemory(n);
     }
     busy = false;
+    fullRead = false;
+    saveLastRead();
     renderLocals();
     const failed = [...memories.values()].filter(m => m.state === 'error').length;
     status(failed ? `Connected: ${failed} of ${info.count} memories with errors (see the MIDI log)` : 'Connected', failed ? 'danger' : 'ok');
@@ -232,6 +263,20 @@
     </li>`;
   }
   function renderMemories() {
+    const hint = $('#usb-pedal-hint');
+    const last = !connected && lastRead();
+    hint.textContent = PEDAL_HINT;
+    delete hint.dataset.kind;
+    if (last) {
+      const when = new Date(last.at).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      hint.textContent = `Not connected: the patches as last read on ${when}. They may have changed on the pedal since; connect it to work on them.`;
+      hint.dataset.kind = 'stale';
+      $('#usb-pedal-count').textContent = last.rows.length;
+      $('#usb-memories').innerHTML = last.rows.map(r => `<li class="usb-mem is-stale" data-state="${r.state}">
+        <div class="usb-mem-main" aria-disabled="true"><span class="usb-num">${r.n}</span><span class="usb-name">${escapeHtml(r.name)}</span><span class="usb-meta">${escapeHtml(r.meta)}</span></div>
+      </li>`).join('');
+      return;
+    }
     const count = info?.count ?? 0;
     $('#usb-pedal-count').textContent = count;
     $('#usb-memories').innerHTML = !connected ? '<li class="usb-empty">Connect the pedal to see its patch memories.</li>'
