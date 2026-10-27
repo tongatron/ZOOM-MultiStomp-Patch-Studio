@@ -59,16 +59,6 @@ function matches(effect, { ignoreCategory = false } = {}) {
   return !state.query || effect.haystack.includes(state.query);
 }
 
-function renderStats() {
-  const params = effects.reduce((sum, effect) => sum + effect.params.length, 0);
-  const models = effects.filter(effect => effect.model && effect.model !== 'ZOOM original').length;
-  const dsps = effects.filter(effect => !effect.extra).map(effect => effect.dsp);
-  $('#repo-stats').innerHTML = [
-    [effects.length, 'effects'], [Object.keys(CATEGORIES).length, 'categories'], [params, 'documented parameters'], [models, 'modeled on real hardware'],
-    [`${dspText(Math.min(...dsps))} – ${dspText(Math.max(...dsps))}`, 'DSP load per effect']
-  ].map(([n, label]) => `<li><strong>${n}</strong> ${label}</li>`).join('');
-}
-
 function renderFilters() {
   const base = effects.filter(effect => matches(effect, { ignoreCategory: true }));
   const categories = [[null, 'All', null, base.length], ...Object.entries(CATEGORIES).map(([key, { label, color }]) => [key, label, color, base.filter(effect => effect.category === key).length])];
@@ -290,7 +280,6 @@ function openFromHash() {
 }
 window.addEventListener('hashchange', openFromHash);
 
-renderStats();
 syncViewButtons();
 render();
 openFromHash();

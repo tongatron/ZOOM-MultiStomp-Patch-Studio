@@ -126,9 +126,7 @@ svg { flex: none; }
 .repo-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .repo-title h1 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.4; }
 .repo-desc { margin: 8px 0 12px; max-width: 720px; color: var(--fg-muted); }
-.repo-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; color: var(--fg-muted); font-size: 12px; }
-.repo-stats li { display: inline-flex; align-items: center; gap: 6px; }
-.repo-stats strong { color: var(--fg); font-weight: 600; }
+.repo-resources { margin-top: 4px; }
 
 /* Layout */
 .layout { display: grid; grid-template-columns: 1fr; gap: 24px; padding-top: 24px; padding-bottom: 40px; }
@@ -358,7 +356,7 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 /* ---- Tab navigation (UnderlineNav) ---- */
 .gh-spacer { flex: 1; }
 .repo-head--tabs { padding-bottom: 0; }
-.repo-head--tabs .repo-stats { margin-bottom: 16px; }
+.repo-head--tabs .repo-resources { margin-bottom: 16px; }
 .gh-footer .gh-data { max-width: 260px; padding: 8px 10px; border: 1px solid var(--border-muted); border-radius: 6px; font-size: 11px; line-height: 1.4; }
 .gh-footer { align-items: flex-start; }
 .gh-footer-right { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 370px; margin-left: auto; }
