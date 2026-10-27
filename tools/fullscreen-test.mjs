@@ -149,13 +149,18 @@ try {
   await test('the Pedal menu comes first, lists the two Zoom pedals and closes', async () => {
     await open('builder.html', SIZES[1]);
     assert.equal((await page.locator('.fs-nav > *').first().getAttribute('class')), 'fs-menu', 'the menu is the first item of the bar');
-    assert.match(await page.locator('.fs-menu-button').textContent(), /^\s*Pedal/);
+    // the button shows the selected pedal and an arrow, not a generic word
+    assert.equal(await page.locator('.fs-menu-current').textContent(), 'MS-60B+ bass');
+    assert.equal(await page.locator('.fs-menu-button svg').count(), 1, 'the arrow');
+    assert.match(await page.locator('.fs-menu-button').getAttribute('title'), /Change pedal/);
+    assert.equal(await page.locator('.fs-menu-button .sr-only').textContent(), 'Pedal: ', 'a screen reader still hears that it is the pedal');
+    assert.equal(await page.locator('.fs-badge').textContent(), 'Full screen', 'the badge does not repeat the pedal');
     assert.equal(await page.locator('.fs-menu-list').isHidden(), true);
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
     assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
-    assert.match(await page.locator('.fs-menu-list a[aria-current]').textContent(), /MS-60B\+/);
+    assert.equal((await page.locator('.fs-menu-list a[aria-current]').textContent()).trim(), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/"]').count(), 1);
     // the open menu floats over the page: it stays inside the window
     const box = await page.locator('.fs-menu-list').boundingBox();

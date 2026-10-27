@@ -16,7 +16,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 
 /* Pedal menu: a button that opens the list of the two Zoom pedals */
 .fs-menu { position: relative; margin-right: 6px; padding-right: 8px; border-right: 1px solid var(--border-muted); }
-.fs-menu-button { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; }
+/* The button shows the selected pedal; the arrow says it can be changed */
+.fs-menu-button { display: inline-flex; align-items: center; gap: 8px; padding-right: 10px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; }
+.fs-menu-button:hover, .fs-menu-button[aria-expanded="true"] { border-color: #8b949e; }
+.fs-menu-current { font-weight: 600; }
 .fs-menu-button svg { transition: transform .12s; }
 .fs-menu-button[aria-expanded="true"] svg { transform: rotate(180deg); }
 .fs-menu-list { position: absolute; top: calc(100% + 8px); left: 0; z-index: 50; min-width: 260px; margin: 0; padding: 4px; list-style: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(1, 4, 9, .6); }
