@@ -175,7 +175,7 @@ function paramControl(slot, p) {
     const min = isOff ? c.min - 1 : c.min;
     const current = isOff && value === 'OFF' ? min : value;
     control = `<input type="range" class="slider" id="${id}" min="${min}" max="${c.max}" step="${c.step}" value="${current}" ${isOff ? 'data-off="1"' : ''} />`;
-    shown = isOff && value === 'OFF' ? 'OFF' : c.step < 1 ? Number(value).toFixed(1) : value;
+    shown = isOff && value === 'OFF' ? 'OFF' : c.label ? c.label(value) : c.step < 1 ? Number(value).toFixed(1) : value;
   }
   const badge = !c ? '<span class="Label Label--attention" title="Format not decoded yet: enter the stored value">raw</span>'
     : !c.verified ? '<span class="Label Label--attention" title="Encoding inferred by analogy: check the value on the pedal">unverified</span>' : '';
@@ -370,7 +370,7 @@ $('#chain-list').addEventListener('input', event => {
   else if (input.type === 'range') {
     value = Number(value);
     if (input.dataset.off && value < p.codec.min) { value = 'OFF'; shown = 'OFF'; }
-    else shown = p.codec.step < 1 ? value.toFixed(1) : value;
+    else shown = p.codec.label ? p.codec.label(value) : p.codec.step < 1 ? value.toFixed(1) : value;
   }
   slot.values[name] = value;
   card.querySelector('.param-val').textContent = shown;

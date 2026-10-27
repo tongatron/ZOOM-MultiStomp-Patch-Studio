@@ -31,12 +31,34 @@ const ZPTC = (() => {
   const HIDDEN_DEFAULTS = { 'BASS AMP': { 8: 2 } };
   // Decimal ranges whose encoding was confirmed by importing generated patches into Handy Guitar Lab.
   const VERIFIED_DECIMAL = new Set(['-12.0 – 12.0', '-20.0 – 20.0']);
+  // Ranges stored as a knob step (0 = minimum) rather than as the value shown. shown: the value Handy Guitar Lab
+  // shows at the steps read so far; the steps in between are not known yet, so the codec stays unverified.
+  // MID-FREQ "32 Hz – 6.3 kHz": 32 steps, read on the AMPG SVT (patches/mid-freq/); the other amps with the same
+  // range (SMR400, B-MAN100, AC 370) are assumed to use the same steps. Step 13 (220 Hz) is the default.
+  const STEP_TABLES = {
+    '32 Hz – 6.3 kHz': {
+      steps: 32, fallback: 13,
+      shown: { 0: '32 Hz', 1: '40 Hz', 6: '100 Hz', 13: '220 Hz', 19: '500 Hz', 22: '1.0 kHz', 27: '3.0 kHz', 30: '4.5 kHz', 31: '6.3 kHz' }
+    }
+  };
 
   // ---- displayed value ⇄ stored value -----------------------------------------------------------
   // verified: rule confirmed on exports; otherwise inferred by analogy (check on the pedal).
   // Returns null when the format is not decoded yet: the raw value is needed.
   function codec(range, pname = '') {
     const r = range.replace(/\s+/g, ' ').trim();
+    const table = STEP_TABLES[r];
+    if (table) {
+      const max = table.steps - 1;
+      const known = Object.keys(table.shown).map(Number);
+      return {
+        kind: 'number', min: 0, max, step: 1, verified: false, fallback: table.fallback,
+        encode: v => { const n = Number(v); if (!(Number.isInteger(n) && n >= 0 && n <= max)) throw new Error(`${pname} ${v} is not a step 0–${max}`); return n; },
+        decode: s => s,
+        // The value shown by the pedal at a step, or the known values on either side
+        label: s => table.shown[s] ?? `step ${s} (${table.shown[Math.max(...known.filter(k => k < s))]} – ${table.shown[Math.min(...known.filter(k => k > s))]})`
+      };
+    }
     const num = r.match(/^(-?\d+(?:\.\d+)?) – (-?\d+(?:\.\d+)?)$/);
     if (num) {
       const [min, max] = [parseFloat(num[1]), parseFloat(num[2])];

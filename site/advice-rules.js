@@ -510,7 +510,7 @@
       ] }
     },
     // ---- alternative rock: each profile follows a documented bassist rig (see tone-ideas.js for the players) ----
-    // MID-FREQ of the amps is not decoded yet: raw 13 is the value stored in the exported AMPG SVT patches in patches/.
+    // MID-FREQ of the amps is a knob step: 13 is 220 Hz, the default of the AMPG SVT (see STEP_TABLES in zptc.js).
     {
       id: 'grunge', name: 'Grunge', summary: 'Distortion in the style of a ProCo RAT into an Ampeg SVT, with some clean bass kept under the dirt. After Krist Novoselic (Nirvana).',
       sources: ['novoselicGear', 'bassMusician'],

@@ -112,6 +112,7 @@ TONE starts at bit 54, which is bit 6 of byte 6 of the block (offset `0x62`): go
 | `-12.0 – 12.0`, `-20.0 – 20.0` | 0.5 steps: `(value − min) / 0.5` | EQ +1.5 dB → 27 | verified |
 | `±15.0`, `±10.0` | same rule, by analogy | — | unverified |
 | `OFF, 1 – 6`, `OFF – 100` | OFF = 0, then `n − min + 1` | — | unverified |
+| amp MID-FREQ `32 Hz – 6.3 kHz` | knob step 0–31 (32 steps) | 220 Hz → 13 | 9 of 32 steps read |
 | continuous frequencies, Q | unknown | — | raw value |
 
 The builder marks the unverified parameters.
