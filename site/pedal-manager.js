@@ -13,6 +13,9 @@
   const CLEARED_NAME = 'Empty'; // name of a cleared memory: no effects, only the BLANK slot
   const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
   const MAX_BACKUPS = 30;
+  // The pedal stores no dates: this browser notes when it sees a memory change (a write from here, or an edit made on
+  // the pedal, noticed at the next read). { [memory]: { hash, seen: first read, changed: last change noticed } }
+  const DATES_KEY = `${PEDAL.id}-pedal-dates`;
   const lines = [];
   let info = null; // { count, size, bankSize } from the pedal
   let connected = false;
@@ -55,6 +58,20 @@
   const ptcfOf = bytes => bytes.slice(0, Math.min(bytes.length, new DataView(bytes.buffer, bytes.byteOffset).getUint32(4, true) || bytes.length));
   const sameBytes = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
   const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+  const hashOf = bytes => { let h = 0x811c9dc5; for (const b of bytes) h = Math.imul(h ^ b, 0x01000193); return (h >>> 0).toString(16); }; // FNV-1a
+  function noteContent(number, bytes) {
+    const dates = readJson(DATES_KEY, {});
+    const hash = bytes ? hashOf(bytes) : 'empty';
+    const now = new Date().toISOString();
+    const old = dates[number];
+    if (old?.hash === hash) return;
+    dates[number] = old ? { hash, seen: old.seen, changed: now } : { hash, seen: now, changed: null };
+    try { localStorage.setItem(DATES_KEY, JSON.stringify(dates)); } catch {}
+  }
+  function dateText(number) {
+    const d = readJson(DATES_KEY, {})[number];
+    return !d ? '' : d.changed ? `Changed ${when(d.changed)}` : `Unchanged since ${when(d.seen)}`;
+  }
   const when = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const fileName = text => text.replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'PATCH';
   const download = (bytes, name) => {
@@ -152,10 +169,11 @@
     memories.set(number, { state: 'loading' });
     try {
       const r = await PEDALMIDI.readMemory(number, info);
-      if (!r) { memories.set(number, { state: 'empty' }); return; }
+      if (!r) { memories.set(number, { state: 'empty' }); noteContent(number, null); return; }
       let decoded = null, error = null;
       try { decoded = ZPTC.decode(r.data); } catch (e) { error = e.message; }
       memories.set(number, { state: decoded ? 'ok' : 'error', data: r.data, memory: r.memory, crcOk: r.crcOk, decoded, error: error || (r.crcOk ? null : 'checksum mismatch') });
+      if (r.crcOk) noteContent(number, r.data);
     } catch (e) {
       memories.set(number, { state: 'error', error: e.message });
       note(`Memory ${number}: ${e.message}`);
@@ -198,9 +216,10 @@
     const isSelected = n === selected;
     const name = m.state === 'ok' ? d.name || '(no name)' : m.state === 'loading' ? 'Reading…' : m.state === 'empty' ? '(empty)' : `Unreadable: ${m.error}`;
     const meta = m.state === 'ok' ? `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%` : '';
+    const date = m.state === 'ok' || m.state === 'empty' ? dateText(n) : '';
     return `<li class="usb-mem${isSelected ? ' is-selected' : ''}" data-n="${n}" data-state="${m.state}">
       <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
-        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>
+        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>${date ? `<span class="usb-date" title="The pedal stores no dates: this is when this browser saw the memory change (a write from here, or an edit on the pedal noticed at the next read)">${escapeHtml(date)}</span>` : ''}
       </button>
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
         ${chainCards(d)}
