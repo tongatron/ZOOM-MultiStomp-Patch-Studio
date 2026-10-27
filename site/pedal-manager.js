@@ -118,6 +118,7 @@
     connected = on;
     $('#usb-connect').hidden = on;
     $('#usb-disconnect').hidden = !on;
+    $('#usb-steps').hidden = on;
     $('#usb-refresh').disabled = !on || !info;
     renderMemories();
     renderLocals();
