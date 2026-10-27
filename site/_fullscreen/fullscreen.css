@@ -97,9 +97,12 @@ dialog.Overlay[data-docked] { position: static; inset: auto; width: auto; max-wi
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
 .fs-builder .side-box { flex: 0 1 auto; padding: 0; gap: 0; }
 .fs-builder .side-box-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
-/* Save and Download sit right under the name and the DSP load; the notices come after them and may scroll */
+/* Save and Download are small buttons right under the name and the DSP load */
+.fs-builder .save-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .fs-builder .save-row, .fs-builder .save-status, .fs-builder .save-extra { order: 1; }
-.fs-builder .notices, .fs-builder .sr-status { order: 2; }
+.fs-builder .sr-status { order: 2; }
+/* The patch alerts ("Check on the pedal: …", missing name, raw values) are the first thing in the Advice pane */
+.fs-builder .advice .notices { padding: 12px 16px 0; }
 /* Each chain item shows its own DSP load: the per-effect legend would push My patches off the screen */
 .fs-builder .dsp-legend { display: none; }
 /* My patches takes the rest of the column and its list scrolls; it never grows past the screen with many patches */

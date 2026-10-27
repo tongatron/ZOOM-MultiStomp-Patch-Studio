@@ -135,6 +135,23 @@ try {
     }
   });
 
+  await test('builder: the patch alerts are in the Advice pane; Save and Download are small', async () => {
+    await open('builder.html', SIZES[1]);
+    await page.evaluate(() => {
+      const fx = catalog.find(f => f.dsp !== null && f.params.some(p => p.codec && !p.codec.verified));
+      state.effects = [slotFor(fx.index)];
+      render();
+    });
+    assert.equal(await page.locator('#advice #notices').count(), 1, 'the alerts list is in Advice');
+    assert.equal(await page.locator('.builder-side #notices').count(), 0, 'and not in the patch box');
+    assert.match(await page.locator('#advice #notices').textContent(), /Check on the pedal:/);
+    assert.equal(await page.locator('#advice #notices .notice').first().isVisible(), true);
+    for (const id of ['#save-patch', '#download']) {
+      const box = await page.locator(id).boundingBox();
+      assert.ok(box.height <= 30, `${id} is ${box.height} px tall`);
+    }
+  });
+
   await test('the status bar links Resources; Tone ideas opens from the builder', async () => {
     await open('index.html', SIZES[1]);
     assert.equal(await page.locator('.fs-nav > a').count(), 3);

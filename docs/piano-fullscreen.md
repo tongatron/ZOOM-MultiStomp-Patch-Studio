@@ -15,7 +15,7 @@ Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 | Pagina | Pannelli |
 |---|---|
 | `index.html` (Effects) | filtri \| lista \| dettaglio fisso (`<dialog data-docked>`, opzione di `app.js`) |
-| `builder.html` | catena \| Advice \| patch (nome, DSP, Save, Download, avvisi) e My patches |
+| `builder.html` | catena \| Advice (con in cima gli avvisi della patch, es. "Check on the pedal") \| patch (nome, DSP, Save e Download piccoli) e My patches |
 | `pedal-manager.html` | My patches \| On the pedal \| connessione, Backups, MIDI log |
 | `tones.html` | filtro in alto; By style \| By bassist |
 | `resources.html` | manuali, Effects List, note e "About the patch files" \| Still to check |
@@ -26,7 +26,7 @@ Sette pagine MS-60B+, servite su `https://zoom.tongatron.org/_fullscreen/`:
 - Testi uguali alle pagine classiche; cambiano solo i contenitori. Barra in alto con il selettore del pedale (mostra il pedale scelto, "MS-60B+ bass", con la freccia; elenca i due pedali Zoom; l'MS-50G+ apre per ora la vista classica), Effects, Patch builder e Pedal manager, la sezione attiva in una pillola blu (Tone ideas si apre dal builder, con un pulsante nella catena); barra di stato con attribuzione ZOOM, Resources, "Classic view", Privacy, GitHub e "Last update" (le pagine sono in `tools/stamp-update.mjs`).
 - `noindex`, niente service worker (`pwa.js` non caricato), nessun link dal sito classico.
 - `app.js`: il dettaglio docked (`data-docked`) si apre senza sfondo, resta aperto, mostra il primo effetto, segna l'effetto nella lista e lascia frecce, `/` ed Esc alla ricerca. Il sito classico non cambia.
-- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 34/34 al 2026-10-27.
+- Test: `node tools/fullscreen-test.mjs` (Playwright): ogni pagina a 1440×820, 1280×680 e 1024×700 senza tagli né comandi fuori schermo, il builder anche con 6 effetti e la barra "Not signed in", il selettore del pedale (primo, mostra il pedale scelto, due pedali nell'elenco, Esc e clic fuori lo chiudono), gli avvisi della patch nel pannello Advice e Save/Download piccoli, con 30 patch salvate l'ultima raggiungibile in My patches (builder e Pedal manager), a 390×700 solo scroll verticale. 35/35 al 2026-10-27.
 - Il laboratorio (`lab.html`, `a/`, `b/`, `shell.css`, `lab-shims.js`) resta come archivio del confronto.
 
 ## Laboratorio (`site/_fullscreen/lab.html`)
