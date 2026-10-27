@@ -910,3 +910,18 @@ body.is-dropping .drop-overlay { display: grid; }
 .markdown-body th, .markdown-body td { padding: 6px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
 .markdown-body th { background: var(--bg-subtle); font-weight: 600; }
 .markdown-body tr:nth-child(even) td { background: rgba(110, 118, 129, .06); }
+
+/* ---- resources: format note and still to check ---- */
+.resource-section { max-width: 760px; margin-top: 16px; }
+.resource-note { margin: 0; padding: 16px; color: var(--fg-muted); font-size: 14px; line-height: 1.5; }
+.resource-note code, .resource-check code { font: 12px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
+.resource-check { padding: 16px; font-size: 14px; line-height: 1.5; }
+.check-list { margin: 0 0 8px; padding-left: 20px; color: var(--fg-muted); }
+.check-list li + li { margin-top: 6px; }
+.check-list b { color: var(--fg); font-weight: 600; }
+.resource-check h3 { display: flex; align-items: center; gap: 8px; margin: 20px 0 4px; font-size: 14px; font-weight: 600; }
+.resource-check .field-hint { margin: 0 0 8px; }
+.check-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.check-table th, .check-table td { padding: 5px 10px; border-top: 1px solid var(--border-muted); text-align: left; vertical-align: top; }
+.check-table th { color: var(--fg-muted); font-weight: 600; }
+.check-table td:nth-child(2), .check-table td:nth-child(3) { font-family: var(--mono); font-size: 12px; }
