@@ -7,7 +7,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ZOOM MultiStomp Patch Studio" />
     <meta property="og:title" content="ZOOM MultiStomp Patch Studio — design patches for the ZOOM MS-60B+ and MS-50G+" />
-    <meta property="og:description" content="Effects library, patch builder with live DSP load, advice and .zptc export for Handy Guitar Lab." />
+    <meta property="og:description" content="Effects library, patch builder with live DSP load, advice, .zptc export for Handy Guitar Lab, a USB pedal manager and a free account for your patches." />
     <meta name="theme-color" content="#0d1117" />
     <title>ZOOM MultiStomp Patch Studio — design patches for the ZOOM MS-60B+ and MS-50G+</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
@@ -69,6 +69,27 @@
       .lp-testers ol b { color: var(--fg); }
       @media (max-width: 767px) { .lp-testers { grid-template-columns: 1fr; padding: 20px; } }
 
+      /* Pedal manager */
+      .lp-split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+      @media (max-width: 767px) { .lp-split { grid-template-columns: 1fr; gap: 20px; } }
+      .lp-split .lp-lead { margin-bottom: 20px; }
+      .lp-checks { margin: 0 0 24px; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14px; color: var(--fg-muted); }
+      .lp-checks li { position: relative; padding-left: 26px; }
+      .lp-checks li::before { content: ""; position: absolute; left: 2px; top: 5px; width: 12px; height: 7px; border-left: 2px solid #3fb950; border-bottom: 2px solid #3fb950; transform: rotate(-45deg); }
+      .lp-checks b { color: var(--fg); font-weight: 600; }
+      .lp-flow { display: grid; gap: 10px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); font-size: 14px; }
+      .lp-flow-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-muted); border-radius: var(--radius); background: var(--bg); }
+      .lp-flow-row b { min-width: 0; flex: 1; }
+      .lp-flow-row span { color: var(--fg-muted); font-size: 12px; white-space: nowrap; }
+      .lp-flow-arrow { justify-self: center; color: var(--fg-muted); font: 600 13px/1 var(--mono); }
+      /* Account */
+      .lp-account { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+      .lp-plan { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); }
+      .lp-plan--account { border-color: rgba(46, 160, 67, .6); background: rgba(46, 160, 67, .07); }
+      .lp-plan h3 { margin: 0; font-size: 18px; }
+      .lp-plan .lp-checks { margin: 0; }
+      .lp-plan--local .lp-checks li::before { border-color: #d29922; border-left-width: 0; border-bottom-width: 0; border-top: 2px solid #d29922; width: 10px; height: 0; transform: none; top: 10px; }
+      .lp-note { margin: 12px 0 0; font-size: 13px; color: var(--fg-muted); }
       /* Links */
       .lp-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
       .lp-links h3 { margin: 0 0 10px; font-size: 13px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .08em; }
@@ -83,17 +104,18 @@
         <span class="gh-brand-name">ZOOM MultiStomp <span>PATCH STUDIO</span></span>
       </a>
       <span class="gh-spacer"></span>
-      <a class="btn btn-sm gh-header-link" href="#pedals">Open the app</a>
+      <a class="btn btn-sm btn-primary gh-header-link" href="#pedals">Open the app</a>
     </header>
 
     <main class="container lp">
       <section class="lp-hero">
         <p class="lp-eyebrow">ZOOM MultiStomp Patch Studio · for the MS-60B+ bass and MS-50G+ guitar</p>
         <h1>Design your patches on a <em>big screen</em>, then send them to the pedal.</h1>
-        <p class="lp-lead">Browse every effect with the original ZOOM text, build a 6-effect chain with a live DSP meter and export a <code>.zptc</code> file that imports into Handy Guitar Lab.</p>
+        <p class="lp-lead">Browse every effect with the original ZOOM text, build a 6-effect chain with a live DSP meter, then export a <code>.zptc</code> file for Handy Guitar Lab or write it to the MS-60B+ over USB. A free account keeps your patches safe on every device.</p>
         <div class="lp-cta">
           <a class="btn btn-primary" href="#pedals">Choose your pedal</a>
-          <a class="btn" href="#how">How it works</a>
+          <a class="btn" href="/register?next=/builder.html">Create a free account</a>
+          <a class="btn btn-invisible" href="#how">How it works</a>
         </div>
       </section>
 
@@ -118,11 +140,12 @@
               <li><strong>11</strong> bass amps</li>
               <li><strong>12</strong> advice styles</li>
             </ul>
-            <p>The full studio: advice on effect order and levels with sources, style profiles, Tone ideas by bassist, sync between devices.</p>
+            <p>The full studio: advice on effect order and levels with sources, style profiles, Tone ideas by bassist, and the Pedal manager to read and write the pedal over USB.</p>
             <div class="lp-cta">
               <a class="btn btn-primary" href="../builder.html">Patch builder</a>
               <a class="btn" href="../">Effects</a>
               <a class="btn" href="../tones.html">Tone ideas</a>
+              <a class="btn" href="../pedal-manager.html">Pedal manager</a>
             </div>
           </article>
 
@@ -154,12 +177,69 @@
       <section id="how" aria-labelledby="how-title">
         <p class="lp-eyebrow">How it works</p>
         <h2 id="how-title">From the browser to the pedal in three steps</h2>
-        <p class="lp-lead">No account and nothing to install. Your patches stay in your browser unless you turn on sync.</p>
+        <p class="lp-lead">Nothing to install and no account needed to start. Sign in when you want your patches kept safe and on every device.</p>
         <ol class="lp-steps">
           <li><h3>Build the chain</h3><p>Pick up to 6 effects, drag them into order and set every parameter with the real ranges.</p></li>
           <li><h3>Check it</h3><p>Watch the DSP load against the 100% limit and read the advice before you leave the desk.</p></li>
-          <li><h3>Send it to the pedal</h3><p>Download the <code>.zptc</code> file, import it in Handy Guitar Lab and copy it to a free memory.</p></li>
+          <li><h3>Send it to the pedal</h3><p>Download the <code>.zptc</code> file for Handy Guitar Lab, or connect the MS-60B+ by USB and write it from the Pedal manager.</p></li>
         </ol>
+      </section>
+
+      <section id="pedal-manager" aria-labelledby="pm-title">
+        <div class="lp-split">
+          <div>
+            <p class="lp-eyebrow">Pedal manager · MS-60B+ · experimental</p>
+            <h2 id="pm-title">Your pedal and your patches, side by side</h2>
+            <p class="lp-lead">Connect the MS-60B+ with a USB cable and see the patches stored on the pedal next to the ones you saved, without Handy Guitar Lab.</p>
+            <ul class="lp-checks">
+              <li><b>Read</b> every memory of the pedal and open a patch in the builder to edit it.</li>
+              <li><b>Write</b> a patch to the memory you choose, or clear one.</li>
+              <li><b>Backup first:</b> before a memory is overwritten its patch is kept, and you can restore it.</li>
+              <li><b>Checked:</b> after writing, the memory is read back to confirm it.</li>
+            </ul>
+            <div class="lp-cta">
+              <a class="btn btn-primary" href="../pedal-manager.html">Open the Pedal manager</a>
+            </div>
+            <p class="lp-note">Works in Chrome or Edge on a computer (Web MIDI). Experimental: the USB protocol is not documented by ZOOM.</p>
+          </div>
+          <div class="lp-flow" aria-hidden="true">
+            <div class="lp-flow-row"><b>My patches</b><span>in your browser or account</span></div>
+            <div class="lp-flow-arrow">↓ write · read ↑</div>
+            <div class="lp-flow-row"><b>MS-60B+ memories</b><span>over USB</span></div>
+            <div class="lp-flow-arrow">↓ before overwriting</div>
+            <div class="lp-flow-row"><b>Backups</b><span>restore any time</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="account" aria-labelledby="account-title">
+        <p class="lp-eyebrow">Free account</p>
+        <h2 id="account-title">Keep your patches safe</h2>
+        <p class="lp-lead">You can use everything without signing in, but then your work lives only in one browser. A free account keeps it on the server and brings it to every device where you sign in.</p>
+        <div class="lp-account">
+          <article class="lp-plan lp-plan--local">
+            <h3>Without an account</h3>
+            <ul class="lp-checks">
+              <li>Patches, settings and pedal backups stay only in this browser.</li>
+              <li>Clearing browsing data or a private window loses them.</li>
+              <li>Another browser, phone or computer won't have them.</li>
+            </ul>
+          </article>
+          <article class="lp-plan lp-plan--account">
+            <h3>With a free account</h3>
+            <ul class="lp-checks">
+              <li>Patches, settings, rule packs and pedal backups for both pedals are saved on the server.</li>
+              <li>The same library on every device where you sign in, synced on its own.</li>
+              <li>The patches already in your browser come with you when you sign up.</li>
+              <li>Download everything or delete your account whenever you want.</li>
+            </ul>
+          </article>
+        </div>
+        <div class="lp-cta">
+          <a class="btn btn-primary" href="/register?next=/builder.html">Create a free account</a>
+          <a class="btn" href="/login?next=/builder.html">Sign in</a>
+        </div>
+        <p class="lp-note">Only your email and a password are needed. No newsletter, no tracking cookies: see <a href="../privacy.html">what is stored</a>.</p>
       </section>
 
       <section aria-labelledby="features-title">
@@ -171,7 +251,9 @@
           <article class="lp-card"><h3>Patch builder</h3><p>Up to 6 effects per patch, reorder by dragging or from the keyboard, undo and redo.</p></article>
           <article class="lp-card"><h3>Live DSP meter</h3><p>The load of each effect and of the whole chain, on the same scale as the Handy Guitar Lab "Processor" meter.</p></article>
           <article class="lp-card"><h3>.zptc export</h3><p>A file that imports into Handy Guitar Lab. On the MS-60B+ it round-trips byte for byte against real exports.</p></article>
-          <article class="lp-card"><h3>My patches</h3><p>Save, compare two versions, back up and restore, share a link, sync between devices with a private code.</p></article>
+          <article class="lp-card"><h3>My patches</h3><p>Save, compare two versions, back up and restore, share a link. Kept in your account when you sign in.</p></article>
+          <article class="lp-card"><h3>Pedal manager <span class="Label">bass · experimental</span></h3><p>Read and write the MS-60B+ memories over USB, with a backup before every write and a read-back check.</p></article>
+          <article class="lp-card"><h3>Free account</h3><p>Your patches, settings and pedal backups on every device, for both pedals. Download or delete them any time.</p></article>
           <article class="lp-card"><h3>Advice engine <span class="Label">full on bass</span></h3><p>Flags effect order, hot levels and heavy chains, and explains why with sources. The guitar version has the objective checks only.</p></article>
           <article class="lp-card"><h3>Style profiles <span class="Label">bass</span></h3><p>Starter chains and advice tuned per playing style, adapted to a bass amp or a mixer.</p></article>
           <article class="lp-card"><h3>Tone ideas <span class="Label">bass</span></h3><p>Starting points by style and by bassist, focused on alternative rock. Each one cites its sources and opens in the builder.</p></article>
@@ -228,9 +310,11 @@
         <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
         <a class="btn gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
         <a class="gh-privacy" href="../privacy.html">Privacy</a>
-        <time class="gh-updated" datetime="2026-10-27T00:26Z">Last update 27 October 2026 01:26</time>
+        <time class="gh-updated" datetime="2026-10-27T00:31Z">Last update 27 October 2026 01:31</time>
       </div>
       <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
     </footer>
+    <script src="../library-merge.js?v=zoom28-20261027"></script>
+    <script src="../account.js?v=zoom28-20261027"></script>
   </body>
 </html>
