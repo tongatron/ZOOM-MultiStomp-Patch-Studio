@@ -175,7 +175,7 @@
     busy = false;
     renderLocals();
     const failed = [...memories.values()].filter(m => m.state === 'error').length;
-    status(failed ? `Read ${info.count} memories, ${failed} with errors (see the MIDI log)` : `Read ${info.count} memories`, failed ? 'danger' : 'ok');
+    status(failed ? `Connected: ${failed} of ${info.count} memories with errors (see the MIDI log)` : 'Connected', failed ? 'danger' : 'ok');
     if (pendingSend) sendPending();
   }
   function sendPending() {
