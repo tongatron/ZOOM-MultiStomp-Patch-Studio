@@ -137,13 +137,39 @@ try {
 
   await test('the status bar links Resources; Tone ideas opens from the builder', async () => {
     await open('index.html', SIZES[1]);
-    assert.equal(await page.locator('.fs-nav a').count(), 3);
+    assert.equal(await page.locator('.fs-nav > a').count(), 3);
     await page.locator('.fs-status a[href="resources.html"]').click();
     await page.waitForURL(/resources\.html$/);
     await open('builder.html', SIZES[1]);
     await page.locator('.builder-chain a[href="tones.html"]').click();
     await page.waitForURL(/tones\.html$/);
-    assert.equal(await page.locator('.fs-nav a[aria-current="page"]').textContent(), 'Patch builder');
+    assert.equal(await page.locator('.fs-nav > a[aria-current="page"]').textContent(), 'Patch builder');
+  });
+
+  await test('the Pedal menu comes first, lists the two Zoom pedals and closes', async () => {
+    await open('builder.html', SIZES[1]);
+    assert.equal((await page.locator('.fs-nav > *').first().getAttribute('class')), 'fs-menu', 'the menu is the first item of the bar');
+    assert.match(await page.locator('.fs-menu-button').textContent(), /^\s*Pedal/);
+    assert.equal(await page.locator('.fs-menu-list').isHidden(), true);
+    await page.locator('.fs-menu-button').click();
+    assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
+    const items = await page.locator('.fs-menu-list a').allTextContents();
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.match(await page.locator('.fs-menu-list a[aria-current]').textContent(), /MS-60B\+/);
+    assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/"]').count(), 1);
+    // the open menu floats over the page: it stays inside the window
+    const box = await page.locator('.fs-menu-list').boundingBox();
+    assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= SIZES[1][0] && box.y + box.height <= SIZES[1][1], 'the menu is inside the window');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.fs-menu-list').isHidden(), true, 'Esc closes it');
+    assert.deepEqual((await page.evaluate(check, PAGES['builder.html'])).issues, [], 'nothing stays covered once it is closed');
+    assert.equal(await page.evaluate(() => document.activeElement.classList.contains('fs-menu-button')), true, 'and gives the focus back');
+    await page.locator('.fs-menu-button').click();
+    await page.locator('.fs-main').click({ position: { x: 5, y: 5 } });
+    assert.equal(await page.locator('.fs-menu-list').isHidden(), true, 'a click elsewhere closes it');
+    // the section you are in is the only highlighted one
+    const marked = await page.locator('.fs-nav > a').evaluateAll(links => links.map(a => [a.textContent, getComputedStyle(a).backgroundColor !== 'rgba(0, 0, 0, 0)']));
+    assert.deepEqual(marked, [['Effects', false], ['Patch builder', true], ['Pedal manager', false]]);
   });
 
   await test('effects: the detail pane shows the first effect, follows the list and the arrows', async () => {

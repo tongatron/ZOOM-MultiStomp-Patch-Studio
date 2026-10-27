@@ -8,9 +8,26 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-top .gh-brand-name { white-space: nowrap; }
 .fs-top .gh-search { max-width: 340px; height: 30px; }
 .fs-nav { display: flex; gap: 2px; min-width: 0; }
-.fs-nav a { padding: 5px 10px; border-radius: var(--radius); color: var(--fg); white-space: nowrap; }
-.fs-nav a:hover { background: var(--bg-hover); text-decoration: none; }
-.fs-nav a[aria-current="page"] { font-weight: 600; background: var(--bg-muted); box-shadow: inset 0 -2px 0 var(--tab-bar); }
+.fs-nav { align-items: center; }
+.fs-nav > a, .fs-menu-button { padding: 5px 12px; border-radius: 2em; color: var(--fg); white-space: nowrap; }
+.fs-nav > a:hover, .fs-menu-button:hover, .fs-menu-button[aria-expanded="true"] { background: var(--bg-hover); text-decoration: none; }
+/* The section you are in is a blue pill; the others are plain text */
+.fs-nav > a[aria-current="page"] { font-weight: 600; color: var(--accent-fg); background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-muted); }
+
+/* Pedal menu: a button that opens the list of the two Zoom pedals */
+.fs-menu { position: relative; margin-right: 6px; padding-right: 8px; border-right: 1px solid var(--border-muted); }
+.fs-menu-button { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer; }
+.fs-menu-button svg { transition: transform .12s; }
+.fs-menu-button[aria-expanded="true"] svg { transform: rotate(180deg); }
+.fs-menu-list { position: absolute; top: calc(100% + 8px); left: 0; z-index: 50; min-width: 260px; margin: 0; padding: 4px; list-style: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(1, 4, 9, .6); }
+.fs-menu-list[hidden] { display: none; }
+.fs-menu-list a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--radius); color: var(--fg); white-space: nowrap; }
+.fs-menu-list a::before { content: ""; width: 14px; flex: none; color: var(--accent-fg); }
+.fs-menu-list a[aria-current] { color: var(--accent-fg); font-weight: 600; }
+.fs-menu-list a[aria-current]::before { content: "✓"; }
+.fs-menu-list a:hover { background: var(--bg-hover); text-decoration: none; }
+.fs-menu-list .Label { margin-left: auto; }
+.fs-menu-note { margin-top: 4px; padding: 8px 10px 6px; border-top: 1px solid var(--border-muted); color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
 .fs-badge { margin-left: auto; white-space: nowrap; }
 .gh-search + .fs-badge { margin-left: 0; }
 @media (max-width: 1239px) { .fs-top .gh-brand-name { display: none; } }
