@@ -858,3 +858,5 @@ body.is-dropping .drop-overlay { display: grid; }
 .privacy li { margin: 4px 0; }
 .privacy code { font: 13px var(--mono); padding: 1px 5px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
 .gh-footer .gh-privacy { color: var(--fg-muted); font-size: 13px; }
+.usb-send { width: 32px; height: 32px; flex: none; }
+.usb-send.btn-primary { color: #fff; }

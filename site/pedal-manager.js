@@ -35,6 +35,8 @@
     showLog();
   });
   const note = text => { lines.push(`   ${text}`); showLog(); };
+  // Octicons "upload": the send button of each patch (its tooltip names the memory)
+  const ICON_SEND = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>';
   const status = (text, kind = '') => { $('#usb-status').textContent = text; $('#usb-status').dataset.kind = kind; };
   const result = (ok, text) => { $('#usb-result').innerHTML = text ? `<p class="usb-result" data-ok="${ok}">${escapeHtml(text)}</p>` : ''; };
   // Runs one step; a failure shows in the status line and the log
@@ -321,8 +323,9 @@
     $('#usb-locals').innerHTML = items.length ? items.map(item => `<li class="usb-local" data-key="${escapeHtml(item.key)}">
         <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
-        <button class="btn btn-sm${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
-          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Write it to memory ${target}`}">${target ? `Send to memory ${target}` : 'Send to…'}</button>
+        <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
+          aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
+          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
       </li>`).join('') : '<li class="usb-empty">No patches yet. Build one in the <a href="builder.html">patch builder</a> and save it, or send a <code>.zptc</code> file.</li>';
   }
   $('#usb-locals').addEventListener('click', event => {
@@ -337,7 +340,7 @@
     if (!file) return;
     fileItem = { fileName: file.name, bytes: new Uint8Array(await file.arrayBuffer()) };
     renderLocals();
-    status(selected ? `“${file.name}” ready: press Send to memory ${selected}` : `“${file.name}” ready: select a memory on the right, then press Send`);
+    status(selected ? `“${file.name}” ready: press its send button to write it to memory ${selected}` : `“${file.name}” ready: select a memory on the right, then press its send button`);
   });
   window.addEventListener('storage', event => { if (event.key === LIBRARY_KEY || event.key === DRAFT_KEY) renderLocals(); });
   window.addEventListener('focus', renderLocals);
