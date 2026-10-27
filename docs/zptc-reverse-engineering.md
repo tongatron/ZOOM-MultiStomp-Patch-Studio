@@ -118,7 +118,7 @@ The format stores unsigned integers. The conversion depends on the range documen
 | `-12.0 – 12.0`, `-20.0 – 20.0` | 0.5 steps: `(value − min) / 0.5` | EQ +1.5 dB → 27; BASS +4.0 → 48 | verified |
 | `±15.0`, `±10.0` (other amps) | same rule, by analogy | — | **unverified** |
 | `OFF, 1 – 6`, `OFF – 100` | OFF = 0, then `n − min + 1` | — | **unverified** |
-| amp MID-FREQ `32 Hz – 6.3 kHz` | knob step 0–31 (32 steps) | 220 Hz → 13 | 9 of 32 steps read |
+| amp MID-FREQ `32 Hz – 6.3 kHz` | knob step 0–31 (32 steps) | 220 Hz → 13 | all 32 steps read on the AMPG SVT; the other amps assumed |
 | Continuous frequencies, Q, `-10 – -1, 1 – 10` | unknown | — | the raw value is entered |
 
 The 0.5 step rule was deduced from the Graphic EQ of the "Big Black" patch. The stored values 16, 28, 33, 36 and 24 become −4, +2, +4.5, +6 and 0 dB only if 24 corresponds to 0 dB and the step is 0.5. It was then confirmed by importing GEN TEST2 on the pedal.

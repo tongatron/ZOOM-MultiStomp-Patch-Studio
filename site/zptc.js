@@ -31,14 +31,20 @@ const ZPTC = (() => {
   const HIDDEN_DEFAULTS = { 'BASS AMP': { 8: 2 } };
   // Decimal ranges whose encoding was confirmed by importing generated patches into Handy Guitar Lab.
   const VERIFIED_DECIMAL = new Set(['-12.0 – 12.0', '-20.0 – 20.0']);
-  // Ranges stored as a knob step (0 = minimum) rather than as the value shown. shown: the value Handy Guitar Lab
-  // shows at the steps read so far; the steps in between are not known yet, so the codec stays unverified.
-  // MID-FREQ "32 Hz – 6.3 kHz": 32 steps, read on the AMPG SVT (patches/mid-freq/); the other amps with the same
-  // range (SMR400, B-MAN100, AC 370) are assumed to use the same steps. Step 13 (220 Hz) is the default.
+  // Ranges stored as a knob step (0 = minimum) rather than as the value shown. shown: the value shown at each step.
+  // MID-FREQ "32 Hz – 6.3 kHz": 32 steps. All 32 were read on the AMPG SVT: 9 from exports (patches/mid-freq/) and
+  // the whole scale from the display of the MS-60B+ (firmware 1.20) while the knob was turned, with the steps read
+  // back over MIDI (2026-10-27). The other amps with the same range (SMR400, B-MAN100, AC 370) are assumed to use
+  // the same steps, so the codec stays unverified. Step 13 (220 Hz) is the default.
   const STEP_TABLES = {
     '32 Hz – 6.3 kHz': {
       steps: 32, fallback: 13,
-      shown: { 0: '32 Hz', 1: '40 Hz', 6: '100 Hz', 13: '220 Hz', 19: '500 Hz', 22: '1.0 kHz', 27: '3.0 kHz', 30: '4.5 kHz', 31: '6.3 kHz' }
+      shown: {
+        0: '32 Hz', 1: '40 Hz', 2: '50 Hz', 3: '63 Hz', 4: '70 Hz', 5: '80 Hz', 6: '100 Hz', 7: '120 Hz', 8: '140 Hz', 9: '150 Hz',
+        10: '160 Hz', 11: '180 Hz', 12: '200 Hz', 13: '220 Hz', 14: '250 Hz', 15: '300 Hz', 16: '350 Hz', 17: '400 Hz', 18: '450 Hz',
+        19: '500 Hz', 20: '630 Hz', 21: '800 Hz', 22: '1.0 kHz', 23: '1.2 kHz', 24: '1.6 kHz', 25: '2.0 kHz', 26: '2.5 kHz',
+        27: '3.0 kHz', 28: '3.6 kHz', 29: '4.0 kHz', 30: '4.5 kHz', 31: '6.3 kHz'
+      }
     }
   };
 

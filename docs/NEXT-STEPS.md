@@ -3,6 +3,8 @@
 Open work on the MS-60B+ site, the `.zptc` codec and the advice engine, roughly in priority order.
 Each item says what is missing and how to close it.
 
+The checks to run on the real pedal and on real devices are in [`controlli-pedale.md`](controlli-pedale.md) (Italian checklist with a tick box for each item).
+
 ## 0. Zoom MS-50G+ (guitar) — not tested
 
 `site/ms-50g/` reuses the MS-60B+ codec, builder and catalog with the MS-50G+ Effects List (127 effects) and the zoom-zt2 firmware table (103 IDs). Nothing has been checked on a real MS-50G+. A tester with the pedal should:
