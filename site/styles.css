@@ -860,4 +860,3 @@ body.is-dropping .drop-overlay { display: grid; }
 .gh-footer .gh-privacy { color: var(--fg-muted); font-size: 13px; }
 .usb-send { width: 32px; height: 32px; flex: none; }
 .usb-send.btn-primary { color: #fff; }
-.usb-date { grid-column: 2 / -1; margin-top: -6px; color: var(--fg-subtle); font-size: 12px; }
