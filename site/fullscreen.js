@@ -1,4 +1,4 @@
-// Layout helpers shared by the pages of the site (pedal menu, Patch box, contents list). Load right after pedal.js.
+// Layout helpers shared by the pages of the site (pedal menu, contents list, small-screen notice). Load right after pedal.js.
 
 // Small screens: the layout needs a window of at least 800 × 640 px (see the media query at the end of fullscreen.css).
 // Below that this notice takes the place of the page: it says so, suggests a bigger screen or the browser's full-screen
@@ -37,32 +37,6 @@ document.querySelectorAll('.fs-menu').forEach(menu => {
   menu.addEventListener('focusout', event => { if (!menu.contains(event.relatedTarget)) set(false); });
   document.addEventListener('click', event => { if (!menu.contains(event.target)) set(false); });
 });
-
-// Patch box of the builder: the arrow in its header folds it away so My patches gets the room. While it is closed the
-// header shows the name and the DSP load; the choice is remembered in this browser
-const patchBox = document.querySelector('.patch-box');
-if (patchBox) {
-  const KEY = `${PEDAL.id}-fs-patch-collapsed`;
-  const toggle = patchBox.querySelector('.patch-toggle');
-  const body = patchBox.querySelector('#patch-body');
-  const summary = patchBox.querySelector('.patch-summary');
-  const fill = () => { summary.textContent = `${document.getElementById('patch-name').value.trim() || 'No name yet'} · ${document.getElementById('dsp-total').textContent}`; };
-  const set = collapsed => {
-    patchBox.classList.toggle('is-collapsed', collapsed);
-    body.hidden = collapsed;
-    summary.hidden = !collapsed;
-    toggle.setAttribute('aria-expanded', String(!collapsed));
-    toggle.title = collapsed ? 'Open the patch box' : 'Close the patch box';
-    if (collapsed) fill();
-  };
-  toggle.addEventListener('click', () => {
-    set(!body.hidden);
-    try { localStorage.setItem(KEY, body.hidden ? '1' : '0'); } catch {}
-  });
-  // The name and the load change while the box is closed (a patch opened from My patches, an effect added from Tone ideas)
-  new MutationObserver(() => { if (body.hidden) fill(); }).observe(document.getElementById('dsp-total'), { childList: true });
-  try { if (localStorage.getItem(KEY) === '1') set(true); } catch {}
-}
 
 const FS = {
   // Fills an "On this page" list with the h2 and h3 headings of a document; headings without an id get one

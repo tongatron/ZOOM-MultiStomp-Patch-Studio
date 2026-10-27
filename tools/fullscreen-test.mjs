@@ -24,7 +24,7 @@ const PHONE = [390, 700];
 // [selector, label, least useful height in px]: the controls must be on screen
 const PAGES = {
   'index.html': [['#search', 'search'], ['#sort', 'sort'], ['.fx-link', 'effect list'], ['#fx-dialog .detail-head', 'detail pane'], ['.results .fs-pane-body', 'effect list', 240], ['#dialog-body', 'effect detail', 240]],
-  'builder.html': [['#add-effect', 'Add effect'], ['.builder-chain a[href="tones.html"]', 'Tone ideas'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['#patch-toggle', 'Patch box arrow'],['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200], ['#library-list', 'My patches list', 48]],
+  'builder.html': [['#add-effect', 'Add effect'], ['.builder-chain a[href="tones.html"]', 'Tone ideas'], ['#patch-name', 'patch name'], ['#save-patch', 'Save'], ['#download', 'Download .zptc'], ['#advice .Box-header', 'Advice'],['#clear-chain', 'Create new patch'], ['.builder-chain .fs-pane-body', 'chain', 200], ['#library-list', 'My patches list', 48]],
   'pedal-manager.html': [['#usb-connect', 'Connect the pedal'], ['#usb-local-title', 'My patches'], ['#usb-pedal-title', 'On the pedal'], ['#usb-locals', 'My patches list', 160], ['#usb-memories', 'memory list', 160]],
   'tones.html': [['#tone-filter', 'filter'], ['#tone-styles-title', 'By style'], ['#tone-bassists-title', 'By bassist'], ['.tone-pane .fs-pane-body', 'tone list', 200]],
   'resources.html': [['.resource-list', 'manuals'], ['#check-title', 'Still to check'], ['.check-pane .fs-pane-body', 'checks', 200]],
@@ -181,7 +181,7 @@ try {
       render();
     });
     assert.equal(await page.locator('#advice #notices').count(), 1, 'the alerts list is in Advice');
-    assert.equal(await page.locator('.builder-side #notices').count(), 0, 'and not in the patch box');
+    assert.equal(await page.locator('.patch-box #notices').count(), 0, 'and not in the patch box');
     assert.match(await page.locator('#advice #notices').textContent(), /Check on the pedal:/);
     assert.equal(await page.locator('#advice #notices .notice').first().isVisible(), true);
     for (const id of ['#save-patch', '#download']) {
@@ -203,19 +203,19 @@ try {
     await page.waitForURL(/resources\.html$/);
   });
 
-  await test('the status bar: Privacy, Source on GitHub and tongatron.org on the left, the data note and the update time on the right', async () => {
+  await test('the status bar: tongatron.org all the way to the left, then Source on GitHub and Privacy, and the update time on the right', async () => {
     for (const file of Object.keys(ALL_PAGES)) {
       for (const size of SIZES) {
         await open(file, size);
         const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
-        assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
-        assert.deepEqual(labels.slice(0, 3), ['Privacy', 'Source on GitHub', 'tongatron.org'], file);
-        assert.match(labels[3], new RegExp(`^Data: Zoom ${file.startsWith('ms-50g') ? 'MS-50G' : 'MS-60B'}\\+ Effects List © 2024 ZOOM CORPORATION`), file);
-        assert.match(labels[4], /^Last update /, file);
+        assert.equal(labels.length, 4, `${file}: ${labels.join(' | ')}`);
+        assert.deepEqual(labels.slice(0, 3), ['tongatron.org', 'Source on GitHub', 'Privacy'], file);
+        assert.match(labels[3], /^Last update /, file);
+        assert.equal(await page.locator('.fs-status').getByText('ZOOM CORPORATION').count(), 0, `${file}: the data note is not in the status bar`);
         const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
         edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
-        assert.ok(edges[4][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
-        assert.ok(edges[2][1] < size[0] / 2, `${file}: the tongatron.org button is on the left`);
+        assert.ok(edges[3][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
+        assert.ok(edges[0][0] <= 16, `${file}: the tongatron.org button is all the way to the left`);
       }
       assert.equal(await page.locator('.fs-status a[href="resources.html"]').count(), 0, `${file}: no Resources in the status bar`);
       assert.equal(await page.locator('.fs-status').getByText('Classic view').count(), 0, `${file}: no Classic view in the status bar`);
@@ -266,6 +266,15 @@ try {
     assert.equal(await page.locator('#toc a').count(), sections, 'one contents entry per section');
   });
 
+  await test('the data note left the status bar and is in the Guide, for each pedal', async () => {
+    for (const [file, pedal, pdf] of [['guide.html', 'MS-60B+', 'E_MS-60Bplus_FX-list.pdf'], ['ms-50g/guide.html', 'MS-50G+', 'E_MS-50Gplus_EffectsList.pdf']]) {
+      await open(file, SIZES[1]);
+      assert.equal(await page.locator('#toc a[href="#credits"]').count(), 1, `${file}: a Data and credits section`);
+      assert.equal((await page.locator('#credits + p').innerText()).replace(/\s+/g, ' '), `Data: Zoom ${pedal} Effects List © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.`);
+      assert.match(await page.locator('#credits + p a').getAttribute('href'), new RegExp(`${pdf}$`));
+    }
+  });
+
   await test('the guide has the how-to that left the builder, and the contents list scrolls the guide', async () => {
     await open('guide.html', SIZES[1]);
     const steps = await page.locator('#load-on-pedal + ol > li').allTextContents();
@@ -296,8 +305,9 @@ try {
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
-    assert.equal((await page.locator('.fs-menu-list a[aria-current]').textContent()).trim(), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass Tested on firmware 1.20', 'MS-50G+ guitar Not tested']);
+    assert.equal(await page.locator('.fs-menu-list a[aria-current] .Label--success').evaluate(el => getComputedStyle(el).color), 'rgb(63, 185, 80)', 'the tag of the bass pedal is green');
+    assert.equal(await page.locator('.fs-menu-list a[aria-current]').evaluate(a => a.firstChild.textContent.trim()), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
     // the open menu floats over the page: it stays inside the window
     const box = await page.locator('.fs-menu-list').boundingBox();
@@ -385,42 +395,31 @@ try {
     await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-advice`));
   });
 
-  await test('builder: the patch box is in the middle and Advice on the right; the DSP bar is thin', async () => {
-    // below 1280 px the builder has two columns (Advice under the chain), so the three columns are checked from there up
-    for (const size of SIZES.filter(([width]) => width >= 1280)) {
+  await test('builder: chain | patch with Advice under it | My patches; the DSP bar is thin; there is no arrow to fold the patch', async () => {
+    const boxes = () => page.evaluate(() => Object.fromEntries(['.builder-chain', '.patch-box', '#advice', '.builder-mine'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [s, { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom) }]; })));
+    for (const size of SIZES) {
       await open('builder.html', size);
-      const left = await page.evaluate(() => ['.builder-chain', '.patch-box', '#advice'].map(s => document.querySelector(s).getBoundingClientRect().left));
-      assert.ok(left[0] < left[1] && left[1] < left[2], `${size.join(' × ')}: chain, patch box, advice from left to right (${left.map(Math.round)})`);
+      const box = await boxes();
+      const where = `${size.join(' × ')} ${JSON.stringify(box)}`;
+      // Advice is right under the patch, in the same column
+      assert.ok(Math.abs(box['#advice'].left - box['.patch-box'].left) <= 1 && box['#advice'].top >= box['.patch-box'].bottom - 1, `Advice under the patch: ${where}`);
+      assert.ok(box['#advice'].bottom - box['#advice'].top >= 120, `Advice keeps some height: ${where}`);
+      if (size[0] >= 1200) {
+        // three columns: the chain, the patch with Advice, My patches at the right
+        assert.ok(box['.builder-chain'].right <= box['.patch-box'].left && box['.patch-box'].right <= box['.builder-mine'].left, `chain | patch | My patches: ${where}`);
+        assert.ok(box['.builder-mine'].right >= size[0] - 20, `My patches is the last column: ${where}`);
+      } else {
+        // two columns: My patches goes under the chain
+        assert.ok(box['.builder-mine'].left === box['.builder-chain'].left && box['.builder-mine'].top >= box['.builder-chain'].bottom - 1, `My patches under the chain: ${where}`);
+      }
     }
     await open('builder.html', SIZES[0]);
+    assert.equal(await page.locator('#patch-toggle, .patch-chevron, #patch-summary').count(), 0, 'no arrow to close the patch');
+    assert.equal(await page.locator('#patch-name').isVisible(), true);
     await page.evaluate(() => { state.effects = catalog.filter(fx => fx.dsp !== null).slice(0, 3).map(fx => slotFor(fx.index)); render(); });
     const bar = await page.locator('#dsp-stack').boundingBox();
     assert.ok(bar.height <= 8 && bar.height >= 3, `the DSP bar is ${bar.height} px tall`);
     assert.ok(bar.width > 150, 'and still as wide as the box');
-  });
-
-  await test('builder: the arrow closes the Patch box, My patches takes the room, and the choice is remembered', async () => {
-    await open('builder.html', SIZES[1]);
-    await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-fs-patch-collapsed`));
-    await page.reload();
-    const list = () => page.locator('#library-list').boundingBox();
-    const before = await list();
-    assert.equal(await page.locator('#patch-toggle').getAttribute('aria-expanded'), 'true');
-    assert.equal(await page.locator('#patch-name').isVisible(), true);
-    await page.fill('#patch-name', 'FOLD ME');
-    await page.locator('#patch-toggle').click();
-    assert.equal(await page.locator('#patch-toggle').getAttribute('aria-expanded'), 'false');
-    assert.equal(await page.locator('#patch-body').isHidden(), true, 'the name, the load and the buttons are folded away');
-    assert.match(await page.locator('#patch-summary').textContent(), /^FOLD ME · \d/, 'the header keeps the name and the load');
-    assert.ok((await list()).height > before.height + 100, 'My patches takes the room');
-    assert.equal(await page.evaluate(() => document.querySelector('.fs-main').scrollHeight <= document.querySelector('.fs-main').clientHeight + 1), true, 'nothing is cut');
-    await open('builder.html', SIZES[1]);
-    assert.equal(await page.locator('#patch-body').isHidden(), true, 'still closed after a reload');
-    assert.match(await page.locator('#patch-summary').textContent(), /· \d/);
-    await page.locator('#patch-toggle').click();
-    assert.equal(await page.locator('#patch-name').isVisible(), true, 'the arrow opens it again');
-    assert.equal(await page.locator('#patch-summary').isHidden(), true);
-    await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-fs-patch-collapsed`));
   });
 
   await test('the pedal menu switches to the same page of the other pedal', async () => {
@@ -446,8 +445,8 @@ try {
     assert.match(await page.locator('.flash a').getAttribute('href'), /ms-50gplus-en/);
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
-    assert.equal(await page.locator('.fs-menu-list a[href="../"]').count(), 1);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass Tested on firmware 1.20', 'MS-50G+ guitar Not tested']);
+    assert.equal(await page.locator('.fs-menu-list a[href="../"] .Label--success').count(), 1);
     await page.keyboard.press('Escape');
 
     // the builder: six effects fit every size, and the data are kept apart from the MS-60B+ ones

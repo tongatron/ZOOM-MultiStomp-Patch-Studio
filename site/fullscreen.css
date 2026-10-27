@@ -35,6 +35,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-menu-list a[aria-current]::before { content: "✓"; }
 .fs-menu-list a:hover { background: var(--bg-hover); text-decoration: none; }
 .fs-menu-list .Label { margin-left: auto; }
+.Label--success { color: #3fb950; border-color: rgba(46, 160, 67, .5); }
 .fs-menu-note { margin-top: 4px; padding: 8px 10px 6px; border-top: 1px solid var(--border-muted); color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
 @media (max-width: 1239px) { .fs-top .gh-brand-name { display: none; } }
 
@@ -55,13 +56,13 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-pane-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .fs-pane-body:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-/* Status bar: Privacy, Source on GitHub and the tongatron.org button on the left; the data note and the update time on the right */
+/* Status bar: the tongatron.org button all the way to the left, then Source on GitHub and Privacy; the update time on the right */
 .fs-status { flex: none; display: flex; align-items: center; gap: 16px; height: 28px; padding: 0 16px; overflow: hidden; background: var(--bg-inset); border-top: 1px solid var(--border-muted); font-size: 11px; color: var(--fg-muted); white-space: nowrap; }
 .fs-status > a, .fs-status > time { flex: none; }
-.fs-status .fs-data { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.fs-status > time { margin-left: auto; }
 /* tongatron.org button (B3 of tongatron.org/pulsanti): yellow dot with a glow and the name, on the bar's own background.
    No hover animation: on hover it is highlighted */
-.fs-b3 { display: inline-flex; align-items: center; gap: 8px; height: 22px; padding: 0 8px; border-radius: 6px; background: transparent; color: var(--fg); font-size: 12px; transition: background .15s; }
+.fs-b3 { display: inline-flex; align-items: center; gap: 8px; height: 22px; margin-left: -8px; padding: 0 8px; border-radius: 6px; background: transparent; color: var(--fg); font-size: 12px; transition: background .15s; }
 .fs-b3-dot { width: 11px; height: 11px; border-radius: 50%; background: #ffcc00; box-shadow: 0 0 8px rgba(255, 204, 0, .8); transition: box-shadow .15s; }
 .fs-b3:hover { background: var(--bg-hover); text-decoration: none; }
 .fs-b3:hover .fs-b3-dot { box-shadow: 0 0 12px 2px rgba(255, 204, 0, .95); }
@@ -108,21 +109,14 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
   .fs-effects .filter-heading { display: none; }
 }
 
-/* ---- Patch builder: chain | patch and My patches | advice ---- */
-.fs-builder { grid-template-columns: minmax(0, 1fr) 320px minmax(300px, 30%); }
-.fs-builder .advice { margin: 0; }
+/* ---- Patch builder: chain | patch and Advice | My patches ---- */
+.fs-builder { grid-template-columns: minmax(0, 1fr) minmax(320px, 30%) 300px; }
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
-.fs-builder .side-box { flex: 0 1 auto; padding: 0; gap: 0; }
+.fs-builder .side-box { padding: 0; gap: 0; }
+.fs-builder .patch-box { flex: none; }
 .fs-builder .side-box-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
-.fs-builder .side-box-body[hidden] { display: none; }
-/* The arrow in the Patch header folds the box away, so My patches gets the room; closed, it still shows the name and the load */
-.fs-builder .patch-head { flex-wrap: nowrap; gap: 8px; padding: 6px 12px 6px 8px; }
-.fs-builder .patch-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 4px; background: none; border: 0; border-radius: var(--radius); color: var(--fg); font: inherit; cursor: pointer; }
-.fs-builder .patch-toggle:hover { background: var(--bg-hover); }
-.fs-builder .patch-chevron { transition: transform .12s; }
-.fs-builder .patch-box.is-collapsed .patch-chevron { transform: rotate(-90deg); }
-.fs-builder .patch-box.is-collapsed > .Box-header { border-bottom: 0; border-radius: var(--radius); }
-.fs-builder .patch-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-muted); font: 12px var(--mono); }
+/* Advice takes the rest of the column under the patch, and scrolls inside */
+.fs-builder .advice { flex: 1 1 0; margin: 0; }
 /* A thin DSP load bar */
 .fs-builder .dsp-stack { height: 6px; border-radius: 3px; }
 /* Save and Download are small buttons right under the name and the DSP load */
@@ -131,17 +125,17 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-builder .sr-status { order: 2; }
 /* The patch alerts ("Check on the pedal: …", missing name, raw values) are the first thing in the Advice pane */
 .fs-builder .advice .notices { padding: 12px 16px 0; }
-/* Each chain item shows its own DSP load: the per-effect legend would push My patches off the screen */
+/* Each chain item shows its own DSP load: the per-effect legend would push the Advice pane off the screen */
 .fs-builder .dsp-legend { display: none; }
-/* My patches takes the rest of the column and its list scrolls; it never grows past the screen with many patches */
-.fs-builder .library { flex: 1 1 0; min-height: 232px; max-height: none; padding: 12px 16px 0; gap: 8px; }
+/* My patches is the right column; its list scrolls and never grows past the screen with many patches */
+.fs-builder .library { padding: 12px 16px 0; gap: 8px; }
 .fs-builder .library-actions { gap: 4px; }
 .fs-builder .library-list { flex: 1; min-height: 48px; max-height: none; }
-@media (max-width: 1279px) {
-  .fs-builder { grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
+@media (max-width: 1199px) {
+  .fs-builder { grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
   .fs-builder .builder-chain { grid-column: 1; grid-row: 1; }
-  .fs-builder .advice { grid-column: 1; grid-row: 2; }
-  .fs-builder .builder-side { grid-column: 2; grid-row: 1 / -1; }
+  .fs-builder .builder-mine { grid-column: 1; grid-row: 2; }
+  .fs-builder .builder-mid { grid-column: 2; grid-row: 1 / -1; }
 }
 
 /* ---- Pedal manager: My patches | On the pedal | connection, backups and MIDI log ---- */

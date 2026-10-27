@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="stylesheet" href="styles.css?v=zoom48-20261027" />
     <link rel="stylesheet" href="theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="fullscreen.css?v=fs13-20261027" />
+    <link rel="stylesheet" href="fullscreen.css?v=fs14-20261027" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
   <body data-account-notice>
@@ -29,7 +29,7 @@
           <div class="fs-menu">
             <button class="fs-menu-button" type="button" aria-expanded="false" aria-controls="pedal-menu" title="Change pedal"><span class="sr-only">Pedal: </span><span class="fs-menu-current">MS-60B+ bass</span> <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
             <ul class="fs-menu-list" id="pedal-menu" hidden>
-              <li><a href="./" aria-current="true">MS-60B+ bass</a></li>
+              <li><a href="./" aria-current="true">MS-60B+ bass <span class="Label Label--success">Tested on firmware 1.20</span></a></li>
               <li><a href="ms-50g/builder.html">MS-50G+ guitar <span class="Label">Not tested</span></a></li>
             </ul>
           </div>
@@ -70,16 +70,10 @@
         </div>
       </section>
 
-      <aside class="fs-col builder-side" aria-label="Patch summary">
+      <div class="fs-col builder-mid">
         <div class="Box fs-pane side-box patch-box">
-          <div class="Box-header patch-head">
-            <button class="patch-toggle" id="patch-toggle" type="button" aria-expanded="true" aria-controls="patch-body" title="Close the patch box">
-              <svg class="patch-chevron" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg>
-              <span class="Box-title">Patch</span>
-            </button>
-            <span class="patch-summary" id="patch-summary" hidden></span>
-          </div>
-          <div class="fs-pane-body side-box-body" id="patch-body">
+          <div class="Box-header"><h2 class="Box-title" id="patch-title">Patch</h2></div>
+          <div class="fs-pane-body side-box-body">
             <label class="field">
               <span class="field-label">Patch name</span>
               <input class="form-control" id="patch-name" maxlength="28" autocomplete="off" spellcheck="false" placeholder="e.g. FUNK SLAP" />
@@ -110,59 +104,58 @@
             </div>
           </div>
         </div>
-
-        <section class="Box fs-pane side-box library" aria-labelledby="library-title">
-          <div class="library-head">
-            <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
-            <div class="library-actions">
-              <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
-              <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
-              <label class="btn btn-sm" for="import-files">Import</label>
-              <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
+        <section class="Box fs-pane advice" id="advice" aria-labelledby="advice-title">
+          <div class="Box-header">
+            <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
+          </div>
+          <div class="fs-pane-body" tabindex="0" aria-label="Advice">
+            <ul class="notices" id="notices" aria-live="polite"></ul>
+            <div class="advice-body" id="advice-body">
+              <details class="advice-prefs" id="advice-prefs">
+                <summary>My preferences <span class="Counter" id="advice-prefs-count">0</span></summary>
+                <p class="field-hint">Pin choices you make on purpose: the matching advice stays hidden.</p>
+                <div id="advice-prefs-list"></div>
+              </details>
+              <details class="advice-prefs" id="advice-packs">
+                <summary>Rule packs <span class="Counter" id="advice-packs-count">0</span></summary>
+                <p class="field-hint">Add your own advice rules from a <code>.json</code> file, or share yours. Every rule must cite a source. <button class="clear-link" id="pack-example">Download an example</button></p>
+                <div id="advice-packs-list"></div>
+                <button class="btn btn-sm btn-primary" id="pack-new">New rule pack</button>
+                <label class="btn btn-sm" for="pack-files">Import rule pack</label>
+                <input type="file" id="pack-files" accept=".json,application/json" multiple hidden />
+              </details>
+              <div class="advice-filters" id="advice-filters" role="group" aria-label="Show"></div>
+              <ul class="advice-list" id="advice-list" aria-live="polite"></ul>
+              <div class="advice-foot" id="advice-foot"></div>
+              <div class="advice-output" id="advice-output" role="group" aria-label="Where do you plug in?"></div>
             </div>
           </div>
-          <ul class="library-list fs-pane-body" id="library-list" tabindex="0" aria-label="My patches"></ul>
-          <input type="file" id="import-files" accept=".zptc,.json,application/json" multiple hidden />
         </section>
-      </aside>
+      </div>
 
-      <section class="Box fs-pane advice" id="advice" aria-labelledby="advice-title">
-        <div class="Box-header">
-          <h2 class="Box-title" id="advice-title">Advice <span class="Counter" id="advice-count">0</span></h2>
-        </div>
-        <div class="fs-pane-body" tabindex="0" aria-label="Advice">
-          <ul class="notices" id="notices" aria-live="polite"></ul>
-          <div class="advice-body" id="advice-body">
-            <details class="advice-prefs" id="advice-prefs">
-              <summary>My preferences <span class="Counter" id="advice-prefs-count">0</span></summary>
-              <p class="field-hint">Pin choices you make on purpose: the matching advice stays hidden.</p>
-              <div id="advice-prefs-list"></div>
-            </details>
-            <details class="advice-prefs" id="advice-packs">
-              <summary>Rule packs <span class="Counter" id="advice-packs-count">0</span></summary>
-              <p class="field-hint">Add your own advice rules from a <code>.json</code> file, or share yours. Every rule must cite a source. <button class="clear-link" id="pack-example">Download an example</button></p>
-              <div id="advice-packs-list"></div>
-              <button class="btn btn-sm btn-primary" id="pack-new">New rule pack</button>
-              <label class="btn btn-sm" for="pack-files">Import rule pack</label>
-              <input type="file" id="pack-files" accept=".json,application/json" multiple hidden />
-            </details>
-            <div class="advice-filters" id="advice-filters" role="group" aria-label="Show"></div>
-            <ul class="advice-list" id="advice-list" aria-live="polite"></ul>
-            <div class="advice-foot" id="advice-foot"></div>
-            <div class="advice-output" id="advice-output" role="group" aria-label="Where do you plug in?"></div>
+      <section class="Box fs-pane side-box library builder-mine" aria-labelledby="library-title">
+        <div class="library-head">
+          <h2 class="Box-title" id="library-title">My patches <span class="Counter" id="library-count">0</span> <span class="Label account-local" title="Sign in to keep your patches in your account">Saved in this browser only</span></h2>
+          <div class="library-actions">
+            <button class="btn btn-sm btn-primary" id="clear-chain" title="Start an empty patch in the editor">Create new patch</button>
+            <button class="btn btn-sm" id="compare-open" title="Compare two patches side by side" disabled>Compare</button>
+            <label class="btn btn-sm" for="import-files">Import</label>
+            <button class="btn btn-sm" id="export-library" title="Download all saved patches as a .json file">Backup</button>
           </div>
         </div>
+        <ul class="library-list fs-pane-body" id="library-list" tabindex="0" aria-label="My patches"></ul>
+        <input type="file" id="import-files" accept=".zptc,.json,application/json" multiple hidden />
       </section>
+
     </main>
 
     <div class="drop-overlay" id="drop-overlay" aria-hidden="true"><span>Drop <code>.zptc</code> or <code>.json</code> files to import them</span></div>
 
     <footer class="fs-status">
-      <a href="privacy.html">Privacy</a>
-      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
-      <span class="fs-data">Data: <a href="https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf" target="_blank" rel="noreferrer">Zoom MS-60B+ Effects List</a> © 2024 ZOOM CORPORATION. Manufacturer names are used only to describe sonic character.</span>
-      <time class="gh-updated" datetime="2026-10-27T21:28Z">Last update 27 October 2026 22:28</time>
+      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
+      <a href="privacy.html">Privacy</a>
+      <time class="gh-updated" datetime="2026-10-27T21:37Z">Last update 27 October 2026 22:37</time>
     </footer>
 
     <dialog class="Overlay" id="picker" aria-labelledby="picker-title">
@@ -221,7 +214,7 @@
     </dialog>
 
     <script src="pedal.js?v=zoom50-20261027"></script>
-    <script src="fullscreen.js?v=fs6-20261027"></script>
+    <script src="fullscreen.js?v=fs7-20261027"></script>
     <script src="effects-data.js?v=zoom24-20261026"></script>
     <script src="firmware-data.js?v=zoom24-20261026"></script>
     <script src="library-merge.js?v=zoom28-20261027"></script>
