@@ -10,7 +10,7 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=zoom36-20261027" />
+    <link rel="stylesheet" href="styles.css?v=zoom37-20261027" />
     <link rel="stylesheet" href="theme.css?v=zoom31-20261027" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
@@ -83,16 +83,34 @@
         <section class="Box usb-panel" aria-labelledby="usb-pedal-title">
           <div class="Box-header">
             <h2 class="Box-title" id="usb-pedal-title">On the pedal <span class="Counter" id="usb-pedal-count">0</span></h2>
-            <div class="toolbar-right"><button class="btn btn-sm" id="usb-refresh" disabled>Read again</button></div>
+            <div class="toolbar-right"><button class="btn btn-sm" id="usb-arrange" disabled title="Change the order of the patches on the pedal">Arrange</button><button class="btn btn-sm" id="usb-refresh" disabled>Read again</button></div>
           </div>
-          <p class="field-hint usb-hint">Select a memory: it is where a patch from the left goes.</p>
+          <p class="field-hint usb-hint" id="usb-pedal-hint">Select a memory: it is where a patch from the left goes.</p>
           <ul class="usb-memories" id="usb-memories" aria-live="polite"></ul>
+          <div class="usb-arrange" id="usb-arrange-panel" hidden>
+            <p class="field-hint usb-hint">Drag a patch to a new place, or select several (Shift-click for a range) and move them as a block. Nothing is written until you press Write.</p>
+            <div class="usb-arrange-bar">
+              <span class="usb-arrange-count" id="usb-arr-selected">No patch selected</span>
+              <button class="btn btn-sm" id="usb-arr-up" title="Move the selected patches up one place (Alt+↑)" aria-label="Move up">↑</button>
+              <button class="btn btn-sm" id="usb-arr-down" title="Move the selected patches down one place (Alt+↓)" aria-label="Move down">↓</button>
+              <label>To memory <input class="form-control form-control--sm" id="usb-arr-pos" type="number" min="1" inputmode="numeric" /></label>
+              <button class="btn btn-sm" id="usb-arr-to">Move</button>
+              <button class="btn btn-sm btn-invisible" id="usb-arr-none">Clear selection</button>
+            </div>
+            <ul class="usb-memories usb-arrange-list" id="usb-arrange-list" aria-label="New order of the patches"></ul>
+            <div class="usb-arrange-foot">
+              <span id="usb-arr-changes">No changes yet</span>
+              <button class="btn btn-sm btn-invisible" id="usb-arr-reset">Undo all</button>
+              <button class="btn btn-sm" id="usb-arr-cancel">Cancel</button>
+              <button class="btn btn-sm btn-primary" id="usb-arr-write" disabled>Write to the pedal</button>
+            </div>
+          </div>
         </section>
       </div>
 
       <details class="Box usb-box" id="usb-backups-box">
         <summary class="Box-header"><h2 class="Box-title">Backups <span class="Counter" id="usb-backup-count">0</span> <span class="Label account-local" title="Sign in to keep your pedal backups in your account">Kept in this browser only</span></h2></summary>
-        <p class="field-hint usb-body">Each write keeps the patch it replaces here (in this browser, the last 30) and downloads it as a <code>.zptc</code> file.</p>
+        <p class="field-hint usb-body">Each write keeps the patch it replaces here (in this browser, the last 30) and downloads it as a <code>.zptc</code> file. Arranging keeps all the memories it changes in one entry.</p>
         <ul class="usb-backups usb-body" id="usb-backups"></ul>
       </details>
 
@@ -117,7 +135,7 @@
         <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
         <a class="btn gh-repo" href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer" aria-label="Source code on GitHub"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Source on GitHub</span></a>
         <a class="gh-privacy" href="privacy.html">Privacy</a>
-        <time class="gh-updated" datetime="2026-10-27T01:03Z">Last update 27 October 2026 02:03</time>
+        <time class="gh-updated" datetime="2026-10-27T01:20Z">Last update 27 October 2026 02:20</time>
       </div>
       <div class="gh-footer-right">
         <span class="gh-data gh-data--note">The <code>.zptc</code> format was reverse-engineered from exported patches and is not supported by ZOOM. Parameters marked "unverified" use an inferred encoding. Patches were tested on Zoom MS-60B+ firmware 1.20.</span>
@@ -131,7 +149,7 @@
     <script src="zptc.js?v=zoom26-20261026"></script>
     <script src="patch-link.js?v=zoom24-20261026"></script>
     <script src="pedal-midi.js?v=zoom24-20261026"></script>
-    <script src="pedal-manager.js?v=zoom36-20261027"></script>
+    <script src="pedal-manager.js?v=zoom37-20261027"></script>
     <script src="library-merge.js?v=zoom28-20261027"></script>
     <script src="account.js?v=zoom28-20261027"></script>
     <script src="pwa.js?v=zoom24-20261026"></script>

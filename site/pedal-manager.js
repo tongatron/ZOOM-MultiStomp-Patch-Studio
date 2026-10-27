@@ -338,6 +338,7 @@
     return items;
   }
   function renderLocals() {
+    updateArrangeButton();
     const items = localItems();
     $('#usb-local-count').textContent = items.filter(i => i.key.startsWith('lib:')).length;
     const target = selected && memories.get(selected)?.state !== 'loading' ? selected : null;
@@ -369,15 +370,203 @@
 
   // ---- writing ---------------------------------------------------------------------------------------
   const readBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };
-  const writeBackups = list => { try { localStorage.setItem(BACKUP_KEY, JSON.stringify(list.slice(0, MAX_BACKUPS))); return true; } catch { return false; } };
+  // The last MAX_BACKUPS, and no more than about 190 kB so the list still fits in an account (see account-sync.mjs)
+  const writeBackups = list => {
+    const kept = list.slice(0, MAX_BACKUPS);
+    while (kept.length > 1 && JSON.stringify(kept).length > 190_000) kept.pop();
+    try { localStorage.setItem(BACKUP_KEY, JSON.stringify(kept)); return true; } catch { return false; }
+  };
   function renderBackups() {
     const list = readBackups();
     $('#usb-backup-count').textContent = list.length;
-    $('#usb-backups').innerHTML = list.length ? list.map(b => `<li data-id="${escapeHtml(b.id)}">
+    $('#usb-backups').innerHTML = list.length ? list.map(b => b.group ? `<li data-id="${escapeHtml(b.id)}">
+        <span><b>${b.group.length} memories</b> · ${escapeHtml(b.name)} <small>${escapeHtml(when(b.at))}</small></span>
+        <span class="usb-row"><button class="btn btn-sm" data-backup="restore" ${connected && info && !busy ? '' : 'disabled'}>Restore all ${b.group.length}</button><button class="btn btn-sm btn-invisible" data-backup="delete" aria-label="Delete this backup">Delete</button></span>
+      </li>` : `<li data-id="${escapeHtml(b.id)}">
         <span><b>Memory ${b.memory}</b> · ${escapeHtml(b.name)} <small>${escapeHtml(when(b.at))}</small></span>
         <span class="usb-row"><button class="btn btn-sm" data-backup="download">Download</button><button class="btn btn-sm" data-backup="restore" ${connected && info ? '' : 'disabled'}>Restore to memory ${b.memory}</button><button class="btn btn-sm btn-invisible" data-backup="delete" aria-label="Delete this backup">Delete</button></span>
       </li>`).join('') : '<li class="usb-empty">No backups yet.</li>';
   }
+
+  // ---- arranging the pedal ---------------------------------------------------------------------------
+  // A new order is planned in the page first: plan[i] is the memory whose patch goes to memory i + 1. Selected patches
+  // move as a block. Writing keeps one backup of every memory that changes, checks that the pedal still holds what was
+  // read, then writes and reads back each memory in turn.
+  let arranging = null; // { plan: [memory numbers], snap: Map(memory → { memory: bytes, name }), selection: Set, anchor }
+  const allRead = () => info && [...Array(info.count).keys()].every(i => { const m = memories.get(i + 1); return m?.state === 'ok' && m.crcOk; });
+  function updateArrangeButton() {
+    const button = $('#usb-arrange');
+    button.disabled = !connected || busy || !allRead();
+    button.title = !connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal is free' : !allRead() ? 'Every memory must be read correctly first: press Read again' : 'Change the order of the patches on the pedal';
+  }
+  function startArranging() {
+    if (!connected || busy || !allRead()) return;
+    const snap = new Map();
+    for (let n = 1; n <= info.count; n++) { const m = memories.get(n); snap.set(n, { memory: m.memory, name: m.decoded.name || '(no name)' }); }
+    arranging = { plan: Array.from({ length: info.count }, (_, i) => i + 1), snap, selection: new Set(), anchor: null };
+    busy = true; // nothing else talks to the pedal or changes it while a new order is planned
+    selected = null;
+    $('#usb-memories').hidden = true;
+    $('#usb-arrange-panel').hidden = false;
+    $('#usb-pedal-hint').hidden = true;
+    renderArrange();
+    renderLocals();
+    renderBackups();
+  }
+  function stopArranging() {
+    arranging = null;
+    busy = false;
+    $('#usb-memories').hidden = false;
+    $('#usb-arrange-panel').hidden = true;
+    $('#usb-pedal-hint').hidden = false;
+    renderMemories();
+    renderLocals();
+    renderBackups();
+  }
+  const changesOf = plan => plan.map((from, i) => ({ to: i + 1, from })).filter(c => c.to !== c.from);
+  function renderArrange(focusId) {
+    const { plan, snap, selection } = arranging;
+    $('#usb-arrange-list').innerHTML = plan.map((from, i) => `<li class="usb-arr-item${selection.has(from) ? ' is-checked' : ''}${from !== i + 1 ? ' is-moved' : ''}" draggable="true" data-from="${from}" tabindex="-1">
+        <input type="checkbox" ${selection.has(from) ? 'checked' : ''} aria-label="Select ${escapeHtml(snap.get(from).name)}" />
+        <span class="usb-num">${i + 1}</span><span class="usb-name">${escapeHtml(snap.get(from).name)}</span>
+        <span class="usb-meta">${from !== i + 1 ? `from ${from}` : ''}</span><span class="usb-grip" aria-hidden="true">⠿</span>
+      </li>`).join('');
+    const changes = changesOf(plan);
+    $('#usb-arr-selected').textContent = selection.size ? `${selection.size} selected` : 'No patch selected';
+    for (const id of ['#usb-arr-up', '#usb-arr-down', '#usb-arr-to', '#usb-arr-none']) $(id).disabled = !selection.size;
+    $('#usb-arr-pos').max = info.count;
+    $('#usb-arr-changes').textContent = changes.length ? `${changes.length} ${changes.length === 1 ? 'memory changes' : 'memories change'}` : 'No changes yet';
+    $('#usb-arr-write').disabled = !changes.length;
+    $('#usb-arr-write').textContent = changes.length ? `Write ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}` : 'Write to the pedal';
+    $('#usb-arr-reset').disabled = !changes.length;
+    if (focusId) $(`#usb-arrange-list [data-from="${focusId}"]`)?.focus();
+  }
+  // Puts the selected patches, in their current order, at index k of the list without them
+  function placeBlock(k) {
+    const { plan, selection } = arranging;
+    const block = plan.filter(id => selection.has(id));
+    const rest = plan.filter(id => !selection.has(id));
+    k = Math.max(0, Math.min(k, rest.length));
+    arranging.plan = [...rest.slice(0, k), ...block, ...rest.slice(k)];
+  }
+  function shift(dir) {
+    const { plan, selection } = arranging;
+    const p = [...plan];
+    const order = p.map((id, i) => (selection.has(id) ? i : -1)).filter(i => i >= 0);
+    for (const i of dir < 0 ? order : order.reverse()) {
+      const j = i + dir;
+      if (j >= 0 && j < p.length && !selection.has(p[j])) [p[i], p[j]] = [p[j], p[i]];
+    }
+    arranging.plan = p;
+  }
+  function choose(from, { range = false, toggle = true } = {}) {
+    const { plan, selection } = arranging;
+    if (range && arranging.anchor != null) {
+      const [x, y] = [plan.indexOf(arranging.anchor), plan.indexOf(from)].sort((a, b) => a - b);
+      for (const id of plan.slice(x, y + 1)) selection.add(id);
+    } else if (toggle) {
+      if (selection.has(from)) selection.delete(from); else selection.add(from);
+      arranging.anchor = from;
+    }
+  }
+  $('#usb-arrange').addEventListener('click', startArranging);
+  $('#usb-arr-cancel').addEventListener('click', stopArranging);
+  $('#usb-arr-reset').addEventListener('click', () => { arranging.plan = Array.from({ length: info.count }, (_, i) => i + 1); renderArrange(); });
+  $('#usb-arr-none').addEventListener('click', () => { arranging.selection.clear(); renderArrange(); });
+  $('#usb-arr-up').addEventListener('click', () => { shift(-1); renderArrange(); });
+  $('#usb-arr-down').addEventListener('click', () => { shift(1); renderArrange(); });
+  $('#usb-arr-to').addEventListener('click', () => {
+    const to = Number($('#usb-arr-pos').value);
+    if (!Number.isInteger(to) || to < 1 || to > info.count) { status(`Choose a memory from 1 to ${info.count}.`, 'danger'); return; }
+    placeBlock(to - 1);
+    renderArrange();
+    $(`#usb-arrange-list [data-from="${arranging.plan[to - 1]}"]`)?.scrollIntoView({ block: 'nearest' });
+  });
+  const list = $('#usb-arrange-list');
+  list.addEventListener('click', event => {
+    const item = event.target.closest('[data-from]');
+    if (!item) return;
+    choose(Number(item.dataset.from), { range: event.shiftKey });
+    renderArrange();
+  });
+  list.addEventListener('keydown', event => {
+    const item = event.target.closest('[data-from]');
+    if (!item || !arranging.selection.size || !event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    shift(event.key === 'ArrowUp' ? -1 : 1);
+    renderArrange(Number(item.dataset.from));
+  });
+  // Drag and drop: dragging a patch that is not selected moves only that patch
+  const dropMarks = () => list.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+  const dropSide = (item, event) => { const r = item.getBoundingClientRect(); return event.clientY < r.top + r.height / 2 ? 'before' : 'after'; };
+  list.addEventListener('dragstart', event => {
+    const item = event.target.closest('[data-from]');
+    if (!item) return;
+    const from = Number(item.dataset.from);
+    if (!arranging.selection.has(from)) { arranging.selection = new Set([from]); arranging.anchor = from; }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(from));
+    requestAnimationFrame(() => list.querySelectorAll('.usb-arr-item').forEach(el => el.classList.toggle('is-dragging', arranging.selection.has(Number(el.dataset.from)))));
+  });
+  list.addEventListener('dragover', event => {
+    const item = event.target.closest('[data-from]');
+    if (!item) return;
+    event.preventDefault();
+    dropMarks();
+    if (!arranging.selection.has(Number(item.dataset.from))) item.classList.add(`drop-${dropSide(item, event)}`);
+  });
+  list.addEventListener('dragleave', event => { if (!list.contains(event.relatedTarget)) dropMarks(); });
+  list.addEventListener('drop', event => {
+    event.preventDefault();
+    const item = event.target.closest('[data-from]');
+    dropMarks();
+    if (!item || arranging.selection.has(Number(item.dataset.from))) return;
+    const rest = arranging.plan.filter(id => !arranging.selection.has(id));
+    placeBlock(rest.indexOf(Number(item.dataset.from)) + (dropSide(item, event) === 'after' ? 1 : 0));
+    renderArrange();
+  });
+  list.addEventListener('dragend', () => { dropMarks(); renderArrange(); });
+
+  $('#usb-arr-write').addEventListener('click', async () => {
+    const { plan, snap } = arranging;
+    const changes = changesOf(plan);
+    if (!changes.length) return;
+    const shown = changes.slice(0, 12).map(c => `<li>Memory ${c.to}: <b>${escapeHtml(snap.get(c.from).name)}</b> (now in ${c.from})</li>`).join('');
+    const yes = await confirmWrite(`<p>Write the new order? ${changes.length} ${changes.length === 1 ? 'memory changes' : 'memories change'}:</p><ul>${shown}${changes.length > 12 ? `<li>and ${changes.length - 12} more</li>` : ''}</ul>
+      <p>A backup of these memories as they are now is kept in Backups, as one entry you can restore at once.</p>`, `Write ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}`);
+    if (!yes) return;
+    result(true, '');
+    // The pedal must still hold what was read when arranging started
+    for (const [k, c] of changes.entries()) {
+      status(`Checking memory ${c.to} (${k + 1} of ${changes.length})`);
+      await readOne(c.to);
+      const now = memories.get(c.to);
+      if (now.state !== 'ok' || !now.crcOk || !sameBytes(now.memory, snap.get(c.to).memory)) {
+        result(false, `Memory ${c.to} changed on the pedal (or could not be read) since it was read: nothing was written. Press Read again and arrange again.`);
+        status('Nothing written', 'danger');
+        stopArranging();
+        return;
+      }
+    }
+    const at = new Date().toISOString();
+    const stored = writeBackups([{ id: `${Date.now()}-arrange`, memory: changes[0].to, name: `Before rearranging ${changes.length} memories`, at,
+      group: changes.map(c => ({ memory: c.to, name: snap.get(c.to).name, data: toBase64(snap.get(c.to).memory) })) }, ...readBackups()]);
+    if (!stored) { result(false, 'This browser could not keep the backup, so nothing was written.'); status('Nothing written', 'danger'); return; }
+    renderBackups();
+    for (const [k, c] of changes.entries()) {
+      status(`Writing memory ${c.to} (${k + 1} of ${changes.length})`);
+      const r = await writeAndCheck(c.to, snap.get(c.from).memory);
+      if (!r.ok) {
+        result(false, `${r.text} Stopped after ${k} of ${changes.length} memories: restore “Before rearranging ${changes.length} memories” in Backups to go back.`);
+        status('Check the pedal', 'danger');
+        stopArranging();
+        return;
+      }
+    }
+    result(true, `New order written: ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}, each read back and identical.`);
+    status('Arranged', 'ok');
+    stopArranging();
+  });
 
   // Resolves true when the user confirms
   function confirmWrite(html, action) {
@@ -491,9 +680,25 @@
     const list = readBackups();
     const backup = list.find(b => b.id === button.closest('li').dataset.id);
     if (!backup) return;
-    const memory = fromBase64(backup.data);
+    const memory = backup.group ? null : fromBase64(backup.data); // an "arrange" backup holds several memories (group)
     if (button.dataset.backup === 'download') download(ptcfOf(memory), `backup ${String(backup.memory).padStart(3, '0')} ${fileName(backup.name)}.zptc`);
     if (button.dataset.backup === 'delete') { writeBackups(list.filter(b => b !== backup)); renderBackups(); }
+    if (button.dataset.backup === 'restore' && backup.group) {
+      const yes = await confirmWrite(`<p>Put back the ${backup.group.length} memories of <b>${escapeHtml(backup.name)}</b> (${escapeHtml(when(backup.at))})?</p><p>Memories ${backup.group.map(g => g.memory).join(', ')} get back what they held then.</p>`, `Restore ${backup.group.length} memories`);
+      if (!yes || busy) return;
+      busy = true;
+      renderLocals();
+      try {
+        for (const [k, g] of backup.group.entries()) {
+          status(`Restoring memory ${g.memory} (${k + 1} of ${backup.group.length})`);
+          const r = await writeAndCheck(g.memory, fromBase64(g.data));
+          if (!r.ok) { result(false, `${r.text} Stopped after ${k} of ${backup.group.length} memories.`); status('Check the pedal', 'danger'); return; }
+        }
+        result(true, `${backup.group.length} memories restored: each read back and identical.`);
+        status('Restored', 'ok');
+      } finally { busy = false; renderLocals(); renderBackups(); }
+      return;
+    }
     if (button.dataset.backup === 'restore') {
       const yes = await confirmWrite(`<p>Put <b>${escapeHtml(backup.name)}</b> (backup of ${escapeHtml(when(backup.at))}) back into <b>memory ${backup.memory}</b>?</p><p>It replaces what that memory holds now.</p>`, `Restore memory ${backup.memory}`);
       if (!yes || busy) return;
