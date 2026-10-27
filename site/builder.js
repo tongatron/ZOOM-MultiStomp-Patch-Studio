@@ -16,7 +16,7 @@ const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.
 // Effect metadata: catalog data + parameter codecs
 const catalog = EFFECTS_DATA.map(([name, category, , description, , params], index) => ({
   index, name, category, description,
-  params: params.map(([pname, desc, range], p) => ({ name: pname, desc, range, bits: PARAM_BITS[p], codec: ZPTC.codec(range, pname) })),
+  params: params.map(([pname, desc, range], p) => ({ name: pname, desc, range, bits: PARAM_BITS[p], codec: ZPTC.codec(range, pname, name) })),
   dsp: ZPTC.effects[index].dsp ?? 0,
   lcd: ZPTC.effects[index].lcd,
   usable: ZPTC.effects[index].id !== null, // false for add-ons whose effect ID is unknown

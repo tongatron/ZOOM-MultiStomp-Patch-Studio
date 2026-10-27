@@ -34,11 +34,12 @@ const ZPTC = (() => {
   // Ranges stored as a knob step (0 = minimum) rather than as the value shown. shown: the value shown at each step.
   // MID-FREQ "32 Hz – 6.3 kHz": 32 steps. All 32 were read on the AMPG SVT: 9 from exports (patches/mid-freq/) and
   // the whole scale from the display of the MS-60B+ (firmware 1.20) while the knob was turned, with the steps read
-  // back over MIDI (2026-10-27). The other amps with the same range (SMR400, B-MAN100, AC 370) are assumed to use
-  // the same steps, so the codec stays unverified. Step 13 (220 Hz) is the default.
+  // back over MIDI (2026-10-27). verifiedOn: the effects whose steps were read on the pedal. The other amps with the
+  // same range (SMR400, B-MAN100, AC 370) are assumed to use the same steps, so for them the codec stays unverified.
+  // Step 13 (220 Hz) is the default.
   const STEP_TABLES = {
     '32 Hz – 6.3 kHz': {
-      steps: 32, fallback: 13,
+      steps: 32, fallback: 13, verifiedOn: ['AMPG SVT'],
       shown: {
         0: '32 Hz', 1: '40 Hz', 2: '50 Hz', 3: '63 Hz', 4: '70 Hz', 5: '80 Hz', 6: '100 Hz', 7: '120 Hz', 8: '140 Hz', 9: '150 Hz',
         10: '160 Hz', 11: '180 Hz', 12: '200 Hz', 13: '220 Hz', 14: '250 Hz', 15: '300 Hz', 16: '350 Hz', 17: '400 Hz', 18: '450 Hz',
@@ -51,14 +52,14 @@ const ZPTC = (() => {
   // ---- displayed value ⇄ stored value -----------------------------------------------------------
   // verified: rule confirmed on exports; otherwise inferred by analogy (check on the pedal).
   // Returns null when the format is not decoded yet: the raw value is needed.
-  function codec(range, pname = '') {
+  function codec(range, pname = '', effect = '') {
     const r = range.replace(/\s+/g, ' ').trim();
     const table = STEP_TABLES[r];
     if (table) {
       const max = table.steps - 1;
       const known = Object.keys(table.shown).map(Number);
       return {
-        kind: 'number', min: 0, max, step: 1, verified: false, fallback: table.fallback,
+        kind: 'number', min: 0, max, step: 1, verified: !!table.verifiedOn?.includes(effect), fallback: table.fallback,
         encode: v => { const n = Number(v); if (!(Number.isInteger(n) && n >= 0 && n <= max)) throw new Error(`${pname} ${v} is not a step 0–${max}`); return n; },
         decode: s => s,
         // The value shown by the pedal at a step, or the known values on either side

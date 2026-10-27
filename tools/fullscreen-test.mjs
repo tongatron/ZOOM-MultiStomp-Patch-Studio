@@ -222,6 +222,20 @@ try {
     }
   });
 
+  await test('the AMPG SVT MID-FREQ has no warning any more; the other amps with that scale still have one', async () => {
+    await open('builder.html', SIZES[1]);
+    const flags = await page.evaluate(() => Object.fromEntries(['AMPG SVT', 'SMR400', 'B-MAN100', 'AC 370'].map(name => [name, catalog.find(fx => fx.name === name).params.find(p => p.name === 'MID-FREQ').codec.verified])));
+    assert.deepEqual(flags, { 'AMPG SVT': true, 'SMR400': false, 'B-MAN100': false, 'AC 370': false });
+    const notice = names => page.evaluate(names => { state.effects = names.map(name => slotFor(catalog.find(fx => fx.name === name).index)); render(); return document.querySelector('#notices').textContent; }, names);
+    assert.doesNotMatch(await notice(['AMPG SVT']), /MID-FREQ/, 'no "Check on the pedal" for the AMPG SVT');
+    assert.match(await notice(['SMR400']), /Check on the pedal:.*MID-FREQ/, 'but still one for the SMR400');
+    await page.evaluate(() => { state.effects = []; render(); });
+    await open('resources.html', SIZES[1]);
+    const rows = await page.locator('#check-unverified').innerText();
+    assert.doesNotMatch(rows, /AMPG SVT/);
+    for (const amp of ['SMR400', 'B-MAN100', 'AC 370']) assert.match(rows, new RegExp(`${amp}\\s+MID-FREQ`));
+  });
+
   await test('the tongatron.org button is B3: no animation, only a highlight on hover', async () => {
     await open('index.html', SIZES[1]);
     const button = page.locator('.fs-status a.fs-b3');
@@ -489,7 +503,7 @@ try {
     assert.equal(await page.locator('.fs-small a[href$="/landing/"]').count(), 1, 'a link to the presentation page');
     // the notice follows the window
     await page.setViewportSize({ width: 500, height: 640 });
-    assert.match(await page.locator('.fs-small [data-size]').textContent(), /^500 × 640 px$/);
+    await page.waitForFunction(() => document.querySelector('.fs-small [data-size]').textContent === '500 × 640 px');
     // every edge of the limit, on the two main pages and with the other pedal
     for (const file of ['index.html', 'builder.html', 'ms-50g/index.html']) {
       for (const [size, small] of [[[799, 700], true], [[1280, 639], true], [[800, 640], false], [[1024, 640], false], [[800, 700], false]]) {

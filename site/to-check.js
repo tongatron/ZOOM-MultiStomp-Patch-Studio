@@ -6,7 +6,7 @@
   EFFECTS_DATA.forEach(([name, , , , , params], i) => {
     if (!FIRMWARE_DATA[i]) return;
     params.forEach(([pname, , range]) => {
-      const c = ZPTC.codec(range, pname);
+      const c = ZPTC.codec(range, pname, name);
       if (!c) rows.raw.push([name, pname, range]);
       else if (!c.verified) rows.unverified.push([name, pname, range]);
     });
