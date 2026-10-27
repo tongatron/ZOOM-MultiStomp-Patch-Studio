@@ -880,3 +880,14 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-grip { color: var(--fg-subtle); }
 .usb-arrange-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); }
 .usb-arrange-foot span { margin-right: auto; color: var(--fg-muted); font-size: 13px; }
+
+/* ---- resources page ---- */
+.resources { padding-top: 8px; padding-bottom: 32px; }
+.resource-list { max-width: 760px; list-style: none; margin: 0; padding: 0; }
+.resource { display: flex; align-items: flex-start; gap: 12px; padding: 16px; }
+.resource + .resource { border-top: 1px solid var(--border-muted); }
+.resource > svg { flex: none; margin-top: 3px; color: var(--fg-muted); }
+.resource-body { flex: 1; min-width: 0; }
+.resource h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.resource p { margin: 0 0 10px; color: var(--fg-muted); font-size: 14px; line-height: 1.5; }
+.resource-links { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -30,9 +30,4 @@ dialog.Overlay { box-shadow: 0 0 0 1px var(--border), 0 8px 24px rgba(1, 4, 9, .
 /* Non-theme rules that live in stage.css: kept so the pages still work */
 .update-bar { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 8px 8px 8px 16px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; }
 .update-bar span { flex: 1; white-space: nowrap; }
-.gh-manual { gap: 6px; cursor: default; }
-.gh-manual:hover { background: var(--btn-bg); border-color: var(--btn-border); }
-.gh-manual a { color: var(--accent-fg); font-weight: 600; }
-.gh-manual > span[aria-hidden] { color: var(--fg-subtle); margin: 0 -2px; }
-@media (max-width: 520px) { .gh-manual-label { display: none; } }
 .flip { transform: scaleX(-1); }
