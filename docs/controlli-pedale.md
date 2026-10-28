@@ -21,7 +21,7 @@ Che cosa si può fare, in ordine di sicurezza:
 
 Come ci si collega, due strade:
 
-- **Strada 1, nessun codice nuovo: Chrome + Pedal manager.** Tu: cavo USB dati, pedale acceso, Handy Guitar Lab chiuso, apri `https://zoom_multistomp_studio.tongatron.org/pedal-manager.html` in Chrome, premi **Connect the pedal** e consenti il MIDI (il permesso lo può dare solo la persona, io non posso cliccarlo). Claude è già collegato al tuo Chrome (estensione locale) e può leggere e usare la pagina (`PEDALMIDI`, la lista delle memorie, il MIDI log). Nessuna installazione.
+- **Strada 1, nessun codice nuovo: Chrome + Pedal manager.** Tu: cavo USB dati, pedale acceso, Handy Guitar Lab chiuso, apri `https://zoommultistompstudio.tongatron.org/pedal-manager.html` in Chrome, premi **Connect the pedal** e consenti il MIDI (il permesso lo può dare solo la persona, io non posso cliccarlo). Claude è già collegato al tuo Chrome (estensione locale) e può leggere e usare la pagina (`PEDALMIDI`, la lista delle memorie, il MIDI log). Nessuna installazione.
 - **Strada 2, da terminale** (non necessaria ora): uno script Node o Python con una libreria CoreMIDI (`midi`, `python-rtmidi`). Serve installare un modulo nativo; ha senso solo se il lavoro con il browser diventa scomodo.
 
 Regole di sicurezza (valgono per tutta la lista):

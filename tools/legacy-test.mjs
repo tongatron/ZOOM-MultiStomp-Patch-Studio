@@ -4,7 +4,7 @@
 // Run: npm install && npx playwright install chromium && node tools/legacy-test.mjs
 // Locally you can use the installed Chrome instead of downloading Chromium: PW_CHANNEL=chrome node tools/legacy-test.mjs
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -72,6 +72,13 @@ await test('the new address is the site itself, and its /moved page only takes d
   const body = await receiver.text();
   assert.ok(body.includes(`const FROM = ["${old}"]`));
   assert.match(body, /event\.origin !== from/);
+});
+
+await test('an old address equal to SITE_URL is ignored, so a stale SITE_URL cannot make the site redirect to itself', async () => {
+  const read = env => JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "const m = await import(process.argv[1]); console.log(JSON.stringify({ site: m.SITE_URL, legacy: m.LEGACY_ORIGINS }));", new URL('../deploy/site-url.mjs', import.meta.url).href], { env: { ...process.env, ...env } }).toString());
+  assert.deepEqual(read({ SITE_URL: 'https://zoom.tongatron.org', LEGACY_ORIGINS: 'https://zoom.tongatron.org/,https://old.example' }), { site: 'https://zoom.tongatron.org', legacy: ['https://old.example'] });
+  assert.deepEqual(read({ SITE_URL: '', LEGACY_ORIGINS: '' }), { site: 'https://zoommultistompstudio.tongatron.org', legacy: [] }, 'the defaults, and an empty list turns the redirect off');
+  assert.deepEqual(read({ SITE_URL: '', LEGACY_ORIGINS: undefined }).legacy, ['https://zoom.tongatron.org'], 'by default the old address redirects');
 });
 
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });

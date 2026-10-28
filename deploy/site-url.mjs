@@ -3,5 +3,6 @@
 //   LEGACY_ORIGINS  comma separated old addresses of the site, which only redirect to SITE_URL (see legacy-host.mjs);
 //                   empty turns the redirect off
 // The site was zoom.tongatron.org until 2026-10-28.
-export const SITE_URL = (process.env.SITE_URL || 'https://zoom_multistomp_studio.tongatron.org').replace(/\/$/, '');
-export const LEGACY_ORIGINS = (process.env.LEGACY_ORIGINS ?? 'https://zoom.tongatron.org').split(',').map(origin => origin.trim().replace(/\/$/, '')).filter(Boolean);
+export const SITE_URL = (process.env.SITE_URL || 'https://zoommultistompstudio.tongatron.org').replace(/\/$/, '');
+// An old address equal to SITE_URL is ignored: it would redirect to itself
+export const LEGACY_ORIGINS = (process.env.LEGACY_ORIGINS ?? 'https://zoom.tongatron.org').split(',').map(origin => origin.trim().replace(/\/$/, '')).filter(origin => origin && origin !== SITE_URL);
