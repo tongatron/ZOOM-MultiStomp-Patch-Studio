@@ -4,7 +4,7 @@
 const PEDAL = {
   id: 'ms60b', // prefix of the browser storage keys and of the sync namespace
   name: 'Zoom MS-60B+',
-  amp: 'Bass amp', // "Plugging into" choice in the advice panel
+  amp: 'Amp', // "Plug into" choice in the advice panel
   tested: true, // false: generated patches have not been checked on the pedal yet
   fxListUrl: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf',
   manualUrl: 'https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41',

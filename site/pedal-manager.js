@@ -11,8 +11,11 @@
   const DRAFT_KEY = `${PEDAL.id}-builder`;
   const EDIT_KEY = `${PEDAL.id}-pedal-edit`; // { memory, name, base: base64 PTCF, at } while a memory is edited in the builder
   const CLEARED_NAME = 'Empty'; // name of a cleared memory: no effects, only the BLANK slot
-  const BACKUP_KEY = `${PEDAL.id}-usb-backups`; // [{ id, memory, name, at, data: base64 of the whole memory }], newest first
+  // [{ id, memory, name, at, data: base64 of the whole memory }], newest first. A deleted backup stays as { id, deleted: true, at }
+  // for 90 days, so that an account does not bring it back (backups are only ever added when two copies are merged)
+  const BACKUP_KEY = `${PEDAL.id}-usb-backups`;
   const MAX_BACKUPS = 30;
+  const GRAVE_MS = 90 * 864e5;
   // The memories as last read, so the list stays visible (greyed, read-only) while the pedal is not connected:
   // { at, count, memories: { n: base64 of the PTCF file | null for an empty memory } }
   const LAST_READ_KEY = `${PEDAL.id}-usb-last-read`;
@@ -28,6 +31,7 @@
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
   let renaming = null; // memory number whose rename field is open
   let moving = null; // { n, swap } while the move or swap form of memory n is open
+  let staleOpen = null; // memory number whose saved patch is open in the list shown while the pedal is not connected
   // "Send to memory N" in the builder opens this page with #send=N: once the pedal is read, the builder's patch goes there
   let pendingSend = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('send')) || null;
   if (pendingSend) history.replaceState(null, '', location.pathname);
@@ -121,6 +125,7 @@
   }
   function setConnected(on) {
     connected = on;
+    staleOpen = null;
     $('#usb-connect').hidden = on;
     $('#usb-disconnect').hidden = !on;
     $('#usb-steps').hidden = on;
@@ -176,7 +181,8 @@
     memories.forEach((m, n) => { if (m.state === 'ok') list[n] = toBase64(m.data); else if (m.state === 'empty') list[n] = null; });
     try { localStorage.setItem(LAST_READ_KEY, JSON.stringify({ at: new Date().toISOString(), count: info.count, memories: list })); } catch {}
   }
-  // Rows of the last-read list: name and summary of each memory, decoded again from the saved files
+  // Rows of the last-read list: name and summary of each memory, decoded again from the saved files; a readable
+  // memory also carries its file (data) and what it holds (decoded: the effects), so it can be opened without the pedal
   function lastRead() {
     const saved = readJson(LAST_READ_KEY, null);
     if (!saved?.count) return null;
@@ -185,8 +191,9 @@
       if (data === null) return { n, state: 'empty', name: '(empty)', meta: '' };
       if (!data) return { n, state: 'empty', name: 'Not read', meta: '' };
       try {
-        const d = ZPTC.decode(fromBase64(data));
-        return { n, state: 'ok', name: d.name || '(no name)', meta: `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%` };
+        const bytes = fromBase64(data);
+        const decoded = ZPTC.decode(bytes);
+        return { n, state: 'ok', name: decoded.name || '(no name)', meta: `${decoded.effects.length} fx · ${decoded.dspTotal.toFixed(1)}%`, data: bytes, decoded };
       } catch { return { n, state: 'error', name: 'Unreadable', meta: '' }; }
     });
     return { at: saved.at, rows };
@@ -262,6 +269,24 @@
       </div>` : ''}
     </li>`;
   }
+  // Not connected: a memory of the saved list. A readable one opens to its effects, and can be copied or downloaded
+  // (what needs the pedal stays out of this list)
+  let staleRows = null;
+  function staleHtml(r) {
+    const open = r.n === staleOpen && !!r.decoded;
+    return `<li class="usb-mem is-stale${open ? ' is-selected' : ''}" data-n="${r.n}" data-state="${r.state}">
+      <button class="usb-mem-main" data-act="stale-open" aria-pressed="${open}" ${r.decoded ? '' : 'disabled'}>
+        <span class="usb-num">${r.n}</span><span class="usb-name">${escapeHtml(r.name)}</span><span class="usb-meta">${escapeHtml(r.meta)}</span>
+      </button>
+      ${open ? `<div class="usb-mem-detail">
+        ${chainCards(r.decoded)}
+        <div class="usb-row">
+          <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
+          <button class="btn btn-sm" data-act="download">Download .zptc</button>
+        </div>
+      </div>` : ''}
+    </li>`;
+  }
   function renderMemories() {
     const hint = $('#usb-pedal-hint');
     const last = !connected && lastRead();
@@ -269,14 +294,14 @@
     delete hint.dataset.kind;
     if (last) {
       const when = new Date(last.at).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      hint.textContent = `Not connected: the patches as last read on ${when}. They may have changed on the pedal since; connect it to work on them.`;
+      hint.textContent = `Not connected: the patches and their effects as last read on ${when}. Select a patch to see its effects. They may have changed on the pedal since; connect it to work on them.`;
       hint.dataset.kind = 'stale';
+      staleRows = last.rows;
       $('#usb-pedal-count').textContent = last.rows.length;
-      $('#usb-memories').innerHTML = last.rows.map(r => `<li class="usb-mem is-stale" data-state="${r.state}">
-        <div class="usb-mem-main" aria-disabled="true"><span class="usb-num">${r.n}</span><span class="usb-name">${escapeHtml(r.name)}</span><span class="usb-meta">${escapeHtml(r.meta)}</span></div>
-      </li>`).join('');
+      $('#usb-memories').innerHTML = last.rows.map(staleHtml).join('');
       return;
     }
+    staleRows = null;
     const count = info?.count ?? 0;
     $('#usb-pedal-count').textContent = count;
     $('#usb-memories').innerHTML = !connected ? '<li class="usb-empty">Connect the pedal to see its patch memories.</li>'
@@ -299,8 +324,18 @@
     const button = event.target.closest('[data-act]');
     if (!button) return;
     const n = Number(button.closest('[data-n]').dataset.n);
-    const m = memories.get(n);
+    const m = connected ? memories.get(n) : staleRows?.find(r => r.n === n); // saved copy while the pedal is not connected
     switch (button.dataset.act) {
+      case 'stale-open': {
+        const previous = staleOpen;
+        staleOpen = staleOpen === n ? null : n;
+        for (const k of new Set([previous, staleOpen])) {
+          const row = staleRows.find(r => r.n === k);
+          if (row) $(`#usb-memories [data-n="${k}"]`).outerHTML = staleHtml(row);
+        }
+        $(`#usb-memories [data-n="${n}"] .usb-mem-main`)?.focus();
+        break;
+      }
       case 'select': renaming = null; moving = null; select(n); break;
       case 'edit': // remember where the patch comes from, so the builder can send it back to this memory
         try { localStorage.setItem(EDIT_KEY, JSON.stringify({ memory: n, name: m.decoded.name, base: toBase64(m.data), at: new Date().toISOString(), pending: true })); } catch {}
@@ -415,16 +450,25 @@
   window.addEventListener('account-synced', event => { if (event.detail.pedal === PEDAL.id) { renderLocals(); renderBackups(); } });
 
   // ---- writing ---------------------------------------------------------------------------------------
-  const readBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };
-  // The last MAX_BACKUPS, and no more than about 190 kB so the list still fits in an account (see account-sync.mjs)
-  const writeBackups = list => {
+  const storedBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };
+  const readBackups = () => storedBackups().filter(b => !b.deleted);
+  // The last MAX_BACKUPS, and no more than about 190 kB so the list still fits in an account (see account-sync.mjs).
+  // The deletion records of the last 90 days are kept next to them.
+  const writeBackups = (list, graves = storedBackups().filter(b => b.deleted)) => {
     const kept = list.slice(0, MAX_BACKUPS);
-    while (kept.length > 1 && JSON.stringify(kept).length > 190_000) kept.pop();
-    try { localStorage.setItem(BACKUP_KEY, JSON.stringify(kept)); return true; } catch { return false; }
+    const recent = graves.filter(g => Date.now() - Date.parse(g.at) < GRAVE_MS);
+    while (kept.length > 1 && JSON.stringify([...kept, ...recent]).length > 190_000) kept.pop();
+    try { localStorage.setItem(BACKUP_KEY, JSON.stringify([...kept, ...recent])); return true; } catch { return false; }
+  };
+  const removeBackups = ids => {
+    const at = new Date().toISOString();
+    const live = readBackups();
+    return writeBackups(live.filter(b => !ids.includes(b.id)), [...storedBackups().filter(b => b.deleted), ...live.filter(b => ids.includes(b.id)).map(b => ({ id: b.id, deleted: true, at }))]);
   };
   function renderBackups() {
     const list = readBackups();
     $('#usb-backup-count').textContent = list.length;
+    $('#usb-backups-clear').disabled = !list.length;
     $('#usb-backups').innerHTML = list.length ? list.map(b => b.group ? `<li data-id="${escapeHtml(b.id)}">
         <span><b>${b.group.length} memories</b> · ${escapeHtml(b.name)} <small>${escapeHtml(when(b.at))}</small></span>
         <span class="usb-row"><button class="btn btn-sm" data-backup="restore" ${connected && info && !busy ? '' : 'disabled'}>Restore all ${b.group.length}</button><button class="btn btn-sm btn-invisible" data-backup="delete" aria-label="Delete this backup">Delete</button></span>
@@ -615,8 +659,9 @@
   });
 
   // Resolves true when the user confirms
-  function confirmWrite(html, action) {
+  function confirmWrite(html, action, title = 'Write to the pedal') {
     const dialog = $('#usb-confirm');
+    $('#usb-confirm-title').textContent = title;
     $('#usb-confirm-body').innerHTML = html;
     $('#usb-confirm-yes').textContent = action;
     dialog.showModal();
@@ -728,7 +773,7 @@
     if (!backup) return;
     const memory = backup.group ? null : fromBase64(backup.data); // an "arrange" backup holds several memories (group)
     if (button.dataset.backup === 'download') download(ptcfOf(memory), `backup ${String(backup.memory).padStart(3, '0')} ${fileName(backup.name)}.zptc`);
-    if (button.dataset.backup === 'delete') { writeBackups(list.filter(b => b !== backup)); renderBackups(); }
+    if (button.dataset.backup === 'delete') { removeBackups([backup.id]); renderBackups(); }
     if (button.dataset.backup === 'restore' && backup.group) {
       const yes = await confirmWrite(`<p>Put back the ${backup.group.length} memories of <b>${escapeHtml(backup.name)}</b> (${escapeHtml(when(backup.at))})?</p><p>Memories ${backup.group.map(g => g.memory).join(', ')} get back what they held then.</p>`, `Restore ${backup.group.length} memories`);
       if (!yes || busy) return;
@@ -754,6 +799,35 @@
       status(r.ok ? 'Restored' : 'Check the pedal', r.ok ? 'ok' : 'danger');
     }
   });
+
+  $('#usb-backups-clear').addEventListener('click', async () => {
+    const list = readBackups();
+    if (!list.length) return;
+    const count = `${list.length} ${list.length === 1 ? 'backup' : 'backups'}`;
+    const yes = await confirmWrite(`<p>Delete all <b>${count}</b>?</p>
+      <p>They hold the patches the pedal had before each write. Once deleted they cannot be restored from this page, and if you are signed in they are deleted from your account too. The <code>.zptc</code> files that were downloaded with them are not touched.</p>`,
+      `Delete ${list.length === 1 ? 'the backup' : `all ${list.length}`}`, 'Delete all backups');
+    if (!yes) return;
+    removeBackups(readBackups().map(b => b.id));
+    renderBackups();
+    status(`${count} deleted`, 'ok');
+  });
+
+  // MIDI log full screen: the whole box, through the Fullscreen API when the browser has it (Esc leaves), else the window
+  const logBox = $('#usb-log-box');
+  const logFull = $('#usb-log-full');
+  function setLogFull(on) {
+    if (on) logBox.open = true;
+    logBox.classList.toggle('is-full', on);
+    logFull.setAttribute('aria-pressed', String(on));
+    logFull.setAttribute('aria-label', on ? 'Leave full screen' : 'Full screen');
+    logFull.title = on ? 'Leave full screen (Esc)' : 'Full screen';
+    if (on && logBox.requestFullscreen) logBox.requestFullscreen().catch(() => {});
+    if (!on && document.fullscreenElement === logBox) document.exitFullscreen().catch(() => {});
+  }
+  logFull.addEventListener('click', () => setLogFull(!logBox.classList.contains('is-full')));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && logBox.classList.contains('is-full')) setLogFull(false); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && logBox.classList.contains('is-full') && !document.fullscreenElement && !$('#usb-confirm').open) setLogFull(false); });
 
   $('#usb-copy-log').addEventListener('click', () => navigator.clipboard?.writeText($('#usb-log').textContent).then(() => status('Log copied', 'ok')));
   $('#usb-clear-log').addEventListener('click', () => { lines.length = 0; showLog(); });

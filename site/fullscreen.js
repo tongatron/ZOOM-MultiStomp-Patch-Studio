@@ -39,12 +39,48 @@ document.querySelectorAll('.fs-menu').forEach(menu => {
 });
 
 const FS = {
-  // Fills an "On this page" list with the h2 and h3 headings of a document; headings without an id get one
+  // Fills an "On this page" list with the h2 and h3 headings of a document (headings without an id get one) and
+  // highlights the entry of the section being read while the document scrolls
   toc(doc, list) {
     const slug = text => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    list.innerHTML = [...doc.querySelectorAll('h2, h3')].map(h => {
+    const headings = [...doc.querySelectorAll('h2, h3')];
+    list.innerHTML = headings.map(h => {
       if (!h.id) h.id = slug(h.textContent);
       return `<li${h.tagName === 'H3' ? ' class="toc-sub"' : ''}><a href="#${h.id}">${h.textContent.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</a></li>`;
     }).join('');
+
+    const links = [...list.querySelectorAll('a')];
+    const scroller = doc.closest('.fs-pane-body'); // the pane the document scrolls in
+    const pane = list.closest('.fs-pane-body'); // the pane of the contents list, which scrolls to keep the entry in view
+    if (!scroller || !pane || !links.length) return;
+    const indexOf = hash => headings.findIndex(h => `#${h.id}` === hash);
+    let active = -1;
+    let chosen = indexOf(location.hash); // the section a link just took us to: it stays marked even when it is too short to reach the top
+    const mark = index => {
+      if (index === active) return;
+      active = index;
+      links.forEach((link, i) => i === index ? link.setAttribute('aria-current', 'location') : link.removeAttribute('aria-current'));
+      const a = links[index].getBoundingClientRect(), p = pane.getBoundingClientRect();
+      if (a.top < p.top + 8) pane.scrollTop -= p.top + 8 - a.top;
+      else if (a.bottom > p.bottom - 8) pane.scrollTop += a.bottom - p.bottom + 8;
+    };
+    const update = () => {
+      const view = scroller.getBoundingClientRect();
+      let index = 0;
+      headings.forEach((h, i) => { if (h.getBoundingClientRect().top <= view.top + 24) index = i; }); // the last heading that reached the top
+      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2) { // the end: the last sections cannot reach the top
+        index = chosen >= 0 && headings[chosen].getBoundingClientRect().top < view.bottom ? chosen : headings.length - 1;
+      }
+      mark(index);
+    };
+    scroller.addEventListener('scroll', update, { passive: true });
+    for (const type of ['wheel', 'touchmove', 'keydown']) scroller.addEventListener(type, () => { chosen = -1; }, { passive: true });
+    list.addEventListener('click', event => {
+      const link = event.target.closest('a');
+      if (link) { chosen = links.indexOf(link); mark(chosen); }
+    });
+    addEventListener('hashchange', () => { chosen = indexOf(location.hash); });
+    addEventListener('resize', update);
+    update();
   }
 };

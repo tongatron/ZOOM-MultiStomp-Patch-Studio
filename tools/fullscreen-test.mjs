@@ -6,6 +6,7 @@
 // Locally you can use the installed Chrome instead of downloading Chromium: PW_CHANNEL=chrome node tools/fullscreen-test.mjs
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -393,6 +394,121 @@ try {
     assert.notEqual(await page.locator('#dialog-title').textContent(), before);
   });
 
+  await test('effects: no manual notice under the filters and no link buttons under the detail, for each pedal', async () => {
+    for (const file of ['index.html', 'ms-50g/index.html']) {
+      await open(file, SIZES[1]);
+      await page.locator('.fx-link').nth(2).click();
+      assert.equal(await page.locator('.sidebar .flash, .sidebar a[href*="zoomcorp.com"]').count(), 0, `${file}: no notice about the official manual`);
+      assert.equal(await page.locator('#dialog-body .detail-foot, #dialog-body a[href*="zoomcorp.com"]').count(), 0, `${file}: no Effects List or manual buttons in the detail`);
+      assert.equal(await page.locator('#dialog-body .detail-add a').count(), 1, `${file}: Add to patch is still there`);
+    }
+  });
+
+  await test('builder: Plug into, Amp and the mixer choice sit on one line at every size, for each pedal', async () => {
+    for (const file of ['builder.html', 'ms-50g/builder.html']) {
+      for (const size of SIZES) {
+        await open(file, size);
+        const row = await page.evaluate(() => {
+          const box = document.querySelector('#advice-output');
+          const items = [...box.children];
+          const middle = el => { const r = el.getBoundingClientRect(); return (r.top + r.bottom) / 2; };
+          return { texts: items.map(el => el.textContent.trim()), oneLine: items.every(el => Math.abs(middle(el) - middle(items[0])) < 4), fits: box.scrollWidth <= box.clientWidth + 1 };
+        });
+        assert.deepEqual(row, { texts: ['Plug into', 'Amp', 'Mixer / PA / headphones'], oneLine: true, fits: true }, `${file} at ${size.join(' × ')}`);
+      }
+    }
+  });
+
+  await test('the guide and the other documents mark the contents entry of the section being read', async () => {
+    for (const file of ['guide.html', 'ms-50g/guide.html', 'technical-notes.html']) {
+      await open(file, SIZES[1]);
+      const current = () => page.locator('#toc a[aria-current]').evaluateAll(links => links.map(a => a.getAttribute('href')));
+      const hrefs = await page.locator('#toc a').evaluateAll(links => links.map(a => a.getAttribute('href')));
+      assert.deepEqual(await current(), [hrefs[0]], `${file}: the first section is marked at the top`);
+      const scrollTo = id => page.evaluate(target => {
+        const pane = document.querySelector('.fs-doc .fs-pane-body');
+        pane.scrollTop = document.getElementById(target).getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - 4;
+      }, id);
+      const middle = hrefs[Math.floor(hrefs.length / 2)];
+      await scrollTo(middle.slice(1));
+      await page.waitForFunction(href => document.querySelector('#toc a[aria-current]')?.getAttribute('href') === href, middle);
+      assert.deepEqual(await current(), [middle], `${file}: the section that reached the top is marked, and only that one`);
+      await page.evaluate(() => { const pane = document.querySelector('.fs-doc .fs-pane-body'); pane.scrollTop = pane.scrollHeight; });
+      await page.waitForFunction(href => document.querySelector('#toc a[aria-current]')?.getAttribute('href') === href, hrefs.at(-1));
+      if (file.endsWith('guide.html')) { // a short section near the end cannot reach the top: it stays marked after its link is used
+        await page.locator('#toc a[href="#resources"]').click();
+        await page.waitForTimeout(300);
+        assert.deepEqual(await current(), ['#resources'], `${file}: the section a link led to stays marked`);
+      }
+    }
+  });
+
+  await test('pedal manager: the hint under My patches, the effects of the last-read patches, Delete all and the MIDI log in full screen', async () => {
+    const memories = { 1: '01base.zptc', 2: '06FLIP.zptc', 3: '07Big Black .zptc' };
+    const lastRead = { at: '2026-10-28T10:00:00.000Z', count: 6, memories: { ...Object.fromEntries(Object.entries(memories).map(([n, f]) => [n, readFileSync(new URL(`../patches/${f}`, import.meta.url)).toString('base64')])), 4: null } };
+    const backups = [3, 2, 1].map(i => ({ id: `b${i}`, memory: i, name: `Patch ${i}`, at: new Date(Date.now() - i * 60000).toISOString(), data: 'AAAA' }));
+    await open('pedal-manager.html', SIZES[1]);
+    await page.evaluate(([read, saved]) => { localStorage.setItem('ms60b-usb-last-read', read); localStorage.setItem('ms60b-usb-backups', saved); }, [JSON.stringify(lastRead), JSON.stringify(backups)]);
+    await page.reload();
+    await page.waitForSelector('#usb-memories .usb-mem');
+
+    // My patches: a hint that asks for a slot on the pedal, and nothing about the browser
+    const hint = (await page.locator('.usb-panel').first().locator('.usb-hint').textContent()).trim();
+    assert.equal(hint, 'Select a slot on the pedal to load a patch.');
+
+    // Not connected: the last-read patches open to their effects, and can be copied or downloaded
+    assert.match(await page.locator('#usb-pedal-hint').textContent(), /Not connected: the patches and their effects as last read on 28 October 2026/);
+    assert.equal(await page.locator('#usb-memories [data-act="stale-open"]:not([disabled])').count(), 3, 'the three readable memories can be opened; the empty and unread ones cannot');
+    await page.locator('#usb-memories [data-n="3"] [data-act="stale-open"]').click();
+    const shown = await page.locator('#usb-memories [data-n="3"] .usb-fx b').allTextContents();
+    const stored = await page.evaluate(b64 => ZPTC.decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0))).effects.map(e => e.effect), lastRead.memories[3]);
+    assert.ok(stored.length >= 2, 'the sample patch has several effects');
+    assert.deepEqual(shown, stored, 'the saved patch shows its effects, in order');
+    assert.deepEqual(await page.locator('#usb-memories [data-n="3"] .usb-mem-detail button').allTextContents(), ['Copy to My patches', 'Download .zptc']);
+    const patchesBefore = Number(await page.locator('#usb-local-count').textContent());
+    await page.locator('#usb-memories [data-n="3"] [data-act="copy"]').click();
+    assert.equal(Number(await page.locator('#usb-local-count').textContent()), patchesBefore + 1, 'copied to My patches without the pedal');
+    await page.locator('#usb-memories [data-n="3"] [data-act="stale-open"]').click();
+    assert.equal(await page.locator('#usb-memories .usb-mem-detail').count(), 0, 'selecting it again closes it');
+
+    // Backups: Delete all asks first
+    assert.equal(await page.locator('#usb-backup-count').textContent(), '3');
+    await page.locator('#usb-backups-clear').click();
+    assert.equal(await page.locator('#usb-backups-box').evaluate(box => box.open), true, 'the button does not fold the box');
+    assert.equal(await page.locator('#usb-confirm-title').textContent(), 'Delete all backups');
+    assert.match(await page.locator('#usb-confirm-body').innerText(), /Delete all 3 backups\?/);
+    await page.locator('#usb-confirm [data-confirm="no"]').click();
+    assert.equal(await page.locator('#usb-backup-count').textContent(), '3', 'Cancel keeps them');
+    await page.locator('#usb-backups-clear').click();
+    await page.locator('#usb-confirm [data-confirm="yes"]').click();
+    assert.equal(await page.locator('#usb-backup-count').textContent(), '0');
+    assert.equal(await page.locator('#usb-backups-clear').isDisabled(), true, 'nothing left to delete');
+    const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('ms60b-usb-backups')));
+    assert.deepEqual(kept.map(b => b.deleted), [true, true, true], 'deletion records keep an account from bringing them back');
+    await page.reload();
+    await page.waitForSelector('#usb-backups li');
+    assert.equal(await page.locator('#usb-backups .usb-empty').textContent(), 'No backups yet.');
+
+    // MIDI log: a full screen button at the top right of its header
+    const place = await page.evaluate(() => {
+      const head = document.querySelector('#usb-log-box > summary').getBoundingClientRect();
+      const button = document.querySelector('#usb-log-full').getBoundingClientRect();
+      return { atRight: head.right - button.right < 24, inside: button.top >= head.top && button.bottom <= head.bottom };
+    });
+    assert.deepEqual(place, { atRight: true, inside: true });
+    await page.locator('#usb-log-full').click();
+    const full = await page.evaluate(() => { const r = document.querySelector('#usb-log-box').getBoundingClientRect(); return { covers: r.width === innerWidth && r.height === innerHeight, pressed: document.querySelector('#usb-log-full').getAttribute('aria-pressed') }; });
+    assert.deepEqual(full, { covers: true, pressed: 'true' });
+    await page.locator('#usb-log-full').click();
+    assert.equal(await page.locator('#usb-log-box').evaluate(box => box.classList.contains('is-full')), false, 'the button leaves full screen');
+    // without the Fullscreen API the box fills the window and Esc leaves it
+    await page.evaluate(() => { document.querySelector('#usb-log-box').requestFullscreen = undefined; });
+    await page.locator('#usb-log-full').click();
+    assert.equal(await page.locator('#usb-log-box').evaluate(box => box.classList.contains('is-full')), true);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#usb-log-box').evaluate(box => box.classList.contains('is-full')), false, 'Esc leaves it');
+  });
+
   await test('the advice cannot be turned off: no switch in the builder or in the effect detail, even if the classic page saved it off', async () => {
     await open('index.html', SIZES[1]);
     await page.evaluate(() => localStorage.setItem(`${PEDAL.id}-advice`, JSON.stringify({ enabled: false })));
@@ -458,7 +574,7 @@ try {
     assert.equal(await page.locator('.fx-thumb').first().getAttribute('src'), 'assets/effects/fx-000.png');
     await page.locator('.fx-thumb').first().evaluate(img => img.decode());
     assert.equal(await page.locator('.fx-thumb').first().evaluate(img => img.naturalWidth > 0), true, 'the MS-50G+ effect images load');
-    assert.match(await page.locator('.flash a').getAttribute('href'), /ms-50gplus-en/);
+    assert.equal(await page.locator('.flash').count(), 0, 'no notice about the official manual');
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
     assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass Tested on firmware 1.20', 'MS-50G+ guitar Not tested']);

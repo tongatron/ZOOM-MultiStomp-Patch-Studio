@@ -813,7 +813,7 @@ function renderAdvice() {
 
   $('#advice-prefs-count').textContent = adviceSettings.preferences.length;
   $('#advice-prefs-list').innerHTML = ADVICE.preferences.map(pref => `<label class="pref-row" title="${escapeHtml(pref.hint)}"><input type="checkbox" data-advice="pref" data-id="${pref.id}"${adviceSettings.preferences.includes(pref.id) ? ' checked' : ''} /> <span>${escapeHtml(pref.label)}</span></label>`).join('');
-  $('#advice-output').innerHTML = `<span class="advice-output-label">Plugging into</span>${[['amp', PEDAL.amp], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
+  $('#advice-output').innerHTML = `<span class="advice-output-label">Plug into</span>${[['amp', PEDAL.amp], ['mixer', 'Mixer / PA / headphones']].map(([id, label]) =>
     `<button class="chip-filter" data-advice="output" data-id="${id}" aria-pressed="${adviceSettings.output === id}">${label}</button>`).join('')}`;
   renderPacks();
   findings = ADVICE.analyze(serialize(state), { output: adviceSettings.output, ignored: adviceSettings.ignored, preferences: adviceSettings.preferences });

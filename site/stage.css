@@ -38,7 +38,6 @@ body { background: radial-gradient(1200px 520px at 50% -140px, #1b2a14 0%, trans
 .filter-item[aria-pressed="true"] { background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); }
 .filter-item .check svg { color: #11160a; }
 .chip { border-radius: 999px; }
-.flash { border-radius: 14px; }
 
 /* Grid view: tall artwork with the name laid over it */
 .fx-list[data-view="grid"] { gap: 18px; }

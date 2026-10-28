@@ -229,7 +229,7 @@ Test in `tools/auth-test.mjs`: utente normale → 403 su ogni rotta `/admin`; ad
 Nuove variabili nel servizio (`deploy/zoom-ms60b.service`), tramite `EnvironmentFile=/srv/apps/zoom-ms60b-app/.env` (permessi 600, mai in git, fuori dalla web root):
 
 ```
-SITE_URL=https://zoom.tongatron.org
+SITE_URL=https://zoom_multistomp_studio.tongatron.org
 DB_FILE=/srv/apps/zoom-ms60b-data/studio.db
 SESSION_SECRET=<64 hex, openssl rand -hex 32>
 MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json
@@ -284,7 +284,7 @@ Checklist del primo deploy su `hp-ubuntu`:
 3. File del server: `rsync -a deploy/*.mjs deploy/backup-data.sh hp-ubuntu:/srv/apps/zoom-ms60b-app/`.
 4. Sito: `rsync -a --exclude '.DS_Store' site/ hp-ubuntu:/srv/apps/zoom-ms60b/` (prima del riavvio: `server.mjs` carica `library-merge.js` dalla web root).
 5. Segreti, in `/srv/apps/zoom-ms60b-app/` (permessi 600):
-   - `.env` con `SITE_URL=https://zoom.tongatron.org`, `SESSION_SECRET=` (da `openssl rand -hex 32`), `MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json`, `TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json`;
+   - `.env` con `SITE_URL=https://zoom_multistomp_studio.tongatron.org`, `SESSION_SECRET=` (da `openssl rand -hex 32`), `MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json`, `TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json`;
    - `node set-mail.mjs` (casella Gmail e password per le app di PatternMachine), poi `node set-mail.mjs --test <email>`;
    - `node set-telegram.mjs` (bot e chat di PatternMachine), poi `node set-telegram.mjs --test`.
 6. Unità systemd aggiornata (`deploy/zoom-ms60b.service`: `EnvironmentFile`, `--disable-warning`), `sudo systemctl daemon-reload && sudo systemctl restart zoom-ms60b`.

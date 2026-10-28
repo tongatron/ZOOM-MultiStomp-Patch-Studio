@@ -2,7 +2,7 @@
 // the account page (/account: password, export, sign out everywhere, delete) and the user console for admins (/admin).
 // The site stays open to everyone; an account only keeps the user's data on the server.
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
-// database), SITE_URL (links in emails), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
+// database), SITE_URL (links in emails, see site-url.mjs), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
 
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,6 +14,7 @@ import {
 import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
 import { mailConfig, mailHtml, sendMail, sendTelegram, telegramConfig } from './mail.mjs';
+import { SITE_URL } from './site-url.mjs';
 import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
 const RESET_TTL = 3600; // seconds
@@ -32,7 +33,7 @@ export const clientIp = request => request.headers['cf-connecting-ip'] || String
 export function createAccounts({ dataDir }) {
   const dbFile = process.env.DB_FILE || join(dataDir, 'studio.db');
   const store = openDb(dbFile);
-  const siteUrl = (process.env.SITE_URL || 'https://zoom.tongatron.org').replace(/\/$/, '');
+  const siteUrl = SITE_URL;
   let secretHex = process.env.SESSION_SECRET || store.meta('session_secret');
   if (!/^[a-f0-9]{64}$/.test(secretHex || '')) {
     if (process.env.SESSION_SECRET) throw new Error('SESSION_SECRET must be 64 hex characters');

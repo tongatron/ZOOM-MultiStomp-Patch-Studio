@@ -14,9 +14,9 @@
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-    <link rel="stylesheet" href="../styles.css?v=zoom55-20261028" />
+    <link rel="stylesheet" href="../styles.css?v=zoom56-20261028" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="../fullscreen.css?v=fs16-20261028" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs17-20261028" />
     <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
 <body>
@@ -60,6 +60,21 @@
               <li><b>Send it to the pedal.</b> Download the <code>.zptc</code> file and load it with Handy Guitar Lab (<a href="#load-on-pedal">how to do it</a>).</li>
             </ol>
 
+            <h2 id="tasks">I want to…</h2>
+            <div class="md-table">
+              <table>
+                <thead><tr><th>I want to</th><th>Go to</th></tr></thead>
+                <tbody>
+                  <tr><td>See what an effect does and what it costs in DSP</td><td><a href="#effects">Find an effect</a></td></tr>
+                  <tr><td>Make a patch from scratch</td><td><a href="#build">Build a patch</a></td></tr>
+                  <tr><td>Know whether my chain makes sense before I play it</td><td><a href="#advice">Read the advice</a></td></tr>
+                  <tr><td>Put a patch on the pedal</td><td><a href="#load-on-pedal">How to load it on the pedal</a></td></tr>
+                  <tr><td>Find my patches on another computer</td><td><a href="#account">Keep your patches safe</a></td></tr>
+                  <tr><td>Fix a problem</td><td><a href="#troubleshooting">Troubleshooting</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+
             <h2 id="effects">Find an effect</h2>
             <p>The <a href="./">Effects</a> page lists all 127 effects with the original text of the ZOOM Effects List.</p>
             <ul>
@@ -86,7 +101,7 @@
             <ul>
               <li>The <b>Errors</b>, <b>Warnings</b> and <b>Tips</b> buttons show or hide each kind.</li>
               <li><b>Ignore</b> hides an item you chose on purpose; <b>Show again</b>, at the bottom, brings the ignored ones back. <b>My preferences</b> pins choices you make on purpose.</li>
-              <li><b>Plugging into</b> (guitar amp, or mixer / PA / headphones) turns the cabinet advice into an exact check.</li>
+              <li><b>Plug into</b> (<b>Amp</b>, or <b>Mixer / PA / headphones</b>) turns the cabinet advice into an exact check.</li>
               <li>On the MS-50G+ the advice makes basic checks only (levels and DSP load).</li>
               <li><b>Rule packs</b> add your own rules from a <code>.json</code> file; every rule must cite a source.</li>
             </ul>
@@ -120,6 +135,21 @@
               <li>When you open the studio without an account, a message reminds you of this, with the links to <b>Create a free account</b> and <b>Sign in</b>. <b>Maybe later</b> shows it again the next time you visit; <b>Ignore this message</b> hides it for good in that browser.</li>
               <li>Signing out removes your data from that browser by default; it stays in your account.</li>
               <li>On the <a href="/account">account page</a> you can download everything or delete the account. <a href="../privacy.html">Privacy</a> says exactly what is stored.</li>
+            </ul>
+
+            <h2 id="troubleshooting">Troubleshooting</h2>
+            <ul>
+              <li><b>Download .zptc is greyed out.</b> The patch needs at least one effect, a name made of the allowed characters, and an estimated DSP load of 100% or less.</li>
+              <li><b>The pedal shows <code>PROCESS OVERFLOW</code>.</b> The patch asks for more than the pedal can process. Swap or remove a heavy effect: sort the Effects list by <b>DSP: lightest</b> to find lighter ones.</li>
+              <li><b>My patches are gone.</b> They are kept in the browser: another browser or computer, a private window or cleared site data does not have them. Signed in, they come back from your account; otherwise import a <code>.json</code> backup.</li>
+              <li><b>The page says the window is too small.</b> The site needs a window of at least 800 × 640 px: make it bigger or switch the browser to full screen (<kbd class="gh-kbd">F11</kbd>).</li>
+            </ul>
+
+            <h2 id="words">Words used here</h2>
+            <ul>
+              <li><b>Patch:</b> up to 6 effects in a chain, with their settings and a name of up to 28 characters.</li>
+              <li><b>DSP load:</b> how much of the pedal's processing power a patch uses. Above 100% the pedal bypasses the effects.</li>
+              <li><b><code>.zptc</code>:</b> the patch file that Handy Guitar Lab, the ZOOM app for editing patches, reads and writes.</li>
             </ul>
 
             <h2 id="shortcuts">Keyboard shortcuts</h2>
@@ -159,9 +189,9 @@
       <time class="gh-updated" datetime="2026-10-28T14:07Z">Last update 28 October 2026 15:07</time>
     </footer>
 
-    <script src="pedal.js?v=zoom24-20261026"></script>
-    <script src="../fullscreen.js?v=fs7-20261027"></script>
-    <script src="../library-merge.js?v=zoom28-20261027"></script>
+    <script src="pedal.js?v=zoom25-20261028"></script>
+    <script src="../fullscreen.js?v=fs8-20261028"></script>
+    <script src="../library-merge.js?v=zoom29-20261028"></script>
     <script src="../account.js?v=zoom48-20261028"></script>
     <script>
       FS.toc(document.getElementById('doc'), document.getElementById('toc'));

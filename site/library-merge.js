@@ -32,22 +32,30 @@ const LIBMERGE = (() => {
 
   // Docs: { [kind]: { data: the browser's stored string or null, updatedAt } }. The newest copy of each kind wins,
   // except pedal backups, which are only ever added: both sides are kept (by id, the newest MAX_BACKUPS).
+  // A deleted backup stays as { id, deleted: true, at } for 90 days, so the other copy does not bring it back.
   const MAX_BACKUPS = 30;
+  const GRAVE_DAYS = 90;
   const parseList = text => { try { const list = JSON.parse(text); return Array.isArray(list) ? list : []; } catch { return []; } };
-  function mergeBackups(a, b) {
+  function mergeBackups(a, b, now = Date.now()) {
     if (a == null && b == null) return null;
     const byId = new Map();
-    for (const item of [...parseList(a), ...parseList(b)]) if (item && typeof item.id === 'string' && !byId.has(item.id)) byId.set(item.id, item);
-    const list = [...byId.values()].sort((x, y) => time(y.at) - time(x.at)).slice(0, MAX_BACKUPS);
-    return JSON.stringify(list);
+    const graves = new Map();
+    for (const item of [...parseList(a), ...parseList(b)]) {
+      if (!item || typeof item.id !== 'string') continue;
+      if (item.deleted) graves.set(item.id, item);
+      else if (!byId.has(item.id)) byId.set(item.id, item);
+    }
+    const live = [...byId.values()].filter(item => !graves.has(item.id)).sort((x, y) => time(y.at) - time(x.at)).slice(0, MAX_BACKUPS);
+    const recent = [...graves.values()].filter(grave => time(grave.at) >= now - GRAVE_DAYS * 864e5);
+    return JSON.stringify([...live, ...recent]);
   }
-  function mergeDocs(local = {}, remote = {}) {
+  function mergeDocs(local = {}, remote = {}, now = Date.now()) {
     const docs = {};
     for (const kind of new Set([...Object.keys(local), ...Object.keys(remote)])) {
       const a = local[kind], b = remote[kind];
       if (!a || !b) { docs[kind] = a || b; continue; }
       const newer = time(b.updatedAt) > time(a.updatedAt) ? b : a;
-      docs[kind] = kind === 'usb-backups' ? { data: mergeBackups(a.data, b.data), updatedAt: newer.updatedAt } : newer;
+      docs[kind] = kind === 'usb-backups' ? { data: mergeBackups(a.data, b.data, now), updatedAt: newer.updatedAt } : newer;
     }
     return docs;
   }

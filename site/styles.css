@@ -174,15 +174,6 @@ svg { flex: none; }
   .filter-item[aria-pressed="true"]::before { display: none; }
 }
 
-.flash {
-  display: flex; gap: 10px; padding: 12px 14px;
-  background: var(--accent-subtle); border: 1px solid var(--accent-muted); border-radius: var(--radius);
-  font-size: 13px;
-}
-.flash svg { color: var(--accent-fg); margin-top: 2px; }
-.flash p { margin: 0; }
-@media (max-width: 1011px) { .flash { display: none; } }
-
 /* Box */
 .Box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .Box-header {
@@ -338,7 +329,6 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 .ptable .pdesc { color: var(--fg-muted); }
 .ptable .prange { font: 12px/20px var(--mono); color: var(--accent-fg); }
 .page-hint { margin: 8px 0 0; font-size: 12px; color: var(--fg-muted); }
-.detail-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
 @media (max-width: 640px) {
   .Overlay { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; border: 0; }
   .Overlay-body { padding: 16px; }
@@ -515,9 +505,6 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .picker-dsp.is-over small { color: #f85149; }
 #picker[open] { height: min(80vh, 760px); }
 
-/* Effect detail: link to the builder */
-.detail-foot .btn-primary { margin-right: auto; }
-
 /* ---- Saving and patch library ---- */
 .save-row { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
 .save-row .btn { justify-content: center; }
@@ -662,7 +649,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .advice-off p { margin: 0 0 10px; }
 
 /* Output selector (builder advice panel) */
-.advice-output { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 12px; padding: 0 16px; }
+.advice-output { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px 8px; margin: 0 0 12px; padding: 0 16px; white-space: nowrap; }
 .advice-output-label { font-size: 12px; font-weight: 600; color: var(--fg-muted); margin-right: 2px; }
 
 .cmp-head .btn { align-self: flex-start; margin-top: 6px; }
@@ -789,8 +776,9 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-mem:first-child, .usb-local:first-child { border-top: 0; }
 .usb-mem-main { display: grid; grid-template-columns: 36px 1fr auto; align-items: baseline; gap: 10px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
 .usb-mem-main:hover:not(:disabled) { background: var(--bg-hover); }
-.usb-mem.is-stale .usb-mem-main { cursor: default; opacity: .5; }
-.usb-mem.is-stale .usb-mem-main:hover { background: none; }
+.usb-mem.is-stale .usb-mem-main { opacity: .6; }
+.usb-mem.is-stale .usb-mem-main:disabled { cursor: default; }
+.usb-mem.is-stale.is-selected .usb-mem-main { opacity: 1; }
 .usb-hint[data-kind="stale"] { color: #d29922; background: rgba(187, 128, 9, .1); }
 .usb-mem.is-selected { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
 .usb-mem[data-state="loading"] .usb-name, .usb-mem[data-state="empty"] .usb-name { color: var(--fg-subtle); }
@@ -821,6 +809,14 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-box[open] > summary::before { transform: rotate(45deg); margin: 0 2px 4px 0; }
 .usb-box:not([open]) > summary.Box-header { border-bottom: 0; border-radius: var(--radius); }
 .usb-box > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* A button at the right end of a box header (Backups: Delete all; MIDI log: full screen) */
+.usb-head-action { margin-left: auto; }
+.usb-box > summary.Box-header .Box-title { flex: 1 1 0; min-width: 0; } /* the title takes the room the button leaves: a long label goes under it */
+.usb-head-action .i-exit, .usb-box.is-full .usb-head-action .i-enter { display: none; }
+.usb-box.is-full .usb-head-action .i-exit { display: inline; }
+/* MIDI log full screen: the box fills the screen (the Fullscreen API when the browser has it, else the window) */
+.usb-box.is-full { position: fixed; inset: 0; z-index: 300; max-height: none; margin: 0; border: 0; border-radius: 0; background: var(--bg); }
+.usb-box.is-full .usb-log { max-height: none; font-size: 13px; }
 .usb-result { margin: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(248, 81, 73, .4); color: #f85149; font-size: 13px; }
 .usb-result[data-ok="true"] { border-color: rgba(63, 185, 80, .4); color: #3fb950; }
 .usb-warn { color: #d29922; }

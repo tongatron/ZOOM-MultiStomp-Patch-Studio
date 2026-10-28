@@ -54,6 +54,22 @@ await test('docs: the newest copy wins, pedal backups from both sides are kept',
   assert.equal(JSON.parse(LIBMERGE.mergeDocs({ 'usb-backups': { data: JSON.stringify(many), updatedAt: T(1) } }, { 'usb-backups': { data: '[]', updatedAt: T(2) } })['usb-backups'].data).length, 30);
 });
 
+await test('docs: a deleted pedal backup stays deleted when the other copy still has it (Delete all included)', () => {
+  const ids = docs => JSON.parse(docs['usb-backups'].data).filter(b => !b.deleted).map(b => b.id);
+  const stored = [{ id: '1', at: T(20) }, { id: '2', at: T(21) }];
+  const account = { 'usb-backups': { data: JSON.stringify(stored), updatedAt: T(21) } };
+  const one = { 'usb-backups': { data: JSON.stringify([{ id: '2', at: T(21) }, { id: '1', deleted: true, at: T(22) }]), updatedAt: T(22) } };
+  assert.deepEqual(ids(LIBMERGE.mergeDocs(one, account, NOW)), ['2'], 'one deleted here');
+  assert.deepEqual(ids(LIBMERGE.mergeDocs(account, one, NOW)), ['2'], 'the same when the account is the local side');
+  const all = { 'usb-backups': { data: JSON.stringify(stored.map(b => ({ id: b.id, deleted: true, at: T(23) }))), updatedAt: T(23) } };
+  assert.deepEqual(ids(LIBMERGE.mergeDocs(all, account, NOW)), [], 'all deleted here');
+  const again = LIBMERGE.mergeDocs(all, LIBMERGE.mergeDocs(all, account, NOW), NOW);
+  assert.deepEqual(ids(again), [], 'and it stays so on the next sync');
+  assert.deepEqual(ids(LIBMERGE.mergeDocs(all, { 'usb-backups': { data: JSON.stringify([{ id: '3', at: T(24) }]), updatedAt: T(24) } }, NOW)), ['3'], 'a backup made elsewhere is still added');
+  const old = { 'usb-backups': { data: JSON.stringify([{ id: '9', deleted: true, at: '2026-01-01T00:00:00.000Z' }]), updatedAt: T(23) } };
+  assert.equal(JSON.parse(LIBMERGE.mergeDocs(old, account, NOW)['usb-backups'].data).some(b => b.deleted), false, 'deletion records are dropped after 90 days');
+});
+
 // ---- server ---------------------------------------------------------------------------------------
 const dataDir = await mkdtemp(join(tmpdir(), 'ms60b-sync-'));
 const port = 18097;

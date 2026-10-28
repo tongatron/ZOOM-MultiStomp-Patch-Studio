@@ -3,6 +3,7 @@
 //   ROOT=… DATA_DIR=… PORT=… node …        → override
 //
 // Accounts (sign-in pages, /api/me, database in DATA_DIR/studio.db): see accounts.mjs.
+// The address is SITE_URL (site-url.mjs); the old one, zoom.tongatron.org, only redirects to it: see legacy-host.mjs.
 // POST /api/account/sync/<pedal>  body { patches, deleted, docs }  → the signed-in user's merged copy (account-sync.mjs).
 
 import { createServer } from 'node:http';
@@ -14,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 import { createAccounts } from './accounts.mjs';
 import { PEDALS, cleanDocs, createAccountSync } from './account-sync.mjs';
 import { crossSite } from './auth.mjs';
+import { createLegacyHost } from './legacy-host.mjs';
+import { LEGACY_ORIGINS, SITE_URL } from './site-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(process.env.ROOT || join(here, '..', 'site'));
@@ -22,6 +25,7 @@ const PORT = Number(process.env.PORT || 8097);
 const HOST = process.env.HOST || '127.0.0.1';
 const LIBMERGE = createRequire(import.meta.url)(join(ROOT, 'library-merge.js'));
 const accounts = createAccounts({ dataDir: DATA_DIR });
+const legacy = createLegacyHost({ siteUrl: SITE_URL, origins: LEGACY_ORIGINS }); // the old address only redirects (legacy-host.mjs)
 
 const MAX_BODY = 1_000_000;
 const MAX_PATCHES = 300;
@@ -109,6 +113,8 @@ const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url, 'http://localhost');
     const { pathname } = url;
+    if (legacy.isLegacy(request)) return legacy.handle(request, response, url);
+    if (legacy.enabled && pathname === '/moved' && request.method === 'GET') return legacy.receiver(response);
     if (await accounts.handle(request, response, url)) return;
     const accountRoute = pathname.match(/^\/api\/account\/sync\/([a-z0-9]{1,12})$/);
     if (accountRoute) {

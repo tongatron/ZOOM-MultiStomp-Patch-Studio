@@ -10,8 +10,9 @@ const CORE = [
   ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 
-// Sign-in and account pages are always asked to the server (they depend on the session)
-const ACCOUNT_PAGES = /^\/(login|register|forgot|reset|verify|logout|account|admin)(\/|$)/;
+// Sign-in and account pages are always asked to the server (they depend on the session); so is /moved, which receives
+// the data of the old address of the site (deploy/legacy-host.mjs)
+const ACCOUNT_PAGES = /^\/(login|register|forgot|reset|verify|logout|account|admin|moved)(\/|$)/;
 
 const stamp = response => response.headers.get('etag') || response.headers.get('last-modified') || '';
 const notifyUpdate = async () => (await self.clients.matchAll()).forEach(client => client.postMessage({ type: 'updated' }));

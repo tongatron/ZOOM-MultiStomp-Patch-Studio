@@ -2,7 +2,7 @@
 const PEDAL = {
   id: 'ms50g',
   name: 'Zoom MS-50G+',
-  amp: 'Guitar amp',
+  amp: 'Amp',
   tested: false,
   fxListUrl: 'https://zoomcorp.com/media/documents/E_MS-50Gplus_EffectsList.pdf',
   manualUrl: 'https://zoomcorp.com/manuals/ms-50gplus-en/',

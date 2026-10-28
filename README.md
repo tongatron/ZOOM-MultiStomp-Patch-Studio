@@ -8,7 +8,7 @@
 
 Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
 
-[![Open the site](https://img.shields.io/badge/▶_open_the_site-zoom.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoom.tongatron.org/landing/)
+[![Open the site](https://img.shields.io/badge/▶_open_the_site-zoom__multistomp__studio.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoom_multistomp_studio.tongatron.org/landing/)
 
 [![CI](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/actions/workflows/ci.yml)
 ![No build step](https://img.shields.io/badge/build_step-none-2ea043)
@@ -24,8 +24,8 @@ Explore every effect · build patches with a live DSP meter and smart advice · 
 
 | Pedal | Effects | Builder | Extras | Status |
 |---|---|---|---|---|
-| **MS-60B+** bass | [97 effects](https://zoom.tongatron.org) | [Patch builder](https://zoom.tongatron.org/builder.html) | [Tone ideas](https://zoom.tongatron.org/tones.html) · [Pedal manager](https://zoom.tongatron.org/pedal-manager.html) · [Resources](https://zoom.tongatron.org/resources.html) | ✅ Tested on firmware 1.20 |
-| **MS-50G+** guitar | [127 effects](https://zoom.tongatron.org/ms-50g/) | [Patch builder](https://zoom.tongatron.org/ms-50g/builder.html) | [Resources](https://zoom.tongatron.org/ms-50g/resources.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-50g) |
+| **MS-60B+** bass | [97 effects](https://zoom_multistomp_studio.tongatron.org) | [Patch builder](https://zoom_multistomp_studio.tongatron.org/builder.html) | [Tone ideas](https://zoom_multistomp_studio.tongatron.org/tones.html) · [Pedal manager](https://zoom_multistomp_studio.tongatron.org/pedal-manager.html) · [Resources](https://zoom_multistomp_studio.tongatron.org/resources.html) | ✅ Tested on firmware 1.20 |
+| **MS-50G+** guitar | [127 effects](https://zoom_multistomp_studio.tongatron.org/ms-50g/) | [Patch builder](https://zoom_multistomp_studio.tongatron.org/ms-50g/builder.html) | [Resources](https://zoom_multistomp_studio.tongatron.org/ms-50g/resources.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-50g) |
 
 ## 💡 Why
 
@@ -66,7 +66,7 @@ Both pedals share the codec, builder and catalog code; each keeps its own data (
 
 The MS-50G+ section is built from the official ZOOM documentation and assumes the same `.zptc` format as the MS-60B+. Nobody has tried it on a real pedal yet. Own one? You can help in five minutes:
 
-1. 🛠️ Build a simple patch in the [MS-50G+ builder](https://zoom.tongatron.org/ms-50g/builder.html), or grab [`patches/generated/ms50g-test.zptc`](patches/generated/ms50g-test.zptc) (COMPRESSOR → MS1959 DRIVE → DELAY).
+1. 🛠️ Build a simple patch in the [MS-50G+ builder](https://zoom_multistomp_studio.tongatron.org/ms-50g/builder.html), or grab [`patches/generated/ms50g-test.zptc`](patches/generated/ms50g-test.zptc) (COMPRESSOR → MS1959 DRIVE → DELAY).
 2. 📥 Import it in Handy Guitar Lab and copy it to a free memory.
 3. 📝 [Open an issue](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues) with what you see: the effects, the values on the pedal, the "Processor %" in the app. A patch exported from your pedal is gold.
 
