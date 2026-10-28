@@ -77,7 +77,7 @@ try {
     assert.equal(bytes.subarray(0, 4).toString('latin1'), 'PTCF');
   });
 
-  await test('a share link opens the same patch on another device', async () => {
+  await test('a patch link (Tone ideas, Pedal manager, an old share link) opens the same patch on another device', async () => {
     const link = await page.evaluate(() => new URL(PATCHLINK.url(serialize(state)), location.href).href);
     const other = await device();
     await other.page.goto(link);

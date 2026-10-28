@@ -522,10 +522,10 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .status--attention::before { background: #d29922; }
 .status--danger { color: #f85149; }
 .status--danger::before { background: #f85149; }
-.save-extra { display: flex; justify-content: space-between; gap: 8px; margin-top: -8px; }
-.save-extra .btn { color: var(--fg-muted); }
-.save-extra .btn:hover { color: var(--fg); }
-.save-extra [hidden] { display: none; }
+.save-info { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; }
+.save-info[hidden], .save-info [hidden] { display: none; }
+.save-info .btn { margin-right: -10px; color: var(--fg-muted); } /* the text lines up with the right edge of the buttons above */
+.save-info .btn:hover { color: var(--fg); }
 .library { gap: 12px; }
 .library-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .library-head .Counter { margin-left: 4px; }

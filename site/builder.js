@@ -262,7 +262,6 @@ function renderSummary() {
   if (raw.length) notices.push(['attention', `Raw values (format not decoded): ${raw.join(', ')}.`]);
   $('#notices').innerHTML = notices.map(([kind, text]) => `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`).join('');
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
-  $('#share-patch').disabled = !state.effects.length;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
   renderSaveState();
   renderAdvice();
@@ -280,6 +279,7 @@ function renderSaveState() {
   $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Saving is not available in this browser</span>'
     : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Unsaved changes' : `Saved ${formatDate(entry.updatedAt)}`}</span>`
     : state.effects.length ? '<span class="status status--attention">Patch not saved yet</span>' : '';
+  $('#save-info').hidden = !entry && !$('#save-status').innerHTML; // nothing to show: no empty row between the buttons and Advice
 }
 
 function renderLibrary() {
@@ -376,15 +376,6 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
-// ---- share link (format in patch-link.js) -------------------------------------------------------
-async function sharePatch() {
-  if (!state.effects.length) return;
-  const url = new URL(PATCHLINK.url(serialize(state)), location.href).href;
-  try { await navigator.clipboard.writeText(url); notify('muted', 'Link copied: whoever opens it gets this patch in the builder.'); }
-  catch { prompt('Copy this link to share the patch:', url); }
-}
-$('#share-patch').addEventListener('click', sharePatch);
-
 const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('The current patch has unsaved changes. Continue and lose them?');
 function loadPatch(patch, currentId = null) {
   endPedalEdit(); // another patch replaces the one being edited for the pedal

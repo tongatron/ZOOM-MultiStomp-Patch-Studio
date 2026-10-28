@@ -121,7 +121,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-builder .dsp-stack { height: 6px; border-radius: 3px; }
 /* Save and Download are small buttons right under the name and the DSP load */
 .fs-builder .save-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.fs-builder .save-row, .fs-builder .save-status, .fs-builder .save-extra { order: 1; }
+.fs-builder .save-row, .fs-builder .save-info { order: 1; }
 .fs-builder .sr-status { order: 2; }
 /* The patch alerts ("Check on the pedal: …", missing name, raw values) are the first thing in the Advice pane */
 .fs-builder .advice .notices { padding: 12px 16px 0; }

@@ -1,4 +1,5 @@
-// Share links for patches, used by the builder (Share link) and the Tone ideas page (Open in builder).
+// Links that open a patch in the builder, made by the Tone ideas page (Open in builder) and the Pedal manager (Edit in builder).
+// The builder opens them (also the share links it used to make); it has no Share link button any more.
 // The patch travels in the URL fragment (#p=…), which browsers never send to the server.
 // Payload: [name, [[effectIndex, on 1|0, [values in Effects List parameter order]]]] as base64url JSON.
 // Requires EFFECTS_DATA.
