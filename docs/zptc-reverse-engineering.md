@@ -78,6 +78,8 @@ then a sequence of blocks  [4-char tag][u32 length][data]:
 
 **Slot 0.** Every file contains one more slot than the number of effects: ID 0, on, parameters at zero. The Handy Guitar Lab screenshots made clear what it is: the **BLANK** tile the app shows at the start of the chain. The generator reproduces it identically. Patches stored on the pedal do not always have it: factory memory 10 ("D.I Plus Preamp", read over USB) has one slot holding the effect itself. The decoder treats slot 0 as BLANK only when its ID is 0; otherwise every slot is an effect and `_noBlank` keeps the round trip exact.
 
+**The pedal holds 6 entries (found 2026-10-28 on the real pedal).** A chain of 6 effects with the BLANK in front is 7 entries, one more than a memory holds: the pedal accepts the write and reads it back unchanged (so the read-back check passes), then keeps only the first 6 entries when the patch is loaded and saved, and the 6th effect is lost (written "C7 Test": HALL REVERB gone, 308 bytes instead of 336). Patches the pedal stores itself with 6 effects (memory 53, written by Handy Guitar Lab) have 6 entries and no BLANK. `ZPTC.forPedal` re-encodes such a patch without the BLANK (`_noBlank`, amp bits and cursor moved one entry down) and leaves every other patch as it is; the Pedal manager calls it before any write. With 5 effects or fewer the BLANK fits (≤ 6 entries) and is harmless. Whether Handy Guitar Lab itself accepts a file without the BLANK is not tested: the builder's **Download .zptc** keeps writing it.
+
 ### The effect block (EDTB, 24 bytes)
 
 The 24 bytes are read as **a single 192-bit little-endian integer**. From the least significant bit:
@@ -127,7 +129,7 @@ The 0.5 step rule was deduced from the Graphic EQ of the "Big Black" patch. The 
 
 It is not fully deciphered. Two fields were identified by comparison:
 
-- **byte 10, bits 5–7**: the slot selected for editing. In `06FLIP` it is `0x4c` instead of `0x2c` because FLIPTOP (slot 2) was selected.
+- **byte 10, bits 5–7**: the entry selected for editing, counted from 0 and counting the BLANK as an entry (so in a patch with the BLANK it equals the position in the chain). In `06FLIP` it is `0x4c` instead of `0x2c` because FLIPTOP (position 2) was selected. Patches stored by the pedal that nobody edited have 0; after browsing to the last slot of a 6-entry patch the pedal itself saved 5 (`0xac`, 2026-10-28, effects and values untouched). Inferred from those cases, not tested slot by slot.
 - **byte 20**: one bit for every slot that contains an amp. In `06FLIP` it is `0x08` (bit 3 = slot 2 + 1); in "Big Black" it is `0x40` (AMPG SVT in slot 5).
 
 The rest is copied from `01base` (template). Some fields of "Big Black" are still unexplained: byte 0 and bytes 11–12.

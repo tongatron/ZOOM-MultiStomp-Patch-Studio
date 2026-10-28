@@ -109,5 +109,53 @@ await test('clearing a memory writes an empty patch (BLANK slot only) that decod
   assert.ok(back.crcOk);
   assert.deepEqual([...back.data], [...file]);
 });
+const SIX = ['BLACK OPTICAL COMPRESSOR', 'BLUEBERRY DRIVE', 'AMPG SVT', 'BASS GRAPHIC EQ', 'CLONE CHORUS', 'HALL REVERB'].map(effect => ({ effect }));
+const slotCount = file => new DataView(file.buffer, file.byteOffset).getUint32(12, true);
+const prm2Bytes = spec => spec._prm2.match(/../g).map(x => parseInt(x, 16));
+await test('a full 6-effect chain is written without the BLANK slot: the pedal holds 6 entries and would lose the last effect', async () => {
+  const { file: withBlank } = ZPTC.encode({ name: 'SIX FX', selected: 6, effects: SIX });
+  assert.equal(slotCount(withBlank), 7, 'BLANK + 6 effects: one entry more than the pedal holds');
+  const out = ZPTC.forPedal(withBlank);
+  assert.equal(slotCount(out), 6);
+  const [a, b] = [ZPTC.decode(withBlank), ZPTC.decode(out)];
+  assert.equal(b._noBlank, true);
+  assert.equal(b.name, a.name);
+  assert.equal(JSON.stringify(b.effects), JSON.stringify(a.effects), 'same effects, values and slots');
+  assert.ok(ZPTC.roundtrip(out));
+  const [pa, pb] = [prm2Bytes(a), prm2Bytes(b)];
+  assert.equal(pa[20], 1 << 4, 'AMPG SVT is entry 3 behind the BLANK: bit 4');
+  assert.equal(pb[20], 1 << 3, 'and entry 2 without it: bit 3');
+  assert.equal(pa[10] >> 5, 6, 'cursor on the last entry');
+  assert.equal(pb[10] >> 5, 5, 'still the last entry, now number 5');
+  pa.forEach((v, i) => { if (i !== 10 && i !== 20) assert.equal(pb[i], v, `PRM2 byte ${i} kept`); });
+  assert.equal(Buffer.from(ZPTC.forPedal(out)).equals(Buffer.from(out)), true, 'twice gives the same bytes');
+  const info = await PEDALMIDI.patchInfo();
+  await PEDALMIDI.writeMemory(100, info, out);
+  const back = await PEDALMIDI.readMemory(100, info);
+  assert.ok(back.crcOk);
+  assert.equal(Buffer.from(back.data).equals(Buffer.from(out)), true);
+  assert.equal(ZPTC.decode(back.data).effects.length, 6);
+});
+await test('forPedal leaves the other patches as they are: up to 5 effects, no BLANK, exports and pedal patches', () => {
+  // Same bytes, compared by content: the codec runs in its own vm context, so a Uint8Array made here is another class to it
+  const same = file => assert.equal(Buffer.from(ZPTC.forPedal(file)).equals(Buffer.from(file)), true);
+  const five = ZPTC.encode({ name: 'FIVE FX', effects: SIX.slice(0, 5) }).file;
+  assert.equal(slotCount(five), 6);
+  same(five);
+  assert.equal(ZPTC.forPedal(five), five, 'and the very same array, which is how the manager tells nothing changed');
+  same(ZPTC.encode({ name: 'SIX FX', _noBlank: true, effects: SIX }).file);
+  patches.forEach(same);
+  same(ZPTC.encode({ name: 'Empty', empty: true, effects: [] }).file);
+});
+await test('the edit cursor of a patch without BLANK starts on its first entry and an edit keeps it', () => {
+  const { file } = ZPTC.encode({ name: 'TWO FX', _noBlank: true, effects: SIX.slice(0, 2) });
+  assert.equal(prm2Bytes(ZPTC.decode(file))[10] >> 5, 0);
+  const cursorOn2 = ZPTC.encode({ name: 'TWO FX', _noBlank: true, selected: 2, effects: SIX.slice(0, 2) }).file;
+  const spec = ZPTC.decode(cursorOn2);
+  assert.equal(prm2Bytes(spec)[10] >> 5, 1);
+  const edited = ZPTC.encode({ ...spec, _prm2Refresh: true, effects: SIX.slice(0, 3).map(({ effect }) => ({ effect })) }).file;
+  assert.equal(prm2Bytes(ZPTC.decode(edited))[10] >> 5, 1, 'the cursor stays on the same entry');
+  assert.throws(() => ZPTC.encode({ name: 'X', _noBlank: true, selected: 3, effects: SIX.slice(0, 2) }), /between 1 and 2/);
+});
 PEDALMIDI.disconnect();
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);

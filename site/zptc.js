@@ -219,13 +219,16 @@ const ZPTC = (() => {
     const prm2 = hex(spec._prm2 ?? PRM2_TEMPLATE);
     // _prm2Refresh: keep the patch data of an existing patch (_prm2) but recompute the bits that depend on the chain
     if ((!spec._prm2 || spec._prm2Refresh) && list.length) {
-      // byte 20: one bit per slot holding an amp (bit = slot + 1); byte 10, bits 5–7: slot selected for editing
+      // byte 20: one bit per entry holding an amp (bit = entry index + 1); byte 10, bits 5–7: entry selected for editing
+      // (index from 0, the BLANK counts as an entry: the pedal wrote 5 for its last slot, 0 in patches nobody edited).
+      // spec.selected is the position in the chain, from 1.
       if (spec._prm2Refresh) prm2[20] = 0;
       entries.forEach((e, i) => { if (byId.get(e.id)?.category === 'BASS AMP') prm2[20] |= 1 << (i + 1); });
+      const first = entries.length - list.length; // 1 with the BLANK in front, 0 without
       const kept = prm2[10] >> 5;
-      const selected = spec.selected ?? (spec._prm2Refresh && kept >= 1 && kept <= list.length ? kept : 1);
+      const selected = spec.selected ?? (spec._prm2Refresh && kept >= first && kept < first + list.length ? kept - first + 1 : 1);
       if (!(selected >= 1 && selected <= list.length)) throw new Error(`"selected" must be between 1 and ${list.length}`);
-      prm2[10] = (prm2[10] & 0x1f) | (selected << 5);
+      prm2[10] = (prm2[10] & 0x1f) | ((first + selected - 1) << 5);
     }
 
     const description = spec.description ? text(spec.description, (spec.description.length + 4) & ~3) : new Uint8Array(0);
@@ -252,5 +255,17 @@ const ZPTC = (() => {
     return equal(file, bytes);
   }
 
-  return { effects, byId, byName, codec, decode, encode, roundtrip, MAX_EFFECTS, NAME_CHARS };
+  // The bytes to write to a pedal memory. The pedal holds at most MAX_EFFECTS entries per patch, but a file with the
+  // BLANK slot in front (ours, Handy Guitar Lab's) and a full chain has one more: the pedal accepts it and reads it
+  // back unchanged, then drops the last effect when the patch is loaded and saved (found 2026-10-28, 6-effect
+  // patch). That case is re-encoded without the BLANK; everything else is returned as it came.
+  function forPedal(input) {
+    const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+    const spec = decode(bytes);
+    if (spec._noBlank || spec.effects.length < MAX_EFFECTS) return bytes;
+    const selected = Math.min(Math.max(parseInt(spec._prm2.slice(20, 22), 16) >> 5, 1), spec.effects.length); // BLANK layout: entry = position
+    return encode({ ...spec, _noBlank: true, _prm2Refresh: true, selected, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
+  }
+
+  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, MAX_EFFECTS, NAME_CHARS };
 })();
