@@ -74,9 +74,11 @@ const ACCOUNT = (() => {
   const account = { PEDALS, KINDS, createSync, me: null, status: { syncing: false, lastSync: 0, error: '' }, changed: () => {} };
 
   // ---- in the page ------------------------------------------------------------------------------
-  // Header entry ("Sign in" or the account menu), the signed-out notice (pages with <body data-account-notice>),
-  // the first sign-in on a browser that already has patches, and sign-out (by default it removes the data from here).
+  // Header entry ("Sign in" or the account menu), the signed-out notice (pages with <body data-account-notice>), the
+  // reminder dialog for visitors without an account (pages with <body data-account-welcome>), the first sign-in on a
+  // browser that already has patches, and sign-out (by default it removes the data from here).
   const OWNER_KEY = 'account-owner'; // email of the account this browser's data was last synced with
+  const WELCOME_KEY = 'account-welcome'; // localStorage 'ignored': never show the reminder; sessionStorage 'later': not again in this visit
   const ASIDE = pedal => `${pedal}-library-aside`; // patches kept out of the account ("Not now" at the first sign-in)
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const here = () => location.pathname + location.search;
@@ -93,12 +95,15 @@ const ACCOUNT = (() => {
     const list = key => { const value = readJson(key, []); return Array.isArray(value) ? value : []; };
     for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-sync`); // the old anonymous sync codes
 
+    let answered = false; // the last /api/me request was answered by the server (not the offline fallback below)
     async function refreshMe() {
       try {
         const response = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' });
         account.me = await response.json();
+        answered = true;
         try { sessionStorage.setItem('account-me', JSON.stringify(account.me)); } catch {}
       } catch {
+        answered = false;
         try { account.me = JSON.parse(sessionStorage.getItem('account-me')) || { signedIn: false }; } catch { account.me = { signedIn: false }; }
       }
       render();
@@ -297,6 +302,52 @@ const ACCOUNT = (() => {
       header ? header.after(notice) : document.body.prepend(notice);
     }
 
+    // ---- reminder for visitors without an account ----
+    // The advantages of an account, with the links to sign up or sign in. "Ignore this message" hides it for good in
+    // this browser; closing it any other way hides it for this visit only, so it comes back the next time the site is opened.
+    let welcome = null;
+    const stored = (storage, key) => { try { return storage.getItem(key); } catch { return null; } };
+    const welcomeHidden = () => stored(localStorage, WELCOME_KEY) === 'ignored' || stored(sessionStorage, WELCOME_KEY) === 'later';
+    function showWelcome() {
+      if (welcome || !document.body.hasAttribute('data-account-welcome') || account.me?.signedIn || welcomeHidden()) return;
+      const next = encodeURIComponent(here());
+      welcome = document.createElement('dialog');
+      welcome.className = 'Overlay Overlay--small account-dialog account-welcome';
+      welcome.setAttribute('aria-labelledby', 'account-welcome-title');
+      welcome.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title" id="account-welcome-title">Keep your patches safe with a free account</h2></div>
+        <div class="Overlay-body">
+          <p>You are using the studio without an account, so your patches, settings and pedal backups are stored only in this browser.</p>
+          <ul class="account-perks">
+            <li>Everything is saved on the server, for both pedals, and is the same on every device where you sign in.</li>
+            <li>The patches already in this browser come with you when you sign up.</li>
+            <li>Only an email and a password are needed. Download everything or delete the account whenever you want.</li>
+          </ul>
+          <div class="account-actions">
+            <a class="btn" href="/login?next=${next}">Sign in</a>
+            <a class="btn btn-primary" href="/register?next=${next}">Create a free account</a>
+          </div>
+          <div class="account-later">
+            <button class="btn btn-sm btn-invisible" type="button" data-welcome="later">Maybe later</button>
+            <button class="btn btn-sm btn-invisible" type="button" data-welcome="ignore">Ignore this message</button>
+          </div>
+          <p class="account-note">Maybe later asks again the next time you visit. Ignore this message hides it for good in this browser. <a href="/privacy.html">What is stored</a></p>
+        </div>`;
+      welcome.addEventListener('click', event => {
+        const choice = event.target.closest('[data-welcome]')?.dataset.welcome;
+        if (!choice) return;
+        if (choice === 'ignore') { try { localStorage.setItem(WELCOME_KEY, 'ignored'); } catch {} }
+        welcome.close();
+      });
+      welcome.addEventListener('close', () => { // also Esc
+        try { sessionStorage.setItem(WELCOME_KEY, 'later'); } catch {}
+        welcome.remove();
+        welcome = null;
+      });
+      document.body.append(welcome);
+      welcome.showModal();
+      welcome.querySelector('.btn-primary').focus();
+    }
+
     // A small dialog; resolves true (primary), false (secondary) or null (cancelled)
     function choose({ title, text, note = '', primary, secondary, cancel = false }) {
       return new Promise(resolve => {
@@ -350,7 +401,7 @@ const ACCOUNT = (() => {
       if (me.signedIn) {
         try { await firstSignIn(); ready = true; } catch { account.status.error = 'Cannot reach the server: reload the page to sync.'; render(); }
         await syncAll();
-      }
+      } else if (answered) showWelcome();
     });
   }
 

@@ -21,8 +21,11 @@ let passed = 0;
 const errors = [];
 const test = async (name, fn) => { await fn(); passed++; console.log(`✓ ${name}`); };
 // Each context is a separate "device" with its own storage; service workers are blocked so every load hits the server
-async function device() {
+// welcome: true leaves the reminder dialog for visitors without an account switched on (it has its own test); by default it is
+// ignored, because it would cover every signed-out page
+async function device({ welcome = false } = {}) {
   const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true });
+  if (!welcome) await context.addInitScript(() => { try { localStorage.setItem('account-welcome', 'ignored'); } catch {} });
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -151,6 +154,59 @@ try {
     await signIn(laptop.page, 'e2e@example.com');
     await laptop.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
     await laptop.context.close();
+  });
+
+  // The reminder for visitors without an account (pages with <body data-account-welcome>)
+  const reminder = target => target.locator('.account-welcome[open]');
+  const settle = async target => { await target.locator('.account-signin').waitFor(); await target.waitForTimeout(300); };
+  await test('signed out: the reminder shows the advantages and the links; Maybe later hides it for this visit, Ignore for good', async () => {
+    const { context, page: first } = await device({ welcome: true });
+    await reminder(first).waitFor();
+    assert.match(await reminder(first).innerText(), /free account[\s\S]*every device/);
+    assert.equal(await reminder(first).locator('a[href="/register?next=%2Fbuilder.html"]').count(), 1, 'sign-up link back to this page');
+    assert.equal(await reminder(first).locator('a[href="/login?next=%2Fbuilder.html"]').count(), 1, 'sign-in link back to this page');
+    // Esc counts as "Maybe later": not again in this tab, whatever the page...
+    await first.keyboard.press('Escape');
+    await first.locator('.account-welcome').waitFor({ state: 'detached', timeout: 3000 });
+    await first.reload();
+    await settle(first);
+    assert.equal(await first.locator('.account-welcome').count(), 0, 'not again after a reload');
+    await first.goto(`${base}/tones.html`);
+    await settle(first);
+    assert.equal(await first.locator('.account-welcome').count(), 0, 'not again on another page of the same visit');
+    // ...but the next visit (a new tab) asks again
+    const second = await context.newPage();
+    await second.goto(`${base}/tones.html`);
+    await reminder(second).waitFor();
+    assert.equal(await reminder(second).locator('a[href="/register?next=%2Ftones.html"]').count(), 1);
+    await reminder(second).locator('button', { hasText: 'Ignore this message' }).click();
+    await second.locator('.account-welcome').waitFor({ state: 'detached', timeout: 3000 });
+    assert.equal(await second.evaluate(() => localStorage.getItem('account-welcome')), 'ignored');
+    // ignored: no more reminders, in new visits either
+    const third = await context.newPage();
+    await third.goto(`${base}/`);
+    await settle(third);
+    assert.equal(await third.locator('.account-welcome').count(), 0, 'ignored for good');
+    await context.close();
+  });
+
+  await test('the reminder shows on the Effects page, not on the documents, and not when signed in', async () => {
+    const visitor = await device({ welcome: true });
+    await visitor.page.goto(`${base}/`);
+    await reminder(visitor.page).waitFor();
+    for (const file of ['guide.html', 'privacy.html', 'resources.html', 'landing/']) {
+      const tab = await visitor.context.newPage();
+      await tab.goto(`${base}/${file}`);
+      await settle(tab);
+      assert.equal(await tab.locator('.account-welcome').count(), 0, `${file}: no reminder`);
+      await tab.close();
+    }
+    await visitor.context.close();
+    const member = await device({ welcome: true });
+    await signIn(member.page, 'e2e@example.com');
+    await member.page.waitForTimeout(500);
+    assert.equal(await member.page.locator('.account-welcome').count(), 0, 'signed in: no reminder');
+    await member.context.close();
   });
 
   await test('first sign-in on a browser with its own patches: Not now keeps them aside, then they can be added', async () => {

@@ -101,6 +101,8 @@ const test = async (name, fn) => {
   try { await fn(); passed++; console.log(`✓ ${name}`); } catch (error) { failures.push(name); console.log(`✗ ${name}\n  ${error.message.split('\n').join('\n  ')}`); }
 };
 const context = await browser.newContext({ serviceWorkers: 'block' });
+// The reminder dialog for visitors without an account would cover every page: it is checked in tools/e2e-test.mjs
+await context.addInitScript(() => { try { localStorage.setItem('account-welcome', 'ignored'); } catch {} });
 const page = await context.newPage();
 page.on('pageerror', error => errors.push(error.message));
 page.on('console', message => { if (message.type() === 'error' && !/Failed to load resource/.test(message.text())) errors.push(message.text()); });

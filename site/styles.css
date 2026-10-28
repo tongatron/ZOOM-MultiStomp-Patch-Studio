@@ -862,6 +862,9 @@ body.is-dropping .drop-overlay { display: grid; }
 .account-dialog .Overlay-body p { margin: 0 0 12px; }
 .account-note { color: var(--fg-muted); font-size: 13px; }
 .account-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.account-perks { display: grid; gap: 6px; margin: 0 0 4px; padding-left: 20px; }
+.account-later { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin-top: 8px; }
+.account-welcome .account-note { margin: 8px 0 0; }
 .account-local { display: none; }
 .signed-out .account-local { display: inline-flex; }
 
