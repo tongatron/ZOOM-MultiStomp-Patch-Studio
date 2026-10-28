@@ -27,9 +27,23 @@
       .lp-hero .lp-lead { font-size: 18px; margin-bottom: 32px; }
       .lp-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px); gap: 48px; align-items: center; }
       .lp-hero-grid h1 { font-size: clamp(32px, 4.6vw, 54px); }
-      /* The cut-out has no background; the cables fade out instead of ending at the image edge. */
+      /* Pedal carousel: the cut-outs have no background and share one size, so they stack in one grid cell and cross-fade. */
       .lp-hero-pedal { margin: 0; }
-      .lp-hero-pedal img { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .5)); }
+      .lp-pedal-stage { position: relative; display: grid; }
+      /* The cables fade out instead of ending at the image edge. */
+      .lp-pedal-img { grid-area: 1 / 1; display: block; width: 100%; height: auto; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .5)); }
+      .lp-pedal-img.is-active { opacity: 1; visibility: visible; transition-delay: 0s; }
+      .lp-pedal-nav { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; margin-top: -20px; border: 1px solid var(--border); border-radius: 50%; color: var(--fg); background: rgba(13, 17, 23, .72); cursor: pointer; transition: background .12s, border-color .12s; }
+      .lp-pedal-nav:hover { background: var(--bg-muted); border-color: var(--fg-muted); }
+      .lp-pedal-nav:focus-visible { outline: 2px solid var(--accent-fg); outline-offset: 2px; }
+      .lp-pedal-nav[hidden] { display: none; }
+      .lp-pedal-nav--prev { left: 0; }
+      .lp-pedal-nav--next { right: 0; }
+      .lp-pedal-nav svg { width: 18px; height: 18px; }
+      .lp-pedal-caption { margin-top: 12px; text-align: center; }
+      .lp-pedal-name { font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--fg); }
+      .lp-pedal-name small { margin-left: 8px; font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--fg-muted); }
+      @media (prefers-reduced-motion: reduce) { .lp-pedal-img { transition: none; } }
       @media (max-width: 767px) { .lp-hero-grid { grid-template-columns: 1fr; gap: 32px; } .lp-hero-pedal { max-width: 300px; margin: 0 auto; } }
       .lp-cta { display: flex; flex-wrap: wrap; gap: 12px; }
       .lp-cta .btn { height: 40px; padding: 0 20px; font-size: 15px; }
@@ -141,8 +155,17 @@
               <a class="btn btn-invisible" href="#how">How it works</a>
             </div>
           </div>
-          <figure class="lp-hero-pedal">
-            <img src="pedal-ms60b.webp" alt="The ZOOM MultiStomp MS-60B+ bass pedal in red, with two jacks on the left, one on the right and the display showing CLEAR DRIVER PREAMP." width="854" height="1266" fetchpriority="high" />
+          <figure class="lp-hero-pedal" role="group" aria-roledescription="carousel" aria-label="The two supported pedals">
+            <div class="lp-pedal-stage">
+              <img class="lp-pedal-img is-active" src="pedal-ms60b.webp" alt="The ZOOM MultiStomp MS-60B+ bass pedal in red, with two jacks on the left, one on the right and the display showing CLEAR DRIVER PREAMP." width="854" height="1266" fetchpriority="high" />
+              <img class="lp-pedal-img" src="pedal-ms50g.webp" alt="The ZOOM MultiStomp MS-50G+ guitar pedal in white, with two jacks on the left, one on the right and the display showing KRAMPUS DRIVE." width="854" height="1266" aria-hidden="true" />
+              <button class="lp-pedal-nav lp-pedal-nav--prev" type="button" aria-label="Previous pedal" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M10 3 5 8l5 5"/></svg></button>
+              <button class="lp-pedal-nav lp-pedal-nav--next" type="button" aria-label="Next pedal" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m6 3 5 5-5 5"/></svg></button>
+            </div>
+            <figcaption class="lp-pedal-caption" aria-live="polite">
+              <span class="lp-pedal-name">ZOOM MS-60B+<small>Bass</small></span>
+              <span class="lp-pedal-name" hidden>ZOOM MS-50G+<small>Guitar</small></span>
+            </figcaption>
           </figure>
         </div>
         <figure class="lp-shot">
@@ -407,11 +430,38 @@
         <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
         <div class="gh-footer-meta">
           <a class="gh-privacy" href="../privacy.html">Privacy</a>
-          <time class="gh-updated" datetime="2026-10-28T13:43Z">Last update 28 October 2026 14:43</time>
+          <time class="gh-updated" datetime="2026-10-28T14:07Z">Last update 28 October 2026 15:07</time>
         </div>
       </div>
     </footer>
     <script src="../library-merge.js?v=zoom28-20261027"></script>
     <script src="../account.js?v=zoom48-20261028"></script>
+    <script>
+      // Hero pedal carousel: the arrows (hidden until this runs) and the left/right keys swap the pedal and its name.
+      (function () {
+        var stage = document.querySelector('.lp-pedal-stage');
+        if (!stage) return;
+        var imgs = stage.querySelectorAll('.lp-pedal-img');
+        var names = document.querySelectorAll('.lp-pedal-name');
+        var prev = stage.querySelector('.lp-pedal-nav--prev');
+        var next = stage.querySelector('.lp-pedal-nav--next');
+        var current = 0;
+        function show(n) {
+          current = (n + imgs.length) % imgs.length;
+          imgs.forEach(function (img, k) {
+            img.classList.toggle('is-active', k === current);
+            img.setAttribute('aria-hidden', k === current ? 'false' : 'true');
+          });
+          names.forEach(function (name, k) { name.hidden = k !== current; });
+        }
+        prev.hidden = next.hidden = false;
+        prev.addEventListener('click', function () { show(current - 1); });
+        next.addEventListener('click', function () { show(current + 1); });
+        stage.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowLeft') show(current - 1);
+          else if (e.key === 'ArrowRight') show(current + 1);
+        });
+      })();
+    </script>
   </body>
 </html>
