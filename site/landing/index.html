@@ -73,11 +73,6 @@
       .lp-checks li { position: relative; padding-left: 26px; }
       .lp-checks li::before { content: ""; position: absolute; left: 2px; top: 5px; width: 12px; height: 7px; border-left: 2px solid #3fb950; border-bottom: 2px solid #3fb950; transform: rotate(-45deg); }
       .lp-checks b { color: var(--fg); font-weight: 600; }
-      .lp-flow { display: grid; gap: 10px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); font-size: 14px; }
-      .lp-flow-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-muted); border-radius: var(--radius); background: var(--bg); }
-      .lp-flow-row b { min-width: 0; flex: 1; }
-      .lp-flow-row span { color: var(--fg-muted); font-size: 12px; white-space: nowrap; }
-      .lp-flow-arrow { justify-self: center; color: var(--fg-muted); font: 600 13px/1 var(--mono); }
       /* Account */
       .lp-account { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
       .lp-plan { display: flex; flex-direction: column; gap: 12px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); }
@@ -90,6 +85,30 @@
       .lp-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
       .lp-links h3 { margin: 0 0 10px; font-size: 13px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .08em; }
       .lp-links ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; }
+
+      /* Screenshots of the studio */
+      .lp-shot { margin: 0; }
+      .lp-shot img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: calc(var(--radius) * 2); background: var(--bg); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+      .lp-shot figcaption { margin-top: 12px; font-size: 13px; color: var(--fg-muted); }
+      .lp-hero .lp-shot { margin-top: 48px; }
+      .lp-shot--small img { box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+      .lp-split--wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: start; }
+      .lp-stack { display: grid; gap: 28px; }
+      .lp-shot--dialog { max-width: 440px; }
+      .lp-tour { display: grid; gap: 56px; margin-top: 12px; }
+      .lp-tour-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 40px; align-items: center; }
+      .lp-tour-row--flip { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+      .lp-tour-row--flip .lp-tour-text { order: 2; }
+      .lp-tour-text h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; font-size: 20px; line-height: 1.25; }
+      .lp-tour-text h3 .Label { height: 18px; font-size: 11px; color: var(--fg-muted); }
+      .lp-tour-text p { margin: 0 0 14px; font-size: 15px; color: var(--fg-muted); }
+      .lp-tour-text .lp-checks { margin-bottom: 0; }
+      .lp-testers .lp-shot { grid-column: 1 / -1; }
+      @media (max-width: 767px) {
+        .lp-tour-row, .lp-tour-row--flip { grid-template-columns: 1fr; gap: 16px; }
+        .lp-tour-row--flip .lp-tour-text { order: 0; }
+        .lp-split--wide { grid-template-columns: 1fr; }
+      }
     </style>
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
@@ -113,12 +132,23 @@
           <a class="btn" href="/register?next=/builder.html">Create a free account</a>
           <a class="btn btn-invisible" href="#how">How it works</a>
         </div>
+        <figure class="lp-shot">
+          <img src="shots/builder.webp" alt="The Patch builder of the studio: a chain of six effects from DYNAMIC COMPRESSOR to ROOM REVERB, the patch name and a DSP load of 85%, the Advice pane with a tip, and the My patches list on the right." width="1920" height="1200" fetchpriority="high" />
+          <figcaption>The Patch builder: a chain of 6 effects at 85% DSP, advice with sources, and your saved patches at the right.</figcaption>
+        </figure>
       </section>
 
       <section id="pedals" aria-labelledby="pedals-title">
-        <p class="lp-eyebrow">Pedals</p>
-        <h2 id="pedals-title">Two pedals, one studio</h2>
-        <p class="lp-lead">Switch between them at the top of every page of the studio. The bass version is tested on a real pedal; the guitar version is new and waiting for testers.</p>
+        <div class="lp-split" style="margin-bottom: 28px;">
+          <div>
+            <p class="lp-eyebrow">Pedals</p>
+            <h2 id="pedals-title">Two pedals, one studio</h2>
+            <p class="lp-lead" style="margin-bottom: 0;">Switch between them at the top of every page of the studio. The bass version is tested on a real pedal; the guitar version is new and waiting for testers.</p>
+          </div>
+          <figure class="lp-shot lp-shot--small">
+            <img src="shots/menu.webp" alt="The pedal menu at the top of the studio: MS-60B+ bass with the green tag Tested on firmware 1.20, and MS-50G+ guitar with the grey tag Not tested." width="960" height="330" loading="lazy" />
+          </figure>
+        </div>
         <div class="lp-pedals">
           <article class="lp-pedal">
             <div class="lp-pedal-head">
@@ -174,8 +204,60 @@
         </ol>
       </section>
 
+      <section id="tour" aria-labelledby="tour-title">
+        <p class="lp-eyebrow">A look inside</p>
+        <h2 id="tour-title">The studio, screen by screen</h2>
+        <p class="lp-lead">Every page fits the window: the page itself never scrolls, only the lists inside it. These are the real pages, shown for the MS-60B+.</p>
+        <div class="lp-tour">
+          <div class="lp-tour-row">
+            <div class="lp-tour-text">
+              <h3>Every effect, with the original ZOOM text</h3>
+              <p>All 97 effects of the MS-60B+ (127 on the MS-50G+), described exactly as in the ZOOM Effects List.</p>
+              <ul class="lp-checks">
+                <li>Search by effect, model or parameter; press <b>/</b> to jump to the search box.</li>
+                <li>Filter by category and by feature: footswitch, tempo sync, stereo, mix dry/wet.</li>
+                <li>Placement tips, the estimated DSP load and every parameter with its range.</li>
+                <li><b>Add to patch</b> opens the builder with the effect in the chain.</li>
+              </ul>
+            </div>
+            <figure class="lp-shot">
+              <img src="shots/effects.webp" alt="The Effects page: the category filters on the left, the list of compressors with their descriptions in the middle, and the detail of DYNAMIC COMPRESSOR on the right with placement tips, the DSP load and its parameters." width="1920" height="1200" loading="lazy" />
+            </figure>
+          </div>
+
+          <div class="lp-tour-row lp-tour-row--flip">
+            <div class="lp-tour-text">
+              <h3>Add effects and watch the DSP load</h3>
+              <p>Up to 6 effects per patch, as on the pedal. Search names and descriptions, or narrow the list by category.</p>
+              <ul class="lp-checks">
+                <li>Every effect shows what it costs and what the whole chain would be after adding it.</li>
+                <li>Drag effects into order or move them from the keyboard, with undo and redo.</li>
+                <li>Advice reads the chain as you build it and often offers a one-click fix.</li>
+              </ul>
+            </div>
+            <figure class="lp-shot">
+              <img src="shots/add-effect.webp" alt="The Add effect window over the Patch builder: a search box, the categories as buttons that wrap onto two lines, and a list of compressors each with its DSP load and the chain total after adding it." width="1920" height="1200" loading="lazy" />
+            </figure>
+          </div>
+
+          <div class="lp-tour-row">
+            <div class="lp-tour-text">
+              <h3>Tone ideas <span class="Label">bass</span></h3>
+              <p>Starting chains by playing style and by bassist, focused on alternative rock.</p>
+              <ul class="lp-checks">
+                <li>Every gear fact cites its source, and the chains are approximations of a rig, not copies.</li>
+                <li><b>Open in builder</b> loads the chain ready to edit, save and send to the pedal.</li>
+              </ul>
+            </div>
+            <figure class="lp-shot">
+              <img src="shots/tones.webp" alt="The Tone ideas page: alternative-rock styles such as Grunge and Post-punk with their effect chains on the left, and bassist cards such as Krist Novoselic and Peter Hook with sourced gear facts on the right." width="1920" height="1200" loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
       <section id="pedal-manager" aria-labelledby="pm-title">
-        <div class="lp-split">
+        <div class="lp-split lp-split--wide">
           <div>
             <p class="lp-eyebrow">Pedal manager · MS-60B+ · experimental</p>
             <h2 id="pm-title">Your pedal and your patches, side by side</h2>
@@ -183,6 +265,7 @@
             <ul class="lp-checks">
               <li><b>Read</b> every memory of the pedal and open a patch in the builder to edit it.</li>
               <li><b>Write</b> a patch to the memory you choose, or clear one.</li>
+              <li><b>Arrange:</b> rename, move or swap patches, or put the whole pedal in a new order.</li>
               <li><b>Backup first:</b> before a memory is overwritten its patch is kept, and you can restore it.</li>
               <li><b>Checked:</b> after writing, the memory is read back to confirm it.</li>
             </ul>
@@ -191,12 +274,15 @@
             </div>
             <p class="lp-note">Works in Chrome or Edge on a computer (Web MIDI). Experimental: the USB protocol is not documented by ZOOM.</p>
           </div>
-          <div class="lp-flow" aria-hidden="true">
-            <div class="lp-flow-row"><b>My patches</b><span>in your browser or account</span></div>
-            <div class="lp-flow-arrow">↓ write · read ↑</div>
-            <div class="lp-flow-row"><b>MS-60B+ memories</b><span>over USB</span></div>
-            <div class="lp-flow-arrow">↓ before overwriting</div>
-            <div class="lp-flow-row"><b>Backups</b><span>restore any time</span></div>
+          <div class="lp-stack">
+            <figure class="lp-shot">
+              <img src="shots/pedal-manager.webp" alt="The Pedal manager with a pedal connected: My patches on the left, the 100 memories of the pedal in the middle with memory 5 now holding ALT ROCK, and on the right the message that the memory was read back and is identical, the Backups list with the replaced JAZZ WARM, and the MIDI log." width="1920" height="1200" loading="lazy" />
+              <figcaption>After a write the memory is read back, and the patch it replaced is kept in Backups. Shown with a simulated pedal.</figcaption>
+            </figure>
+            <figure class="lp-shot lp-shot--small lp-shot--dialog">
+              <img src="shots/pedal-write.webp" alt="The confirmation window of the Pedal manager: Write ALT ROCK, 6 effects, DSP 85.1%, to memory 5. It replaces JAZZ WARM, and a backup of it is in Backups and was downloaded as a .zptc file." width="780" height="450" loading="lazy" />
+              <figcaption>Nothing is written until you confirm.</figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -236,14 +322,14 @@
         <h2 id="features-title">What's inside</h2>
         <p class="lp-lead">Everything works for both pedals unless it says otherwise.</p>
         <div class="lp-grid">
-          <article class="lp-card"><h3>Effects library</h3><p>Every effect with the original ZOOM Effects List text, parameters and ranges. Search by effect, model or parameter and filter by category.</p></article>
+          <article class="lp-card"><h3>Effects library</h3><p>Every effect with the original ZOOM Effects List text, parameters and ranges, placement tips and an estimated DSP load. Search by effect, model or parameter; filter by category and feature.</p></article>
           <article class="lp-card"><h3>Patch builder</h3><p>Up to 6 effects per patch, reorder by dragging or from the keyboard, undo and redo.</p></article>
           <article class="lp-card"><h3>Live DSP meter</h3><p>The load of each effect and of the whole chain, on the same scale as the Handy Guitar Lab "Processor" meter.</p></article>
           <article class="lp-card"><h3>.zptc export</h3><p>A file that imports into Handy Guitar Lab. On the MS-60B+ it round-trips byte for byte against real exports.</p></article>
-          <article class="lp-card"><h3>My patches</h3><p>Save, compare two versions, back up and restore, share a link. Kept in your account when you sign in.</p></article>
-          <article class="lp-card"><h3>Pedal manager <span class="Label">bass · experimental</span></h3><p>Read and write the MS-60B+ memories over USB, with a backup before every write and a read-back check.</p></article>
+          <article class="lp-card"><h3>My patches</h3><p>Save, save as new, compare two versions, import and back up. Kept in your account when you sign in.</p></article>
+          <article class="lp-card"><h3>Pedal manager <span class="Label">bass · experimental</span></h3><p>Read and write the MS-60B+ memories over USB, with a backup before every write and a read-back check. Rename, move, swap and arrange memories too.</p></article>
           <article class="lp-card"><h3>Free account</h3><p>Your patches, settings and pedal backups on every device, for both pedals. Download or delete them any time.</p></article>
-          <article class="lp-card"><h3>Advice engine <span class="Label">full on bass</span></h3><p>Flags effect order, hot levels and heavy chains, and explains why with sources. The guitar version has the objective checks only.</p></article>
+          <article class="lp-card"><h3>Advice engine <span class="Label">full on bass</span></h3><p>Flags effect order, hot levels and heavy chains, explains why with sources and often offers a one-click fix. The guitar version has the objective checks only.</p></article>
           <article class="lp-card"><h3>Style profiles <span class="Label">bass</span></h3><p>Starter chains and advice tuned per playing style, adapted to a bass amp or a mixer.</p></article>
           <article class="lp-card"><h3>Tone ideas <span class="Label">bass</span></h3><p>Starting points by style and by bassist, focused on alternative rock. Each one cites its sources and opens in the builder.</p></article>
           <article class="lp-card"><h3>Works offline</h3><p>Installable as an app on a computer or a tablet held sideways, so it works at rehearsals too.</p></article>
@@ -262,6 +348,10 @@
             <li>Import it in <b>Handy Guitar Lab</b> and copy it to a free memory.</li>
             <li>Check the effects and values on the pedal, and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>. An exported patch from your pedal helps too.</li>
           </ol>
+          <figure class="lp-shot">
+            <img src="shots/ms50g-builder.webp" alt="The MS-50G+ Patch builder with a guitar chain of six effects from COMPRESSOR to HALL REVERB at 70% DSP, under a red notice that no generated patch has been checked on a real MS-50G+ yet." width="1920" height="1200" loading="lazy" />
+            <figcaption>The MS-50G+ builder: the same studio, with a notice that it is not tested yet.</figcaption>
+          </figure>
         </div>
       </section>
 
@@ -286,6 +376,7 @@
           <div>
             <h3>Project</h3>
             <ul>
+              <li><a href="../guide.html">Guide: how to use the studio</a></li>
               <li><a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a></li>
               <li><a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">Report a problem</a></li>
             </ul>
