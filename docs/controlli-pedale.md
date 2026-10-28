@@ -27,6 +27,7 @@ Come ci si collega, due strade:
 Regole di sicurezza (valgono per tutta la lista):
 
 - Si scrive **solo nella memoria di prova** scelta in 0.4, mai in altre.
+- **Il pedale salva da solo quello che si tocca** (visto il 2026-10-28, con l'editor mode rimasto acceso): leggendo il display, nelle 5 memorie guardate sono cambiati byte interni di PRM2 e, sulla 62, due valori (THRSHLD −22 → −24, FREQ grezzo 16 → 15) per una manopola sfiorata. Prima di leggere il display a mano premi **Disconnect** nel Pedal manager (spegne l'editor mode), non solo cambiare pagina, e non toccare le manopole. Dopo ogni sessione rileggi le memorie e confrontale con l'ultima lettura. La 62 è stata ripristinata dal backup della lettura precedente (riletta uguale byte per byte, 2026-10-28); delle altre 4 memorie guardate restano cambiati solo byte interni di PRM2, effetti e valori sono quelli di prima.
 - Un cambio alla volta, e dopo ogni scrittura si rilegge.
 - Se il pedale non risponde o mostra qualcosa di strano: niente retry in serie, si copia il MIDI log e ci si ferma.
 - I backup restano (ultimi 30 nel browser, più il `.zptc` scaricato a ogni scrittura).
@@ -81,8 +82,8 @@ Per ognuno: imposta un valore sul pedale (o scrivilo con il Pedal manager), anno
 ### D.1 Codifica non verificata (22), il sito usa una regola dedotta per analogia
 
 - [x] D1a **Ampli AMPG SVT, MID-FREQ** (`32 Hz – 6.3 kHz`, 32 passi). → fatto il 2026-10-27: tutti i 32 passi letti sul display del pedale (passata lenta con B5) e messi in `site/zptc.js`: 32, 40, 50, 63, 70, 80, 100, 120, 140, 150, 160, 180, 200, 220, 250, 300, 350, 400, 450, 500, 630, 800, 1.0k, 1.2k, 1.6k, 2.0k, 2.5k, 3.0k, 3.6k, 4.0k, 4.5k, 6.3k (Hz).
-- [ ] D1b **SMR400, B-MAN100, AC 370, MID-FREQ** (stessa scala, oggi assunta uguale a quella dell'AMPG SVT). Per ognuno: cambia l'effetto del patch corrente sul pedale, passata lenta del MID-FREQ (un click ogni ~2 secondi, senza salvare) e scrivi i valori in ordine; il lettore controlla i 32 passi. → …
-- [ ] D2 **Toni ±15**: SMR400 e TE400SMX, BASS / MID / TREBLE (`-15.0 – 15.0`). → −15, 0, +15 e un passo vicino a 0: …
+- [ ] D1b **SMR400, B-MAN100, AC 370, MID-FREQ** (stessa scala, oggi assunta uguale a quella dell'AMPG SVT). Per ognuno: cambia l'effetto del patch corrente sul pedale, passata lenta del MID-FREQ (un click ogni ~2 secondi, senza salvare) e scrivi i valori in ordine; il lettore controlla i 32 passi. → 2026-10-28, controllo a campione sul display, tutti uguali al previsto con la scala dell'AMPG SVT: B-MAN100 passo 17 (400 Hz, mem. 53) e passo 21 (800 Hz, mem. 29), AC 370 passo 17 (400 Hz, mem. 31), SMR400 passo 14 (250 Hz, mem. 62). Passata completa dei 32 passi non fatta: `verifiedOn` in `site/zptc.js` resta solo l'AMPG SVT.
+- [ ] D2 **Toni ±15**: SMR400 e TE400SMX, BASS / MID / TREBLE (`-15.0 – 15.0`). → 2026-10-28: SMR400 (mem. 62) BASS +4, MID −5, TREBLE 0: uguali al display. Mancano −15, +15 e il TE400SMX.
 - [ ] D3 **Toni ±10**: EBH360, BASS / MID / TREBLE (`-10.0 – 10.0`). → …
 - [ ] D4 **MODE dei delay** (`SHORT, LONG, ♩`): DELAY, ANALOG DELAY, TAPE ECHO, REVERSE DELAY, MODULATION DELAY, HOLD DELAY; e DUAL DELAY (`TIME, ♩`). → provali tutte le opzioni su uno, poi una per gli altri: …
 - [ ] D5 **DI-5 PREAMP, TONE** (`OFF, 1 – 6`). → i 7 valori: …
@@ -91,10 +92,10 @@ Per ognuno: imposta un valore sul pedale (o scrivilo con il Pedal manager), anno
 ### D.2 Non decodificati (20), il sito chiede il valore grezzo ("raw")
 
 - [ ] D7 DUAL COMPRESSOR, FREQ (`300 Hz – 1.5 kHz`)
-- [ ] D8 160 COMPRESSOR, RATIO (`1.0 – 10.0`)
+- [ ] D8 160 COMPRESSOR, RATIO (`1.0 – 10.0`) → 2026-10-28: raw 30 = 4.0 sul display (mem. 62, valore non toccato). Coerente con 1.0 + raw × 0.1, ma è un solo punto.
 - [ ] D9 BASS AUTO WAH, SENSE · Z TRON FILTER, SENSE · BASS CRY FILTER, SENSE (`-10 – -1, 1 – 10`: attenzione allo zero che non c'è)
 - [ ] D10 ENVELOPE GENERATOR FILTER, TYPE (`HPF2 – LPF4`: tutti i tipi)
-- [ ] D11 BASS PARAMETRIC EQ, FREQ (`20 Hz – 20 kHz`) e Q (`0.5 – 16.0`)
+- [ ] D11 BASS PARAMETRIC EQ, FREQ (`20 Hz – 20 kHz`) e Q (`0.5 – 16.0`) → 2026-10-28: Q raw 0 = 0.5. FREQ: 250 Hz letta sulla 62 (slot 4) o sulla 53 (slot 6), raw 15 o 16: la 62 è cambiata mentre la si leggeva (16 → 15), quindi il punto è da rifare. Valori grezzi già presenti nelle 100 memorie: FREQ 4 (mem. 70), 15 (62), 16 (51, 53); Q 0 (51), 1 (52), 2 (55), 27 (70).
 - [ ] D12 LOW EQ, FREQ (`20 Hz – 640 Hz`) · HIGH EQ, FREQ (`500 Hz – 20 kHz`) · SPLITTER, FREQ (`80 Hz – 2.5 kHz`)
 - [ ] D13 CLEAR DRIVER PREAMP, MID-FREQ (`100 Hz – 1.0 kHz`) · 1073 PREAMP, MID-F (`350 Hz – 3.2 kHz`) · SOLID PREAMP, LO-FREQ (`40 Hz – 600 Hz`) e HI-FREQ (`1.5 kHz – 22.0 kHz`)
 - [ ] D14 DJENT PREAMP, LOCUT (`OFF, 20 Hz – 120 Hz`) · BASS STEREO CHORUS, LOCUT e BASS VINTAGE FLANGER, LOCUT (`OFF, 60 Hz – 800 Hz`)
