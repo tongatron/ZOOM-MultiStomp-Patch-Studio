@@ -232,29 +232,42 @@ const ACCOUNT = (() => {
     header?.append(slot);
     let notice = null;
 
+    // What the slot shows now. A render that changes nothing leaves the button alone, and one that only changes
+    // the menu (the sync state) keeps the button too: rebuilding it makes the header flicker and drops keyboard focus.
+    let shown = { button: '', menu: '' };
+    function paint(button, menu = '') {
+      if (button === shown.button && menu === shown.menu) return;
+      const details = slot.querySelector('details');
+      if (menu && details && button === shown.button) {
+        details.querySelector('.account-dropdown').outerHTML = menu;
+      } else {
+        slot.innerHTML = menu ? `<details class="account-menu"${details?.open ? ' open' : ''}>${button}${menu}</details>` : button;
+      }
+      shown = { button, menu };
+    }
+
     function render() {
       const me = account.me;
       document.documentElement.classList.toggle('signed-out', !me?.signedIn);
       document.documentElement.classList.toggle('signed-in', !!me?.signedIn);
       if (!me) return;
       if (!me.signedIn) {
-        slot.innerHTML = `<a class="btn btn-sm account-signin" href="/login?next=${encodeURIComponent(here())}">Sign in</a>`;
+        paint(`<a class="btn btn-sm account-signin" href="/login?next=${encodeURIComponent(here())}">Sign in</a>`);
       } else {
         const s = account.status;
         const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet');
         const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
-        const open = slot.querySelector('details')?.open;
-        slot.innerHTML = `<details class="account-menu"${open ? ' open' : ''}>
-          <summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>
-          <div class="account-dropdown" role="menu">
+        paint(
+          `<summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>`,
+          `<div class="account-dropdown" role="menu">
             <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
             <div class="account-state" role="status">${esc(state)}</div>
             ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
             <a class="account-item" href="/account">Account</a>
             ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
             <button class="account-item" type="button" data-action="signout">Sign out</button>
-          </div>
-        </details>`;
+          </div>`
+        );
       }
       renderNotice();
     }
@@ -329,6 +342,10 @@ const ACCOUNT = (() => {
 
     account.syncNow = syncAll;
     account.changed = () => schedule(500);
+    // Every page is a new document: paint the header from this tab's last /api/me answer at once (refreshMe confirms it)
+    // instead of leaving the slot empty until the request returns
+    try { account.me = JSON.parse(sessionStorage.getItem('account-me')); } catch { account.me = null; }
+    render();
     refreshMe().then(async me => {
       if (me.signedIn) {
         try { await firstSignIn(); ready = true; } catch { account.status.error = 'Cannot reach the server: reload the page to sync.'; render(); }

@@ -570,7 +570,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .chip-filter.sev-tip svg { color: var(--accent-fg); }
 .chip-filter[aria-pressed="false"] { opacity: .55; }
 .advice-list { margin: 0; padding: 0; list-style: none; }
-.advice-item { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 16px; border-top: 1px solid var(--border-muted); }
+.advice-item { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px 12px; align-items: start; padding: 12px 16px; border-top: 1px solid var(--border-muted); }
 .advice-item:first-child { border-top: 0; }
 .advice-icon { padding-top: 2px; }
 .sev-error .advice-icon, .advice-dot.sev-error { color: #f85149; }
@@ -581,15 +581,14 @@ body.is-dropping .drop-overlay { display: grid; }
 .advice-why { margin-top: 4px; font-size: 12px; }
 .advice-why summary { cursor: pointer; color: var(--accent-fg); width: fit-content; }
 .advice-why p { margin: 6px 0 0; color: var(--fg); }
-.advice-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+/* The actions sit under the text, in the text column: a long fix label ("Move AMPG SVT after NEW YORK MUFF FUZZ") in a side column would leave the text a few characters wide */
+.advice-actions { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.advice-actions .btn { height: auto; min-height: 28px; max-width: 100%; padding-top: 4px; padding-bottom: 4px; white-space: normal; text-align: left; }
+.advice-actions > .btn-invisible:first-child { margin-left: -10px; } /* "Ignore" alone lines up with the text */
 .advice-empty { padding: 16px; color: var(--fg-muted); font-size: 13px; }
 .advice-foot { padding: 8px 16px; border-top: 1px solid var(--border-muted); font-size: 12px; color: var(--fg-muted); }
 .advice-foot:empty { display: none; }
 .advice-dot { display: inline-flex; }
-@media (max-width: 640px) {
-  .advice-item { grid-template-columns: 20px minmax(0, 1fr); }
-  .advice-actions { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; }
-}
 .tip-card { padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
 .tip-card p { margin: 8px 0 0; }
 .detail-section h3 .clear-link { margin-left: auto; font-weight: 400; }
@@ -837,7 +836,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .pedal-edit-actions { display: flex; gap: 8px; }
 
 /* ---- account (account.js) ---- */
-.account-slot { display: flex; align-items: center; }
+.account-slot { display: flex; align-items: center; min-width: 28px; } /* the avatar's width: the Guide button does not move when it appears */
 .account-menu { position: relative; }
 .account-menu > summary { list-style: none; }
 .account-menu > summary::-webkit-details-marker { display: none; }
