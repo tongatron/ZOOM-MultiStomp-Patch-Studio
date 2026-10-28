@@ -202,6 +202,13 @@ try {
     assert.doesNotMatch(await rawGet('/../deploy/server.mjs'), /createServer/);
     assert.doesNotMatch(await rawGet('/%2e%2e/deploy/server.mjs'), /createServer/);
   });
+
+  await test('a request target that starts with // is read as a path, and one that is not a URL gets 400 (not 500)', async () => {
+    assert.match(await rawGet('//'), /^HTTP\/1\.1 200 /, '// is the home page');
+    assert.match(await rawGet('//builder.html'), /^HTTP\/1\.1 200 /);
+    assert.match(await rawGet('//example.com/builder.html'), /^HTTP\/1\.1 404 /, 'a host after // is not followed');
+    assert.match(await rawGet('http://['), /^HTTP\/1\.1 400 /);
+  });
 } finally {
   server.kill();
   await rm(dataDir, { recursive: true, force: true });

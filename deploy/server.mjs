@@ -111,7 +111,9 @@ async function serveStatic(request, response, pathname) {
 // ---- server -------------------------------------------------------------------------------------
 const server = createServer(async (request, response) => {
   try {
-    const url = new URL(request.url, 'http://localhost');
+    // A target that starts with // is a path, not an address (new URL('//') fails and '//host/x' would name a host)
+    let url;
+    try { url = new URL(request.url.replace(/^\/{2,}/, '/'), 'http://localhost'); } catch { return sendJson(response, 400, { error: 'bad request' }); }
     const { pathname } = url;
     if (legacy.isLegacy(request)) return legacy.handle(request, response, url);
     if (legacy.enabled && pathname === '/moved' && request.method === 'GET') return legacy.receiver(response);
