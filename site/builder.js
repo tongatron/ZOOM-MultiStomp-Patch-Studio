@@ -273,7 +273,9 @@ function renderSaveState() {
   if (state.currentId && !entry) state.currentId = null;
   const dirty = isDirty();
   const canSave = state.effects.length > 0 && state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
-  $('#save-patch').disabled = !canSave || (entry && !dirty);
+  const saveable = !!canSave && !(entry && !dirty); // something to save: a new patch, or changes to a saved one
+  $('#save-patch').disabled = !saveable;
+  $('#save-patch').classList.toggle('btn-primary', saveable); // green only while there is something to save
   $('#save-as-new').hidden = !entry;
   $('#save-label').textContent = entry ? (dirty ? 'Save changes' : 'Saved') : 'Save';
   $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Saving is not available in this browser</span>'
@@ -729,7 +731,7 @@ function renderPicker() {
   $('#picker-cats').innerHTML = [[null, 'All'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
     .map(([key, label]) => `<button class="chip-filter" data-cat="${key ?? ''}" aria-pressed="${pickerState.category === key}">${key ? `<span class="dot" style="--c:${CATEGORIES[key].color}"></span>` : ''}${label}</button>`).join('');
   const items = catalog.filter(fx => fx.usable && (!pickerState.category || fx.category === pickerState.category)
-    && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category}`.toLowerCase().includes(pickerState.query)));
+    && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category} ${fx.description}`.toLowerCase().includes(pickerState.query)));
   $('#picker-list').innerHTML = items.length ? items.map(fx => {
     const over = total + fx.dsp > 100;
     const near = !over && total + fx.dsp > 95;
