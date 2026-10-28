@@ -25,6 +25,12 @@
       .lp-hero h1 { max-width: 820px; margin: 0 0 20px; font-size: clamp(34px, 6.4vw, 60px); line-height: 1.05; letter-spacing: -.02em; }
       .lp-hero h1 em { font-style: normal; color: var(--accent-fg); }
       .lp-hero .lp-lead { font-size: 18px; margin-bottom: 32px; }
+      .lp-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px); gap: 48px; align-items: center; }
+      .lp-hero-grid h1 { font-size: clamp(32px, 4.6vw, 54px); }
+      /* The cut-out has no background; the cables fade out instead of ending at the image edge. */
+      .lp-hero-pedal { margin: 0; }
+      .lp-hero-pedal img { display: block; width: 100%; height: auto; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .5)); }
+      @media (max-width: 767px) { .lp-hero-grid { grid-template-columns: 1fr; gap: 32px; } .lp-hero-pedal { max-width: 300px; margin: 0 auto; } }
       .lp-cta { display: flex; flex-wrap: wrap; gap: 12px; }
       .lp-cta .btn { height: 40px; padding: 0 20px; font-size: 15px; }
 
@@ -124,13 +130,20 @@
 
     <main class="container lp">
       <section class="lp-hero">
-        <p class="lp-eyebrow">ZOOM MultiStomp Patch Studio · for the MS-60B+ bass and MS-50G+ guitar</p>
-        <h1>Design your patches on a <em>big screen</em>, then send them to the pedal.</h1>
-        <p class="lp-lead">Browse every effect with the original ZOOM text, build a 6-effect chain with a live DSP meter, then export a <code>.zptc</code> file for Handy Guitar Lab or write it to the MS-60B+ over USB. A free account keeps your patches safe on every device.</p>
-        <div class="lp-cta">
-          <a class="btn btn-primary" href="../">Open the studio</a>
-          <a class="btn" href="/register?next=/builder.html">Create a free account</a>
-          <a class="btn btn-invisible" href="#how">How it works</a>
+        <div class="lp-hero-grid">
+          <div class="lp-hero-text">
+            <p class="lp-eyebrow">ZOOM MultiStomp Patch Studio · for the MS-60B+ bass and MS-50G+ guitar</p>
+            <h1>Design your patches on a <em>big screen</em>, then send them to the pedal.</h1>
+            <p class="lp-lead">Browse every effect with the original ZOOM text, build a 6-effect chain with a live DSP meter, then export a <code>.zptc</code> file for Handy Guitar Lab or write it to the MS-60B+ over USB. A free account keeps your patches safe on every device.</p>
+            <div class="lp-cta">
+              <a class="btn btn-primary" href="../">Open the studio</a>
+              <a class="btn" href="/register?next=/builder.html">Create a free account</a>
+              <a class="btn btn-invisible" href="#how">How it works</a>
+            </div>
+          </div>
+          <figure class="lp-hero-pedal">
+            <img src="pedal-ms60b.webp" alt="The ZOOM MultiStomp MS-60B+ bass pedal in red, with two jacks on the left, one on the right and the display showing CLEAR DRIVER PREAMP." width="854" height="1266" fetchpriority="high" />
+          </figure>
         </div>
         <figure class="lp-shot">
           <img src="shots/builder.webp" alt="The Patch builder of the studio: a chain of six effects from DYNAMIC COMPRESSOR to ROOM REVERB, the patch name and a DSP load of 85%, the Advice pane with a tip, and the My patches list on the right." width="1920" height="1200" fetchpriority="high" />
@@ -394,7 +407,7 @@
         <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
         <div class="gh-footer-meta">
           <a class="gh-privacy" href="../privacy.html">Privacy</a>
-          <time class="gh-updated" datetime="2026-10-28T12:32Z">Last update 28 October 2026 13:32</time>
+          <time class="gh-updated" datetime="2026-10-28T13:43Z">Last update 28 October 2026 14:43</time>
         </div>
       </div>
     </footer>
