@@ -479,6 +479,12 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .notice--muted { color: var(--fg-muted); }
 .notice--attention { background: rgba(187, 128, 9, .15); border-color: rgba(187, 128, 9, .4); }
 .notice--danger { background: rgba(248, 81, 73, .1); border-color: rgba(248, 81, 73, .4); }
+/* The "i" of a notice: the reason (data-tip) shows under it when pointed at or focused */
+.info-tip { position: relative; display: inline-flex; vertical-align: -2px; margin-right: 6px; color: var(--fg-muted); cursor: help; }
+.notice--attention .info-tip { color: #d29922; }
+.info-tip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 50%; }
+.info-tip::after { content: attr(data-tip); position: absolute; left: -4px; top: calc(100% + 6px); z-index: 30; box-sizing: border-box; width: max-content; max-width: 260px; padding: 8px 10px; background: var(--bg-subtle); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(1, 4, 9, .8); font-size: 12px; font-weight: 400; line-height: 1.45; text-align: left; white-space: normal; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .12s; }
+.info-tip:hover::after, .info-tip:focus-visible::after { opacity: 1; visibility: visible; }
 .import-help { gap: 8px; font-size: 13px; }
 .import-help summary { font-weight: 600; cursor: pointer; }
 .import-help ol { margin: 4px 0; padding-left: 20px; color: var(--fg-muted); display: flex; flex-direction: column; gap: 6px; }

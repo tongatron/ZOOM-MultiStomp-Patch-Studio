@@ -13,6 +13,10 @@ const ICON_CHEVRON = '<path fill="currentColor" d="M12.78 5.22a.75.75 0 0 1 0 1.
 const ICON_SWAP = '<path fill="currentColor" d="M5.22 14.78a.75.75 0 0 0 1.06-1.06L4.56 12h8.69a.75.75 0 0 0 0-1.5H4.56l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3a.75.75 0 0 0 0 1.06l3 3Zm5.56-6.5a.75.75 0 1 1-1.06-1.06l1.72-1.72H2.75a.75.75 0 0 1 0-1.5h8.69L9.72 2.28a.75.75 0 0 1 1.06-1.06l3 3a.75.75 0 0 1 0 1.06l-3 3Z"/>';
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
 
+const ICON_INFO = '<path fill="currentColor" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>';
+// An "i" that shows the reason of a notice when pointed at or focused (the text sits in data-tip, drawn by CSS, so it stays out of the notice text)
+const infoTip = why => `<span class="info-tip" tabindex="0" role="img" aria-label="${escapeHtml(why)}" data-tip="${escapeHtml(why)}">${icon(ICON_INFO, 14)}</span>`;
+
 // Effect metadata: catalog data + parameter codecs
 const catalog = EFFECTS_DATA.map(([name, category, , description, , params], index) => ({
   index, name, category, description,
@@ -258,9 +262,11 @@ function renderSummary() {
     if (!p.codec) raw.push(`${catalog[slot.index].lcd} ${p.name}`);
     else if (!p.codec.verified) unverified.push(`${catalog[slot.index].lcd} ${p.name}`);
   }));
-  if (unverified.length) notices.push(['attention', `Check on the pedal: ${unverified.join(', ')}.`]);
-  if (raw.length) notices.push(['attention', `Raw values (format not decoded): ${raw.join(', ')}.`]);
-  $('#notices').innerHTML = notices.map(([kind, text]) => `<li class="notice notice--${kind}">${escapeHtml(text)}</li>`).join('');
+  if (unverified.length) notices.push(['attention', `Check on the pedal: ${unverified.join(', ')}.`,
+    'These parameters use an encoding inferred by analogy with similar ones, not yet confirmed on a pedal. After loading the patch, check their values on the pedal.']);
+  if (raw.length) notices.push(['attention', `Raw values (format not decoded): ${raw.join(', ')}.`,
+    'The builder does not know yet how the pedal shows these values, so it asks for the stored value (raw) instead of the value shown on the pedal.']);
+  $('#notices').innerHTML = notices.map(([kind, text, why]) => `<li class="notice notice--${kind}">${why ? infoTip(why) : ''}<span>${escapeHtml(text)}</span></li>`).join('');
   $('#download').disabled = !state.effects.length || !nameOk || total > 100;
   $('#patch-name').classList.toggle('is-invalid', Boolean(state.name) && !ZPTC.NAME_CHARS.test(state.name));
   renderSaveState();
