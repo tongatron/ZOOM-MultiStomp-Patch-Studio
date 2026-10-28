@@ -152,12 +152,16 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-usb #usb-result { flex: none; max-height: 30%; overflow: auto; }
 .fs-usb #usb-result:empty { display: none; }
 .fs-usb .usb-box { flex: 1 1 0; min-height: 96px; }
+/* Backups and MIDI log are <details> (open by default): open, they share the column; closed, a box shrinks to its title */
+.fs-usb .usb-box:not([open]) { flex: none; min-height: 0; }
+.fs-usb .usb-box::details-content { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .fs-usb .usb-box .fs-pane-body > .usb-body:first-child { padding-bottom: 0; }
 .fs-usb .usb-log { margin: 0 16px 12px; }
 @media (max-width: 1199px) {
   .fs-usb { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
   .fs-usb .fs-col { grid-column: 1 / -1; flex-direction: row; }
   .fs-usb .fs-col > * { flex: 1 1 0; }
+  .fs-usb .usb-box:not([open]) { align-self: flex-start; }
 }
 
 /* ---- Tone ideas: by style | by bassist ---- */

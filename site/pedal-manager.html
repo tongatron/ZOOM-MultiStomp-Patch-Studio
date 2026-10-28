@@ -10,9 +10,9 @@
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css?v=zoom53-20261028" />
+    <link rel="stylesheet" href="styles.css?v=zoom54-20261028" />
     <link rel="stylesheet" href="theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="fullscreen.css?v=fs15-20261028" />
+    <link rel="stylesheet" href="fullscreen.css?v=fs16-20261028" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
   <body data-account-notice>
@@ -99,20 +99,20 @@
           </details>
         </section>
         <div id="usb-result" role="status"></div>
-        <section class="Box fs-pane usb-box" aria-labelledby="usb-backups-title" id="usb-backups-box">
-                <div class="Box-header"><h2 class="Box-title" id="usb-backups-title">Backups <span class="Counter" id="usb-backup-count">0</span> <span class="Label account-local" title="Sign in to keep your pedal backups in your account">Kept in this browser only</span></h2></div>
-        <div class="fs-pane-body" tabindex="0" aria-label="Backups">
-                <p class="field-hint usb-body">Each write keeps the patch it replaces here (in this browser, the last 30) and downloads it as a <code>.zptc</code> file. Arranging keeps all the memories it changes in one entry.</p>
-                <ul class="usb-backups usb-body" id="usb-backups"></ul>
-              </div>
-        </section>
-        <section class="Box fs-pane usb-box" aria-labelledby="usb-log-title">
-                <div class="Box-header"><h2 class="Box-title" id="usb-log-title">MIDI log</h2></div>
-        <div class="fs-pane-body" tabindex="0" aria-label="MIDI log">
-                <div class="usb-row usb-body"><button class="btn btn-sm" id="usb-copy-log">Copy log</button><button class="btn btn-sm btn-invisible" id="usb-clear-log">Clear</button><span class="field-hint">If something fails, copy the log and send it: it shows the bytes exchanged with the pedal.</span></div>
-                <pre class="usb-log" id="usb-log" aria-live="off"></pre>
-              </div>
-        </section>
+        <details class="Box fs-pane usb-box" id="usb-backups-box" open>
+          <summary class="Box-header"><h2 class="Box-title" id="usb-backups-title">Backups <span class="Counter" id="usb-backup-count">0</span> <span class="Label account-local" title="Sign in to keep your pedal backups in your account">Kept in this browser only</span></h2></summary>
+          <div class="fs-pane-body" tabindex="0" aria-label="Backups">
+            <p class="field-hint usb-body">Each write keeps the patch it replaces here (in this browser, the last 30) and downloads it as a <code>.zptc</code> file. Arranging keeps all the memories it changes in one entry.</p>
+            <ul class="usb-backups usb-body" id="usb-backups"></ul>
+          </div>
+        </details>
+        <details class="Box fs-pane usb-box" open>
+          <summary class="Box-header"><h2 class="Box-title" id="usb-log-title">MIDI log</h2></summary>
+          <div class="fs-pane-body" tabindex="0" aria-label="MIDI log">
+            <div class="usb-row usb-body"><button class="btn btn-sm" id="usb-copy-log">Copy log</button><button class="btn btn-sm btn-invisible" id="usb-clear-log">Clear</button><span class="field-hint">If something fails, copy the log and send it: it shows the bytes exchanged with the pedal.</span></div>
+            <pre class="usb-log" id="usb-log" aria-live="off"></pre>
+          </div>
+        </details>
       </div>
     </main>
 
@@ -120,7 +120,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-10-28T07:14Z">Last update 28 October 2026 08:14</time>
+      <time class="gh-updated" datetime="2026-10-28T08:33Z">Last update 28 October 2026 09:33</time>
     </footer>
 
     <dialog class="Overlay Overlay--small" id="usb-confirm" aria-labelledby="usb-confirm-title">
