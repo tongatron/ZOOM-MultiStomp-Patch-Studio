@@ -72,50 +72,17 @@ Both pedals share the codec, builder and catalog code; each keeps its own data (
 
 ## 🙋 Help test the MS-50G+
 
-The MS-50G+ section is built from the official ZOOM documentation and assumes the same `.zptc` format as the MS-60B+. Nobody has tried it on a real pedal yet. Own one? You can help in five minutes:
+The MS-50G+ section is built from the official ZOOM documentation, but nobody has tried it on a real pedal yet. Own one? There are a few short tests, from five minutes up, and you choose how much time to give. All you need is the pedal and the Handy Guitar Lab app on an iPhone or iPad.
 
-1. 🛠️ Build a simple patch in the [MS-50G+ builder](https://zoommultistompstudio.tongatron.org/ms-50g/builder.html), or grab [`patches/generated/ms50g-test.zptc`](patches/generated/ms50g-test.zptc) (COMPRESSOR → MS1959 DRIVE → DELAY).
-2. 📥 Import it in Handy Guitar Lab and copy it to a free memory.
-3. 📝 [Open an issue](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues) with what you see: the effects, the values on the pedal, the "Processor %" in the app. A patch exported from your pedal is gold.
-
-What still needs checking: [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md) (section 0).
+👉 **[What would help, and how to get in touch](https://zoommultistompstudio.tongatron.org/ms-50g/help.html)**
 
 ## 🔬 Under the hood: cracking `.zptc`
 
-ZOOM documents the effects, not the patch file. So the format was **rebuilt from scratch** — no firmware or app disassembly, just a black box, a hex editor and a lot of patient diffing.
+ZOOM documents the effects, not the patch file, so the format was **rebuilt from scratch**: no firmware or app disassembly, just seven patches that each differ by one change, a hex editor and a lot of patient diffing. It turned out to be bit-packed: each effect is a 24-byte block read as one 192-bit integer (ON/OFF, effect ID, then the parameters), inside a `PTCF` header with tagged blocks.
 
-**🧪 Differential analysis.** Seven patches were exported from Handy Guitar Lab, each one *exactly one change* away from the previous: a parameter +1, an effect off, a new name, one more effect.
+The codec is proven four ways on the MS-60B+: byte-for-byte round-trips, files rebuilt from readable values, generated patches checked on a real pedal (firmware 1.20), and the browser builder producing the same bytes. The MS-50G+ reuses it with its own effect table; effect IDs, DSP figures and the USB protocol come from the open-source [zoom-zt2](https://github.com/mungewell/zoom-zt2) project (MIT).
 
-```
-TONE 50 -> 51      offset 0x62     80 -> c0     one bit flips mid-byte
-effect ON -> OFF   offset 0x5c     21 -> 20     bit 0 is ON/OFF
-add FLIPTOP        size 0xc4 -> 0xe0, slots 2 -> 3   one more 24-byte block
-```
-
-That first line cracked it: a +1 lighting up a bit *inside* a byte means the parameters are **bit-packed**.
-
-**🧬 The layout.** Each effect is a 24-byte block read as one 192-bit little-endian integer:
-
-```
-bit    0        ON / OFF
-bits   1-29     effect ID          (29 bits)
-bits  30-89     parameters 1-5     (12 bits each)
-bits  90-113    parameters 6-8     ( 8 bits each)
-bits 114-161    parameters 9-12    (12 bits each)
-```
-
-Around it sit the `PTCF` header and tagged blocks (`EDTB`, `PRM2`, `NAME`). A hidden "slot 0" is the BLANK tile at the start of the chain, amps carry a ninth undocumented parameter, and EQ ranges move in 0.5 dB steps — deduced from a real patch ("Big Black") where stored 16, 28, 33, 36, 24 only make sense as −4, +2, +4.5, +6, 0 dB.
-
-**✅ Proven four ways (MS-60B+):**
-
-1. 🔁 **Round-trip** — decode and re-encode every exported file: all identical, byte for byte.
-2. ⌨️ **From readable values** — typing "TONE 50, ATTACK FAST" rebuilds the original files exactly.
-3. 🎚️ **On the real pedal** — generated patches on an MS-60B+ (firmware 1.20): all 28 values match, decimals, negatives and switches included.
-4. 🌐 **In the browser** — a patch composed in the builder gives the same bytes as the tested file.
-
-The **MS-50G+** reuses the codec with its own effect table, extracted word by word from the official Effects List PDF (743 descriptions checked). Effect IDs and DSP figures come from the open-source [zoom-zt2](https://github.com/mungewell/zoom-zt2) project (MIT), which also documents the USB SysEx protocol used by the Pedal manager.
-
-📄 Full write-up: [`docs/zptc-reverse-engineering.md`](docs/zptc-reverse-engineering.md)
+📄 Read the full story: [Technical notes](https://zoommultistompstudio.tongatron.org/ms-60b/technical-notes.html) · [`docs/zptc-reverse-engineering.md`](docs/zptc-reverse-engineering.md)
 
 ## 🛠️ Run it yourself
 
