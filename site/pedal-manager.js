@@ -243,7 +243,15 @@
       <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
         <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>
       </button>
+      ${isSelected && m.state === 'error' ? `<div class="usb-mem-detail">
+        <p class="usb-warn">${escapeHtml(m.error || 'This memory could not be read.')} It cannot be shown, renamed or moved${m.memory ? '' : '; nothing was received from the pedal, so it cannot be cleared either'}.</p>
+        <div class="usb-row">
+          <button class="btn btn-sm btn-invisible" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button>
+          <button class="btn btn-sm btn-danger usb-clear" data-act="clear" ${connected && !busy && m.memory ? '' : 'disabled'} title="A backup of what the memory holds now is kept first">Clear patch</button>
+        </div>
+      </div>` : ''}
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
+        ${m.crcOk ? '' : '<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly. Read it again, or clear it.</p>'}
         ${chainCards(d)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
           <label>New name <input class="form-control form-control--sm" name="name" maxlength="28" value="${escapeHtml(d.name)}" required spellcheck="false" autocomplete="off" /></label>
@@ -259,13 +267,13 @@
         </form>` : ''}
         <div class="usb-row">
           <a class="btn btn-sm btn-primary" href="${PATCHLINK.url(toPatch(d))}&m=${n}" data-act="edit">Edit in builder</a>
-          <button class="btn btn-sm" data-act="rename" ${connected && !busy ? '' : 'disabled'}>Rename</button>
-          <button class="btn btn-sm" data-act="move" ${connected && !busy ? '' : 'disabled'}>Move to…</button>
-          <button class="btn btn-sm" data-act="swap" ${connected && !busy ? '' : 'disabled'}>Swap with…</button>
+          <button class="btn btn-sm" data-act="rename" ${connected && !busy && m.crcOk ? '' : 'disabled'}>Rename</button>
+          <button class="btn btn-sm" data-act="move" ${connected && !busy && m.crcOk ? '' : 'disabled'}>Move to…</button>
+          <button class="btn btn-sm" data-act="swap" ${connected && !busy && m.crcOk ? '' : 'disabled'}>Swap with…</button>
           <button class="btn btn-sm" data-act="copy">Copy to My patches</button>
           <button class="btn btn-sm" data-act="download">Download .zptc</button>
           <button class="btn btn-sm btn-invisible" data-act="reread">Read again</button>
-          <button class="btn btn-sm btn-danger usb-clear" data-act="clear" ${connected && !busy && d.effects.length ? '' : 'disabled'}>Clear patch</button>
+          <button class="btn btn-sm btn-danger usb-clear" data-act="clear" ${connected && !busy && (d.effects.length || d.name !== CLEARED_NAME) ? '' : 'disabled'} title="Saves the memory as an empty patch, after a backup of this one">Clear patch</button>
         </div>
       </div>` : ''}
     </li>`;
@@ -755,17 +763,24 @@
     await step(`Backing up memory ${number}`, () => readOne(number));
     renderMemory(number);
     const old = memories.get(number);
-    if (old.state !== 'ok' || !old.crcOk) { status(`Memory ${number} could not be read safely, so nothing was written.`, 'danger'); return; }
-    const stored = writeBackups([{ id: `${Date.now()}`, memory: number, name: old.decoded.name || '(no name)', at: new Date().toISOString(), data: toBase64(old.memory) }, ...readBackups()]);
-    download(old.data, `backup ${String(number).padStart(3, '0')} ${fileName(old.decoded.name)}.zptc`);
+    // A memory that cannot be decoded (or whose checksum failed) can still be cleared: what the pedal sent is backed up as it is
+    const readable = old.state === 'ok' && old.crcOk;
+    if (!readable && !(clearing && old.memory)) { status(`Memory ${number} could not be read safely, so nothing was written.`, 'danger'); return; }
+    const oldName = old.decoded?.name || (readable ? '(no name)' : '(unreadable)');
+    const stored = writeBackups([{ id: `${Date.now()}`, memory: number, name: oldName, at: new Date().toISOString(), data: toBase64(old.memory) }, ...readBackups()]);
+    download(old.data || old.memory, `backup ${String(number).padStart(3, '0')} ${fileName(oldName)}.zptc`);
     renderBackups();
     // 2. Confirmation
     status('Waiting for your confirmation');
-    const yes = await confirmWrite(`<p>${clearing ? `Clear <b>memory ${number}</b>: it becomes <b>${escapeHtml(d.name)}</b>, with no effects.` : `Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?`}</p>
-      <p>It replaces <b>${escapeHtml(old.decoded.name || '(no name)')}</b>. A backup of it ${stored ? 'is in Backups on this page and ' : ''}was downloaded as a <code>.zptc</code> file.</p>
+    const yes = await confirmWrite(`<p>${clearing ? `Clear <b>memory ${number}</b>: it is saved as an empty patch, with no effects, named <input class="form-control form-control--sm" id="usb-clear-name" maxlength="28" value="${escapeHtml(d.name)}" spellcheck="false" autocomplete="off" aria-label="Name of the empty patch" />.` : `Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?`}</p>
+      <p>It replaces <b>${escapeHtml(oldName)}</b>. A backup of it ${stored ? 'is in Backups on this page and ' : ''}was downloaded as a <code>.zptc</code> file.</p>
       ${noBlank ? `<p>The file starts with a BLANK slot, and ${ZPTC.MAX_EFFECTS} effects fill every slot of the pedal: the BLANK is left out.</p>` : ''}
       ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, clearing ? `Clear memory ${number}` : `Write to memory ${number}`);
     if (!yes) { status('Nothing written'); return; }
+    if (clearing) { // the name proposed is Empty; the user may have changed it
+      const name = ($('#usb-clear-name')?.value || '').trim() || CLEARED_NAME;
+      try { bytes = ZPTC.encode({ name, shortName: name, empty: true, effects: [] }).file; } catch (error) { status(`${error.message}; nothing was written.`, 'danger'); return; }
+    }
     // 3. Write and read back
     const r = await writeAndCheck(number, bytes);
     result(r.ok, r.text);
