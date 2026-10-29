@@ -4,9 +4,9 @@
 
 # 🎛️ ZOOM MultiStomp Patch Studio
 
-### Your MultiStomp pedal, on a big screen.
+### Stop squinting at a tiny pedal screen. Design your tone on a big one.
 
-Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
+**224 effects. One calm workspace.** Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
 
 [![Open the site](https://img.shields.io/badge/▶_open_the_site-zoommultistompstudio.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoommultistompstudio.tongatron.org/landing/)
 
@@ -24,18 +24,26 @@ Explore every effect · build patches with a live DSP meter and smart advice · 
 
 | Pedal | Effects | Builder | Extras | Status |
 |---|---|---|---|---|
-| **MS-60B+** bass | [97 effects](https://zoommultistompstudio.tongatron.org) | [Patch builder](https://zoommultistompstudio.tongatron.org/builder.html) | [Tone ideas](https://zoommultistompstudio.tongatron.org/tones.html) · [Pedal manager](https://zoommultistompstudio.tongatron.org/pedal-manager.html) · [Resources](https://zoommultistompstudio.tongatron.org/resources.html) | ✅ Tested on firmware 1.20 |
+| **MS-60B+** bass | [97 effects](https://zoommultistompstudio.tongatron.org/ms-60b/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-60b/builder.html) | [Tone ideas](https://zoommultistompstudio.tongatron.org/ms-60b/tones.html) · [Pedal manager](https://zoommultistompstudio.tongatron.org/ms-60b/pedal-manager.html) · [Resources](https://zoommultistompstudio.tongatron.org/ms-60b/resources.html) | ✅ Tested on firmware 1.20 |
 | **MS-50G+** guitar | [127 effects](https://zoommultistompstudio.tongatron.org/ms-50g/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-50g/builder.html) | [Resources](https://zoommultistompstudio.tongatron.org/ms-50g/resources.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-50g) |
 
 ## 💡 Why
 
-ZOOM MultiStomp pedals pack about a hundred effects, a tight DSP budget and a 6-slot chain behind a tiny screen. The Patch Studio puts it all on your desk, so you can design patches calmly and load them with confidence.
+A ZOOM MultiStomp hides about a hundred effects, a tight DSP budget and a 6-slot chain behind a screen the size of a postage stamp. Great sounds are in there. Getting to them is the hard part.
+
+The Patch Studio puts the whole pedal on your desk:
+
+- 🧠 **Know before you load.** The DSP meter and the advice engine tell you what will work, and *why*, before you touch the pedal.
+- 🎯 **Find your tone faster.** Search, star your favorites, start from a ready chain, then tweak.
+- 🔒 **Yours to keep.** Free, open source, works offline, and your patches stay in your browser unless you choose to sync.
+- 🔬 **Built on the real format.** The `.zptc` codec is proven byte for byte, so what you build is what the pedal gets.
 
 ## ✨ Features
 
 | | |
 |---|---|
 | 🔎 **Effects library** | Every effect with the original ZOOM Effects List text, parameters and ranges. Search by name, model or parameter; filter by category and feature. |
+| ⭐ **Favorites** | Star the effects you love and filter the list down to them. |
 | 🧱 **Patch builder** | Up to 6 effects, drag to reorder, every parameter editable, undo and redo. |
 | 📊 **Live DSP meter** | The load of each effect and of the whole chain, against the 100% limit — no surprises on the pedal. |
 | 🧠 **Advice engine** | Flags risky order, hot levels and heavy chains, explains *why*, and cites its sources. Adapts to your rig (amp or mixer). Order rules are tips, never errors. |
@@ -109,76 +117,11 @@ The **MS-50G+** reuses the codec with its own effect table, extracted word by wo
 
 📄 Full write-up: [`docs/zptc-reverse-engineering.md`](docs/zptc-reverse-engineering.md)
 
-## 🗂️ Repository layout
+## 🛠️ Run it yourself
 
-```
-site/            🌐 The static site: HTML, CSS, vanilla JS. No build step. MS-60B+ data + shared scripts.
-site/ms-50g/     🎸 MS-50G+ pages and data.
-site/landing/    🛬 Landing page for both pedals.
-deploy/          🖥️ Node server: static files, accounts, sync, admin console, backups.
-tools/           🧰 .zptc CLI, Effects List extractor, tests, simulated pedal, source checker.
-patches/         💾 Sample .zptc files for the round-trip test, plus generated test patches.
-docs/            📝 Format notes and the open work list.
-documentazione/  📚 Official ZOOM documents used as data sources.
-```
+Clone it, start one Node command, and the whole studio is on `localhost`. No build step, no bundler, no dependencies to install.
 
-## 🚀 Run it locally
-
-```bash
-node deploy/server.mjs
-```
-
-Open <http://localhost:8097>. The Node server (Node 22+, for built-in SQLite) also runs accounts, with the database in `sync-data/studio.db`; emails are only sent when configured (`MAIL_OUTBOX=dir` writes them to files instead).
-
-No accounts needed? Any static server works:
-
-```bash
-python3 -m http.server 8766 --directory site
-```
-
-## 🧪 Checks
-
-```bash
-npm test
-```
-
-Runs the codec round-trip, advice, sync and account tests in one go.
-
-<details>
-<summary>🔍 One by one</summary>
-
-```bash
-# .zptc codec: every sample must round-trip byte for byte
-node tools/zptc.mjs roundtrip patches/0* "patches/07Big Black .zptc"
-
-# decode or encode with the MS-50G+ effects
-ZPTC_PEDAL=ms-50g node tools/zptc.mjs decode file.zptc
-
-# advice rules and starter chains (both pedals)
-node tools/advice-test.mjs
-
-# merge rules and the account sync API
-node tools/sync-test.mjs
-
-# accounts: sign-up, sign-in, reset, cookies, CSRF, rate limits, admin console, backup
-node tools/auth-test.mjs
-
-# pedal manager over USB, against a simulated pedal
-node tools/midi-test.mjs
-
-# the builder in a real browser (Playwright)
-npm install && npx playwright install chromium && node tools/e2e-test.mjs
-# or with your installed Chrome:
-PW_CHANNEL=chrome node tools/e2e-test.mjs
-
-# are the sources cited by the advice still reachable? (also weekly on GitHub Actions)
-node tools/check-sources.mjs
-
-# re-extract the MS-50G+ effects from the official PDF (needs pdfplumber)
-python3 tools/extract-effects-list.py documentazione/ms-50gplus/E_MS-50Gplus_EffectsList.pdf > effects.json
-```
-
-</details>
+👉 **[How to install](INSTALL.md)**: run it locally, repository layout, and the test suite.
 
 ## 🔐 Privacy
 

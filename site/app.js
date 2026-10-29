@@ -28,8 +28,14 @@ const dspText = dsp => `${dsp.toFixed(1)}%`;
 const EXTRA_LABEL = '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
 const dspMeter = (dsp, wide = false) => dsp === null ? EXTRA_LABEL : `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
-const state = { query: '', category: null, features: new Set(), sort: 'zoom', view: 'list', visible: [] };
+const state = { query: '', category: null, features: new Set(), favOnly: false, sort: 'zoom', view: 'list', visible: [] };
 try { state.view = localStorage.getItem(`${PEDAL.id}-view`) === 'grid' ? 'grid' : 'list'; } catch {}
+
+// Favorite effects (a star): kept in this browser only, as a list of effect slugs
+const FAV_KEY = `${PEDAL.id}-favorites`;
+const favorites = new Set();
+try { for (const slug of JSON.parse(localStorage.getItem(FAV_KEY)) ?? []) favorites.add(slug); } catch {}
+const saveFavorites = () => { try { localStorage.setItem(FAV_KEY, JSON.stringify([...favorites])); } catch {} };
 
 const $ = selector => document.querySelector(selector);
 const escapeHtml = text => String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -38,6 +44,8 @@ const ICON_X = '<path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.
 const ICON_CHECK = '<path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_SLIDERS = '<path fill="currentColor" d="M5.75 7.5a.75.75 0 0 1 .75.75v1.5h1a.75.75 0 0 1 0 1.5h-1v3a.75.75 0 0 1-1.5 0v-3h-1a.75.75 0 0 1 0-1.5h1v-1.5a.75.75 0 0 1 .75-.75Zm4.5-6a.75.75 0 0 1 .75.75v3h1a.75.75 0 0 1 0 1.5h-1v7.5a.75.75 0 0 1-1.5 0v-7.5h-1a.75.75 0 0 1 0-1.5h1v-3a.75.75 0 0 1 .75-.75Z"/>';
 const ICON_SEARCH = '<path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.06ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/>';
+const ICON_STAR = '<path fill="currentColor" d="M8 .25a.75.75 0 0 1 .67.42l1.88 3.8 4.2.61a.75.75 0 0 1 .42 1.28l-3.04 2.96.72 4.18a.75.75 0 0 1-1.09.79L8 12.32l-3.76 1.97a.75.75 0 0 1-1.09-.79l.72-4.18L.83 6.36a.75.75 0 0 1 .42-1.28l4.2-.61L7.33.67A.75.75 0 0 1 8 .25Z"/>';
+const favButton = (effect, label = false) => `<button type="button" class="${label ? 'btn btn-sm fav-btn' : 'fav-star'}" data-fav="${effect.slug}" aria-pressed="${favorites.has(effect.slug)}" title="Favorite effect">${icon(ICON_STAR, label ? 14 : 16)}${label ? '<span>Favorite</span>' : '<span class="sr-only">Favorite</span>'}</button>`;
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
 
 function highlight(text) {
@@ -51,6 +59,7 @@ const featureLabel = key => `<span class="Label" title="${FEATURES[key].hint}">$
 
 function matches(effect, { ignoreCategory = false } = {}) {
   if (!ignoreCategory && state.category && effect.category !== state.category) return false;
+  if (state.favOnly && !favorites.has(effect.slug)) return false;
   for (const feature of state.features) if (!effect.tags.includes(feature)) return false;
   return !state.query || effect.haystack.includes(state.query);
 }
@@ -59,6 +68,7 @@ function renderFilters() {
   const base = effects.filter(effect => matches(effect, { ignoreCategory: true }));
   const categories = [[null, 'All', null, base.length], ...Object.entries(CATEGORIES).map(([key, { label, color }]) => [key, label, color, base.filter(effect => effect.category === key).length])];
   $('#category-list').innerHTML = categories.map(([key, label, color, count]) => `<li><button class="filter-item" data-category="${key ?? ''}" aria-pressed="${state.category === key}" ${count || state.category === key ? '' : 'disabled'}>${color ? `<span class="dot" style="--c:${color}"></span>` : ''}<span class="name">${label}</span><span class="Counter">${count}</span></button></li>`).join('');
+  $('#fav-list').innerHTML = `<li><button class="filter-item" data-favorites aria-pressed="${state.favOnly}" title="Show only the effects you starred"><span class="check">${icon(ICON_STAR, 12)}</span><span class="name">Favorites</span><span class="Counter">${base.filter(effect => favorites.has(effect.slug)).length}</span></button></li>`;
   const scoped = effects.filter(effect => (!state.category || effect.category === state.category) && (!state.query || effect.haystack.includes(state.query)));
   $('#feature-list').classList.add('feature-list');
   $('#feature-list').innerHTML = Object.entries(FEATURES).map(([key, { label, hint }]) => {
@@ -84,17 +94,18 @@ function renderList() {
   const chips = [];
   if (state.query) chips.push(`<button class="chip" data-clear="query">“${escapeHtml(state.query)}” ${icon(ICON_X, 12)}</button>`);
   if (state.category) chips.push(`<button class="chip" data-clear="category">${CATEGORIES[state.category].label} ${icon(ICON_X, 12)}</button>`);
+  if (state.favOnly) chips.push(`<button class="chip" data-clear="favorites">Favorites ${icon(ICON_X, 12)}</button>`);
   state.features.forEach(key => chips.push(`<button class="chip" data-clear="feature" data-key="${key}">${FEATURES[key].label} ${icon(ICON_X, 12)}</button>`));
   if (chips.length > 1) chips.push('<button class="clear-link" data-clear="all">Clear filters</button>');
   $('#active-filters').innerHTML = chips.join('');
 
   if (!state.visible.length) {
-    list.innerHTML = `<li class="blankslate">${icon(ICON_SEARCH, 24)}<h3>No effects found</h3><p>Try another term or remove some filters.</p><button class="btn btn-sm" data-clear="all">Clear filters</button></li>`;
+    list.innerHTML = `<li class="blankslate">${icon(ICON_SEARCH, 24)}<h3>No effects found</h3><p>${state.favOnly && !favorites.size ? 'You have no favorites yet. Click the star of an effect to add it.' : 'Try another term or remove some filters.'}</p><button class="btn btn-sm" data-clear="all">Clear filters</button></li>`;
     return;
   }
   list.innerHTML = state.visible.map(effect => {
     const paramChips = effect.params.map(([name]) => `<span class="param-chip${state.query && name.toLowerCase().includes(state.query) ? ' hit' : ''}">${escapeHtml(name)}</span>`).join('');
-    return `<li class="fx-row"><a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
+    return `<li class="fx-row">${favButton(effect)}<a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
         <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
@@ -147,10 +158,9 @@ function openEffect(effect) {
         <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
         <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
         ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b></p>` : ''}
-        ${addToPatch ? `<div class="detail-add">${addToPatch}</div>` : ''}
+        <div class="detail-add">${addToPatch} ${favButton(effect, true)}</div>
       </div>
     </div>
-    ${placementTips(effect)}
     ${effect.extra ? `<section class="detail-section">
       <h3>Handy Guitar Lab add-on</h3>
       <p>This effect is downloaded to the pedal with Handy Guitar Lab (★ in the Effects List). Its effect ID and DSP load are not known yet, so the Patch builder cannot add it.</p>
@@ -165,6 +175,7 @@ function openEffect(effect) {
         </details>
       </div>
     </section>`}
+    ${placementTips(effect)}
     <section class="detail-section">
       <h3>${icon(ICON_SLIDERS)} Parameters <span class="Counter">${effect.params.length}</span></h3>
       <table class="ptable">
@@ -204,7 +215,17 @@ const step = delta => {
 const search = $('#search');
 search.addEventListener('input', () => { state.query = search.value.trim().toLowerCase(); render(); });
 
+function setFavorite(slug) {
+  if (favorites.has(slug)) favorites.delete(slug); else favorites.add(slug);
+  saveFavorites();
+  document.querySelectorAll('[data-fav]').forEach(button => { if (button.dataset.fav === slug) button.setAttribute('aria-pressed', String(favorites.has(slug))); });
+  if (state.favOnly) render(); else renderFilters();
+}
+
 document.addEventListener('click', event => {
+  const fav = event.target.closest('[data-fav]');
+  if (fav) { setFavorite(fav.dataset.fav); return; }
+  if (event.target.closest('[data-favorites]')) { state.favOnly = !state.favOnly; render(); return; }
   const link = event.target.closest('.fx-link');
   if (link) {
     event.preventDefault();
@@ -228,6 +249,7 @@ document.addEventListener('click', event => {
   if (clear) {
     const what = clear.dataset.clear;
     if (what === 'query' || what === 'all') { state.query = ''; search.value = ''; }
+    if (what === 'favorites' || what === 'all') state.favOnly = false;
     if (what === 'category' || what === 'all') state.category = null;
     if (what === 'feature') state.features.delete(clear.dataset.key);
     if (what === 'all') state.features.clear();
