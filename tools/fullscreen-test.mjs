@@ -33,12 +33,13 @@ const PAGES = {
   'privacy.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]],
   'guide.html': [['.fs-guide', 'Guide button'], ['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]]
 };
-// The MS-50G+ has Effects, Patch builder, Resources and the Guide (no Pedal manager, no Tone ideas)
+// The MS-50G+ has Effects, Patch builder, Resources, the Guide and the help page for its testers (no Pedal manager, no Tone ideas)
 const PAGES_50G = {
   'ms-50g/index.html': PAGES['index.html'],
   'ms-50g/builder.html': PAGES['builder.html'].filter(([selector]) => !selector.includes('tones.html')),
   'ms-50g/resources.html': PAGES['resources.html'],
-  'ms-50g/guide.html': PAGES['guide.html']
+  'ms-50g/guide.html': PAGES['guide.html'],
+  'ms-50g/help.html': PAGES['guide.html']
 };
 const ALL_PAGES = { ...PAGES, ...PAGES_50G };
 
@@ -110,7 +111,7 @@ page.on('console', message => { if (message.type() === 'error' && !/Failed to lo
 const open = async (file, [width, height]) => {
   await page.setViewportSize({ width, height });
   await page.goto(`${base}/${file}`);
-  if (/(technical-notes|privacy|guide)\.html$/.test(file)) await page.waitForSelector('#toc a', { state: 'attached' });
+  if (/(technical-notes|privacy|guide|help)\.html$/.test(file)) await page.waitForSelector('#toc a', { state: 'attached' });
   await page.waitForSelector('.account-slot > *', { state: 'attached', timeout: 3000 }).catch(() => {}); // the Sign in button is part of the bar
   await page.waitForTimeout(150);
 };
@@ -608,6 +609,64 @@ try {
     assert.deepEqual(await page.locator('.resource a[aria-label^="Official manual"]').evaluateAll(links => links.map(a => a.href)), ['https://zoomcorp.com/manuals/ms-50gplus-en/', 'https://zoomcorp.com/manuals/ms-50gplus-it/']);
     assert.match(await page.locator('.check-list').textContent(), /The whole format on an MS-50G\+/);
     assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
+  });
+
+  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which ends with Contact us (a temporary mailto)', async () => {
+    for (const file of ['ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/guide.html', 'ms-50g/resources.html']) {
+      for (const size of SIZES) {
+        await open(file, size);
+        const button = page.locator('.fs-note > a.btn');
+        assert.equal(await button.textContent(), 'Help us', `${file}: the button`);
+        assert.equal(await button.getAttribute('href'), 'help.html', file);
+        const place = await page.evaluate(() => {
+          const bar = document.querySelector('.fs-note').getBoundingClientRect();
+          const b = document.querySelector('.fs-note > a.btn').getBoundingClientRect();
+          const p = document.querySelector('.fs-note > p').getBoundingClientRect();
+          return { gapRight: Math.round(bar.right - b.right), afterText: b.left >= p.right - 1, inside: b.top >= bar.top && b.bottom <= bar.bottom };
+        });
+        assert.ok(place.gapRight <= 17 && place.afterText && place.inside, `${file} ${size.join(' × ')}: the button sits at the right end of the bar, after the text ${JSON.stringify(place)}`);
+      }
+    }
+    await open('ms-50g/resources.html', SIZES[1]);
+    await page.locator('.fs-note > a.btn').click();
+    await page.waitForURL(/\/ms-50g\/help\.html$/);
+
+    // the help page: no bar of its own, one section per test with its time, the two test patches, Contact us at the very end
+    await open('ms-50g/help.html', SIZES[1]);
+    assert.equal(await page.locator('.fs-note').count(), 0, 'the page is the invitation: no "Not tested" bar on it');
+    assert.equal(await page.locator('#doc-title').textContent(), 'Help us test the MS-50G+');
+    for (const id of ['at-a-glance', 'before-you-start', ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => `test-${n}`), 'send-results']) assert.equal(await page.locator(`#toc a[href="#${id}"]`).count(), 1, `contents: ${id}`);
+    for (let n = 1; n <= 8; n++) {
+      const first = await page.locator(`#test-${n} + p`).textContent();
+      assert.match(first, /^About \d+ minutes/, `test ${n} says how long it takes`);
+    }
+    const glance = await page.locator('#at-a-glance + .md-table tbody tr').allInnerTexts();
+    assert.equal(glance.length, 9, 'the table has the setup and the 8 tests');
+    assert.ok(glance.every(row => /min/.test(row)), 'with a time for each');
+    const mail = page.locator('#doc #contact-us');
+    assert.equal(await mail.textContent(), 'Contact us');
+    assert.match(await mail.getAttribute('href'), /^mailto:giovanni\.bindi@icloud\.com\?subject=/);
+    assert.equal(await page.locator('#doc a.btn').count(), 1, 'one button, at the end');
+    assert.equal(await page.evaluate(() => { const last = document.querySelector('#doc').lastElementChild; return last.matches('p.field-hint') && last.previousElementSibling.contains(document.querySelector('#contact-us')); }), true, 'Contact us is the last thing on the page');
+    const claimed = (await page.locator('#doc').innerText()).match(/about (\d+\.\d)%/g).map(s => parseFloat(s.slice(6)));
+    assert.equal(claimed.length, 2, 'the DSP of TEST A and TEST C');
+    // the test patches open in the builder with the effects the page names, and with the DSP load it quotes
+    const links = await page.locator('#doc a[href^="builder.html#p="]').evaluateAll(as => as.map(a => a.getAttribute('href')));
+    assert.equal(links.length, 2);
+    const expected = [['COMPRESSOR', 'MS1959 DRIVE', 'DELAY'], ['COMPRESSOR', 'TS DRIVE', 'MS1959 DRIVE', 'GUITAR GRAPHIC EQ7', 'CLONE CHORUS', 'HALL REVERB']];
+    for (const [i, href] of links.entries()) {
+      await page.goto('about:blank'); // a change of the fragment alone would not reload the builder
+      await page.goto(`${base}/ms-50g/${href}`);
+      await page.waitForSelector('#chain-list .chain-item');
+      assert.deepEqual(await page.evaluate(() => state.effects.map(slot => catalog[slot.index].name)), expected[i], `test patch ${i + 1}`);
+      assert.ok(Math.abs(parseFloat(await page.locator('#dsp-total').textContent()) - claimed[i]) < 0.1, `test patch ${i + 1}: the builder shows the DSP load the page quotes`);
+      await page.evaluate(() => { state.effects = []; state.name = ''; render(); save(); }); // a link asks before it replaces an unsaved patch
+    }
+    // the amp and add-on lists come from the data
+    await open('ms-50g/help.html', SIZES[1]);
+    const text = await page.locator('#doc').innerText();
+    assert.match(text, /The 22 amp models: MS45OS DRIVE,/);
+    assert.match(text, /The 24 add-on effects: OPTICAL COMPRESSOR,/);
   });
 
   await test('under 800 × 640 px a notice says so, suggests a bigger screen or full screen, and says what the site does', async () => {

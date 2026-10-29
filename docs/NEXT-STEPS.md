@@ -17,6 +17,14 @@ The checks to run on the real pedal and on real devices are in [`controlli-pedal
 6. Undecoded ranges (raw values in the builder): LOW-PASS FILTER SENSE / RESO, ENVELOPE GENERATOR FILTER TYPE, PARAMETRIC EQ FREQ / Q, MATCH30 DRIVE VOL, DUAL DELAY DEPTH, SLAP BACK DELAY TIME.
 7. Guitar advice: only objective checks exist. Order, style and tone rules need guitar sources.
 
+**Testers who are far away.** The **Help us** button of the "Not tested yet" bar (every MS-50G+ page) opens `site/ms-50g/help.html`: steps 1–6 above written for someone who has only the pedal and the Handy Guitar Lab app (iPhone/iPad), with the time each test takes (setup and tests 1–3 about 50 minutes, everything about 4 hours) and what to send back. Answers come by email: **Contact us** is a temporary `mailto:` to giovanni.bindi@icloud.com, to be replaced by a form or another address. Patches in tests 4–6 are named after the value the app shows, so the file name and the raw values (`ZPTC_PEDAL=ms-50g node tools/zptc.mjs decode file.zptc`) can be put side by side. `tools/fullscreen-test.mjs` checks that the two test patches of the page (TEST A, TEST C) open in the builder with the effects and the DSP load the page quotes.
+
+What the MS-60B+ tests taught and the page already uses ([`controlli-pedale.md`](controlli-pedale.md)):
+- PARAMETRIC EQ has the same ranges on both pedals. On the MS-60B+ Q is 0.5 + raw × 0.1 (raw 0, 1, 2, 27 = 0.5, 0.6, 0.7, 3.2) and FREQ is not linear (raw 4 = 50 Hz, raw 16 = 300 Hz): test 4 asks for six (FREQ, Q) pairs, enough to confirm it. Not decoded in the codec yet on either pedal, so the MS-50G+ stays "raw".
+- The MS-60B+ holds six entries: a six-effect file written with the BLANK slot first (seven entries) lost its sixth effect on the pedal over USB. Test 3 asks whether the MS-50G+ keeps all six when the patch comes through the app; if not, write six-effect files without BLANK for the MS-50G+ too (`ZPTC.forPedal`).
+- With the editor mode on, the pedal rewrites a memory by itself when its slots are browsed, and saves what is touched: testers are told to use free memories, make a backup first and leave the knobs alone while the app is connected.
+- A value read on the display is only useful with its raw value next to it, and a frequency scale needs five or more points: the tests ask for the lowest, the highest and some in between.
+
 ## 1. Finish decoding the `.zptc` parameters
 
 The builder can already write every parameter, but some formats are only known as raw stored values.

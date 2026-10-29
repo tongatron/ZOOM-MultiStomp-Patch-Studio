@@ -41,9 +41,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 
 /* Bars that scripts add under the header stay compact */
 .account-notice { flex: none; padding: 6px 16px; }
-/* "Not tested yet" bar under the header of the MS-50G+ pages */
-.fs-note { flex: none; padding: 6px 16px; background: rgba(248, 81, 73, .1); border-bottom: 1px solid rgba(248, 81, 73, .4); font-size: 13px; line-height: 1.5; }
-.fs-note p { margin: 0; }
+/* "Not tested yet" bar under the header of the MS-50G+ pages: the text, and the "Help us" button at the right end */
+.fs-note { flex: none; display: flex; align-items: center; gap: 16px; padding: 6px 16px; background: rgba(248, 81, 73, .1); border-bottom: 1px solid rgba(248, 81, 73, .4); font-size: 13px; line-height: 1.5; }
+.fs-note p { flex: 1; min-width: 0; margin: 0; }
+.fs-note .btn { flex: none; white-space: nowrap; }
 .fs-note b { color: #ff7b72; }
 .fs-editbar { flex: none; padding: 0 16px; }
 .fs-editbar .pedal-edit-bar { margin: 8px 0 0; }
