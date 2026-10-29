@@ -290,7 +290,7 @@ try {
   });
 
   await test('landing page: a Help us button leads to the MS-50G+ help page instead of steps, and Contact us writes to the Telegram bot', async () => {
-    await page.goto(`${base}/landing/`);
+    await page.goto(`${base}/`);
     await page.locator('.gh-header .account-slot > *').waitFor();
     const testers = page.locator('section[aria-labelledby="testers-title"]');
     assert.equal(await testers.locator('ol, li').count(), 0, 'no list of steps to follow');
@@ -865,7 +865,7 @@ try {
     assert.match(text, /full screen/i, 'and suggests the full-screen mode');
     assert.match(text, /F11/);
     for (const word of ['MS-60B+', 'MS-50G+', 'Effects', 'Patch builder', 'Pedal manager', 'Tone ideas', '.zptc', 'Handy Guitar Lab', 'free account']) assert.ok(text.includes(word), `what the site does: ${word}`);
-    assert.equal(await page.locator('.fs-small a[href$="/landing/"]').count(), 1, 'a link to the presentation page');
+    assert.equal(await page.locator(`.fs-small a[href="${base}/"]`).count(), 1, 'a link to the presentation page');
     // the notice follows the window
     await page.setViewportSize({ width: 500, height: 640 });
     await page.waitForFunction(() => document.querySelector('.fs-small [data-size]').textContent === '500 × 640 px');
@@ -886,11 +886,35 @@ try {
   });
 
   await test('the old addresses of the MS-60B+ pages lead to /ms-60b/, keeping the query and the #fragment', async () => {
-    for (const [from, to] of [['', '/ms-60b/'], ['index.html', '/ms-60b/'], ['builder.html?add=x', '/ms-60b/builder.html'], ['tones.html', '/ms-60b/tones.html'], ['pedal-manager.html', '/ms-60b/pedal-manager.html'],
+    for (const [from, to] of [['#dynamic-compressor', '/ms-60b/#dynamic-compressor'], ['?add=x', '/ms-60b/'], ['builder.html?add=x', '/ms-60b/builder.html'], ['tones.html', '/ms-60b/tones.html'], ['pedal-manager.html', '/ms-60b/pedal-manager.html'],
       ['usb.html', '/ms-60b/pedal-manager.html'], ['guide.html#shortcuts', '/ms-60b/guide.html#shortcuts'], ['resources.html', '/ms-60b/resources.html'], ['technical-notes.html', '/ms-60b/technical-notes.html']]) {
       await page.goto(`${base}/${from}`);
       await page.waitForURL(url => (url.pathname + url.search + url.hash).startsWith(to) && !/^\/(index|builder|tones|pedal-manager|resources|technical-notes|guide|usb)\.html$/.test(url.pathname), { timeout: 10000 });
     }
+  });
+
+  await test('the root of the site is the home page, and the old landing address leads to it', async () => {
+    await page.goto(`${base}/`);
+    assert.equal(new URL(page.url()).pathname, '/');
+    assert.match(await page.locator('h1').first().innerText(), /big screen/);
+    await page.goto(`${base}/landing/`);
+    await page.waitForURL(url => url.pathname === '/');
+  });
+
+  await test('SEO: every public page has a canonical address, a description and Open Graph tags; robots.txt and sitemap.xml list them', async () => {
+    const robots = await (await fetch(`${base}/robots.txt`)).text();
+    assert.match(robots, /Sitemap: https:\/\/zoommultistompstudio\.tongatron\.org\/sitemap\.xml/);
+    assert.match(robots, /Disallow: \/login/);
+    const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => new URL(match[1]).pathname);
+    assert.ok(locs.includes('/') && locs.includes('/ms-60b/') && locs.includes('/ms-50g/'), 'home and both pedals are in the sitemap');
+    for (const path of locs) {
+      const html = await (await fetch(`${base}${path}`)).text();
+      assert.ok(html.includes(`<link rel="canonical" href="https://zoommultistompstudio.tongatron.org${path}" />`), `canonical of ${path}`);
+      for (const tag of ['name="description"', 'property="og:title"', 'property="og:image"', 'name="twitter:card"']) assert.ok(html.includes(tag), `${tag} on ${path}`);
+      assert.match(html, /<title>[^<]{20,}<\/title>/, `title of ${path}`);
+    }
+    assert.match(await (await fetch(`${base}/`)).text(), /application\/ld\+json/, 'structured data on the home page');
   });
 
   await test('the old addresses of the test version redirect to the site', async () => {

@@ -19,7 +19,7 @@
       <li><b>Tone ideas</b> (MS-60B+): starting chains by style and by bassist.</li>
       <li>A free account keeps your patches, settings and pedal backups safe and brings them to every device.</li>
     </ul>
-    <p class="fs-small-links"><a href="${new URL('landing/', here)}">More about the site</a> <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a></p>`;
+    <p class="fs-small-links"><a href="${new URL('./', here)}">More about the site</a> <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a></p>`;
   document.body.prepend(notice);
   const size = notice.querySelector('[data-size]');
   const showSize = () => { size.textContent = `${innerWidth} × ${innerHeight} px`; };

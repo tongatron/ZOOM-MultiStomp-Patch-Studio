@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot
+Disallow: /reset
+Disallow: /verify
+Disallow: /logout
+Disallow: /admin
+Disallow: /moved
+
+Sitemap: https://zoommultistompstudio.tongatron.org/sitemap.xml

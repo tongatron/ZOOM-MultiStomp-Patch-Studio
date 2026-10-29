@@ -10,7 +10,7 @@ You only need Node 22+ (for the built-in SQLite). There is no build step and not
 site/            🌐 The static site: HTML, CSS, vanilla JS. No build step. Shared scripts and styles.
 site/ms-60b/     🎸 MS-60B+ pages and data.
 site/ms-50g/     🎸 MS-50G+ pages and data.
-site/landing/    🛬 Landing page for both pedals.
+site/index.html 🛬 Home page for both pedals (images in site/landing/).
 deploy/          🖥️ Node server: static files, accounts, sync, admin console, backups.
 tools/           🧰 .zptc CLI, Effects List extractor, tests, simulated pedal, source checker.
 patches/         💾 Sample .zptc files for the round-trip test, plus generated test patches.

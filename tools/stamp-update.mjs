@@ -2,7 +2,7 @@
 // Run it right before a deploy: node tools/stamp-update.mjs
 import fs from 'node:fs';
 
-const pages = ['ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'privacy.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/guide.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/resources.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'landing/index.html'];
+const pages = ['ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'privacy.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/guide.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/resources.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'index.html'];
 const now = new Date();
 const part = type => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
   .formatToParts(now).find(p => p.type === type).value;

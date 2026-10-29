@@ -197,8 +197,9 @@ try {
     assert.match(page.headers.get('content-type'), /text\/html/);
     assert.ok(page.headers.get('last-modified'));
     assert.equal((await fetch(`${base}/ms-60b/builder.html`, { headers: { 'If-Modified-Since': page.headers.get('last-modified') } })).status, 304);
-    assert.equal((await fetch(`${base}/landing`, { redirect: 'manual' })).status, 301);
-    assert.equal((await fetch(`${base}/landing/`)).status, 200);
+    assert.equal((await fetch(`${base}/landing`, { redirect: "manual" })).status, 301);
+    assert.equal((await fetch(`${base}/landing/`)).status, 200); // a small page that sends the browser to the home page
+    assert.match((await fetch(`${base}/sitemap.xml`)).headers.get("content-type"), /xml/);
     assert.doesNotMatch(await rawGet('/../deploy/server.mjs'), /createServer/);
     assert.doesNotMatch(await rawGet('/%2e%2e/deploy/server.mjs'), /createServer/);
   });

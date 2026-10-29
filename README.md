@@ -8,7 +8,7 @@
 
 **224 effects. One calm workspace.** Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
 
-[![Open the site](https://img.shields.io/badge/▶_open_the_site-zoommultistompstudio.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoommultistompstudio.tongatron.org/landing/)
+[![Open the site](https://img.shields.io/badge/▶_open_the_site-zoommultistompstudio.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoommultistompstudio.tongatron.org/)
 
 [![CI](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/actions/workflows/ci.yml)
 ![No build step](https://img.shields.io/badge/build_step-none-2ea043)

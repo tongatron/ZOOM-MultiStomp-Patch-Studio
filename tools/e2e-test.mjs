@@ -131,7 +131,7 @@ try {
     await page.reload();
     await page.locator('.account-signin').waitFor();
     assert.equal(await page.locator('.account-notice').count(), 0, 'dismissed for this session');
-    await page.goto(`${base}/`);
+    await page.goto(`${base}/ms-60b/`);
     await page.locator('.account-signin').waitFor();
     assert.equal(await page.locator('.account-notice').count(), 0, 'the Effects page saves nothing: no notice');
   });
@@ -184,7 +184,7 @@ try {
     assert.equal(await second.evaluate(() => localStorage.getItem('account-welcome')), 'ignored');
     // ignored: no more reminders, in new visits either
     const third = await context.newPage();
-    await third.goto(`${base}/`);
+    await third.goto(`${base}/ms-60b/`);
     await settle(third);
     assert.equal(await third.locator('.account-welcome').count(), 0, 'ignored for good');
     await context.close();
@@ -192,9 +192,9 @@ try {
 
   await test('the reminder shows on the Effects page, not on the documents, and not when signed in', async () => {
     const visitor = await device({ welcome: true });
-    await visitor.page.goto(`${base}/`);
+    await visitor.page.goto(`${base}/ms-60b/`);
     await reminder(visitor.page).waitFor();
-    for (const file of ['ms-60b/guide.html', 'privacy.html', 'ms-60b/resources.html', 'landing/']) {
+    for (const file of ['ms-60b/guide.html', 'privacy.html', 'ms-60b/resources.html', '']) {
       const tab = await visitor.context.newPage();
       await tab.goto(`${base}/${file}`);
       await settle(tab);
@@ -259,7 +259,7 @@ try {
   });
 
   await test('the catalog page loads and links to the builder', async () => {
-    await page.goto(`${base}/`);
+    await page.goto(`${base}/ms-60b/`);
     assert.ok(await page.locator('a[href*="builder"]').count());
   });
 
