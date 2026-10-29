@@ -885,6 +885,14 @@ try {
     assert.equal(await page.locator('.fs-small').isVisible(), false);
   });
 
+  await test('the old addresses of the MS-60B+ pages lead to /ms-60b/, keeping the query and the #fragment', async () => {
+    for (const [from, to] of [['', '/ms-60b/'], ['index.html', '/ms-60b/'], ['builder.html?add=x', '/ms-60b/builder.html'], ['tones.html', '/ms-60b/tones.html'], ['pedal-manager.html', '/ms-60b/pedal-manager.html'],
+      ['usb.html', '/ms-60b/pedal-manager.html'], ['guide.html#shortcuts', '/ms-60b/guide.html#shortcuts'], ['resources.html', '/ms-60b/resources.html'], ['technical-notes.html', '/ms-60b/technical-notes.html']]) {
+      await page.goto(`${base}/${from}`);
+      await page.waitForURL(url => (url.pathname + url.search + url.hash).startsWith(to) && !/^\/(index|builder|tones|pedal-manager|resources|technical-notes|guide|usb)\.html$/.test(url.pathname), { timeout: 10000 });
+    }
+  });
+
   await test('the old addresses of the test version redirect to the site', async () => {
     // (the Effects page adds the first effect to the address)
     for (const [from, to] of [['_fullscreen/index.html', '/ms-60b/'], ['_fullscreen/guide.html#shortcuts', '/ms-60b/guide.html#shortcuts'], ['_fullscreen/privacy.html', '/privacy.html']]) {

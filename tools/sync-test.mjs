@@ -204,7 +204,7 @@ try {
   });
 
   await test('a request target that starts with // is read as a path, and one that is not a URL gets 400 (not 500)', async () => {
-    assert.match(await rawGet('//'), /^HTTP\/1\.1 302 [\s\S]*\r\nLocation: \/ms-60b\/\r\n/, '// is the home page: it goes to the Effects page of the MS-60B+');
+    assert.match(await rawGet('//'), /^HTTP\/1\.1 200 /, '// is the home page');
     assert.match(await rawGet('//ms-60b/builder.html'), /^HTTP\/1\.1 200 /);
     assert.match(await rawGet('//example.com/builder.html'), /^HTTP\/1\.1 404 /, 'a host after // is not followed');
     assert.match(await rawGet('http://['), /^HTTP\/1\.1 400 /);

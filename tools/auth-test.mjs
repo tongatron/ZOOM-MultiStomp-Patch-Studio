@@ -405,15 +405,19 @@ try {
     assert.match((await flood.json()).error, /Too many reports/);
   });
 
-  await test('the MS-60B+ pages are in /ms-60b/; the old addresses redirect there, with the query string', async () => {
+  await test('the MS-60B+ pages are in /ms-60b/; the old addresses are small pages that send the browser there (not redirects, so a returning visitor\'s service worker can store them)', async () => {
     for (const path of ['/ms-60b/', '/ms-60b/index.html', '/ms-60b/builder.html', '/ms-60b/technical-notes.md', '/ms-60b/effects-data.js', '/ms-50g/', '/privacy.html']) assert.equal((await get(path)).status, 200, path);
-    const to = async path => { const r = await get(path); return [r.status, r.headers.get('location')]; };
-    assert.deepEqual(await to('/'), [302, '/ms-60b/']);
-    assert.deepEqual(await to('/index.html'), [301, '/ms-60b/']);
-    assert.deepEqual(await to('/builder.html?add=hall'), [301, '/ms-60b/builder.html?add=hall'], 'the ?add= of an old link is kept');
-    for (const name of ['tones', 'pedal-manager', 'resources', 'technical-notes', 'guide']) assert.deepEqual(await to(`/${name}.html`), [301, `/ms-60b/${name}.html`], name);
-    assert.deepEqual(await to('/usb.html'), [301, '/ms-60b/pedal-manager.html']);
-    assert.deepEqual(await to('/technical-notes.md'), [301, '/ms-60b/technical-notes.md']);
+    const goesTo = async (path, target) => {
+      const response = await get(path);
+      assert.equal(response.status, 200, `${path} is a page`);
+      assert.match(await response.text(), new RegExp(`location\\.replace\\('${target.replace(/[./]/g, '\\$&')}' \\+ location\\.search \\+ location\\.hash\\)`), `${path} leads to ${target} and keeps the query and the fragment`);
+    };
+    await goesTo('/', 'ms-60b/');
+    await goesTo('/index.html', 'ms-60b/');
+    for (const name of ['builder', 'tones', 'pedal-manager', 'resources', 'technical-notes', 'guide']) await goesTo(`/${name}.html`, `ms-60b/${name}.html`);
+    await goesTo('/usb.html', 'ms-60b/pedal-manager.html');
+    const notes = await get('/technical-notes.md');
+    assert.deepEqual([notes.status, notes.headers.get('location')], [301, '/ms-60b/technical-notes.md'], 'the text file of a cached old page is redirected');
     assert.equal((await get('/ms-60b')).status, 301, 'a folder without its slash goes to the folder');
   });
 

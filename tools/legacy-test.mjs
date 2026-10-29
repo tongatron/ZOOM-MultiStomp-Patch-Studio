@@ -63,7 +63,7 @@ await test('the old address serves a service worker that removes itself and the 
 });
 
 await test('the new address is the site itself, and its /moved page only takes data from the old address', async () => {
-  const builder = await fetch(`${site}/builder.html`);
+  const builder = await fetch(`${site}/ms-60b/builder.html`);
   assert.equal(builder.status, 200);
   assert.match(await builder.text(), /Patch builder/);
   const receiver = await fetch(`${site}/moved`);
