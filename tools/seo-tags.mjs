@@ -7,8 +7,10 @@ import { join, dirname } from 'node:path';
 const SITE = join(dirname(fileURLToPath(import.meta.url)), '..', 'site');
 const ORIGIN = 'https://zoommultistompstudio.tongatron.org';
 const NAME = 'ZOOM MultiStomp Patch Studio';
-const IMG60 = { url: `${ORIGIN}/landing/shots/builder.webp`, alt: 'The Patch builder of the studio with a chain of six effects for the ZOOM MS-60B+ and its DSP load' };
-const IMG50 = { url: `${ORIGIN}/landing/shots/ms50g-builder.webp`, alt: 'The Patch builder of the studio with a chain of six effects for the ZOOM MS-50G+ and its DSP load' };
+// One preview image for every page (1200 × 675): the ZOOM MultiStomp Studio card
+const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp Studio: build patches, save presets, load to the pedal. The Patch builder next to a red ZOOM MS-60B+ pedal, for the MS-60B+ bass and MS-50G+ guitar.' };
+const IMG60 = IMG;
+const IMG50 = IMG;
 
 // file, address, title, description, image, sitemap priority
 const PAGES = [
@@ -72,6 +74,8 @@ for (const [file, path, title, description, image, , ] of PAGES) {
     `<meta property="og:description" content="${esc(description)}" />`,
     `<meta property="og:url" content="${url}" />`,
     `<meta property="og:image" content="${image.url}" />`,
+    '<meta property="og:image:width" content="1200" />',
+    '<meta property="og:image:height" content="675" />',
     `<meta property="og:image:alt" content="${esc(image.alt)}" />`,
     '<meta name="twitter:card" content="summary_large_image" />',
     `<meta name="twitter:title" content="${esc(full)}" />`,
