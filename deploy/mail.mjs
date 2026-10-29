@@ -137,7 +137,7 @@ export function mailHtml({ title, intro, button, url, outro = '' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"></head>
 <body style="margin:0;background:#f6f8fa;padding:24px 12px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#1f2328;">
 <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #d0d7de;border-radius:6px;padding:24px;">
-<div style="font-size:14px;font-weight:600;">ZOOM MultiStomp <span style="color:#656d76;">PATCH STUDIO</span></div>
+<div style="font-size:14px;font-weight:600;">ZOOM MultiStomp <span style="color:#656d76;">STUDIO</span></div>
 <div style="height:1px;background:#d0d7de;margin:12px 0 20px;"></div>
 <h1 style="font-size:20px;font-weight:600;margin:0 0 10px;">${esc(title)}</h1>
 <p style="font-size:14px;line-height:1.5;margin:0 0 20px;">${esc(intro)}</p>
