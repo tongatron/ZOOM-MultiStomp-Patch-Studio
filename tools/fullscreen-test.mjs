@@ -244,8 +244,19 @@ try {
       await dialog.getByRole('button', { name: 'Close' }).click();
       assert.ok(!(await dialog.evaluate(d => d.open)), `${file}: the form closes`);
     }
+    // The technical details are optional: unticked, neither the page nor the details are sent
+    await open('index.html', SIZES[1]);
+    await page.locator('.fs-report').click();
+    const plain = page.locator('dialog.report-dialog');
+    assert.ok(await plain.locator('[name="details"]').isChecked(), 'the technical details are ticked by default');
+    await plain.locator('[name="details"]').uncheck();
+    await plain.locator('[name="message"]').fill('No details, please');
+    await plain.getByRole('button', { name: 'Send', exact: true }).click();
+    await plain.locator('.report-done').waitFor({ state: 'visible' });
+    await plain.getByRole('button', { name: 'Close' }).click();
     const notices = await Promise.all((await readdir(outbox)).sort().map(name => readFile(join(outbox, name), 'utf8')));
-    assert.equal(notices.length, 2);
+    assert.equal(notices.length, 3);
+    assert.match(notices[2], /^Problem report from ZOOM Patch Studio\nFrom: \(no name\) \(not signed in\)\n\nNo details, please$/);
     assert.match(notices[0], /^Problem report from ZOOM Patch Studio\nFrom: Test Bassist \(not signed in\)\nPage: \/index\.html\n\nLine one on index\.html\nLine two\n\n---\nZoom MS-60B\+ · site updated /);
     assert.match(notices[1], /Page: \/ms-50g\/index\.html\n[\s\S]*Zoom MS-50G\+ · site updated /);
   });

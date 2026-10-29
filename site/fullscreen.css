@@ -74,6 +74,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .report-form > p { margin: 0; }
 .report-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
 .report-form label small { color: var(--fg-muted); font-size: inherit; font-weight: 400; }
+.report-form label.report-check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 400; }
+.report-check input { flex: none; margin: 3px 0 0; }
 .report-form textarea.form-control { height: auto; min-height: 120px; resize: vertical; font: inherit; line-height: 1.45; }
 .report-error { color: #f85149; }
 /* tongatron.org button (B3 of tongatron.org/pulsanti): yellow dot with a glow and the name, on the bar's own background.

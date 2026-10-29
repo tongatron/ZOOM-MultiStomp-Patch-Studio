@@ -29,7 +29,7 @@
           <label><span>Name <small>(optional)</small></span><input class="form-control" name="name" maxlength="80" autocomplete="name" /></label>
           <label><span>Email <small>(optional, so we can reply)</small></span><input class="form-control" name="email" type="email" maxlength="200" autocomplete="email" /></label>
           <label><span>Message</span><textarea class="form-control" name="message" rows="6" maxlength="3000" placeholder="What you were doing, what happened, what you expected"></textarea></label>
-          <p class="account-note">Along with the message we receive the address of this page, the pedal, the date of the site's last update, the size of your window and the name of your browser.</p>
+          <label class="report-check"><input type="checkbox" name="details" checked /><span>Send technical details <small>(the address of this page, the pedal, the date of the site's last update, the size of your window and the name of your browser)</small></span></label>
           <p class="report-error" role="alert" hidden></p>
           <div class="account-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Send</button></div>
         </form>
@@ -52,12 +52,13 @@
       if (!field('message').value.trim()) { fail('Write your message.'); field('message').focus(); return; }
       error.hidden = true;
       send.disabled = true;
+      const details = field('details').checked;
       const updated = status.querySelector('time')?.getAttribute('datetime');
-      const info = [typeof PEDAL !== 'undefined' && PEDAL.name, updated && `site updated ${updated}`, `window ${innerWidth}×${innerHeight}`, navigator.userAgent].filter(Boolean).join(' · ');
+      const info = !details ? '' : [typeof PEDAL !== 'undefined' && PEDAL.name, updated && `site updated ${updated}`, `window ${innerWidth}×${innerHeight}`, navigator.userAgent].filter(Boolean).join(' · ');
       try {
         const response = await fetch('/api/report', {
           method: 'POST', credentials: 'same-origin',
-          body: new URLSearchParams({ name: field('name').value, email: field('email').value, message: field('message').value, page: location.pathname + location.search, info })
+          body: new URLSearchParams({ name: field('name').value, email: field('email').value, message: field('message').value, page: details ? location.pathname + location.search : '', info })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || `Server error ${response.status}.`);
