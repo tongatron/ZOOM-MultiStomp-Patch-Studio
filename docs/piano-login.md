@@ -154,14 +154,14 @@ Nel browser (`site/account.js`, caricato in tutte le pagine dei due pedali):
 3. Se l'account ha già dati: finestra "This browser has 12 patches that are not in your account" con **Add them to my account** (predefinito, fusione con `LIBMERGE`, nulla si perde) o **Not now** (restano solo qui; si può ripetere da `/account`).
 4. Se il browser usava un **codice di sync**: la sua libreria è già in `localStorage`, quindi entra con lo stesso passo; la chiave `-sync` rimasta si cancella all'avvio.
 5. Sul server non c'è nulla da migrare (`zoom-ms60b-data` è vuota). Al deploy si controlla di nuovo: se nel frattempo comparisse un `<hash>.json`, resta nel backup e il suo contenuto è comunque nel browser di chi lo usava.
-6. **Logout**: finestra "Sign out" con due pulsanti: **Remove from this browser** (predefinito, pulsante principale: cancella da questo browser patch, preferenze, rule pack e backup USB di entrambi i pedali, che restano nell'account) e *Keep a copy here*. Prima di cancellare si fa un ultimo sync; se il sync fallisce (offline) la cancellazione non avviene e la finestra lo dice: "Can't reach the server: your latest changes are only in this browser. Sign out anyway and keep them here?".
+6. **Logout** (dal 2026-10-29 si avvia dal pulsante **Sign out** della pagina `/account`, che porta a `/?signout=1`; non c'è più il menu in alto): finestra "Sign out" con due pulsanti: **Remove from this browser** (predefinito, pulsante principale: cancella da questo browser patch, preferenze, rule pack e backup USB di entrambi i pedali, che restano nell'account) e *Keep a copy here*. Prima di cancellare si fa un ultimo sync; se il sync fallisce (offline) la cancellazione non avviene e la finestra lo dice: "Can't reach the server: your latest changes are only in this browser. Sign out anyway and keep them here?".
 
 ## 5. Interfaccia (testi in inglese)
 
 **Header** (`.gh-header`, tutte le pagine MS-60B+ e MS-50G+; nella landing solo il link): a destra, dopo "Official Manual ENG/ITA",
 
 - non loggato: pulsante `Sign in` (`btn btn-sm`) che porta a `/login?next=<pagina>`;
-- loggato: pulsante con l'iniziale dell'email che apre un menu: email, `Synced 2 min ago` / `Offline: changes saved here`, `Account`, `Sign out`.
+- loggato (dal 2026-10-29): solo il nome dell'utente (o l'email) in alto a destra, link a `/account`; lo stato della sincronizzazione è nel tooltip, e un piccolo pulsante `+N` compare se ci sono patch tenute da parte. Niente più menu: `Sign out` e, per gli admin, `Users` stanno nella pagina `/account`.
 
 **Avviso per chi non è loggato** — barra sottile sotto l'header (stile `flash` di Primer, colore *attention*), su Patch builder, Pedal manager e Tone ideas (la pagina Effects non salva nulla, quindi nessun avviso):
 
@@ -198,9 +198,9 @@ Pagina `/admin` (testi in inglese):
   - `Download data` (stesso JSON dell'export dell'utente, per assistenza);
   - `Delete` con pagina di conferma ("Delete the account of …? Their patches stay in their browsers. This can't be undone.").
 - **Patch di un utente** (`/admin/user/<id>`): lista in sola lettura delle patch per pedale (nome, effetti, data), per aiutare in caso di problemi; nessuna modifica dei dati dell'utente.
-- **Stato del servizio**: mail configurata sì/no con pulsante `Send test email` (a se stessi), Telegram sì/no, data dell'ultimo backup trovato in `/srv/apps/zoom-ms60b-backups`.
+- ~~Stato del servizio~~ (tolto il 2026-10-29: mail, Telegram, ultimo backup e il pulsante `Send test email`; la prova della mail resta `node set-mail.mjs --test <email>`).
 
-Rotte: `GET /admin`, `GET /admin/user/<id>`, `POST /admin/reset`, `/admin/signout`, `/admin/role`, `/admin/delete`, `/admin/test-mail`. Ogni azione dell'admin si registra in una tabella `admin_log (at, admin_id, action, target_id)`, visibile in fondo alla pagina (ultime 100).
+Rotte: `GET /admin`, `GET /admin/user/<id>`, `POST /admin/reset`, `/admin/signout`, `/admin/role`, `/admin/delete`. Ogni azione dell'admin si registra in una tabella `admin_log (at, admin_id, action, target_id)`, visibile in fondo alla pagina (ultime 100).
 
 Aggiunta allo schema:
 
@@ -290,4 +290,4 @@ Checklist del primo deploy su `hp-ubuntu`:
 6. Unità systemd aggiornata (`deploy/zoom-ms60b.service`: `EnvironmentFile`, `--disable-warning`), `sudo systemctl daemon-reload && sudo systemctl restart zoom-ms60b`.
 7. Admin: `cd /srv/apps/zoom-ms60b-app && DATA_DIR=/srv/apps/zoom-ms60b-data node --disable-warning=ExperimentalWarning add-user.mjs --email <la tua email> --name Giovanni --admin`.
 8. Crontab: sostituire `backup-sync-data.sh` con `backup-data.sh` nella riga delle 03:30; lanciarlo una volta a mano; cancellare il vecchio `backup-sync-data.sh` dal server.
-9. Controlli: registrazione di prova, mail ricevuta, notifica Telegram, `/admin`, "Send me a test email", ultimo backup visibile nella console.
+9. Controlli: registrazione di prova, mail ricevuta, notifica Telegram, `/admin`, (la mail si prova con `node set-mail.mjs --test <email>`).

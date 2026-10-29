@@ -74,7 +74,7 @@ const ACCOUNT = (() => {
   const account = { PEDALS, KINDS, createSync, me: null, status: { syncing: false, lastSync: 0, error: '' }, changed: () => {} };
 
   // ---- in the page ------------------------------------------------------------------------------
-  // Header entry ("Sign in" or the account menu), the signed-out notice (pages with <body data-account-notice>), the
+  // Header entry ("Sign in", or the name of the signed-in user, which opens the account page), the signed-out notice (pages with <body data-account-notice>), the
   // reminder dialog for visitors without an account (pages with <body data-account-welcome>), the first sign-in on a
   // browser that already has patches, and sign-out (by default it removes the data from here).
   const OWNER_KEY = 'account-owner'; // email of the account this browser's data was last synced with
@@ -231,24 +231,26 @@ const ACCOUNT = (() => {
     }
 
     // ---- interface ----
+    // The Sign out button of the account page leads here (/?signout=1): the studio asks what to do with the data kept in this browser
+    const wantsSignOut = new URLSearchParams(location.search).has('signout');
+    if (wantsSignOut) {
+      const clean = new URL(location.href);
+      clean.searchParams.delete('signout');
+      history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+    }
     const header = document.querySelector('.gh-header');
     const slot = document.createElement('div');
     slot.className = 'account-slot';
     header?.append(slot);
     let notice = null;
 
-    // What the slot shows now. A render that changes nothing leaves the button alone, and one that only changes
-    // the menu (the sync state) keeps the button too: rebuilding it makes the header flicker and drops keyboard focus.
-    let shown = { button: '', menu: '' };
-    function paint(button, menu = '') {
-      if (button === shown.button && menu === shown.menu) return;
-      const details = slot.querySelector('details');
-      if (menu && details && button === shown.button) {
-        details.querySelector('.account-dropdown').outerHTML = menu;
-      } else {
-        slot.innerHTML = menu ? `<details class="account-menu"${details?.open ? ' open' : ''}>${button}${menu}</details>` : button;
-      }
-      shown = { button, menu };
+    // What the slot shows now. A render that changes nothing leaves the slot alone (rebuilding it makes the header flicker);
+    // the sync state only goes into the title and the border of the name.
+    let shown = '';
+    function paint(content) {
+      if (content === shown) return;
+      slot.innerHTML = content;
+      shown = content;
     }
 
     function render() {
@@ -262,26 +264,18 @@ const ACCOUNT = (() => {
         const s = account.status;
         const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet');
         const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
-        paint(
-          `<summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>`,
-          `<div class="account-dropdown" role="menu">
-            <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
-            <div class="account-state" role="status">${esc(state)}</div>
-            ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
-            <a class="account-item" href="/account">Account</a>
-            ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
-            <button class="account-item" type="button" data-action="signout">Sign out</button>
-          </div>`
-        );
+        const kept = `${aside} ${aside === 1 ? 'patch' : 'patches'}`;
+        paint(`<a class="btn btn-sm account-name" href="/account"><span>${esc(me.name || me.email)}</span></a>` +
+          (aside ? `<button class="btn btn-sm account-aside" type="button" data-action="aside" title="Add ${kept} kept aside in this browser to your account" aria-label="Add ${kept} kept aside in this browser to your account">+${aside}</button>` : ''));
+        const name = slot.querySelector('.account-name');
+        name.title = `${me.email} · ${state}`;
+        name.classList.toggle('has-error', !!s.error);
       }
       renderNotice();
     }
     slot.addEventListener('click', event => {
-      const action = event.target.closest('[data-action]')?.dataset.action;
-      if (action === 'signout') { slot.querySelector('details').open = false; signOut(); }
-      if (action === 'aside') addAside();
+      if (event.target.closest('[data-action="aside"]')) addAside();
     });
-    document.addEventListener('click', event => { const menu = slot.querySelector('details[open]'); if (menu && !menu.contains(event.target)) menu.open = false; });
 
     function renderNotice() {
       const show = document.body.hasAttribute('data-account-notice') && account.me && !account.me.signedIn && sessionStorage.getItem('account-notice') !== 'dismissed';
@@ -401,6 +395,7 @@ const ACCOUNT = (() => {
       if (me.signedIn) {
         try { await firstSignIn(); ready = true; } catch { account.status.error = 'Cannot reach the server: reload the page to sync.'; render(); }
         await syncAll();
+        if (wantsSignOut) signOut();
       } else if (answered) showWelcome();
     });
   }

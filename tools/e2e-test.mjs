@@ -111,11 +111,12 @@ try {
     await target.fill('#password', PASSWORD);
     await target.click('button[type="submit"]');
     await target.waitForURL(/builder\.html/);
-    await target.locator('.account-button').waitFor();
+    await target.locator('.account-name').waitFor();
   };
+  // Signed in, the header shows only the user's name; Sign out starts from the account page and the studio then asks what to do with the data
   const signOut = async (target, choice) => {
-    await target.click('.account-button');
-    await target.click('[data-action="signout"]');
+    await target.goto(`${base}/account`);
+    await target.click('.account-links a[href="/?signout=1"]');
     await target.locator('.account-dialog button', { hasText: choice }).click();
     await target.waitForLoadState('load');
     await target.locator('.account-signin').waitFor();
@@ -144,7 +145,9 @@ try {
     await page.fill('#password', PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL(/builder\.html/);
-    await page.locator('.account-button').waitFor();
+    await page.locator('.account-name').waitFor();
+    assert.equal(await page.locator('.account-name').innerText(), 'e2e@example.com', 'the header shows the user name (the email when there is no name)');
+    assert.equal(await page.locator('.account-slot details, .account-dropdown').count(), 0, 'and no menu');
     await page.locator('.update-bar', { hasText: 'now kept in your account' }).waitFor();
     assert.equal(await page.locator('.account-local').isVisible(), false);
   });
@@ -224,18 +227,21 @@ try {
     await dialog.locator('button', { hasText: 'Not now' }).click();
     await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
     assert.doesNotMatch(await tablet.page.locator('#library-list').innerText(), /TABLET ONLY/);
-    await tablet.page.click('.account-button');
+    assert.equal(await tablet.page.locator('.account-aside').innerText(), '+1', 'a small button next to the name adds the patches kept aside');
     await tablet.page.click('[data-action="aside"]');
     await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
-    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-state')?.textContent || ''));
+    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-name')?.title || ''));
+    assert.equal(await tablet.page.locator('.account-aside').count(), 0, 'nothing is kept aside any more');
     await tablet.context.close();
   });
 
   await test('sign-out removes the data from this browser by default; it comes back at the next sign-in', async () => {
     await page.goto(`${base}/builder.html`);
-    await page.locator('.account-button').waitFor();
+    await page.locator('.account-name').waitFor();
     await page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
     await signOut(page, 'Remove from this browser');
+    await page.goto(`${base}/builder.html`);
+    await page.waitForFunction(() => document.querySelector('#library-count'));
     assert.equal(await page.locator('#library-count').innerText(), '0');
     assert.equal(await page.evaluate(() => localStorage.getItem('ms60b-library')), null);
     await signIn(page, 'e2e@example.com');

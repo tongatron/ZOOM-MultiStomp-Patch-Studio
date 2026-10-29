@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#0d1117" />
     <title>ZOOM MultiStomp Patch Studio — design patches for the ZOOM MS-60B+ and MS-50G+</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="../styles.css?v=zoom56-20261028" />
+    <link rel="stylesheet" href="../styles.css?v=zoom59-20261029" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
     <style>
       .lp section { padding: 40px 0; }
@@ -78,11 +78,9 @@
       .lp-card p { margin: 0; font-size: 14px; color: var(--fg-muted); line-height: 1.55; }
 
       /* Testers */
-      .lp-testers { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; padding: 28px; border: 1px solid rgba(248, 81, 73, .4); border-radius: var(--radius); background: rgba(248, 81, 73, .08); }
+      .lp-testers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding: 28px; border: 1px solid rgba(248, 81, 73, .4); border-radius: var(--radius); background: rgba(248, 81, 73, .08); }
       .lp-testers .lp-eyebrow, .lp-testers h2 { color: #ff7b72; }
-      .lp-testers .lp-lead { margin: 0; }
-      .lp-testers ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; color: var(--fg-muted); }
-      .lp-testers ol b { color: var(--fg); }
+      .lp-testers .lp-lead { margin: 0 0 24px; }
       @media (max-width: 767px) { .lp-testers { grid-template-columns: 1fr; padding: 20px; } }
 
       /* Pedal manager */
@@ -123,7 +121,6 @@
       .lp-tour-text h3 .Label { height: 18px; font-size: 11px; color: var(--fg-muted); }
       .lp-tour-text p { margin: 0 0 14px; font-size: 15px; color: var(--fg-muted); }
       .lp-tour-text .lp-checks { margin-bottom: 0; }
-      .lp-testers .lp-shot { grid-column: 1 / -1; }
       @media (max-width: 767px) {
         .lp-tour-row, .lp-tour-row--flip { grid-template-columns: 1fr; gap: 16px; }
         .lp-tour-row--flip .lp-tour-text { order: 0; }
@@ -139,6 +136,7 @@
         <span class="gh-brand-name">ZOOM MultiStomp <span>PATCH STUDIO</span></span>
       </a>
       <span class="gh-spacer"></span>
+      <button class="btn btn-sm gh-header-link" type="button" data-report="contact" data-intro="Write to the person who makes this site: a question, an idea, or an offer to help.">Contact us</button>
       <a class="btn btn-sm btn-primary gh-header-link" href="../">Open the studio</a>
     </header>
 
@@ -377,13 +375,9 @@
           <div>
             <p class="lp-eyebrow">Help wanted</p>
             <h2 id="testers-title">Do you own an MS-50G+?</h2>
-            <p class="lp-lead">One quick test on a real pedal is enough to confirm the guitar version, or to show what needs fixing.</p>
+            <p class="lp-lead">Nobody has tried a patch made here on a real MS-50G+ yet. If you own one, a little of your time would show us what works and what needs fixing.</p>
+            <div class="lp-cta"><a class="btn btn-primary" href="../ms-50g/help.html">Help us test the MS-50G+</a></div>
           </div>
-          <ol>
-            <li>Build a simple patch in the <a href="../ms-50g/builder.html">MS-50G+ builder</a> and download the <code>.zptc</code>.</li>
-            <li>Import it in <b>Handy Guitar Lab</b> and copy it to a free memory.</li>
-            <li>Check the effects and values on the pedal, and <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio/issues" target="_blank" rel="noreferrer">tell us what you see</a>. An exported patch from your pedal helps too.</li>
-          </ol>
           <figure class="lp-shot">
             <img src="shots/ms50g-builder.webp" alt="The MS-50G+ Patch builder with a guitar chain of six effects from COMPRESSOR to HALL REVERB at 70% DSP, under a red notice that no generated patch has been checked on a real MS-50G+ yet." width="1920" height="1200" loading="lazy" />
             <figcaption>The MS-50G+ builder: the same studio, with a notice that it is not tested yet.</figcaption>
@@ -435,7 +429,8 @@
       </div>
     </footer>
     <script src="../library-merge.js?v=zoom29-20261028"></script>
-    <script src="../account.js?v=zoom48-20261028"></script>
+    <script src="../account.js?v=zoom50-20261029"></script>
+    <script src="../report.js?v=report5-20261029"></script>
     <script>
       // Hero pedal carousel: the arrows (hidden until this runs) and the left/right keys swap the pedal and its name.
       (function () {

@@ -226,6 +226,28 @@ try {
     }
   });
 
+  await test('signed in, the header shows only the name (cut with an ellipsis when long), as a link to the account page, and the top bar still fits at 800 px', async () => {
+    const longName = 'Giovanni Bindi Giovanni Bindi Giovanni Bindi Giovanni Bindi 12';
+    const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: longName, password: 'header password 1' }, maxRedirects: 0 });
+    assert.equal(made.status(), 303);
+    for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html']) {
+      for (const size of [[1280, 680], [800, 700]]) {
+        await open(file, size);
+        const link = page.locator('.account-slot > a.account-name');
+        await link.waitFor();
+        assert.equal(await link.getAttribute('href'), '/account', `${file}: the name opens the account page`);
+        assert.equal((await page.locator('.account-slot > *').count()), 1, `${file}: only the name, no menu`);
+        assert.equal(await page.locator('.account-slot details, .account-dropdown').count(), 0, file);
+        assert.match(await link.getAttribute('title'), /^header@example\.com · /, `${file}: the email and the sync state are in the tooltip`);
+        const cut = await link.locator('span').evaluate(el => el.scrollWidth > el.clientWidth);
+        assert.equal(cut, true, `${file} ${size.join(' × ')}: a long name is cut with an ellipsis`);
+        assert.deepEqual(await page.evaluate(barIssues), [], `${file} ${size.join(' × ')}: the top bar fits with the name`);
+      }
+    }
+    await page.context().clearCookies();
+    await page.evaluate(() => { try { sessionStorage.clear(); } catch {} });
+  });
+
   await test('Report a problem: the form opens, asks for a message, sends it to the Telegram bot and confirms', async () => {
     const outbox = join(dataDir, 'telegram');
     for (const file of ['index.html', 'ms-50g/index.html']) {
@@ -254,11 +276,41 @@ try {
     await plain.getByRole('button', { name: 'Send', exact: true }).click();
     await plain.locator('.report-done').waitFor({ state: 'visible' });
     await plain.getByRole('button', { name: 'Close' }).click();
-    const notices = await Promise.all((await readdir(outbox)).sort().map(name => readFile(join(outbox, name), 'utf8')));
+    const everything = await Promise.all((await readdir(outbox)).sort().map(name => readFile(join(outbox, name), 'utf8')));
+    const notices = everything.filter(text => text.startsWith('Problem report from')); // the sign-up notices of other tests share the folder
     assert.equal(notices.length, 3);
     assert.match(notices[2], /^Problem report from ZOOM Patch Studio\nFrom: \(no name\) \(not signed in\)\n\nNo details, please$/);
     assert.match(notices[0], /^Problem report from ZOOM Patch Studio\nFrom: Test Bassist \(not signed in\)\nPage: \/index\.html\n\nLine one on index\.html\nLine two\n\n---\nZoom MS-60B\+ · site updated /);
     assert.match(notices[1], /Page: \/ms-50g\/index\.html\n[\s\S]*Zoom MS-50G\+ · site updated /);
+  });
+
+  await test('landing page: a Help us button leads to the MS-50G+ help page instead of steps, and Contact us writes to the Telegram bot', async () => {
+    await page.goto(`${base}/landing/`);
+    await page.locator('.gh-header .account-slot > *').waitFor();
+    const testers = page.locator('section[aria-labelledby="testers-title"]');
+    assert.equal(await testers.locator('ol, li').count(), 0, 'no list of steps to follow');
+    const help = testers.locator('a.btn');
+    assert.equal(await help.count(), 1, 'one button');
+    assert.equal(await help.textContent(), 'Help us test the MS-50G+');
+    assert.equal(await help.evaluate(a => new URL(a.href).pathname), '/ms-50g/help.html');
+    // Contact us: the form of report.js, an email address is needed
+    const outbox = join(dataDir, 'telegram');
+    const lastNotice = async () => { const all = (await readdir(outbox)).sort(); return readFile(join(outbox, all[all.length - 1]), 'utf8'); };
+    await page.locator('.gh-header [data-report="contact"]').click();
+    const dialog = page.locator('dialog.report-dialog');
+    assert.equal(await dialog.locator('#report-title').textContent(), 'Contact us');
+    assert.match(await dialog.locator('[data-intro]').textContent(), /a question, an idea, or an offer to help/);
+    await dialog.locator('[name="message"]').fill('Can I help with the tests?');
+    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    assert.match(await dialog.locator('.report-error').textContent(), /Add your email address/);
+    await dialog.locator('[name="name"]').fill('Ann');
+    await dialog.locator('[name="email"]').fill('ann@example.com');
+    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    await dialog.locator('.report-done').waitFor({ state: 'visible' });
+    assert.match(await lastNotice(), /^Message from ZOOM Patch Studio \(Contact us\)\nFrom: Ann <ann@example\.com> \(not signed in\)\nPage: \/landing\/\n\nCan I help with the tests\?\n\n---\nsite updated /);
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await help.click();
+    await page.waitForURL(/\/ms-50g\/help\.html$/);
   });
 
   await test('the AMPG SVT MID-FREQ has no warning any more; the other amps with that scale still have one', async () => {
@@ -292,7 +344,7 @@ try {
     assert.equal(hover.animation, 'none');
   });
 
-  await test('the header has no "Full screen" tag; the Guide button comes right before the account menu on every page and opens the guide', async () => {
+  await test('the header has no "Full screen" tag; the Guide button comes right before the account entry on every page and opens the guide', async () => {
     for (const file of Object.keys(ALL_PAGES)) {
       await open(file, SIZES[1]);
       assert.equal(await page.locator('.fs-badge').count(), 0, `${file}: no "Full screen" tag`);
@@ -304,7 +356,7 @@ try {
         const nav = document.querySelector('.fs-nav').getBoundingClientRect();
         return { onlyAccountAfter: at >= 0 && items.slice(at + 1).every(el => el.classList.contains('account-slot')), rightOfNav: !!guide && guide.left > nav.right, atRight: !!guide && guide.right > innerWidth / 2 };
       });
-      assert.deepEqual(place, { onlyAccountAfter: true, rightOfNav: true, atRight: true }, `${file}: Guide at the right, before the account menu`);
+      assert.deepEqual(place, { onlyAccountAfter: true, rightOfNav: true, atRight: true }, `${file}: Guide at the right, before the account entry`);
       assert.equal(await page.locator('.fs-guide').getAttribute('href'), 'guide.html');
       assert.equal(await page.locator('.fs-guide[aria-current="page"]').count(), file.endsWith('guide.html') ? 1 : 0, `${file}: highlighted only on the guide`);
       assert.equal(await page.locator('.fs-guide').getAttribute('aria-label'), 'Guide');
@@ -440,14 +492,14 @@ try {
     }
   });
 
-  await test('the header of the MS-60B+ pages has the green "Tested on firmware 1.20" tag just left of the Guide button (the full text on wide windows, "Firmware 1.20" on narrower ones)', async () => {
+  await test('the header of the MS-60B+ pages has the green "Tested on firmware 1.20" tag just left of the Guide button, with the full text at every width', async () => {
     for (const file of Object.keys(PAGES)) {
       await open(file, SIZES[1]);
       const tag = page.locator('.fs-top > .fs-fw');
       assert.equal(await tag.count(), 1, file);
       assert.equal(await tag.getAttribute('title'), 'Tested on firmware 1.20', file);
       assert.equal(await tag.evaluate(el => getComputedStyle(el).color), 'rgb(63, 185, 80)', `${file}: green`);
-      assert.equal((await tag.innerText()).trim(), 'Tested on firmware 1.20', `${file}: the full text on a wide window`);
+      assert.equal((await tag.innerText()).trim(), 'Tested on firmware 1.20', `${file}: the full text`);
       const place = await page.evaluate(() => {
         const items = [...document.querySelectorAll('.fs-top > *')];
         const t = document.querySelector('.fs-fw').getBoundingClientRect();
@@ -456,8 +508,14 @@ try {
       });
       assert.deepEqual(place, { rightBeforeGuide: true, left: true }, `${file}: left of the Guide button`);
     }
-    await open('index.html', [1024, 700]);
-    assert.equal((await page.locator('.fs-fw').innerText()).trim(), 'Firmware 1.20', 'the short form on a narrower window');
+    // the same text on the narrowest supported window, and on the ones in between, for every page of the MS-60B+
+    for (const file of Object.keys(PAGES)) {
+      for (const size of [[1024, 700], [800, 700]]) {
+        await open(file, size);
+        assert.equal((await page.locator('.fs-fw').innerText()).trim(), 'Tested on firmware 1.20', `${file} ${size.join(' × ')}: the full text on a narrow window too`);
+        assert.equal(await page.locator('.fs-fw').evaluate(el => el.scrollWidth <= el.clientWidth + 1 && el.getBoundingClientRect().right <= innerWidth), true, `${file} ${size.join(' × ')}: the tag is whole and inside the window`);
+      }
+    }
   });
 
   await test('builder: Plug into, Amp and the mixer choice sit on one line at every size, for each pedal, above the Errors / Warnings / Tips row', async () => {
@@ -528,6 +586,26 @@ try {
     await page.locator('#usb-memories [data-n="3"] [data-act="stale-open"]').click();
     assert.equal(await page.locator('#usb-memories .usb-mem-detail').count(), 0, 'selecting it again closes it');
 
+    // The connection box shows the real MS-60B+ of the landing page: dim and grey while the pedal is not connected, in colour once it is
+    const pedal = page.locator('.usb-connect > img.usb-pedal');
+    assert.match(await pedal.getAttribute('src'), /^landing\/pedal-ms60b-small\.webp$/, 'the picture of the landing page');
+    assert.equal(await pedal.evaluate(img => img.complete && img.naturalWidth > 0), true, 'the picture loads');
+    const look = () => pedal.evaluate(img => ({ filter: getComputedStyle(img).filter, opacity: Number(getComputedStyle(img).opacity) }));
+    const off = await look();
+    assert.match(off.filter, /grayscale/, 'grey while not connected');
+    assert.ok(off.opacity < 1, 'and dim');
+    await page.evaluate(() => document.querySelector('.usb-connect').classList.add('is-connected')); // what setConnected(true) does
+    await page.waitForFunction(() => { const css = getComputedStyle(document.querySelector('.usb-pedal')); return css.opacity === '1' && css.filter === 'none'; }); // the colour comes back with a short transition
+    assert.deepEqual(await look(), { filter: 'none', opacity: 1 }, 'normal colours once connected');
+    await page.evaluate(() => document.querySelector('.usb-connect').classList.remove('is-connected'));
+    const sits = await page.evaluate(() => { const i = document.querySelector('.usb-pedal').getBoundingClientRect(), s = document.querySelector('.usb-steps').getBoundingClientRect(), c = document.querySelector('.usb-connect').getBoundingClientRect(); return { leftOfSteps: i.right <= s.left, small: i.width <= 80 && i.height <= 130, inside: i.top >= c.top && i.bottom <= c.bottom }; });
+    assert.deepEqual(sits, { leftOfSteps: true, small: true, inside: true }, 'a small pedal at the left of the steps');
+
+    // Backups and the MIDI log are closed until opened
+    assert.deepEqual(await page.evaluate(() => [document.querySelector('#usb-backups-box').open, document.querySelector('#usb-log-box').open]), [false, false], 'Backups and the MIDI log start closed');
+    await page.locator('#usb-backups-title').click();
+    assert.equal(await page.locator('#usb-backups-box').evaluate(box => box.open), true, 'a click on the title opens Backups');
+
     // Backups: Delete all asks first
     assert.equal(await page.locator('#usb-backup-count').textContent(), '3');
     await page.locator('#usb-backups-clear').click();
@@ -543,7 +621,7 @@ try {
     const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('ms60b-usb-backups')));
     assert.deepEqual(kept.map(b => b.deleted), [true, true, true], 'deletion records keep an account from bringing them back');
     await page.reload();
-    await page.waitForSelector('#usb-backups li');
+    await page.waitForSelector('#usb-backups li', { state: 'attached' }); // Backups is closed again after a reload
     assert.equal(await page.locator('#usb-backups .usb-empty').textContent(), 'No backups yet.');
 
     // MIDI log: a full screen button at the top right of its header
@@ -668,7 +746,7 @@ try {
     assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
   });
 
-  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which has Contact us (a temporary mailto) after its description', async () => {
+  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which has Contact us (a form that writes to the Telegram bot) after its description', async () => {
     for (const file of ['ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/guide.html', 'ms-50g/resources.html']) {
       for (const size of SIZES) {
         await open(file, size);
@@ -700,17 +778,45 @@ try {
     const glance = await page.locator('#at-a-glance + .md-table tbody tr').allInnerTexts();
     assert.equal(glance.length, 9, 'the table has the setup and the 8 tests');
     assert.ok(glance.every(row => /min/.test(row)), 'with a time for each');
-    const mail = page.locator('#doc #contact-us');
-    assert.equal(await mail.textContent(), 'Contact us');
-    assert.match(await mail.getAttribute('href'), /^mailto:giovanni\.bindi@icloud\.com\?subject=/);
-    assert.equal(await page.locator('#doc a.btn').count(), 1, 'one button');
+    const contact = page.locator('#doc #contact-us');
+    assert.equal(await contact.textContent(), 'Contact us');
+    assert.equal(await contact.getAttribute('data-report'), 'contact', 'it opens the form of report.js, not an email program');
+    assert.equal(await page.locator('#doc a[href^="mailto:"]').count(), 0, 'no email address on the page');
+    assert.equal(await page.locator('#doc .btn').count(), 1, 'one button');
     // Contact us comes right after the description (which says the tests are organised according to the time the person has), before the list of tests
     assert.equal(await page.evaluate(() => {
       const button = document.querySelector('#contact-us'), glance = document.querySelector('#at-a-glance');
       const intro = [...document.querySelectorAll('#doc > p')].filter(p => glance.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_PRECEDING && !p.contains(button) && !p.matches('.field-hint')).map(p => p.textContent).join(' ');
       return !!(button.compareDocumentPosition(glance) & Node.DOCUMENT_POSITION_FOLLOWING) && /organise the tests together, according to the time you have/.test(intro) && /we would need/.test(intro);
     }), true, 'Contact us follows the description and comes before the tests');
-    assert.match(await page.locator('#contact-us').getAttribute('href'), /body=How%20much%20time/, 'the message starts by asking how much time the person has');
+    assert.match(await page.locator('#contact-us').getAttribute('data-template'), /^How much time I could give to the tests:/, 'the message starts by asking how much time the person has');
+    // Contact us opens the form with that message; an email address is needed; it reaches Telegram as a contact message
+    const outbox = join(dataDir, 'telegram');
+    const lastNotice = async () => { const all = (await readdir(outbox)).sort(); return readFile(join(outbox, all[all.length - 1]), 'utf8'); };
+    const before = (await readdir(outbox)).length;
+    await contact.click();
+    const dialog = page.locator('dialog.report-dialog');
+    assert.equal(await dialog.locator('#report-title').textContent(), 'Contact us');
+    assert.match(await dialog.locator('[data-intro]').textContent(), /how much time you could give to the MS-50G\+ tests/);
+    assert.match(await dialog.locator('[name="message"]').inputValue(), /^How much time I could give to the tests: \nPedal firmware version \(MENU > VERSION\): \nHandy Guitar Lab version: /);
+    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    assert.match(await dialog.locator('.report-error').textContent(), /Write your message/, 'the unchanged template is not a message');
+    await dialog.locator('[name="message"]').fill('How much time I could give to the tests: 2 hours\nPedal firmware version (MENU > VERSION): 1.10');
+    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    assert.match(await dialog.locator('.report-error').textContent(), /Add your email address/, 'Contact us needs an email address');
+    assert.equal((await readdir(outbox)).length, before, 'nothing was sent yet');
+    await dialog.locator('[name="email"]').fill('tester@example.com');
+    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    await dialog.locator('.report-done').waitFor({ state: 'visible' });
+    assert.match(await dialog.locator('[data-reply]').textContent(), /We will write to tester@example\.com/);
+    assert.equal(await page.locator('.fs-report').textContent(), 'Report a problem', 'the status bar button does not change for Contact us');
+    assert.match(await lastNotice(), /^Message from ZOOM Patch Studio \(Contact us\)\nFrom: \(no name\) <tester@example\.com> \(not signed in\)\nPage: \/ms-50g\/help\.html\n\nHow much time I could give to the tests: 2 hours\nPedal firmware version \(MENU > VERSION\): 1\.10\n\n---\nZoom MS-50G\+ · /);
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    // the same form serves the status bar button, with its own title, and nothing of the contact message
+    await page.locator('.fs-report').click();
+    assert.equal(await dialog.locator('#report-title').textContent(), 'Report a problem');
+    assert.equal(await dialog.locator('[name="message"]').inputValue(), '', 'the problem form starts empty');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
     const claimed = (await page.locator('#doc').innerText()).match(/about (\d+\.\d)%/g).map(s => parseFloat(s.slice(6)));
     assert.equal(claimed.length, 2, 'the DSP of TEST A and TEST C');
     // the test patches open in the builder with the effects the page names, and with the DSP load it quotes

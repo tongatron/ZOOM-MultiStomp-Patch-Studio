@@ -5,7 +5,7 @@
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
 // database), SITE_URL (links in emails, see site-url.mjs), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
 
-import { readdirSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
@@ -14,7 +14,7 @@ import {
 } from './auth.mjs';
 import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
-import { mailConfig, mailHtml, sendMail, sendTelegram, telegramConfig } from './mail.mjs';
+import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
 import { SITE_URL } from './site-url.mjs';
 import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
@@ -102,7 +102,6 @@ export function createAccounts({ dataDir }) {
   }
 
   // ---- user console (admins only) --------------------------------------------------------------
-  const BACKUP_DIR = process.env.BACKUP_DIR || '/srv/apps/zoom-ms60b-backups';
   const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', change: 'last_change' };
   const countOf = pedal => `(SELECT COUNT(*) FROM patches p WHERE p.user_id = u.id AND p.pedal = '${pedal}' AND p.deleted_at IS NULL)`;
   const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g,
@@ -116,18 +115,6 @@ export function createAccounts({ dataDir }) {
     if (!session) { redirect(response, `/login?next=${encodeURIComponent(next)}`); return null; }
     if (session.user.role !== 'admin') { html(response, 403, messagePage('Administrators only', 'This page is for the administrators of the site.')); return null; }
     return session.user;
-  }
-
-  function serviceState() {
-    const mail = mailConfig();
-    let backup = null;
-    try {
-      for (const name of readdirSync(BACKUP_DIR)) {
-        const at = statSync(join(BACKUP_DIR, name)).mtimeMs;
-        if (!backup || at > backup.at) backup = { name, at };
-      }
-    } catch {}
-    return { mail: mail && !process.env.MAIL_OUTBOX ? mail.user : mail ? 'outbox (test)' : '', telegram: !!telegramConfig(), backup };
   }
 
   function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', ...rest } = {}) {
@@ -146,7 +133,7 @@ export function createAccounts({ dataDir }) {
     };
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, stats, users, query, sort, dir, service: serviceState(), log, ...rest }));
+    html(response, status, adminPage({ me, stats, users, query, sort, dir, log, ...rest }));
   }
 
   // The account an admin action is about; never the admin's own (so an admin cannot lock themselves out)
@@ -216,14 +203,6 @@ export function createAccounts({ dataDir }) {
       logAdmin(me, `delete account ${target.email}`, target);
       store.removeUser(target.id);
       showAdmin(response, me, { note: `The account of ${target.email} has been deleted.` });
-    },
-    'POST /admin/test-mail': (request, response) => {
-      const me = adminOnly(request, response);
-      if (!me) return;
-      const sent = sendMail(me.email, 'ZOOM Patch Studio: test email', 'If you can read this, the emails of ZOOM Patch Studio work.',
-        mailHtml({ title: 'Test email', intro: 'If you can read this, the emails of ZOOM Patch Studio work.' }));
-      logAdmin(me, 'test email', me);
-      showAdmin(response, me, sent ? { note: `Test email sent to ${me.email}: check the inbox (and the service log if it does not arrive).` } : { status: 503, error: 'Email is not configured.' });
     }
   };
 
@@ -384,7 +363,8 @@ export function createAccounts({ dataDir }) {
       html(response, 200, messagePage('Account deleted', 'Your account and everything kept in it have been deleted. Patches stored in your browsers stay there.'),
         { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) });
     },
-    // "Report a problem": open to everyone, answered in JSON. The message goes to the Telegram bot (nothing is stored here).
+    // "Report a problem" and "Contact us" (kind=contact: the MS-50G+ help page, a reply address is needed): open to everyone,
+    // answered in JSON. The message goes to the Telegram bot (nothing is stored here).
     'POST /api/report': async (request, response, form, ip) => {
       if (limits.tooMany('report', ip)) return json(response, 429, { error: 'Too many reports from this network. Try again in a few minutes.' });
       const line = (key, max) => String(form[key] || '').replace(/[\x00-\x1f\x7f\s]+/g, ' ').trim().slice(0, max);
@@ -393,11 +373,13 @@ export function createAccounts({ dataDir }) {
       const email = line('email', 200);
       const page = line('page', 300);
       const info = line('info', 600);
+      const contact = form.kind === 'contact';
       if (!message) return json(response, 400, { error: 'Write your message.' });
+      if (contact && !email) return json(response, 400, { error: 'Add your email address, so we can answer you.' });
       if (email && !EMAIL_RE.test(email)) return json(response, 400, { error: 'The email address does not look valid.' });
       limits.note('report', ip);
       const session = current(request);
-      const text = ['Problem report from ZOOM Patch Studio',
+      const text = [contact ? 'Message from ZOOM Patch Studio (Contact us)' : 'Problem report from ZOOM Patch Studio',
         `From: ${[name || '(no name)', email && `<${email}>`].filter(Boolean).join(' ')} (${session ? `account ${session.user.email}` : 'not signed in'})`,
         ...(page ? [`Page: ${page}`] : []), '', message, ...(info ? ['', '---', info] : [])].join('\n');
       if (await sendTelegram(text)) return json(response, 200, { ok: true });

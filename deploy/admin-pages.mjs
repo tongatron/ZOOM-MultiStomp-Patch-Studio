@@ -37,7 +37,7 @@ const act = (action, id, label, extra = '') => `<form method="post" action="/adm
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['login', 'Last sign-in'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['change', 'Last change']];
 
-export function adminPage({ me, stats, users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, service, log }) {
+export function adminPage({ me, stats, users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log }) {
   const sortLink = key => {
     const nextDir = sort === key && dir === 'desc' ? 'asc' : 'desc';
     const params = new URLSearchParams({ ...(query ? { q: query } : {}), sort: key, dir: nextDir });
@@ -70,10 +70,6 @@ ${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Del
   <input type="hidden" name="sort" value="${esc(sort)}"><input type="hidden" name="dir" value="${esc(dir)}"><button class="btn btn-sm" type="submit">Search</button></form>
   <div class="admin-table"><table><thead><tr>${COLUMNS.map(([key, label]) => `<th>${sortLink(key)}${label}</a></th>`).join('')}<th></th></tr></thead>
   <tbody>${rows || `<tr><td colspan="8" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
-</section>
-<section class="auth-card"><h2>Service</h2>
-  <p>Email: <b>${service.mail ? 'configured' : 'not configured'}</b>${service.mail ? ` (from ${esc(service.mail)})` : ''} · Telegram: <b>${service.telegram ? 'configured' : 'not configured'}</b> · Last backup: <b>${service.backup ? `${esc(service.backup.name)}, ${dateTime(service.backup.at)}` : 'none found'}</b></p>
-  ${service.mail ? '<form method="post" action="/admin/test-mail"><button class="btn btn-sm" type="submit">Send me a test email</button></form>' : ''}
 </section>
 <section class="auth-card"><h2>Admin log</h2>
   ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}

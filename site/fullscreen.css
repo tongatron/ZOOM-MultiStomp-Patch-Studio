@@ -17,12 +17,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-guide { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 10px; border-radius: 2em; background: var(--bg-muted); color: var(--fg); white-space: nowrap; }
 .fs-guide:hover { background: var(--btn-hover); text-decoration: none; }
 .fs-guide[aria-current="page"] { font-weight: 600; color: var(--accent-fg); background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-muted); }
-@media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; } }
-/* Firmware the MS-60B+ was tested on, in the header just left of the Guide button; narrow windows get the short form */
+@media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; } .fs-top { gap: 8px; } .fs-nav > a, .fs-menu-button { padding: 5px 8px; } .account-name { max-width: 90px; } }
+/* Firmware the MS-60B+ was tested on, in the header just left of the Guide button (the same text at every width) */
 .fs-fw { margin-left: auto; flex: none; white-space: nowrap; }
 .fs-fw + .fs-guide { margin-left: 0; }
-.fs-fw-short { display: none; }
-@media (max-width: 1099px) { .fs-fw-long { display: none; } .fs-fw-short { display: inline; } }
 
 /* Pedal menu: a button that opens the list of the two Zoom pedals */
 .fs-menu { position: relative; margin-right: 6px; padding-right: 8px; border-right: 1px solid var(--border-muted); }
@@ -69,15 +67,6 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* Report a problem (report.js): a button that looks like the links next to it */
 .fs-report { padding: 0; border: 0; background: none; font: inherit; color: var(--accent-fg); cursor: pointer; }
 .fs-report:hover { text-decoration: underline; }
-/* ...and its form, in the dialog of report.js */
-.report-form { display: flex; flex-direction: column; gap: 12px; }
-.report-form > p { margin: 0; }
-.report-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
-.report-form label small { color: var(--fg-muted); font-size: inherit; font-weight: 400; }
-.report-form label.report-check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 400; }
-.report-check input { flex: none; margin: 3px 0 0; }
-.report-form textarea.form-control { height: auto; min-height: 120px; resize: vertical; font: inherit; line-height: 1.45; }
-.report-error { color: #f85149; }
 /* tongatron.org button (B3 of tongatron.org/pulsanti): yellow dot with a glow and the name, on the bar's own background.
    No hover animation: on hover it is highlighted */
 .fs-b3 { display: inline-flex; align-items: center; gap: 8px; height: 22px; margin-left: -8px; padding: 0 8px; border-radius: 6px; background: transparent; color: var(--fg); font-size: 12px; transition: background .15s; }

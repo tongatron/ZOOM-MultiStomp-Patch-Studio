@@ -751,6 +751,16 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
 .usb-connect > .usb-row { gap: 12px; margin: 0; padding: 16px; }
 .usb-connect [hidden] { display: none; }
+/* The real MS-60B+ (the picture of the landing page) at the left of the steps: switched off and dim until the pedal is connected, in colour once it is.
+   The cables fade out instead of ending at the edge of the picture. */
+.usb-connect { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+.usb-connect > :not(.usb-pedal) { grid-column: 2; }
+.usb-connect > .usb-ports { grid-column: 1 / -1; }
+.usb-pedal { grid-column: 1; grid-row: 1 / span 2; align-self: center; width: 60px; height: auto; margin: 12px 0 12px 16px;
+  filter: grayscale(1) brightness(.5); opacity: .55; transition: filter .3s, opacity .3s;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); }
+.usb-connect.is-connected .usb-pedal { filter: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .usb-pedal { transition: none; } }
 .usb-steps { margin: 0; padding: 16px 16px 0 36px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; }
 .usb-steps b { color: var(--fg); font-weight: 600; }
 .usb-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 13px; }
@@ -840,18 +850,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .pedal-edit-actions { display: flex; gap: 8px; }
 
 /* ---- account (account.js) ---- */
-.account-slot { display: flex; align-items: center; min-width: 28px; } /* the avatar's width: the Guide button does not move when it appears */
-.account-menu { position: relative; }
-.account-menu > summary { list-style: none; }
-.account-menu > summary::-webkit-details-marker { display: none; }
-.account-button { width: 28px; padding: 0; justify-content: center; border-radius: 50%; font-weight: 600; }
-.account-button.has-error { border-color: #d29922; }
-.account-dropdown { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 240px; padding: 4px 0; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(1, 4, 9, .8); }
-.account-who { display: flex; flex-direction: column; gap: 2px; padding: 8px 16px; font-size: 13px; overflow-wrap: anywhere; }
-.account-who span, .account-state { color: var(--fg-muted); font-size: 12px; }
-.account-state { padding: 0 16px 8px; border-bottom: 1px solid var(--border-muted); margin-bottom: 4px; }
-.account-item { display: block; width: 100%; padding: 6px 16px; color: var(--fg); background: none; border: 0; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-.account-item:hover { background: var(--accent); color: #fff; text-decoration: none; }
+.account-slot { display: flex; align-items: center; gap: 6px; }
+.account-name { max-width: 160px; } /* the name of the signed-in user, a link to the account page */
+.account-name > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-name.has-error { border-color: #d29922; }
+.account-aside { flex: none; }
 .account-notice { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px; background: rgba(187, 128, 9, .15); border-bottom: 1px solid rgba(187, 128, 9, .4); font-size: 13px; }
 @media (min-width: 768px) { .account-notice { padding: 10px 24px; } }
 .account-notice p { flex: 1; margin: 0; line-height: 1.5; }
@@ -861,6 +864,15 @@ body.is-dropping .drop-overlay { display: grid; }
 .account-perks { display: grid; gap: 6px; margin: 0 0 4px; padding-left: 20px; }
 .account-later { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin-top: 8px; }
 .account-welcome .account-note { margin: 8px 0 0; }
+/* The form of report.js (Report a problem, Contact us), also on the landing page */
+.report-form { display: flex; flex-direction: column; gap: 12px; }
+.report-form > p { margin: 0; }
+.report-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.report-form label small { color: var(--fg-muted); font-size: inherit; font-weight: 400; }
+.report-form label.report-check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 400; }
+.report-check input { flex: none; margin: 3px 0 0; }
+.report-form textarea.form-control { height: auto; min-height: 120px; resize: vertical; font: inherit; line-height: 1.45; }
+.report-error { color: #f85149; }
 .account-local { display: none; }
 .signed-out .account-local { display: inline-flex; }
 

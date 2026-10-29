@@ -255,6 +255,10 @@ try {
     const page = await (await get('/admin', { cookie: admin })).text();
     assert.match(page, /Summary/);
     assert.match(page, /new3@example\.com/);
+    assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
+    assert.match(await (await get('/account', { cookie: admin })).text(), /<a class="btn" href="\/admin">Users<\/a>/, 'an administrator finds Users on the account page');
+    assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');
+    assert.match(page, /<!--email_off-->[\s\S]*new3@example\.com[\s\S]*<!--\/email_off-->/, 'the emails are marked so that Cloudflare does not hide them');
     const found = await (await get('/admin?q=PLAYER&sort=bogus&dir=up', { cookie: admin })).text();
     assert.match(found, /Player@Example\.com/);
     assert.doesNotMatch(found, /new3@example\.com/);
@@ -291,6 +295,9 @@ try {
     const page = await (await get('/account', { cookie: session })).text();
     assert.match(page, /page@example\.com/);
     assert.match(page, /0 MS-60B\+ patches/);
+    assert.match(page, /<!--email_off-->[\s\S]*page@example\.com[\s\S]*<!--\/email_off-->/, 'the email is marked so that Cloudflare does not hide it');
+    assert.match(page, /<a class="btn" href="\/\?signout=1">Sign out<\/a>/, 'Sign out starts from here: the studio asks what to do with the data');
+    assert.doesNotMatch(page, /href="\/admin"/, 'no Users link for a normal user');
     assert.equal((await post('/account/password', { current: 'wrong password', password: 'brand new password' }, { cookie: session })).status, 400);
     const changed = await post('/account/password', { current: PASSWORD, password: 'brand new password' }, { cookie: session });
     assert.equal(changed.headers.get('location'), '/account?done=password');
@@ -342,27 +349,34 @@ try {
   });
 
   await test('Report a problem: the message reaches Telegram with its account, page and details; bad input and floods are refused', async () => {
+    // Notices are written in the background, in files named by the millisecond: look for the report by what it says, not by its position
     const names = async () => (await readdir(telegramDir)).sort();
-    const latest = async () => { const all = await names(); return readFile(join(telegramDir, all[all.length - 1]), 'utf8'); };
+    const seen = new Set(await names());
+    const waitFor = async test => {
+      for (let i = 0; i < 60; i++) {
+        for (const name of await names()) {
+          if (seen.has(name)) continue;
+          const text = await readFile(join(telegramDir, name), 'utf8');
+          if (test(text)) { seen.add(name); return text; }
+        }
+        await new Promise(ok => setTimeout(ok, 50));
+      }
+      throw new Error('the notice did not arrive');
+    };
+    const isReport = text => /^(Problem report|Message from) /.test(text);
     const report = (fields, options) => post('/api/report', fields, options);
-    const before = (await names()).length;
+    const delivered = async (fields, options) => { const response = await report(fields, options); assert.equal(response.status, 200); return waitFor(isReport); };
 
-    const sent = await report({ name: ' Bass\nPlayer ', email: 'bass@example.com', message: 'The  chain\r\nlost an effect\x07', page: '/builder.html?x=1', info: 'Zoom MS-60B+ · window 1280×800' });
-    assert.equal(sent.status, 200);
-    assert.deepEqual(await sent.json(), { ok: true });
-    assert.equal(await latest(), 'Problem report from ZOOM Patch Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
+    assert.equal(await delivered({ name: ' Bass\nPlayer ', email: 'bass@example.com', message: 'The  chain\r\nlost an effect\x07', page: '/builder.html?x=1', info: 'Zoom MS-60B+ · window 1280×800' }),
+      'Problem report from ZOOM Patch Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
 
     const session = sessionOf(await post('/register', { email: 'reporter@example.com', password: PASSWORD }));
-    for (let i = 0; i < 40 && !/reporter@example\.com/.test(await latest()); i++) await new Promise(ok => setTimeout(ok, 50)); // the sign-up notice is written in the background
-    assert.equal((await report({ message: 'Hello' }, { cookie: session })).status, 200);
-    assert.equal(await latest(), 'Problem report from ZOOM Patch Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
+    await waitFor(text => /^New user signed up[\s\S]*reporter@example\.com/.test(text)); // the sign-up notice of this account
+    assert.equal(await delivered({ message: 'Hello' }, { cookie: session }), 'Problem report from ZOOM Patch Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
 
-    const long = await report({ message: 'q'.repeat(5000) });
-    assert.equal(long.status, 200);
-    assert.equal((await latest()).match(/q+/)[0].length, 3000, 'the message is cut at 3000 characters');
-    assert.equal((await report({ message: '€'.repeat(3000) })).status, 200, 'a long message of 3-byte characters still fits');
+    assert.equal((await delivered({ message: 'q'.repeat(5000) })).match(/q+/)[0].length, 3000, 'the message is cut at 3000 characters');
+    assert.equal((await delivered({ message: '€'.repeat(3000) })).match(/€+/)[0].length, 3000, 'a long message of 3-byte characters still fits');
 
-    const sentSoFar = (await names()).length;
     const empty = await report({ name: 'x', message: ' \n ' });
     assert.equal(empty.status, 400);
     assert.deepEqual(await empty.json(), { error: 'Write your message.' });
@@ -372,8 +386,20 @@ try {
     assert.equal(foreign.status, 403, 'writes from another site are refused');
     assert.match(foreign.headers.get('content-type'), /json/);
     assert.equal((await get('/api/report')).status, 405);
-    assert.equal((await names()).length, sentSoFar, 'nothing refused was sent');
-    assert.equal(sentSoFar, before + 5, 'the 4 reports and the sign-up notice');
+
+    // Contact us (the MS-50G+ help page) needs an email address and has its own title
+    const noReply = await report({ kind: 'contact', message: 'Two hours' });
+    assert.equal(noReply.status, 400);
+    assert.deepEqual(await noReply.json(), { error: 'Add your email address, so we can answer you.' });
+    assert.equal((await report({ kind: 'contact', message: 'Two hours', email: 'nope' })).status, 400);
+    assert.equal(await delivered({ kind: 'contact', name: 'Ann', email: 'ann@example.com', message: 'Two hours', page: '/ms-50g/help.html' }),
+      'Message from ZOOM Patch Studio (Contact us)\nFrom: Ann <ann@example.com> (not signed in)\nPage: /ms-50g/help.html\n\nTwo hours');
+    assert.match(await delivered({ kind: 'anything else', message: 'Hi' }), /^Problem report from ZOOM Patch Studio/, 'an unknown kind is a problem report');
+
+    // Nothing that was refused reached Telegram: every report notice that exists was one of the deliveries above
+    const reports = [];
+    for (const name of await names()) { const text = await readFile(join(telegramDir, name), 'utf8'); if (isReport(text)) reports.push(text); }
+    assert.equal(reports.length, 6, 'bass, Hello, q, €, Ann and the unknown kind, and nothing else');
 
     const ip = freshIp();
     for (let i = 0; i < 5; i++) assert.equal((await report({ message: `Flood ${i}` }, { ip })).status, 200);

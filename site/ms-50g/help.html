@@ -14,9 +14,9 @@
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-    <link rel="stylesheet" href="../styles.css?v=zoom57-20261029" />
+    <link rel="stylesheet" href="../styles.css?v=zoom59-20261029" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="../fullscreen.css?v=fs23-20261029" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs26-20261029" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
 <body>
@@ -50,9 +50,8 @@
           <article class="markdown-body" id="doc">
             <p>The MS-50G+ pages of this site are built from the official ZOOM documents and from the file format of the MS-60B+, which has been checked on a real pedal. Nobody has tried a patch made here on a real MS-50G+ yet, so we are looking for someone who owns one and would like to help.</p>
             <p>This page lists what we would need, from the shortest check to the longest. Nobody is expected to do it all. If you can spare some time, write to us and tell us how much: this way we organise the tests together, according to the time you have, and we agree on how to send the results.</p>
-            <!-- Temporary: the contact is a plain email address for now; replace the link with a form or another address when there is one. -->
-            <p><a class="btn btn-primary" id="contact-us" href="mailto:giovanni.bindi@icloud.com?subject=MS-50G%2B%20tests&amp;body=How%20much%20time%20I%20could%20give%20to%20the%20tests%3A%20%0APedal%20firmware%20version%20(MENU%20%3E%20VERSION)%3A%20%0AHandy%20Guitar%20Lab%20version%3A%20%0AiPhone%20or%20iPad%20model%20and%20system%20version%3A%20%0A">Contact us</a></p>
-            <p class="field-hint">The button opens your email program. If nothing happens, write to giovanni.bindi@icloud.com (a temporary address).</p>
+            <p><button class="btn btn-primary" type="button" id="contact-us" data-report="contact" data-intro="Tell us how much time you could give to the MS-50G+ tests: we organise them together, according to the time you have." data-template="How much time I could give to the tests: &#10;Pedal firmware version (MENU &gt; VERSION): &#10;Handy Guitar Lab version: &#10;iPhone or iPad model and system version: &#10;">Contact us</button></p>
+            <p class="field-hint">The button opens a form: the message goes straight to the people who make this site. Add your email address, so we can answer.</p>
 
             <h2 id="at-a-glance">The tests we would need</h2>
             <div class="md-table">
@@ -207,8 +206,8 @@
     <script src="pedal.js?v=zoom25-20261028"></script>
     <script src="../fullscreen.js?v=fs8-20261028"></script>
     <script src="../library-merge.js?v=zoom29-20261028"></script>
-    <script src="../account.js?v=zoom48-20261028"></script>
-    <script src="../report.js?v=report3-20261029"></script>
+    <script src="../account.js?v=zoom50-20261029"></script>
+    <script src="../report.js?v=report5-20261029"></script>
     <script>
       FS.toc(document.getElementById('doc'), document.getElementById('toc'));
       if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
