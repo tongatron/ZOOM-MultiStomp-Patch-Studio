@@ -64,8 +64,18 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 
 /* Status bar: the tongatron.org button all the way to the left, then Source on GitHub and Privacy; the update time on the right */
 .fs-status { flex: none; display: flex; align-items: center; gap: 16px; height: 28px; padding: 0 16px; overflow: hidden; background: var(--bg-inset); border-top: 1px solid var(--border-muted); font-size: 11px; color: var(--fg-muted); white-space: nowrap; }
-.fs-status > a, .fs-status > time { flex: none; }
+.fs-status > a, .fs-status > time, .fs-status > button { flex: none; }
 .fs-status > time { margin-left: auto; }
+/* Report a problem (report.js): a button that looks like the links next to it */
+.fs-report { padding: 0; border: 0; background: none; font: inherit; color: var(--accent-fg); cursor: pointer; }
+.fs-report:hover { text-decoration: underline; }
+/* ...and its form, in the dialog of report.js */
+.report-form { display: flex; flex-direction: column; gap: 12px; }
+.report-form > p { margin: 0; }
+.report-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.report-form label small { color: var(--fg-muted); font-size: inherit; font-weight: 400; }
+.report-form textarea.form-control { height: auto; min-height: 120px; resize: vertical; font: inherit; line-height: 1.45; }
+.report-error { color: #f85149; }
 /* tongatron.org button (B3 of tongatron.org/pulsanti): yellow dot with a glow and the name, on the bar's own background.
    No hover animation: on hover it is highlighted */
 .fs-b3 { display: inline-flex; align-items: center; gap: 8px; height: 22px; margin-left: -8px; padding: 0 8px; border-radius: 6px; background: transparent; color: var(--fg); font-size: 12px; transition: background .15s; }

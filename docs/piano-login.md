@@ -13,7 +13,7 @@ Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
 - **Console utenti** per l'admin Giovanni (sezione 5 bis).
 - Mittente: **la stessa casella Gmail di PatternMachine**, con nome "ZOOM Patch Studio".
 - **Account separati** da PatternMachine (database, utenti e cookie propri).
-- **Notifica Telegram a ogni nuovo utente** (stesso bot e stessa chat di PatternMachine).
+- **Notifica Telegram a ogni nuovo utente** (dal 2026-10-29 con un bot proprio del sito, non più quello di PatternMachine; lo stesso bot riceve le segnalazioni di "Report a problem").
 - **Nessuna copia dei backup fuori dal server**: restano i 30 giorni in `/srv/apps/zoom-ms60b-backups`.
 - Al logout la scelta predefinita è **Remove from this browser**.
 
@@ -236,7 +236,7 @@ MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json
 TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json   # facoltativo
 ```
 
-`mail.json` si crea con `node deploy/set-mail.mjs` usando la stessa casella Gmail e la stessa password per le app di PatternMachine, con `from_name: "ZOOM Patch Studio"` (lo script la chiede a terminale; nessun segreto nel repository). `telegram.json` (`token`, `chat_id`) si crea allo stesso modo con `deploy/set-telegram.mjs`, con il bot e la chat di PatternMachine; messaggio: "New user signed up on ZOOM Patch Studio", email, data. Senza mail configurata: registrazione e login funzionano, "Forgot password" mostra "Password recovery by email is not active."
+`mail.json` si crea con `node deploy/set-mail.mjs` usando la stessa casella Gmail e la stessa password per le app di PatternMachine, con `from_name: "ZOOM Patch Studio"` (lo script la chiede a terminale; nessun segreto nel repository). `telegram.json` (`token`, `chat_id`) si crea allo stesso modo con `deploy/set-telegram.mjs`, con il bot dedicato al sito (creato con @BotFather); messaggio: "New user signed up on ZOOM Patch Studio", email, data. Senza mail configurata: registrazione e login funzionano, "Forgot password" mostra "Password recovery by email is not active."
 
 **Backup**: `backup-sync-data.sh` diventa `backup-data.sh`: prima `node deploy/db-backup.mjs` (fa `VACUUM INTO` in un file temporaneo, copia coerente anche col server acceso), poi lo stesso `tar` giornaliero con 30 giorni di conservazione in `/srv/apps/zoom-ms60b-backups`. Nessuna copia fuori dal server (decisione presa): protegge da errori e fusioni sbagliate, non dalla perdita del disco.
 
@@ -286,7 +286,7 @@ Checklist del primo deploy su `hp-ubuntu`:
 5. Segreti, in `/srv/apps/zoom-ms60b-app/` (permessi 600):
    - `.env` con `SITE_URL=https://zoommultistompstudio.tongatron.org`, `SESSION_SECRET=` (da `openssl rand -hex 32`), `MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json`, `TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json`;
    - `node set-mail.mjs` (casella Gmail e password per le app di PatternMachine), poi `node set-mail.mjs --test <email>`;
-   - `node set-telegram.mjs` (bot e chat di PatternMachine), poi `node set-telegram.mjs --test`.
+   - `node set-telegram.mjs` (token del bot del sito e chat id), poi `node set-telegram.mjs --test`.
 6. Unità systemd aggiornata (`deploy/zoom-ms60b.service`: `EnvironmentFile`, `--disable-warning`), `sudo systemctl daemon-reload && sudo systemctl restart zoom-ms60b`.
 7. Admin: `cd /srv/apps/zoom-ms60b-app && DATA_DIR=/srv/apps/zoom-ms60b-data node --disable-warning=ExperimentalWarning add-user.mjs --email <la tua email> --name Giovanni --admin`.
 8. Crontab: sostituire `backup-sync-data.sh` con `backup-data.sh` nella riga delle 03:30; lanciarlo una volta a mano; cancellare il vecchio `backup-sync-data.sh` dal server.

@@ -1,5 +1,6 @@
 // Accounts for the ZOOM MultiStomp Patch Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me,
-// the account page (/account: password, export, sign out everywhere, delete) and the user console for admins (/admin).
+// the account page (/account: password, export, sign out everywhere, delete), the user console for admins (/admin) and
+// "Report a problem" (POST /api/report: the message goes to the administrator's Telegram bot, see mail.mjs).
 // The site stays open to everyone; an account only keeps the user's data on the server.
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
 // database), SITE_URL (links in emails, see site-url.mjs), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
@@ -20,8 +21,9 @@ import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPa
 const RESET_TTL = 3600; // seconds
 const VERIFY_TTL = 24 * 3600;
 const MAX_FORM = 16_384;
-// Per 15 minutes: failed sign-ins per address and per email, sign-ups, reset requests, token links
-const LIMITS = { login: 10, loginEmail: 5, register: 5, forgot: 5, forgotEmail: 3, token: 20 };
+const MAX_REPORT_FORM = 48_000; // a report of 3000 characters can grow to 9 bytes per character once percent-encoded
+// Per 15 minutes: failed sign-ins per address and per email, sign-ups, reset requests, token links, problem reports
+const LIMITS = { login: 10, loginEmail: 5, register: 5, forgot: 5, forgotEmail: 3, token: 20, report: 5 };
 const PAGE_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
   'Referrer-Policy': 'no-referrer', // reset links carry their token in the URL
@@ -56,12 +58,12 @@ export function createAccounts({ dataDir }) {
   };
   const tooManyPage = response => html(response, 429, messagePage('Too many attempts', 'Too many attempts. Try again in a few minutes.'));
 
-  async function readForm(request) {
+  async function readForm(request, limit = MAX_FORM) {
     let size = 0;
     const chunks = [];
     for await (const chunk of request) {
       size += chunk.length;
-      if (size > MAX_FORM) { const big = new Error('too large'); big.status = 413; throw big; }
+      if (size > limit) { const big = new Error('too large'); big.status = 413; throw big; }
       chunks.push(chunk);
     }
     return Object.fromEntries(new URLSearchParams(Buffer.concat(chunks).toString('utf8')));
@@ -382,6 +384,25 @@ export function createAccounts({ dataDir }) {
       html(response, 200, messagePage('Account deleted', 'Your account and everything kept in it have been deleted. Patches stored in your browsers stay there.'),
         { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) });
     },
+    // "Report a problem": open to everyone, answered in JSON. The message goes to the Telegram bot (nothing is stored here).
+    'POST /api/report': async (request, response, form, ip) => {
+      if (limits.tooMany('report', ip)) return json(response, 429, { error: 'Too many reports from this network. Try again in a few minutes.' });
+      const line = (key, max) => String(form[key] || '').replace(/[\x00-\x1f\x7f\s]+/g, ' ').trim().slice(0, max);
+      const message = String(form.message || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '').trim().slice(0, 3000);
+      const name = line('name', 80);
+      const email = line('email', 200);
+      const page = line('page', 300);
+      const info = line('info', 600);
+      if (!message) return json(response, 400, { error: 'Write your message.' });
+      if (email && !EMAIL_RE.test(email)) return json(response, 400, { error: 'The email address does not look valid.' });
+      limits.note('report', ip);
+      const session = current(request);
+      const text = ['Problem report from ZOOM Patch Studio',
+        `From: ${[name || '(no name)', email && `<${email}>`].filter(Boolean).join(' ')} (${session ? `account ${session.user.email}` : 'not signed in'})`,
+        ...(page ? [`Page: ${page}`] : []), '', message, ...(info ? ['', '---', info] : [])].join('\n');
+      if (await sendTelegram(text)) return json(response, 200, { ok: true });
+      json(response, 503, { error: 'Reports are not available right now. Please open an issue on GitHub instead.' });
+    },
     'GET /api/me': (request, response) => {
       const session = current(request);
       if (!session) return json(response, 200, { signedIn: false });
@@ -410,10 +431,11 @@ export function createAccounts({ dataDir }) {
     const ip = clientIp(request);
     if (method === 'GET') { await route(request, response, url, ip); return true; }
     if (crossSite(request.headers)) {
-      html(response, 403, messagePage('Request refused', 'This request came from another site and was refused.'));
+      if (path.startsWith('/api/')) json(response, 403, { error: 'This request came from another site and was refused.' });
+      else html(response, 403, messagePage('Request refused', 'This request came from another site and was refused.'));
       return true;
     }
-    await route(request, response, await readForm(request), ip);
+    await route(request, response, await readForm(request, path === '/api/report' ? MAX_REPORT_FORM : MAX_FORM), ip);
     return true;
   }
 

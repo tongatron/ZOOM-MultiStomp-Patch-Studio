@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,7 @@ import { chromium } from 'playwright';
 const port = 18198;
 const base = `http://127.0.0.1:${port}`;
 const dataDir = await mkdtemp(join(tmpdir(), 'ms60b-fullscreen-'));
-const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, PBKDF2_ITER: '1000', MAIL_OUTBOX: join(dataDir, 'mail') }, stdio: ['ignore', 'pipe', 'inherit'] });
+const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, PBKDF2_ITER: '1000', MAIL_OUTBOX: join(dataDir, 'mail'), TELEGRAM_OUTBOX: join(dataDir, 'telegram') }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise(resolve => server.stdout.once('data', resolve));
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 
@@ -207,23 +207,47 @@ try {
     await page.waitForURL(/resources\.html$/);
   });
 
-  await test('the status bar: tongatron.org all the way to the left, then Source on GitHub and Privacy, and the update time on the right', async () => {
+  await test('the status bar: tongatron.org all the way to the left, then Source on GitHub, Privacy and Report a problem, and the update time on the right', async () => {
     for (const file of Object.keys(ALL_PAGES)) {
       for (const size of SIZES) {
         await open(file, size);
         const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
-        assert.equal(labels.length, 4, `${file}: ${labels.join(' | ')}`);
-        assert.deepEqual(labels.slice(0, 3), ['tongatron.org', 'Source on GitHub', 'Privacy'], file);
-        assert.match(labels[3], /^Last update /, file);
+        assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
+        assert.deepEqual(labels.slice(0, 4), ['tongatron.org', 'Source on GitHub', 'Privacy', 'Report a problem'], file);
+        assert.match(labels[4], /^Last update /, file);
         assert.equal(await page.locator('.fs-status').getByText('ZOOM CORPORATION').count(), 0, `${file}: the data note is not in the status bar`);
         const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
         edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
-        assert.ok(edges[3][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
+        assert.ok(edges[4][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
         assert.ok(edges[0][0] <= 16, `${file}: the tongatron.org button is all the way to the left`);
       }
       assert.equal(await page.locator('.fs-status a[href="resources.html"]').count(), 0, `${file}: no Resources in the status bar`);
       assert.equal(await page.locator('.fs-status').getByText('Classic view').count(), 0, `${file}: no Classic view in the status bar`);
     }
+  });
+
+  await test('Report a problem: the form opens, asks for a message, sends it to the Telegram bot and confirms', async () => {
+    const outbox = join(dataDir, 'telegram');
+    for (const file of ['index.html', 'ms-50g/index.html']) {
+      await open(file, SIZES[1]);
+      await page.locator('.fs-report').click();
+      const dialog = page.locator('dialog.report-dialog');
+      assert.ok(await dialog.evaluate(d => d.open), `${file}: the form opens`);
+      assert.equal(await page.evaluate(() => document.activeElement.name), 'message', `${file}: the cursor is in the message`);
+      await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+      assert.match(await dialog.locator('.report-error').textContent(), /Write your message/, file);
+      await dialog.locator('[name="name"]').fill('Test Bassist');
+      await dialog.locator('[name="message"]').fill(`Line one on ${file}\nLine two`);
+      await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+      await dialog.locator('.report-done').waitFor({ state: 'visible' });
+      assert.equal(await page.locator('.fs-report').textContent(), '✓ Message sent', file);
+      await dialog.getByRole('button', { name: 'Close' }).click();
+      assert.ok(!(await dialog.evaluate(d => d.open)), `${file}: the form closes`);
+    }
+    const notices = await Promise.all((await readdir(outbox)).sort().map(name => readFile(join(outbox, name), 'utf8')));
+    assert.equal(notices.length, 2);
+    assert.match(notices[0], /^Problem report from ZOOM Patch Studio\nFrom: Test Bassist \(not signed in\)\nPage: \/index\.html\n\nLine one on index\.html\nLine two\n\n---\nZoom MS-60B\+ · site updated /);
+    assert.match(notices[1], /Page: \/ms-50g\/index\.html\n[\s\S]*Zoom MS-50G\+ · site updated /);
   });
 
   await test('the AMPG SVT MID-FREQ has no warning any more; the other amps with that scale still have one', async () => {

@@ -341,6 +341,47 @@ try {
     await assert.rejects(run('sh', [deploy('backup-data.sh')], { env: { ...process.env, APP_DIR: fileURLToPath(new URL('../deploy', import.meta.url)), DATA_DIR: join(dataDir, 'nothing'), BACKUP_DIR: backupDir, NODE: process.execPath } }), 'no database: the script fails');
   });
 
+  await test('Report a problem: the message reaches Telegram with its account, page and details; bad input and floods are refused', async () => {
+    const names = async () => (await readdir(telegramDir)).sort();
+    const latest = async () => { const all = await names(); return readFile(join(telegramDir, all[all.length - 1]), 'utf8'); };
+    const report = (fields, options) => post('/api/report', fields, options);
+    const before = (await names()).length;
+
+    const sent = await report({ name: ' Bass\nPlayer ', email: 'bass@example.com', message: 'The  chain\r\nlost an effect\x07', page: '/builder.html?x=1', info: 'Zoom MS-60B+ · window 1280×800' });
+    assert.equal(sent.status, 200);
+    assert.deepEqual(await sent.json(), { ok: true });
+    assert.equal(await latest(), 'Problem report from ZOOM Patch Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
+
+    const session = sessionOf(await post('/register', { email: 'reporter@example.com', password: PASSWORD }));
+    for (let i = 0; i < 40 && !/reporter@example\.com/.test(await latest()); i++) await new Promise(ok => setTimeout(ok, 50)); // the sign-up notice is written in the background
+    assert.equal((await report({ message: 'Hello' }, { cookie: session })).status, 200);
+    assert.equal(await latest(), 'Problem report from ZOOM Patch Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
+
+    const long = await report({ message: 'q'.repeat(5000) });
+    assert.equal(long.status, 200);
+    assert.equal((await latest()).match(/q+/)[0].length, 3000, 'the message is cut at 3000 characters');
+    assert.equal((await report({ message: '€'.repeat(3000) })).status, 200, 'a long message of 3-byte characters still fits');
+
+    const sentSoFar = (await names()).length;
+    const empty = await report({ name: 'x', message: ' \n ' });
+    assert.equal(empty.status, 400);
+    assert.deepEqual(await empty.json(), { error: 'Write your message.' });
+    assert.equal((await report({ message: 'Hi', email: 'not an email' })).status, 400);
+    assert.equal((await report({ message: 'a'.repeat(60_000) })).status, 413, 'a huge body is refused');
+    const foreign = await report({ message: 'Hi' }, { headers: { 'Sec-Fetch-Site': 'cross-site' } });
+    assert.equal(foreign.status, 403, 'writes from another site are refused');
+    assert.match(foreign.headers.get('content-type'), /json/);
+    assert.equal((await get('/api/report')).status, 405);
+    assert.equal((await names()).length, sentSoFar, 'nothing refused was sent');
+    assert.equal(sentSoFar, before + 5, 'the 4 reports and the sign-up notice');
+
+    const ip = freshIp();
+    for (let i = 0; i < 5; i++) assert.equal((await report({ message: `Flood ${i}` }, { ip })).status, 200);
+    const flood = await report({ message: 'One more' }, { ip });
+    assert.equal(flood.status, 429, '5 reports per address in 15 minutes');
+    assert.match((await flood.json()).error, /Too many reports/);
+  });
+
   await test('the static site works next to the accounts; the old sync codes answer 410', async () => {
     assert.equal((await get('/builder.html')).status, 200);
     const sync = await fetch(`${base}/api/sync/${hashToken('sync')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
