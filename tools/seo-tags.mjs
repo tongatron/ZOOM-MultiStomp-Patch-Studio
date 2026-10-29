@@ -8,7 +8,7 @@ const SITE = join(dirname(fileURLToPath(import.meta.url)), '..', 'site');
 const ORIGIN = 'https://zoommultistompstudio.tongatron.org';
 const NAME = 'ZOOM MultiStomp Patch Studio';
 // One preview image for every page (1200 × 675): the ZOOM MultiStomp Studio card
-const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp Studio: build patches, save presets, load to the pedal. The Patch builder next to a red ZOOM MS-60B+ pedal, for the MS-60B+ bass and MS-50G+ guitar.' };
+const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor next to a red ZOOM MS-60B+ pedal, for the MS-60B+ bass and MS-50G+ guitar.' };
 const IMG60 = IMG;
 const IMG50 = IMG;
 
