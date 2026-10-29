@@ -323,8 +323,8 @@ try {
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass Tested on firmware 1.20', 'MS-50G+ guitar Not tested']);
-    assert.equal(await page.locator('.fs-menu-list a[aria-current] .Label--success').evaluate(el => getComputedStyle(el).color), 'rgb(63, 185, 80)', 'the tag of the bass pedal is green');
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0, 'the firmware tag is not in the menu any more');
     assert.equal(await page.locator('.fs-menu-list a[aria-current]').evaluate(a => a.firstChild.textContent.trim()), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
     // the open menu floats over the page: it stays inside the window
@@ -405,10 +405,31 @@ try {
     }
   });
 
-  await test('builder: Plug into, Amp and the mixer choice sit on one line at every size, for each pedal', async () => {
+  await test('the header of the MS-60B+ pages has the green "Tested on firmware 1.20" tag just left of the Guide button (the full text on wide windows, "Firmware 1.20" on narrower ones)', async () => {
+    for (const file of Object.keys(PAGES)) {
+      await open(file, SIZES[1]);
+      const tag = page.locator('.fs-top > .fs-fw');
+      assert.equal(await tag.count(), 1, file);
+      assert.equal(await tag.getAttribute('title'), 'Tested on firmware 1.20', file);
+      assert.equal(await tag.evaluate(el => getComputedStyle(el).color), 'rgb(63, 185, 80)', `${file}: green`);
+      assert.equal((await tag.innerText()).trim(), 'Tested on firmware 1.20', `${file}: the full text on a wide window`);
+      const place = await page.evaluate(() => {
+        const items = [...document.querySelectorAll('.fs-top > *')];
+        const t = document.querySelector('.fs-fw').getBoundingClientRect();
+        const g = document.querySelector('.fs-guide').getBoundingClientRect();
+        return { rightBeforeGuide: items.indexOf(document.querySelector('.fs-fw')) === items.indexOf(document.querySelector('.fs-guide')) - 1, left: t.right <= g.left + 1 };
+      });
+      assert.deepEqual(place, { rightBeforeGuide: true, left: true }, `${file}: left of the Guide button`);
+    }
+    await open('index.html', [1024, 700]);
+    assert.equal((await page.locator('.fs-fw').innerText()).trim(), 'Firmware 1.20', 'the short form on a narrower window');
+  });
+
+  await test('builder: Plug into, Amp and the mixer choice sit on one line at every size, for each pedal, above the Errors / Warnings / Tips row', async () => {
     for (const file of ['builder.html', 'ms-50g/builder.html']) {
       for (const size of SIZES) {
         await open(file, size);
+        assert.equal(await page.evaluate(() => !!(document.querySelector('#advice-output').compareDocumentPosition(document.querySelector('#advice-filters')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, `${file}: Plug into comes before the filters row`);
         const row = await page.evaluate(() => {
           const box = document.querySelector('#advice-output');
           const items = [...box.children];
@@ -578,8 +599,9 @@ try {
     assert.equal(await page.locator('.flash').count(), 0, 'no notice about the official manual');
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass Tested on firmware 1.20', 'MS-50G+ guitar Not tested']);
-    assert.equal(await page.locator('.fs-menu-list a[href="../"] .Label--success').count(), 1);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0);
+    assert.equal(await page.locator('.fs-fw').count(), 0, 'the firmware tag of the MS-60B+ is not on the MS-50G+ pages');
     await page.keyboard.press('Escape');
 
     // the builder: six effects fit every size, and the data are kept apart from the MS-60B+ ones
@@ -611,7 +633,7 @@ try {
     assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
   });
 
-  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which ends with Contact us (a temporary mailto)', async () => {
+  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which has Contact us (a temporary mailto) after its description', async () => {
     for (const file of ['ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/guide.html', 'ms-50g/resources.html']) {
       for (const size of SIZES) {
         await open(file, size);
@@ -631,11 +653,11 @@ try {
     await page.locator('.fs-note > a.btn').click();
     await page.waitForURL(/\/ms-50g\/help\.html$/);
 
-    // the help page: no bar of its own, one section per test with its time, the two test patches, Contact us at the very end
+    // the help page: no bar of its own, Contact us after the description, one section per test with its time, the two test patches
     await open('ms-50g/help.html', SIZES[1]);
     assert.equal(await page.locator('.fs-note').count(), 0, 'the page is the invitation: no "Not tested" bar on it');
     assert.equal(await page.locator('#doc-title').textContent(), 'Help us test the MS-50G+');
-    for (const id of ['at-a-glance', 'before-you-start', ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => `test-${n}`), 'send-results']) assert.equal(await page.locator(`#toc a[href="#${id}"]`).count(), 1, `contents: ${id}`);
+    for (const id of ['at-a-glance', 'what-it-takes', ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => `test-${n}`)]) assert.equal(await page.locator(`#toc a[href="#${id}"]`).count(), 1, `contents: ${id}`);
     for (let n = 1; n <= 8; n++) {
       const first = await page.locator(`#test-${n} + p`).textContent();
       assert.match(first, /^About \d+ minutes/, `test ${n} says how long it takes`);
@@ -646,8 +668,14 @@ try {
     const mail = page.locator('#doc #contact-us');
     assert.equal(await mail.textContent(), 'Contact us');
     assert.match(await mail.getAttribute('href'), /^mailto:giovanni\.bindi@icloud\.com\?subject=/);
-    assert.equal(await page.locator('#doc a.btn').count(), 1, 'one button, at the end');
-    assert.equal(await page.evaluate(() => { const last = document.querySelector('#doc').lastElementChild; return last.matches('p.field-hint') && last.previousElementSibling.contains(document.querySelector('#contact-us')); }), true, 'Contact us is the last thing on the page');
+    assert.equal(await page.locator('#doc a.btn').count(), 1, 'one button');
+    // Contact us comes right after the description (which says the tests are organised according to the time the person has), before the list of tests
+    assert.equal(await page.evaluate(() => {
+      const button = document.querySelector('#contact-us'), glance = document.querySelector('#at-a-glance');
+      const intro = [...document.querySelectorAll('#doc > p')].filter(p => glance.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_PRECEDING && !p.contains(button) && !p.matches('.field-hint')).map(p => p.textContent).join(' ');
+      return !!(button.compareDocumentPosition(glance) & Node.DOCUMENT_POSITION_FOLLOWING) && /organise the tests together, according to the time you have/.test(intro) && /we would need/.test(intro);
+    }), true, 'Contact us follows the description and comes before the tests');
+    assert.match(await page.locator('#contact-us').getAttribute('href'), /body=How%20much%20time/, 'the message starts by asking how much time the person has');
     const claimed = (await page.locator('#doc').innerText()).match(/about (\d+\.\d)%/g).map(s => parseFloat(s.slice(6)));
     assert.equal(claimed.length, 2, 'the DSP of TEST A and TEST C');
     // the test patches open in the builder with the effects the page names, and with the DSP load it quotes

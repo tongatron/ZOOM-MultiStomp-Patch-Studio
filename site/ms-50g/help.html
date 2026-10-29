@@ -3,20 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A few short tests to do at home with a ZOOM MS-50G+: what each one checks, how long it takes and what to send back, so this site can be corrected for the pedal." />
+    <meta name="description" content="What would help to check this site on a real ZOOM MS-50G+: the tests we would need, how long each one takes and what we would need back, organised with you according to the time you have." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ZOOM MultiStomp Patch Studio" />
     <meta property="og:title" content="Help us test the MS-50G+ — ZOOM MultiStomp Patch Studio" />
-    <meta property="og:description" content="A few short tests to do at home with a ZOOM MS-50G+: what each one checks, how long it takes and what to send back." />
+    <meta property="og:description" content="What would help to check this site on a real ZOOM MS-50G+: the tests we would need and how long each one takes." />
     <meta name="twitter:card" content="summary" />
     <meta name="theme-color" content="#0d1117" />
     <title>Help us test the MS-50G+ — ZOOM MultiStomp Patch Studio</title>
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-    <link rel="stylesheet" href="../styles.css?v=zoom56-20261028" />
+    <link rel="stylesheet" href="../styles.css?v=zoom57-20261029" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="../fullscreen.css?v=fs18-20261029" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs19-20261029" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
 <body>
@@ -29,7 +29,7 @@
           <div class="fs-menu">
             <button class="fs-menu-button" type="button" aria-expanded="false" aria-controls="pedal-menu" title="Change pedal"><span class="sr-only">Pedal: </span><span class="fs-menu-current">MS-50G+ guitar</span> <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
             <ul class="fs-menu-list" id="pedal-menu" hidden>
-              <li><a href="../">MS-60B+ bass <span class="Label Label--success">Tested on firmware 1.20</span></a></li>
+              <li><a href="../">MS-60B+ bass</a></li>
               <li><a href="./" aria-current="true">MS-50G+ guitar <span class="Label">Not tested</span></a></li>
             </ul>
           </div>
@@ -48,108 +48,91 @@
         <div class="Box-header"><h1 class="Box-title" id="doc-title">Help us test the MS-50G+</h1></div>
         <div class="fs-pane-body" tabindex="0" aria-label="Help us test the MS-50G+">
           <article class="markdown-body" id="doc">
-            <p>The MS-50G+ pages of this site are built from the official ZOOM documents and from the file format of the MS-60B+, which has been checked on a real pedal. Nobody has tried a patch made here on a real MS-50G+ yet. If you own one, a few short tests done at home would tell us what is right and what needs fixing.</p>
-            <p>You do not need to know how the files work: every test says what to do and what to send back. Do one test or all of them, every answer helps, and you can stop whenever you like.</p>
+            <p>The MS-50G+ pages of this site are built from the official ZOOM documents and from the file format of the MS-60B+, which has been checked on a real pedal. Nobody has tried a patch made here on a real MS-50G+ yet, so we are looking for someone who owns one and would like to help.</p>
+            <p>This page lists what we would need, from the shortest check to the longest. Nobody is expected to do it all. If you can spare some time, write to us and tell us how much: this way we organise the tests together, according to the time you have, and we agree on how to send the results.</p>
+            <!-- Temporary: the contact is a plain email address for now; replace the link with a form or another address when there is one. -->
+            <p><a class="btn btn-primary" id="contact-us" href="mailto:giovanni.bindi@icloud.com?subject=MS-50G%2B%20tests&amp;body=How%20much%20time%20I%20could%20give%20to%20the%20tests%3A%20%0APedal%20firmware%20version%20(MENU%20%3E%20VERSION)%3A%20%0AHandy%20Guitar%20Lab%20version%3A%20%0AiPhone%20or%20iPad%20model%20and%20system%20version%3A%20%0A">Contact us</a></p>
+            <p class="field-hint">The button opens your email program. If nothing happens, write to giovanni.bindi@icloud.com (a temporary address).</p>
 
-            <h2 id="at-a-glance">At a glance</h2>
+            <h2 id="at-a-glance">The tests we would need</h2>
             <div class="md-table">
               <table>
-                <thead><tr><th>Test</th><th>What it checks</th><th>Time (about)</th><th>You send</th></tr></thead>
+                <thead><tr><th>Test</th><th>What it would tell us</th><th>Time (about)</th><th>What we would need back</th></tr></thead>
                 <tbody>
-                  <tr><td><a href="#before-you-start">Before you start</a></td><td>Versions and a backup of your pedal</td><td>10 min</td><td>The versions</td></tr>
-                  <tr><td><a href="#test-1">1. Play a generated patch</a></td><td>That the app and the pedal accept a patch made here and keep its values</td><td>15 min</td><td>Your answers</td></tr>
-                  <tr><td><a href="#test-2">2. Share a patch made in the app</a></td><td>How the app writes a patch</td><td>10 min</td><td>1 file</td></tr>
-                  <tr><td><a href="#test-3">3. Six effects in one patch</a></td><td>That all six effects reach the pedal</td><td>15 min</td><td>Your answers</td></tr>
-                  <tr><td><a href="#test-4">4. Parametric EQ</a></td><td>How FREQ and Q are stored</td><td>15 min</td><td>6 files</td></tr>
-                  <tr><td><a href="#test-5">5. Filters</a></td><td>How the filter values are stored</td><td>25 min</td><td>About 12 files</td></tr>
-                  <tr><td><a href="#test-6">6. Delays and preamp</a></td><td>Five more values that are not known yet</td><td>20 min</td><td>5 files and your notes</td></tr>
+                  <tr><td><a href="#what-it-takes">Preparation</a></td><td>Versions and a backup of the pedal</td><td>10 min</td><td>The versions</td></tr>
+                  <tr><td><a href="#test-1">1. A generated patch on the pedal</a></td><td>Whether the app and the pedal accept a patch made here and keep its values</td><td>15 min</td><td>Answers</td></tr>
+                  <tr><td><a href="#test-2">2. A patch made in the app</a></td><td>How the app writes a patch</td><td>10 min</td><td>1 file</td></tr>
+                  <tr><td><a href="#test-3">3. Six effects in one patch</a></td><td>Whether all six effects reach the pedal</td><td>15 min</td><td>Answers</td></tr>
+                  <tr><td><a href="#test-4">4. Parametric EQ values</a></td><td>How FREQ and Q are stored</td><td>15 min</td><td>6 files</td></tr>
+                  <tr><td><a href="#test-5">5. Filter values</a></td><td>How the filter values are stored</td><td>25 min</td><td>About 12 files</td></tr>
+                  <tr><td><a href="#test-6">6. Delay and preamp values</a></td><td>Five more values that are not known yet</td><td>20 min</td><td>5 files and notes</td></tr>
                   <tr><td><a href="#test-7">7. Amp models</a></td><td>Amp data that ZOOM does not document</td><td>3 min per amp</td><td>1 file per amp</td></tr>
                   <tr><td><a href="#test-8">8. Add-on effects</a></td><td>The identifiers of the 24 add-on effects</td><td>3 min per effect</td><td>1 file per effect</td></tr>
                 </tbody>
               </table>
             </div>
-            <p><b>The short version:</b> before you start and tests 1 to 3, about 50 minutes. Everything together is about 4 hours. The times are estimates for someone who has not used the app much; the later tests go faster once you know the steps.</p>
+            <p><b>The short version:</b> the preparation and tests 1 to 3 would take about 50 minutes, everything together about 4 hours. Any part helps. The times are estimates for someone who has not used the app much; the later tests go faster once the steps are known.</p>
 
-            <h2 id="before-you-start">Before you start</h2>
-            <p><b>You need</b></p>
+            <h2 id="what-it-takes">What it would take</h2>
+            <p><b>On your side we would need</b></p>
             <ul>
               <li>The MS-50G+, switched on, and an iPhone or iPad with the free <b>Handy Guitar Lab for MS-50G+</b> app (App Store), connected to the pedal with a USB data cable. The <a href="https://zoomcorp.com/media/documents/E_HandyGuitarLab_for_MS-50Gplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide</a> (PDF) says which cable and adapter your device needs.</li>
               <li>A computer, or an iPad held sideways, to open this site and download the test patches, and a way to move a file to the iPhone or iPad (AirDrop, Mail or Files).</li>
-              <li>An email address to send the results from (see <a href="#send-results">the end of the page</a>).</li>
+              <li>An email address to send the files from.</li>
             </ul>
-            <p><b>Look after your patches</b></p>
+            <p><b>Looking after your patches</b></p>
             <ul>
-              <li>Copying a patch to the pedal <b>overwrites</b> that memory. Make a backup of all the memories first (the back-up pages of the Handy Guitar Lab guide show how, and how to restore it), and use free memories for the tests.</li>
-              <li>Do not turn the pedal's knobs while the app is connected. On the MS-60B+ the pedal saved by itself what had been touched.</li>
+              <li>Copying a patch to the pedal <b>overwrites</b> that memory. A backup of all the memories first (the back-up pages of the Handy Guitar Lab guide show how, and how to restore it) and free memories for the tests would keep your own patches safe.</li>
+              <li>It is best to leave the pedal's knobs alone while the app is connected: on the MS-60B+ the pedal saved by itself what had been touched.</li>
             </ul>
-            <p><b>Write down</b></p>
+            <p><b>We would also like to know</b></p>
             <ul>
               <li>The firmware version of the pedal: on the pedal, select <b>VERSION</b> on the MENU screen.</li>
-              <li>The version of the Handy Guitar Lab app, and the model and system version of your iPhone or iPad.</li>
+              <li>The version of the Handy Guitar Lab app, and the model and system version of the iPhone or iPad.</li>
             </ul>
 
-            <h2 id="test-1">Test 1: play a generated patch</h2>
-            <p><b>About 15 minutes.</b> This checks that a patch made on this site is accepted by the app and by the pedal, and that the values arrive as they were set. The values are unusual on purpose, so that a value that ends up in the wrong place is easy to see.</p>
-            <ol>
-              <li>Open the <a href="builder.html#p=WyJURVNUIEEiLFtbMCwxLFs2LCJGQVNUIiw1LDUwXV0sWzUzLDEsWzMwLDcwLDYwLDQwLDU1LDY1LDQ1XV0sWzk5LDEsWzM1MCwiTE9ORyIsMzAsMjVdXV1d">TEST A patch in the Patch builder</a>. It holds a compressor, an amp and a delay, with these values:
-                <div class="md-table">
-                  <table>
-                    <thead><tr><th>Effect</th><th>Values</th></tr></thead>
-                    <tbody>
-                      <tr><td>COMPRESSOR</td><td>SENSE 6, ATTCK FAST, TONE 5, VOL 50</td></tr>
-                      <tr><td>MS1959 DRIVE</td><td>IN1 30, IN2 70, VOL 60, BASS 40, MID 55, TREBLE 65, PRESENCE 45</td></tr>
-                      <tr><td>DELAY</td><td>TIME 350, MODE LONG, REPEAT 30, MIX 25</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </li>
-              <li>Note the DSP load the builder shows (about 39.6%), then press <b>Download .zptc</b>.</li>
-              <li>Move the file to your iPhone or iPad.</li>
-              <li>Load it on the pedal as described in <a href="guide.html#load-on-pedal">How to load it on the pedal</a>: import it in the Pool, then copy it to a <b>free</b> memory.</li>
-              <li>Select that memory on the pedal, look at the effects and their values, and play a little.</li>
-            </ol>
-            <p><b>Send us the answers to these questions</b></p>
+            <h2 id="test-1">Test 1: a generated patch on the pedal</h2>
+            <p><b>About 15 minutes.</b> We would need to know whether the app and the pedal accept a patch made on this site, and whether its values arrive as they were set. The values of the test patch are unusual on purpose, so that a value that ends up in the wrong place is easy to see.</p>
+            <p><b>What it involves.</b> Opening the <a href="builder.html#p=WyJURVNUIEEiLFtbMCwxLFs2LCJGQVNUIiw1LDUwXV0sWzUzLDEsWzMwLDcwLDYwLDQwLDU1LDY1LDQ1XV0sWzk5LDEsWzM1MCwiTE9ORyIsMzAsMjVdXV1d">TEST A patch in the Patch builder</a> (the builder shows a DSP load of about 39.6%), downloading it as a <code>.zptc</code> file, importing it in Handy Guitar Lab and copying it to a free memory of the pedal, as described in <a href="guide.html#load-on-pedal">How to load it on the pedal</a>. The patch holds a compressor, an amp and a delay:</p>
+            <div class="md-table">
+              <table>
+                <thead><tr><th>Effect</th><th>Values</th></tr></thead>
+                <tbody>
+                  <tr><td>COMPRESSOR</td><td>SENSE 6, ATTCK FAST, TONE 5, VOL 50</td></tr>
+                  <tr><td>MS1959 DRIVE</td><td>IN1 30, IN2 70, VOL 60, BASS 40, MID 55, TREBLE 65, PRESENCE 45</td></tr>
+                  <tr><td>DELAY</td><td>TIME 350, MODE LONG, REPEAT 30, MIX 25</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p><b>What we would need to know</b></p>
             <ul>
-              <li>Did the app import the file? If it showed a message, write it down as it appears.</li>
-              <li>Are the three effects there, in this order, with the values above?</li>
-              <li>Does the pedal show the same effects and values? Write down any value that is different.</li>
-              <li>Which processor or DSP percentage does the app show for the patch?</li>
-              <li>Does it sound as it should (no silence, noise or clicks)?</li>
+              <li>Whether the app imported the file, and the exact message if it showed one.</li>
+              <li>Whether the three effects are there, in this order, with the values above.</li>
+              <li>Whether the pedal shows the same effects and values, and which value is different if one is.</li>
+              <li>The processor or DSP percentage the app shows for the patch.</li>
+              <li>Whether it sounds as it should (no silence, noise or clicks).</li>
             </ul>
-            <p>Screenshots of the app and a photo of the pedal's display are very welcome.</p>
+            <p>Screenshots of the app and a photo of the pedal's display would help a lot.</p>
 
-            <h2 id="test-2">Test 2: share a patch made in the app</h2>
-            <p><b>About 10 minutes.</b> This shows us how the app writes a patch. Nothing from this site is involved.</p>
-            <ol>
-              <li>In the app, pick a free memory and add one <b>COMPRESSOR</b>. Leave its values as they are, name the patch <b>TEST COMP</b> and save it.</li>
-              <li>Write down the four values the app shows for the compressor (SENSE, ATTCK, TONE and VOL).</li>
-              <li>On the Patch Memory screen tap <b>Select</b>, tick that memory, tap the <b>Share</b> button and send the file to yourself (Mail or Files). The Handy Guitar Lab guide shows the steps under "Sharing a Patch Memory".</li>
-            </ol>
-            <p><b>Send us</b> the <code>.zptc</code> file and the four values.</p>
+            <h2 id="test-2">Test 2: a patch made in the app</h2>
+            <p><b>About 10 minutes.</b> We would need a patch file written by the app itself, to see how it stores a patch. Nothing from this site is involved.</p>
+            <p><b>What it involves.</b> Adding one <b>COMPRESSOR</b> to a free memory, leaving its values as they are, naming the patch <b>TEST COMP</b>, saving it, and sharing it from the Patch Memory screen (<b>Select</b>, tick the memory, <b>Share</b>; the Handy Guitar Lab guide shows the steps under "Sharing a Patch Memory").</p>
+            <p><b>What we would need back:</b> the <code>.zptc</code> file and the four values the app shows for the compressor (SENSE, ATTCK, TONE and VOL).</p>
 
             <h2 id="test-3">Test 3: six effects in one patch</h2>
-            <p><b>About 15 minutes.</b> On the MS-60B+ a six-effect patch written over USB lost its last effect on the pedal, because the pedal holds six entries. We need to know whether all six effects of a patch from the builder reach the MS-50G+ through the app.</p>
-            <ol>
-              <li>Open the <a href="builder.html#p=WyJURVNUIEMiLFtbMCwxLFtudWxsLG51bGwsbnVsbCxudWxsXV0sWzI4LDEsW251bGwsbnVsbCxudWxsLG51bGxdXSxbNTMsMSxbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbF1dLFsyMCwxLFtudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXSxbNzUsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dLFsxMTgsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dXV0">TEST C patch in the Patch builder</a>. It holds six effects: COMPRESSOR, TS DRIVE, MS1959 DRIVE, GUITAR GRAPHIC EQ7, CLONE CHORUS and HALL REVERB, with their default values.</li>
-              <li>Note the DSP load the builder shows (about 68.2%), then download the <code>.zptc</code> file.</li>
-              <li>Load it on the pedal as in test 1, into a free memory.</li>
-              <li>On the pedal step through the effects of the patch, from the first to the last.</li>
-            </ol>
-            <p><b>Send us the answers to these questions</b></p>
+            <p><b>About 15 minutes.</b> On the MS-60B+ a six-effect patch written over USB lost its last effect on the pedal, because the pedal holds six entries. We would need to know whether all six effects of a patch from the builder reach the MS-50G+ through the app.</p>
+            <p><b>What it involves.</b> Opening the <a href="builder.html#p=WyJURVNUIEMiLFtbMCwxLFtudWxsLG51bGwsbnVsbCxudWxsXV0sWzI4LDEsW251bGwsbnVsbCxudWxsLG51bGxdXSxbNTMsMSxbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbF1dLFsyMCwxLFtudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXSxbNzUsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dLFsxMTgsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dXV0">TEST C patch in the Patch builder</a> (COMPRESSOR, TS DRIVE, MS1959 DRIVE, GUITAR GRAPHIC EQ7, CLONE CHORUS and HALL REVERB, with their default values; the builder shows a DSP load of about 68.2%), loading it on the pedal as in test 1 and stepping through its effects on the pedal, from the first to the last.</p>
+            <p><b>What we would need to know</b></p>
             <ul>
-              <li>After the copy, how many effects does the app show for the patch, and which ones?</li>
-              <li>How many effects can you reach on the pedal? Is the sixth, HALL REVERB, there?</li>
-              <li>Which processor or DSP percentage does the app show?</li>
-              <li>Did the app or the pedal show any message?</li>
+              <li>How many effects the app shows for the patch after the copy, and which ones.</li>
+              <li>How many effects can be reached on the pedal, and whether the sixth, HALL REVERB, is there.</li>
+              <li>The processor or DSP percentage the app shows.</li>
+              <li>Whether the app or the pedal showed any message.</li>
             </ul>
 
-            <h2 id="test-4">Test 4: parametric EQ</h2>
-            <p><b>About 15 minutes.</b> The builder cannot write the FREQ and Q of the PARAMETRIC EQ yet, because we do not know how the pedal stores them. On the MS-60B+, which has the same ranges, Q grows in steps of 0.1 from 0.5 (checked up to 3.2) and FREQ does not grow in even steps. Here we need to see whether the MS-50G+ does the same.</p>
-            <ol>
-              <li>In the app make six patches in free memories. Each one holds a single <b>PARAMETRIC EQ</b> (leave GAIN and VOL as they are) with the FREQ and Q of the table below.</li>
-              <li>Name each patch after its values, as the app shows them, for example <b>PEQ 50Hz 3.2</b>. If the app cannot show exactly a value of the table, take the nearest one and name the patch after what it really shows.</li>
-              <li>Select the six memories, tap <b>Share</b> and send the files to yourself.</li>
-            </ol>
+            <h2 id="test-4">Test 4: parametric EQ values</h2>
+            <p><b>About 15 minutes.</b> The builder cannot write the FREQ and Q of the PARAMETRIC EQ yet, because we do not know how the pedal stores them. On the MS-60B+, which has the same ranges, Q grows in steps of 0.1 from 0.5 (checked up to 3.2) and FREQ does not grow in even steps. We would need to see whether the MS-50G+ does the same.</p>
+            <p><b>What it involves.</b> Six patches in free memories, each with a single <b>PARAMETRIC EQ</b> (GAIN and VOL left as they are) set to the FREQ and Q of the table, named after the values the app shows (for example <b>PEQ 50Hz 3.2</b>) and shared together. If the app cannot show exactly a value of the table, the nearest one will do, with the patch named after what it really shows.</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Patch</th><th>FREQ</th><th>Q</th></tr></thead>
@@ -163,11 +146,11 @@
                 </tbody>
               </table>
             </div>
-            <p><b>Send us</b> the six files.</p>
+            <p><b>What we would need back:</b> the six files.</p>
 
-            <h2 id="test-5">Test 5: filters</h2>
-            <p><b>About 25 minutes.</b> Same method as test 4: one patch for each value, named after the values, then shared together. The values of these filters are stored in a way we do not know yet.</p>
-            <p><b>LOW-PASS FILTER.</b> Make six patches, each with a single <b>LOW-PASS FILTER</b> and the SENSE and RESO below, named after the values the app shows (for example <b>LPF FST100 2P-10</b>):</p>
+            <h2 id="test-5">Test 5: filter values</h2>
+            <p><b>About 25 minutes.</b> Same method as test 4: one patch for each value, named after the values and shared together. The values of these filters are stored in a way we do not know yet.</p>
+            <p><b>LOW-PASS FILTER.</b> Six patches, each with a single <b>LOW-PASS FILTER</b> and the SENSE and RESO below, named after the values the app shows (for example <b>LPF FST100 2P-10</b>):</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Patch</th><th>SENSE</th><th>RESO</th></tr></thead>
@@ -181,11 +164,11 @@
                 </tbody>
               </table>
             </div>
-            <p><b>ENVELOPE GENERATOR FILTER.</b> Make one patch for each <b>TYPE</b> the app offers, from HPF2 to LPF4, each with a single <b>ENVELOPE GENERATOR FILTER</b>, named after the type (for example <b>EGF HPF2</b>).</p>
-            <p><b>Send us</b> all the files.</p>
+            <p><b>ENVELOPE GENERATOR FILTER.</b> One patch for each <b>TYPE</b> the app offers, from HPF2 to LPF4, each with a single <b>ENVELOPE GENERATOR FILTER</b>, named after the type (for example <b>EGF HPF2</b>).</p>
+            <p><b>What we would need back:</b> all the files.</p>
 
-            <h2 id="test-6">Test 6: delays and preamp</h2>
-            <p><b>About 20 minutes.</b> Make one patch with three effects, <b>MATCH30 DRIVE</b>, <b>DUAL DELAY</b> and <b>SLAP BACK DELAY</b>, then make five copies of it in free memories and change the five values below in each copy. Name the copies <b>T6 1</b> to <b>T6 5</b>. Leave every other value as it is.</p>
+            <h2 id="test-6">Test 6: delay and preamp values</h2>
+            <p><b>About 20 minutes.</b> One patch with three effects, <b>MATCH30 DRIVE</b>, <b>DUAL DELAY</b> and <b>SLAP BACK DELAY</b>, copied five times into free memories, with the five values below changed in each copy and the copies named <b>T6 1</b> to <b>T6 5</b>. Every other value is left as it is.</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Copy</th><th>MATCH30 DRIVE VOL</th><th>DUAL DELAY DEPTH</th><th>DUAL DELAY MODE</th><th>SLAP BACK DELAY TIME</th><th>SLAP BACK DELAY SUBDV</th></tr></thead>
@@ -198,24 +181,17 @@
                 </tbody>
               </table>
             </div>
-            <p><b>Send us</b> the five files. In the email write the DEPTH values you chose for copies 2 to 4, and any value you could not set as listed.</p>
+            <p><b>What we would need back:</b> the five files, with a note of the DEPTH values chosen for copies 2 to 4 and of any value that could not be set as listed.</p>
 
             <h2 id="test-7">Test 7: amp models</h2>
-            <p><b>About 3 minutes per amp.</b> Amps carry data that ZOOM does not document: on the MS-60B+ every amp has a hidden ninth value and a flag of its own in the patch header. We want to know whether the MS-50G+ does the same.</p>
-            <p>Make a patch with <b>only</b> that amp, leave its values as they are and name the patch after the amp. Select the memories, share them and send the files. Start with <b>MS1959 DRIVE</b>, <b>FD TWIN-R DRIVE</b> and <b>RECTI DUAL DRIVE</b> (about 10 minutes); the more amps the better.</p>
+            <p><b>About 3 minutes per amp.</b> Amps carry data that ZOOM does not document: on the MS-60B+ every amp has a hidden ninth value and a flag of its own in the patch header. We would like to know whether the MS-50G+ does the same.</p>
+            <p><b>What it involves.</b> A patch with <b>only</b> that amp, its values left as they are, named after the amp and shared. <b>MS1959 DRIVE</b>, <b>FD TWIN-R DRIVE</b> and <b>RECTI DUAL DRIVE</b> come first (about 10 minutes); the more amps the better.</p>
             <p>The 22 amp models: MS45OS DRIVE, MS1959 DRIVE, MS800 DRIVE, FD B-MAN DRIVE, FD TWIN-R DRIVE, FD DELUXE-R DRIVE, FD MASTER DRIVE, UK 30A DRIVE, BG MARK1 DRIVE, BG MARK3 DRIVE, RECTI DUAL DRIVE, XTASY BLUE DRIVE, HW 100 DRIVE, ORG120 DRIVE, DZ DRIVE, MATCH30 DRIVE, KRAMPUS DRIVE, REDLOOM DRIVE, VELVET DRIVE, MUDDY DRIVE, 7 HEAVEN DRIVE, POLLEX DRIVE.</p>
 
             <h2 id="test-8">Test 8: add-on effects</h2>
-            <p><b>About 3 minutes per effect.</b> The effects marked with a star in the ZOOM Effects List are added to the pedal with Handy Guitar Lab, and the builder does not know their identifiers yet, so it cannot use them. If you have added some, make a patch with <b>only</b> that effect, leave its values as they are, name the patch after the effect, share it and send the file.</p>
+            <p><b>About 3 minutes per effect.</b> The effects marked with a star in the ZOOM Effects List are added to the pedal with Handy Guitar Lab, and the builder does not know their identifiers yet, so it cannot use them.</p>
+            <p><b>What it involves.</b> For each add-on effect that is installed: a patch with <b>only</b> that effect, its values left as they are, named after the effect and shared.</p>
             <p>The 24 add-on effects: OPTICAL COMPRESSOR, MUTE SWITCH, RESONANCE FILTER, CRY FILTER, LFO FILTER, RANDOM FILTER, GUITAR GRAPHIC EQ, STEREO GUITAR GRAPHIC EQ, EXCITER, LOW EQ, HIGH EQ, BG GRID DRIVE, METAL WORLD DRIVE, TS+BOOST DRIVE, RED CRUNCH DRIVE + BOOST, SPOT BOOSTER, UP OCTAVE BOOSTER, OUTPUT BOOSTER, CHORUS, BEND CHORUS, DUO PHASER, PHASE DELAY, AUTO PAN DELAY, SLOW ATTACK DELAY.</p>
-
-            <h2 id="send-results">Send us the results</h2>
-            <p>Write to us with everything in one message: the answers of each test in the body (a line per question is enough), and the files attached. Say which tests you did, in any order. Please include the firmware version of your pedal, the version of the Handy Guitar Lab app and the model and system version of your iPhone or iPad.</p>
-            <p>We use the answers to correct the builder and, when the checks pass, to mark the MS-50G+ as tested on your firmware version. A patch file holds only the patch: its effects, their values and the name you gave it.</p>
-            <p>Thank you!</p>
-            <!-- Temporary: the contact is a plain email address for now; replace the link with a form or another address when there is one. -->
-            <p><a class="btn btn-primary" id="contact-us" href="mailto:giovanni.bindi@icloud.com?subject=MS-50G%2B%20tests&amp;body=Pedal%20firmware%20version%20(MENU%20%3E%20VERSION)%3A%20%0AHandy%20Guitar%20Lab%20version%3A%20%0AiPhone%20or%20iPad%20model%20and%20system%20version%3A%20%0A%0ATests%20done%20and%20my%20answers%3A%0A1.%20%0A2.%20%0A3.%20%0A">Contact us</a></p>
-            <p class="field-hint">The button opens your email program. If nothing happens, write to giovanni.bindi@icloud.com (a temporary address).</p>
           </article>
         </div>
       </section>
@@ -225,7 +201,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-10-29T18:11Z">Last update 29 October 2026 19:11</time>
+      <time class="gh-updated" datetime="2026-10-29T18:37Z">Last update 29 October 2026 19:37</time>
     </footer>
 
     <script src="pedal.js?v=zoom25-20261028"></script>
