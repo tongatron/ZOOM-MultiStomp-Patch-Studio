@@ -1,4 +1,4 @@
-# Piano: account e login per ZOOM MultiStomp Patch Studio
+# Piano: account e login per ZOOM MultiStomp Studio
 
 Stato: **proposta da approvare** (nessun codice scritto). Data: 2026-10-27, aggiornato con le decisioni dell'utente.
 Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
@@ -11,7 +11,7 @@ Il testo del sito resta in inglese (CLAUDE.md); questo piano è in italiano.
 - I **codici di sync anonimi si tolgono subito** (`/api/sync/<hash>` e la finestra Sync del builder).
 - **Registrazione aperta a tutti.**
 - **Console utenti** per l'admin Giovanni (sezione 5 bis).
-- Mittente: **la stessa casella Gmail di PatternMachine**, con nome "ZOOM Patch Studio".
+- Mittente: **la stessa casella Gmail di PatternMachine**, con nome "ZOOM MultiStomp Studio".
 - **Account separati** da PatternMachine (database, utenti e cookie propri).
 - **Notifica Telegram a ogni nuovo utente** (dal 2026-10-29 con un bot proprio del sito, non più quello di PatternMachine; lo stesso bot riceve le segnalazioni di "Report a problem").
 - **Nessuna copia dei backup fuori dal server**: restano i 30 giorni in `/srv/apps/zoom-ms60b-backups`.
@@ -236,7 +236,7 @@ MAIL_FILE=/srv/apps/zoom-ms60b-app/mail.json
 TELEGRAM_FILE=/srv/apps/zoom-ms60b-app/telegram.json   # facoltativo
 ```
 
-`mail.json` si crea con `node deploy/set-mail.mjs` usando la stessa casella Gmail e la stessa password per le app di PatternMachine, con `from_name: "ZOOM Patch Studio"` (lo script la chiede a terminale; nessun segreto nel repository). `telegram.json` (`token`, `chat_id`) si crea allo stesso modo con `deploy/set-telegram.mjs`, con il bot dedicato al sito (creato con @BotFather); messaggio: "New user signed up on ZOOM Patch Studio", email, data. Senza mail configurata: registrazione e login funzionano, "Forgot password" mostra "Password recovery by email is not active."
+`mail.json` si crea con `node deploy/set-mail.mjs` usando la stessa casella Gmail e la stessa password per le app di PatternMachine, con `from_name: "ZOOM MultiStomp Studio"` (lo script la chiede a terminale; nessun segreto nel repository). `telegram.json` (`token`, `chat_id`) si crea allo stesso modo con `deploy/set-telegram.mjs`, con il bot dedicato al sito (creato con @BotFather); messaggio: "New user signed up on ZOOM MultiStomp Studio", email, data. Senza mail configurata: registrazione e login funzionano, "Forgot password" mostra "Password recovery by email is not active."
 
 **Backup**: `backup-sync-data.sh` diventa `backup-data.sh`: prima `node deploy/db-backup.mjs` (fa `VACUUM INTO` in un file temporaneo, copia coerente anche col server acceso), poi lo stesso `tar` giornaliero con 30 giorni di conservazione in `/srv/apps/zoom-ms60b-backups`. Nessuna copia fuori dal server (decisione presa): protegge da errori e fusioni sbagliate, non dalla perdita del disco.
 

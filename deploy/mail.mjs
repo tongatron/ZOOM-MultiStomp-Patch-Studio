@@ -20,7 +20,7 @@ export function mailConfig(file = process.env.MAIL_FILE) {
   const password = process.env.SMTP_PASS || cfg.app_password;
   if (!(user && password) && !process.env.MAIL_OUTBOX) return null;
   return {
-    user: user || 'studio@localhost', password: password || '', fromName: cfg.from_name || 'ZOOM Patch Studio',
+    user: user || 'studio@localhost', password: password || '', fromName: cfg.from_name || 'ZOOM MultiStomp Studio',
     host: cfg.host || 'smtp.gmail.com', port: Number(cfg.port || 465), secure: cfg.secure !== false
   };
 }

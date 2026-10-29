@@ -284,8 +284,8 @@ try {
     const everything = await Promise.all((await readdir(outbox)).sort().map(name => readFile(join(outbox, name), 'utf8')));
     const notices = everything.filter(text => text.startsWith('Problem report from')); // the sign-up notices of other tests share the folder
     assert.equal(notices.length, 3);
-    assert.match(notices[2], /^Problem report from ZOOM Patch Studio\nFrom: \(no name\) \(not signed in\)\n\nNo details, please$/);
-    assert.match(notices[0], /^Problem report from ZOOM Patch Studio\nFrom: Test Bassist \(not signed in\)\nPage: \/ms-60b\/index\.html\n\nLine one on index\.html\nLine two\n\n---\nZoom MS-60B\+ · site updated /);
+    assert.match(notices[2], /^Problem report from ZOOM MultiStomp Studio\nFrom: \(no name\) \(not signed in\)\n\nNo details, please$/);
+    assert.match(notices[0], /^Problem report from ZOOM MultiStomp Studio\nFrom: Test Bassist \(not signed in\)\nPage: \/ms-60b\/index\.html\n\nLine one on index\.html\nLine two\n\n---\nZoom MS-60B\+ · site updated /);
     assert.match(notices[1], /Page: \/ms-50g\/index\.html\n[\s\S]*Zoom MS-50G\+ · site updated /);
   });
 
@@ -315,7 +315,7 @@ try {
     await dialog.locator('[name="email"]').fill('ann@example.com');
     await dialog.getByRole('button', { name: 'Send', exact: true }).click();
     await dialog.locator('.report-done').waitFor({ state: 'visible' });
-    assert.match(await lastNotice(), /^Message from ZOOM Patch Studio \(Contact us\)\nFrom: Ann <ann@example\.com> \(not signed in\)\n\nCan I help with the tests\?$/, 'only what was written: no page, no details');
+    assert.match(await lastNotice(), /^Message from ZOOM MultiStomp Studio \(Contact us\)\nFrom: Ann <ann@example\.com> \(not signed in\)\n\nCan I help with the tests\?$/, 'only what was written: no page, no details');
     assert.equal(await dialog.locator('form').isVisible(), false, 'the form gives way to the confirmation');
     await dialog.getByRole('button', { name: 'Close' }).click();
     await help.click();
@@ -828,7 +828,7 @@ try {
     await dialog.locator('.report-done').waitFor({ state: 'visible' });
     assert.match(await dialog.locator('[data-reply]').textContent(), /We will write to tester@example\.com/);
     assert.equal(await page.locator('.fs-report').textContent(), 'Report a problem', 'the status bar button does not change for Contact us');
-    assert.match(await lastNotice(), /^Message from ZOOM Patch Studio \(Contact us\)\nFrom: \(no name\) <tester@example\.com> \(not signed in\)\n\nI could give two hours\.\nFirmware 1\.10\.$/, 'only what was written: no page, no details');
+    assert.match(await lastNotice(), /^Message from ZOOM MultiStomp Studio \(Contact us\)\nFrom: \(no name\) <tester@example\.com> \(not signed in\)\n\nI could give two hours\.\nFirmware 1\.10\.$/, 'only what was written: no page, no details');
     await dialog.getByRole('button', { name: 'Close' }).click();
     // the same form serves the status bar button, with its own title, and nothing of the contact message
     await page.locator('.fs-report').click();

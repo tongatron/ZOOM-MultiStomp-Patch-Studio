@@ -46,7 +46,7 @@ await test('the SMTP client logs in, sends one message and dot-stuffs it', async
     });
   });
   await new Promise(ok => smtp.listen(0, '127.0.0.1', ok));
-  const cfg = { host: '127.0.0.1', port: smtp.address().port, secure: false, user: 'sender@example.com', password: 'app pass', fromName: 'ZOOM Patch Studio' };
+  const cfg = { host: '127.0.0.1', port: smtp.address().port, secure: false, user: 'sender@example.com', password: 'app pass', fromName: 'ZOOM MultiStomp Studio' };
   const message = buildMessage({ from: cfg.user, fromName: cfg.fromName, to: 'you@example.com', subject: 'Hello – test', text: 'one', html: '<p>two</p>' }) + '\r\n.hidden line';
   await smtpSend(cfg, 'you@example.com', message);
   assert.deepEqual(seen.filter(l => /^(MAIL|RCPT)/.test(l)), ['MAIL FROM:<sender@example.com>', 'RCPT TO:<you@example.com>']);
@@ -148,7 +148,7 @@ try {
     assert.ok(linkToken(text, '/verify'));
     const notices = await readdir(telegramDir);
     assert.equal(notices.length, 1);
-    assert.match(await readFile(join(telegramDir, notices[0]), 'utf8'), /New user signed up on ZOOM Patch Studio\nEmail: Player@Example\.com\nName: Ron/);
+    assert.match(await readFile(join(telegramDir, notices[0]), 'utf8'), /New user signed up on ZOOM MultiStomp Studio\nEmail: Player@Example\.com\nName: Ron/);
   });
 
   await test('the same email cannot sign up twice, whatever its case', async () => {
@@ -365,11 +365,11 @@ try {
     const delivered = async (fields, options) => { const response = await report(fields, options); assert.equal(response.status, 200); return waitFor(isReport); };
 
     assert.equal(await delivered({ name: ' Bass\nPlayer ', email: 'bass@example.com', message: 'The  chain\r\nlost an effect\x07', page: '/builder.html?x=1', info: 'Zoom MS-60B+ · window 1280×800' }),
-      'Problem report from ZOOM Patch Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
+      'Problem report from ZOOM MultiStomp Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
 
     const session = sessionOf(await post('/register', { email: 'reporter@example.com', password: PASSWORD }));
     await waitFor(text => /^New user signed up[\s\S]*reporter@example\.com/.test(text)); // the sign-up notice of this account
-    assert.equal(await delivered({ message: 'Hello' }, { cookie: session }), 'Problem report from ZOOM Patch Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
+    assert.equal(await delivered({ message: 'Hello' }, { cookie: session }), 'Problem report from ZOOM MultiStomp Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
 
     assert.equal((await delivered({ message: 'q'.repeat(5000) })).match(/q+/)[0].length, 3000, 'the message is cut at 3000 characters');
     assert.equal((await delivered({ message: '€'.repeat(3000) })).match(/€+/)[0].length, 3000, 'a long message of 3-byte characters still fits');
@@ -390,8 +390,8 @@ try {
     assert.deepEqual(await noReply.json(), { error: 'Add your email address, so we can answer you.' });
     assert.equal((await report({ kind: 'contact', message: 'Two hours', email: 'nope' })).status, 400);
     assert.equal(await delivered({ kind: 'contact', name: 'Ann', email: 'ann@example.com', message: 'Two hours', page: '/ms-50g/help.html' }),
-      'Message from ZOOM Patch Studio (Contact us)\nFrom: Ann <ann@example.com> (not signed in)\nPage: /ms-50g/help.html\n\nTwo hours');
-    assert.match(await delivered({ kind: 'anything else', message: 'Hi' }), /^Problem report from ZOOM Patch Studio/, 'an unknown kind is a problem report');
+      'Message from ZOOM MultiStomp Studio (Contact us)\nFrom: Ann <ann@example.com> (not signed in)\nPage: /ms-50g/help.html\n\nTwo hours');
+    assert.match(await delivered({ kind: 'anything else', message: 'Hi' }), /^Problem report from ZOOM MultiStomp Studio/, 'an unknown kind is a problem report');
 
     // Nothing that was refused reached Telegram: every report notice that exists was one of the deliveries above
     const reports = [];

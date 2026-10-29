@@ -9,7 +9,7 @@
   notice.className = 'fs-small';
   notice.setAttribute('role', 'note');
   notice.innerHTML = `
-    <h1><img src="${new URL('favicon.svg', here)}" alt="" width="28" height="28" /> ZOOM MultiStomp Patch Studio</h1>
+    <h1><img src="${new URL('favicon.svg', here)}" alt="" width="28" height="28" /> ZOOM MultiStomp Studio</h1>
     <p class="fs-small-warn"><b>This window is too small.</b> The site shows every page in one screen and needs a window of at least 800 × 640 px; this one is <span data-size></span>. Open it on a computer or on a tablet held sideways, make the window bigger, or switch the browser to full screen (<kbd class="gh-kbd">F11</kbd>, or <kbd class="gh-kbd">⌃</kbd> <kbd class="gh-kbd">⌘</kbd> <kbd class="gh-kbd">F</kbd> on a Mac).</p>
     <p>A free tool, with nothing to install, to plan patches for the ZOOM MS-60B+ (bass) and MS-50G+ (guitar) MultiStomp pedals:</p>
     <ul>

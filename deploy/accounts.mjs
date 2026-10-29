@@ -1,4 +1,4 @@
-// Accounts for the ZOOM MultiStomp Patch Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me,
+// Accounts for the ZOOM MultiStomp Studio: sign-up, sign-in, password reset, email confirmation, sign-out, /api/me,
 // the account page (/account: password, export, sign out everywhere, delete), the user console for admins (/admin) and
 // "Report a problem" (POST /api/report: the message goes to the administrator's Telegram bot, see mail.mjs).
 // The site stays open to everyone; an account only keeps the user's data on the server.
@@ -72,8 +72,8 @@ export function createAccounts({ dataDir }) {
   function welcome(user, token) {
     const url = `${siteUrl}/verify?token=${token}`;
     const hello = user.name ? `Hi ${user.name}, welcome` : 'Welcome';
-    sendMail(user.email, 'Welcome to ZOOM Patch Studio',
-      `${hello} to ZOOM MultiStomp Patch Studio!\n\nYour account is ready: your patches are now kept in your account.\n\n` +
+    sendMail(user.email, 'Welcome to ZOOM MultiStomp Studio',
+      `${hello} to ZOOM MultiStomp Studio!\n\nYour account is ready: your patches are now kept in your account.\n\n` +
       `Confirm your email address (optional, link valid for 24 hours):\n${url}\n\nSite: ${siteUrl}/\n`,
       mailHtml({ title: `${hello}!`, intro: 'Your account is ready: your patches are now kept in your account. Please confirm your email address, so you can always reset your password.',
         button: 'Confirm your email', url, outro: "If you didn't create this account, ignore this email." }));
@@ -81,7 +81,7 @@ export function createAccounts({ dataDir }) {
 
   function resetMail(user, token) {
     const url = `${siteUrl}/reset?token=${token}`;
-    sendMail(user.email, 'ZOOM Patch Studio: new password',
+    sendMail(user.email, 'ZOOM MultiStomp Studio: new password',
       `To choose a new password open this link (valid for one hour, it works only once):\n${url}\n\n` +
       "If you didn't ask for this, ignore this email: your password stays the same.\n",
       mailHtml({ title: 'Choose a new password', intro: 'Use the button below to choose a new password. The link is valid for one hour and works only once.',
@@ -255,7 +255,7 @@ export function createAccounts({ dataDir }) {
       const { token, hash } = newToken();
       store.addToken(hash, user.id, 'verify', VERIFY_TTL);
       welcome(user, token);
-      sendTelegram(`New user signed up on ZOOM Patch Studio\nEmail: ${user.email}${user.name ? `\nName: ${user.name}` : ''}\nDate: ${user.created_at}`);
+      sendTelegram(`New user signed up on ZOOM MultiStomp Studio\nEmail: ${user.email}${user.name ? `\nName: ${user.name}` : ''}\nDate: ${user.created_at}`);
       redirect(response, next, { 'Set-Cookie': signIn(request, user) });
     },
     'GET /forgot': (request, response) => html(response, 200, forgotPage()),
@@ -379,7 +379,7 @@ export function createAccounts({ dataDir }) {
       if (email && !EMAIL_RE.test(email)) return json(response, 400, { error: 'The email address does not look valid.' });
       limits.note('report', ip);
       const session = current(request);
-      const text = [contact ? 'Message from ZOOM Patch Studio (Contact us)' : 'Problem report from ZOOM Patch Studio',
+      const text = [contact ? 'Message from ZOOM MultiStomp Studio (Contact us)' : 'Problem report from ZOOM MultiStomp Studio',
         `From: ${[name || '(no name)', email && `<${email}>`].filter(Boolean).join(' ')} (${session ? `account ${session.user.email}` : 'not signed in'})`,
         ...(page ? [`Page: ${page}`] : []), '', message, ...(info ? ['', '---', info] : [])].join('\n');
       if (await sendTelegram(text)) return json(response, 200, { ok: true });

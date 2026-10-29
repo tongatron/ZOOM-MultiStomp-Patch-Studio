@@ -1,4 +1,4 @@
-// Creates an account of the ZOOM Patch Studio, or changes its password and role, from the server's terminal.
+// Creates an account of the ZOOM MultiStomp Studio, or changes its password and role, from the server's terminal.
 //   node add-user.mjs --email you@example.com --name Giovanni --admin   asks for the password without showing it
 //   printf %s 'new password' | node add-user.mjs --email you@example.com --stdin
 // --admin makes the account an administrator, --user makes it a normal user again. Changing the password signs the

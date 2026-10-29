@@ -1,6 +1,6 @@
 # 🛠️ How to install
 
-Run ZOOM MultiStomp Patch Studio on your own computer, look around the code, and run the tests. Back to the [README](README.md).
+Run ZOOM MultiStomp Studio on your own computer, look around the code, and run the tests. Back to the [README](README.md).
 
 You only need Node 22+ (for the built-in SQLite). There is no build step and nothing to compile.
 

@@ -27,13 +27,13 @@ function handoffPage(siteUrl) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>ZOOM MultiStomp Patch Studio has moved</title>
+<title>ZOOM MultiStomp Studio has moved</title>
 <link rel="canonical" href="${escapeHtml(siteUrl)}/" />
 <noscript><meta http-equiv="refresh" content="0;url=${escapeHtml(siteUrl)}/" /></noscript>
 <style>body { display: grid; place-items: center; height: 100vh; margin: 0; background: #0d1117; color: #e6edf3; font: 16px/1.6 system-ui, sans-serif; text-align: center; } a { color: #58a6ff; }</style>
 </head>
 <body>
-<p>ZOOM MultiStomp Patch Studio has moved to<br /><a id="next" href="${escapeHtml(siteUrl)}/">${escapeHtml(siteUrl)}</a><br />Taking you there…</p>
+<p>ZOOM MultiStomp Studio has moved to<br /><a id="next" href="${escapeHtml(siteUrl)}/">${escapeHtml(siteUrl)}</a><br />Taking you there…</p>
 <script>
 (() => {
   const site = ${JSON.stringify(siteUrl)};

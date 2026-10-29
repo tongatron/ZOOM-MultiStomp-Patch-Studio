@@ -12,7 +12,7 @@ const file = process.env.TELEGRAM_FILE || join(dirname(fileURLToPath(import.meta
 
 if (process.argv.includes('--test')) {
   process.env.TELEGRAM_FILE = file;
-  const ok = await sendTelegram('ZOOM Patch Studio: test message. Sign-ups and problem reports will arrive here.');
+  const ok = await sendTelegram('ZOOM MultiStomp Studio: test message. Sign-ups and problem reports will arrive here.');
   console.log(ok ? 'test message sent' : `not sent: check ${file}`);
   process.exit(ok ? 0 : 1);
 } else {

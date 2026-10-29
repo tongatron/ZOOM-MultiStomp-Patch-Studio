@@ -12,7 +12,7 @@ export function page(title, body) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0d1117">
-<title>${esc(title)} · ZOOM MultiStomp Patch Studio</title>
+<title>${esc(title)} · ZOOM MultiStomp Studio</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/theme.css">
@@ -113,7 +113,7 @@ export const messagePage = (title, text, link = '/', label = 'Back to the site')
   <a class="btn" href="${esc(link)}">${esc(label)}</a></div>`);
 
 export const logoutPage = (next = '/') => page('Sign out', `<form class="auth-card" method="post" action="/logout">
-  <p>Sign out of ZOOM MultiStomp Patch Studio on this device?</p>
+  <p>Sign out of ZOOM MultiStomp Studio on this device?</p>
   <input type="hidden" name="next" value="${esc(next)}">
   <button class="btn btn-primary" type="submit">Sign out</button>
 </form>`);

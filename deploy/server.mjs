@@ -1,4 +1,4 @@
-// Static file server + accounts for the ZOOM MultiStomp Patch Studio. No dependencies (Node 22+, for node:sqlite).
+// Static file server + accounts for the ZOOM MultiStomp Studio. No dependencies (Node 22+, for node:sqlite).
 //   node deploy/server.mjs                 → serves ./site on 127.0.0.1:8097, data in ./sync-data
 //   ROOT=… DATA_DIR=… PORT=… node …        → override
 //
@@ -153,4 +153,4 @@ const server = createServer(async (request, response) => {
 });
 
 await mkdir(DATA_DIR, { recursive: true });
-server.listen(PORT, HOST, () => console.log(`ZOOM MultiStomp Patch Studio on http://${HOST}:${PORT} (site ${ROOT}, data ${DATA_DIR})`));
+server.listen(PORT, HOST, () => console.log(`ZOOM MultiStomp Studio on http://${HOST}:${PORT} (site ${ROOT}, data ${DATA_DIR})`));

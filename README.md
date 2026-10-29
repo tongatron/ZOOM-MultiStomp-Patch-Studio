@@ -2,7 +2,7 @@
 
 <img src="site/favicon.svg" width="88" height="88" alt="" />
 
-# 🎛️ ZOOM MultiStomp Patch Studio
+# 🎛️ ZOOM MultiStomp Studio
 
 ### Stop squinting at a tiny pedal screen. Design your tone on a big one.
 
@@ -31,7 +31,7 @@
 
 A ZOOM MultiStomp hides about a hundred effects, a tight DSP budget and a 6-slot chain behind a screen the size of a postage stamp. Great sounds are in there. Getting to them is the hard part.
 
-The Patch Studio puts the whole pedal on your desk:
+MultiStomp Studio puts the whole pedal on your desk:
 
 - 🧠 **Know before you load.** The DSP meter and the advice engine tell you what will work, and *why*, before you touch the pedal.
 - 🎯 **Find your tone faster.** Search, star your favorites, start from a ready chain, then tweak.

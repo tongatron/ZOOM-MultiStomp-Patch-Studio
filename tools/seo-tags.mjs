@@ -6,7 +6,7 @@ import { join, dirname } from 'node:path';
 
 const SITE = join(dirname(fileURLToPath(import.meta.url)), '..', 'site');
 const ORIGIN = 'https://zoommultistompstudio.tongatron.org';
-const NAME = 'ZOOM MultiStomp Patch Studio';
+const NAME = 'ZOOM MultiStomp Studio';
 // One preview image for every page (1200 × 675): the ZOOM MultiStomp Studio card
 const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor next to a red ZOOM MS-60B+ pedal, for the MS-60B+ bass and MS-50G+ guitar.' };
 const IMG60 = IMG;
@@ -14,7 +14,7 @@ const IMG50 = IMG;
 
 // file, address, title, description, image, sitemap priority
 const PAGES = [
-  ['index.html', '/', 'ZOOM MS-60B+ and MS-50G+ patch editor — MultiStomp Patch Studio',
+  ['index.html', '/', 'ZOOM MS-60B+ and MS-50G+ patch editor — MultiStomp Studio',
     'Free online patch editor for the ZOOM MS-60B+ bass and MS-50G+ guitar MultiStomp pedals: browse every effect, build patches with a live DSP meter and smart advice, export .zptc files for Handy Guitar Lab and manage the pedal over USB.', IMG60, 1],
   ['ms-60b/index.html', '/ms-60b/', 'ZOOM MS-60B+ effects list: 97 bass effects, parameters, DSP load',
     'Explore all 97 effects of the ZOOM MS-60B+ bass multi-effects pedal with the original Effects List text, every parameter and range, and the estimated DSP load. Then build a patch and export it for Handy Guitar Lab.', IMG60, 0.9],
@@ -41,11 +41,11 @@ const PAGES = [
   ['ms-50g/help.html', '/ms-50g/help.html', 'Help test the ZOOM MS-50G+: what we would need from owners',
     'Own a ZOOM MS-50G+? These short tests would show whether the patches made in the studio work on a real pedal. Pick the ones that fit your time.', IMG50, 0.4],
   ['privacy.html', '/privacy.html', 'Privacy — what the studio stores and where',
-    'What ZOOM MultiStomp Patch Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
+    'What ZOOM MultiStomp Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
 ];
 
 const esc = text => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-const FULL = title => (title.includes('Patch Studio') ? title : `${title} | Patch Studio`);
+const FULL = title => (title.includes('MultiStomp Studio') ? title : `${title} | MultiStomp Studio`);
 
 const LD = JSON.stringify({
   '@context': 'https://schema.org',
