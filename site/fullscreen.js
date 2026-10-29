@@ -15,7 +15,7 @@
     <ul>
       <li><b>Effects</b>: every effect of the pedal with the original text of the ZOOM Effects List, its estimated DSP load, and all its parameters with their ranges.</li>
       <li><b>Patch builder</b>: pick up to 6 effects, put them in order and set their parameters while the DSP load and the advice on order and levels follow along. Download the patch as a <code>.zptc</code> file for Handy Guitar Lab.</li>
-      <li><b>Pedal manager</b> (MS-60B+, Chrome or Edge on a computer, experimental): read the patches stored on the pedal and write new ones over USB, with a backup of every memory it replaces.</li>
+      <li><b>Pedal manager</b> (MS-60B+, Chrome or Edge on a computer): read the patches stored on the pedal and write new ones over USB, with a backup of every memory it replaces.</li>
       <li><b>Tone ideas</b> (MS-60B+): starting chains by style and by bassist.</li>
       <li>A free account keeps your patches, settings and pedal backups safe and brings them to every device.</li>
     </ul>

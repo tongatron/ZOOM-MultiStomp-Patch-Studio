@@ -51,7 +51,7 @@ MultiStomp Studio puts the whole pedal on your desk:
 | 💾 **`.zptc` export / import** | Straight into Handy Guitar Lab — reverse-engineered format, byte-for-byte exact. |
 | 📚 **My patches** | A library per pedal, side-by-side comparison, share links, backup and restore. |
 | 🎨 **Tone ideas** | Starting chains by style and by bassist, with a soft spot for alternative rock (grunge, post-punk, indie, fuzz). Every gear fact is sourced; one click opens the chain in the builder. |
-| 🔌 **Pedal manager** *(experimental)* | Over USB in Chrome or Edge: see the pedal's 100 memories next to My patches, read them, send patches, and reorder the memories by dragging them (or **Arrange** for block moves). Every write keeps a backup and is checked by reading it back. |
+| 🔌 **Pedal manager** | Over USB in Chrome or Edge: see the pedal's 100 memories next to My patches, read them, send patches, and reorder the memories by dragging them (or **Arrange** for block moves). Every write keeps a backup and is checked by reading it back. |
 | 📖 **Resources** | The official ZOOM manual (English and Italian) and the Effects List PDF, one tab away. |
 | ☁️ **Free account** *(optional)* | Sign in to sync patches, settings, rule packs and pedal backups across devices. Without an account everything stays in your browser. |
 | 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |

@@ -1,4 +1,4 @@
-// USB link to the pedal over Web MIDI (Chrome and Edge on a computer). Experimental.
+// USB link to the pedal over Web MIDI (Chrome and Edge on a computer).
 // The SysEx commands, the 7-bit packing and the CRC32 framing come from zoomzt2.py in the open-source
 // zoom-zt2 project (https://github.com/mungewell/zoom-zt2, MIT). They are not documented or supported by ZOOM.
 //

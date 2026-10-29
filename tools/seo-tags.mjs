@@ -23,7 +23,7 @@ const PAGES = [
   ['ms-60b/tones.html', '/ms-60b/tones.html', 'ZOOM MS-60B+ bass tone ideas: patches by style and by bassist',
     'Starting points for ZOOM MS-60B+ bass patches by style and by bassist, with a focus on alternative rock: grunge, post-punk, indie, alt-metal and fuzz rock. Every idea cites its source and opens in the builder.', IMG60, 0.7],
   ['ms-60b/pedal-manager.html', '/ms-60b/pedal-manager.html', 'ZOOM MS-60B+ USB pedal manager: read and write patches',
-    'Experimental: manage the patches stored on a ZOOM MS-60B+ over USB MIDI in Chrome or Edge. Read the memories, edit them in the builder and write patches back, with a backup before every change.', IMG60, 0.7],
+    'Manage the patches stored on a ZOOM MS-60B+ over USB MIDI in Chrome or Edge. Read the memories, edit them in the builder and write patches back, with a backup before every change.', IMG60, 0.7],
   ['ms-60b/guide.html', '/ms-60b/guide.html', 'ZOOM MS-60B+ guide: build a patch and load it on the pedal',
     'How to use the studio with the ZOOM MS-60B+: find an effect, build a patch, read the advice, save and share it, and load it on the pedal with Handy Guitar Lab or over USB.', IMG60, 0.6],
   ['ms-60b/resources.html', '/ms-60b/resources.html', 'ZOOM MS-60B+ manual and Effects List (PDF)',

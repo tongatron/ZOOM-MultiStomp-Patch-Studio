@@ -1,4 +1,4 @@
-// Pedal manager (pedal-manager.html, experimental): the patch memories of the pedal, read over Web MIDI (pedal-midi.js),
+// Pedal manager (pedal-manager.html): the patch memories of the pedal, read over Web MIDI (pedal-midi.js),
 // next to the patches saved in this browser (My patches of the builder). A pedal patch can be opened in the
 // builder, copied to My patches or downloaded; a local patch can be sent to the selected memory. Every write first
 // reads the target memory and keeps it as a backup (localStorage and a downloaded .zptc), asks for confirmation,
