@@ -2,7 +2,7 @@
   "name": "ZOOM MultiStomp Patch Studio",
   "short_name": "Patch Studio",
   "description": "Effects library and patch builder for the ZOOM MultiStomp MS-60B+ (bass) and MS-50G+ (guitar): DSP load, advice and .zptc export.",
-  "start_url": "./",
+  "start_url": "ms-60b/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0d1117",

@@ -256,7 +256,6 @@ try {
     assert.match(page, /Summary/);
     assert.match(page, /new3@example\.com/);
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
-    assert.match(await (await get('/account', { cookie: admin })).text(), /<a class="btn" href="\/admin">Users<\/a>/, 'an administrator finds Users on the account page');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');
     assert.match(page, /<!--email_off-->[\s\S]*new3@example\.com[\s\S]*<!--\/email_off-->/, 'the emails are marked so that Cloudflare does not hide them');
     const found = await (await get('/admin?q=PLAYER&sort=bogus&dir=up', { cookie: admin })).text();
@@ -296,8 +295,6 @@ try {
     assert.match(page, /page@example\.com/);
     assert.match(page, /0 MS-60B\+ patches/);
     assert.match(page, /<!--email_off-->[\s\S]*page@example\.com[\s\S]*<!--\/email_off-->/, 'the email is marked so that Cloudflare does not hide it');
-    assert.match(page, /<a class="btn" href="\/\?signout=1">Sign out<\/a>/, 'Sign out starts from here: the studio asks what to do with the data');
-    assert.doesNotMatch(page, /href="\/admin"/, 'no Users link for a normal user');
     assert.equal((await post('/account/password', { current: 'wrong password', password: 'brand new password' }, { cookie: session })).status, 400);
     const changed = await post('/account/password', { current: PASSWORD, password: 'brand new password' }, { cookie: session });
     assert.equal(changed.headers.get('location'), '/account?done=password');
@@ -408,8 +405,20 @@ try {
     assert.match((await flood.json()).error, /Too many reports/);
   });
 
+  await test('the MS-60B+ pages are in /ms-60b/; the old addresses redirect there, with the query string', async () => {
+    for (const path of ['/ms-60b/', '/ms-60b/index.html', '/ms-60b/builder.html', '/ms-60b/technical-notes.md', '/ms-60b/effects-data.js', '/ms-50g/', '/privacy.html']) assert.equal((await get(path)).status, 200, path);
+    const to = async path => { const r = await get(path); return [r.status, r.headers.get('location')]; };
+    assert.deepEqual(await to('/'), [302, '/ms-60b/']);
+    assert.deepEqual(await to('/index.html'), [301, '/ms-60b/']);
+    assert.deepEqual(await to('/builder.html?add=hall'), [301, '/ms-60b/builder.html?add=hall'], 'the ?add= of an old link is kept');
+    for (const name of ['tones', 'pedal-manager', 'resources', 'technical-notes', 'guide']) assert.deepEqual(await to(`/${name}.html`), [301, `/ms-60b/${name}.html`], name);
+    assert.deepEqual(await to('/usb.html'), [301, '/ms-60b/pedal-manager.html']);
+    assert.deepEqual(await to('/technical-notes.md'), [301, '/ms-60b/technical-notes.md']);
+    assert.equal((await get('/ms-60b')).status, 301, 'a folder without its slash goes to the folder');
+  });
+
   await test('the static site works next to the accounts; the old sync codes answer 410', async () => {
-    assert.equal((await get('/builder.html')).status, 200);
+    assert.equal((await get('/ms-60b/builder.html')).status, 200);
     const sync = await fetch(`${base}/api/sync/${hashToken('sync')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(sync.status, 410);
   });

@@ -128,7 +128,7 @@
     staleOpen = null;
     $('#usb-connect').hidden = on;
     $('#usb-disconnect').hidden = !on;
-    $('#usb-steps').hidden = on;
+    $('#usb-howto').hidden = on; // the instructions are for a pedal that is not connected yet
     $('.usb-connect').classList.toggle('is-connected', on); // the pedal in the connection box: dim when off, in colour when connected
     $('#usb-refresh').disabled = !on || !info;
     renderMemories();

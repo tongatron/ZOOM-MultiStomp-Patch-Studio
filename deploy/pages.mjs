@@ -38,7 +38,6 @@ export function page(title, body) {
   .auth-alt p { margin: 4px 0 0; color: var(--fg-muted); font-size: 12px; }
   .auth-card .hint { color: var(--fg-muted); font-size: 12px; }
   .account-section { margin-top: 16px; }
-  .account-links { display: flex; gap: 8px; margin: 16px 0 0 !important; }
   .account-section h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
   .account-danger { border-color: rgba(248, 81, 73, .4); }
   .btn-danger { color: #f85149; }
@@ -130,7 +129,6 @@ export const accountPage = ({ user, counts = {}, done = '', error = '', minPassw
   <span class="hint">${user.email_verified_at ? 'Email confirmed' : 'Email not confirmed yet'} · member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
   <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}.</p>
   ${user.email_verified_at ? '' : `<form method="post" action="/account/verify"><button class="btn" type="submit">Send the confirmation email again</button></form>`}
-  <p class="account-links"><a class="btn" href="/?signout=1">Sign out</a>${user.role === 'admin' ? '<a class="btn" href="/admin">Users</a>' : ''}</p>
 </div>
 <form class="auth-card account-section" method="post" action="/account/password">
   <h2>Change password</h2>

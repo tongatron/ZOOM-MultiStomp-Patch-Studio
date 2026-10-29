@@ -6,7 +6,7 @@ import { fakePedal } from './fake-pedal.mjs';
 
 const ctx = { console, setTimeout, clearTimeout };
 vm.createContext(ctx);
-for (const file of ['pedal.js', 'effects-data.js', 'firmware-data.js', 'zptc.js', 'pedal-midi.js']) vm.runInContext(fs.readFileSync(`site/${file}`, 'utf8'), ctx, { filename: file });
+for (const file of ['pedal.js', 'effects-data.js', 'firmware-data.js', 'zptc.js', 'pedal-midi.js']) vm.runInContext(fs.readFileSync(`site/${['pedal.js', 'effects-data.js', 'firmware-data.js'].includes(file) ? 'ms-60b/' : ''}${file}`, 'utf8'), ctx, { filename: file });
 const { PEDALMIDI, ZPTC } = vm.runInContext('({ PEDALMIDI, ZPTC })', ctx);
 
 const patches = ['01base.zptc', '06FLIP.zptc', '07Big Black .zptc'].map(f => new Uint8Array(fs.readFileSync(`patches/${f}`)));

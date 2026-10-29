@@ -1,7 +1,8 @@
 // "Report a problem" and "Contact us": the form opens from the button in the status bar, or from any element with
 // data-report="report" | "contact"; the message goes to the site administrator through POST /api/report (a Telegram bot,
 // see deploy/accounts.mjs). Open to everyone, signed in or not.
-// A trigger can bring its own text: data-intro (the sentence above the form) and data-template (the message to start from).
+// A trigger can bring its own sentence above the form: data-intro. "Contact us" sends only what the visitor writes
+// (name, email, message); "Report a problem" can also send the technical details (a ticked box).
 // Pages without a status bar (the landing page) get the form from their own buttons only.
 // Load after pedal.js and account.js (a signed-in visitor gets their name and email filled in).
 
@@ -11,11 +12,11 @@
   const MODES = {
     report: {
       kind: 'problem', title: 'Report a problem', intro: 'Tell us what is wrong or what you would like: the message goes straight to the person who makes this site.',
-      emailHint: '(optional, so we can reply)', needEmail: false, placeholder: 'What you were doing, what happened, what you expected', template: ''
+      emailHint: '(optional, so we can reply)', needEmail: false, placeholder: 'What you were doing, what happened, what you expected', technical: true
     },
     contact: {
       kind: 'contact', title: 'Contact us', intro: 'Write to the person who makes this site.',
-      emailHint: '(needed, so we can answer you)', needEmail: true, placeholder: 'Your message', template: ''
+      emailHint: '(needed, so we can answer you)', needEmail: true, placeholder: 'Your message', technical: false
     }
   };
 
@@ -68,11 +69,11 @@
     form.addEventListener('submit', async event => {
       event.preventDefault();
       const message = field('message').value;
-      if (!message.trim() || message.trim() === current.template.trim()) { fail('Write your message.'); field('message').focus(); return; }
+      if (!message.trim()) { fail('Write your message.'); field('message').focus(); return; }
       if (current.needEmail && !field('email').value.trim()) { fail('Add your email address, so we can answer you.'); field('email').focus(); return; }
       error.hidden = true;
       send.disabled = true;
-      const details = field('details').checked;
+      const details = current.technical && field('details').checked;
       const updated = document.querySelector('.fs-status time, .gh-updated')?.getAttribute('datetime');
       const info = !details ? '' : [typeof PEDAL !== 'undefined' && PEDAL.name, updated && `site updated ${updated}`, `window ${innerWidth}×${innerHeight}`, navigator.userAgent].filter(Boolean).join(' · ');
       try {
@@ -84,7 +85,7 @@
         if (!response.ok) throw new Error(data.error || `Server error ${response.status}.`);
         const email = field('email').value.trim();
         part('[data-reply]').textContent = current.needEmail ? `Thank you! We will write to ${email}.` : email ? `Thank you! If needed, we will reply to ${email}.` : 'Thank you!';
-        field('message').value = current.template;
+        field('message').value = '';
         delete drafts[current.name];
         form.hidden = true;
         part('.report-done').hidden = false;
@@ -104,16 +105,16 @@
 
   function open(name, trigger) {
     if (!dialog) { build(); document.body.append(dialog); }
-    const next = { name, ...MODES[name], intro: trigger?.dataset.intro || MODES[name].intro, template: trigger?.dataset.template ?? MODES[name].template };
-    if (current && current.name !== name) { drafts[current.name] = field('message').value; field('message').value = drafts[name] ?? next.template; }
-    else if (!current) field('message').value = next.template;
+    const next = { name, ...MODES[name], intro: trigger?.dataset.intro || MODES[name].intro };
+    if (current && current.name !== name) { drafts[current.name] = field('message').value; field('message').value = drafts[name] ?? ''; }
     current = next;
     part('#report-title').textContent = next.title;
     part('[data-intro]').textContent = next.intro;
     part('[data-email-hint]').textContent = next.emailHint;
     field('message').placeholder = next.placeholder;
+    part('.report-check').hidden = !next.technical;
     const me = typeof ACCOUNT !== 'undefined' ? ACCOUNT.me : null;
-    if (me?.signedIn) { // a draft already typed stays as it is
+    if (me?.signedIn) { // the name and the email of a signed-in visitor; a visitor without an account starts with empty fields
       if (!field('name').value) field('name').value = me.name || '';
       if (!field('email').value) field('email').value = me.email || '';
     }

@@ -154,14 +154,14 @@ Nel browser (`site/account.js`, caricato in tutte le pagine dei due pedali):
 3. Se l'account ha già dati: finestra "This browser has 12 patches that are not in your account" con **Add them to my account** (predefinito, fusione con `LIBMERGE`, nulla si perde) o **Not now** (restano solo qui; si può ripetere da `/account`).
 4. Se il browser usava un **codice di sync**: la sua libreria è già in `localStorage`, quindi entra con lo stesso passo; la chiave `-sync` rimasta si cancella all'avvio.
 5. Sul server non c'è nulla da migrare (`zoom-ms60b-data` è vuota). Al deploy si controlla di nuovo: se nel frattempo comparisse un `<hash>.json`, resta nel backup e il suo contenuto è comunque nel browser di chi lo usava.
-6. **Logout** (dal 2026-10-29 si avvia dal pulsante **Sign out** della pagina `/account`, che porta a `/?signout=1`; non c'è più il menu in alto): finestra "Sign out" con due pulsanti: **Remove from this browser** (predefinito, pulsante principale: cancella da questo browser patch, preferenze, rule pack e backup USB di entrambi i pedali, che restano nell'account) e *Keep a copy here*. Prima di cancellare si fa un ultimo sync; se il sync fallisce (offline) la cancellazione non avviene e la finestra lo dice: "Can't reach the server: your latest changes are only in this browser. Sign out anyway and keep them here?".
+6. **Logout**: finestra "Sign out" con due pulsanti: **Remove from this browser** (predefinito, pulsante principale: cancella da questo browser patch, preferenze, rule pack e backup USB di entrambi i pedali, che restano nell'account) e *Keep a copy here*. Prima di cancellare si fa un ultimo sync; se il sync fallisce (offline) la cancellazione non avviene e la finestra lo dice: "Can't reach the server: your latest changes are only in this browser. Sign out anyway and keep them here?".
 
 ## 5. Interfaccia (testi in inglese)
 
 **Header** (`.gh-header`, tutte le pagine MS-60B+ e MS-50G+; nella landing solo il link): a destra, dopo "Official Manual ENG/ITA",
 
 - non loggato: pulsante `Sign in` (`btn btn-sm`) che porta a `/login?next=<pagina>`;
-- loggato (dal 2026-10-29): solo il nome dell'utente (o l'email) in alto a destra, link a `/account`; lo stato della sincronizzazione è nel tooltip, e un piccolo pulsante `+N` compare se ci sono patch tenute da parte. Niente più menu: `Sign out` e, per gli admin, `Users` stanno nella pagina `/account`.
+- loggato: pulsante con l'iniziale dell'email che apre un menu: email, `Synced 2 min ago` / `Offline: changes saved here`, `Account`, `Sign out`.
 
 **Avviso per chi non è loggato** — barra sottile sotto l'header (stile `flash` di Primer, colore *attention*), su Patch builder, Pedal manager e Tone ideas (la pagina Effects non salva nulla, quindi nessun avviso):
 

@@ -17,7 +17,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-guide { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 10px; border-radius: 2em; background: var(--bg-muted); color: var(--fg); white-space: nowrap; }
 .fs-guide:hover { background: var(--btn-hover); text-decoration: none; }
 .fs-guide[aria-current="page"] { font-weight: 600; color: var(--accent-fg); background: var(--accent-subtle); box-shadow: inset 0 0 0 1px var(--accent-muted); }
-@media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; } .fs-top { gap: 8px; } .fs-nav > a, .fs-menu-button { padding: 5px 8px; } .account-name { max-width: 90px; } }
+@media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; }  }
 /* Firmware the MS-60B+ was tested on, in the header just left of the Guide button (the same text at every width) */
 .fs-fw { margin-left: auto; flex: none; white-space: nowrap; }
 .fs-fw + .fs-guide { margin-left: 0; }
@@ -158,7 +158,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-usb .usb-arrange > :not(.usb-arrange-list) { flex: none; }
 .fs-usb .usb-connect { flex: none; }
 .fs-usb .usb-steps { padding-top: 12px; font-size: 13px; line-height: 1.5; }
-.fs-usb .usb-connect > .usb-row { padding: 12px 16px; }
+.fs-usb .usb-connect-main > .usb-row { padding: 12px 16px; }
 .fs-usb #usb-result { flex: none; max-height: 30%; overflow: auto; }
 .fs-usb #usb-result:empty { display: none; }
 .fs-usb .usb-box { flex: 1 1 0; min-height: 96px; }

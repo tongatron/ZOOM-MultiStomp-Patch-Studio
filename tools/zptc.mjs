@@ -13,7 +13,7 @@ import vm from 'node:vm';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({});
-const DATA = process.env.ZPTC_PEDAL ? `${process.env.ZPTC_PEDAL}/` : '';
+const DATA = `${process.env.ZPTC_PEDAL || 'ms-60b'}/`; // the pedal's own folder: site/ms-60b/ (default) or site/ms-50g/
 const source = [`${DATA}effects-data.js`, `${DATA}firmware-data.js`, 'zptc.js'].map(file => readFileSync(new URL(file, SITE), 'utf8')).join('\n;\n');
 vm.runInContext(`${source}\n;globalThis.ZPTC = ZPTC;`, ctx);
 const { ZPTC } = ctx;

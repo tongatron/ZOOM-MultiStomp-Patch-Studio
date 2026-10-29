@@ -27,6 +27,13 @@ const LIBMERGE = createRequire(import.meta.url)(join(ROOT, 'library-merge.js'));
 const accounts = createAccounts({ dataDir: DATA_DIR });
 const legacy = createLegacyHost({ siteUrl: SITE_URL, origins: LEGACY_ORIGINS }); // the old address only redirects (legacy-host.mjs)
 
+// The MS-60B+ pages moved into /ms-60b/ on 2026-10-29, as the MS-50G+ ones are in /ms-50g/. The old addresses redirect (the browser keeps the
+// #fragment of a link, and the query string is passed on), so bookmarks and shared patch links keep opening.
+const MOVED = new Map([
+  ['/', ['/ms-60b/', 302]], ['/index.html', ['/ms-60b/', 301]], ['/usb.html', ['/ms-60b/pedal-manager.html', 301]], ['/technical-notes.md', ['/ms-60b/technical-notes.md', 301]],
+  ...['builder', 'tones', 'pedal-manager', 'resources', 'technical-notes', 'guide'].map(name => [`/${name}.html`, [`/ms-60b/${name}.html`, 301]])
+]);
+
 const MAX_BODY = 1_000_000;
 const MAX_PATCHES = 300;
 const MAX_EFFECTS = 6;
@@ -135,6 +142,10 @@ const server = createServer(async (request, response) => {
     // The anonymous sync codes were replaced by accounts (2026-10)
     if (/^\/api\/sync\/[a-f0-9]{64}$/.test(pathname)) return sendJson(response, 410, { error: 'Sync codes have been replaced by accounts: sign in to keep your patches.' });
     if (pathname.startsWith('/api/')) return sendJson(response, 404, { error: 'not found' });
+    const moved = MOVED.get(pathname);
+    if (moved && (request.method === 'GET' || request.method === 'HEAD')) {
+      return send(response, moved[1], '', { Location: moved[0] + url.search, ...(moved[1] === 302 ? { 'Cache-Control': 'no-cache' } : {}) });
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') return send(response, 405, 'Method not allowed');
     await serveStatic(request, response, pathname);
   } catch (error) {

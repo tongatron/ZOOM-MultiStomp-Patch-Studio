@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({ console });
-const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js', 'rule-packs.js', 'tone-ideas.js'];
+const files = ['ms-60b/effects-data.js', 'ms-60b/firmware-data.js', 'zptc.js', 'advice-engine.js', 'ms-60b/advice-rules.js', 'rule-packs.js', 'tone-ideas.js'];
 vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.ZPTC = ZPTC; globalThis.RULEPACK = RULEPACK; globalThis.TONE_IDEAS = TONE_IDEAS;`, ctx);
 const { ADVICE, ZPTC, RULEPACK, TONE_IDEAS } = ctx;
 // Values created inside the vm context have their own Array prototype: compare as plain JSON

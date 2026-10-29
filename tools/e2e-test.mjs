@@ -30,7 +30,7 @@ async function device({ welcome = false } = {}) {
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('dialog', dialog => dialog.accept());
-  await page.goto(`${base}/builder.html`);
+  await page.goto(`${base}/ms-60b/builder.html`);
   return { context, page };
 }
 const addEffect = async (page, name) => {
@@ -106,17 +106,16 @@ try {
 
   const PASSWORD = 'e2e password 123';
   const signIn = async (target, email) => {
-    await target.goto(`${base}/login?next=/builder.html`);
+    await target.goto(`${base}/login?next=/ms-60b/builder.html`);
     await target.fill('#email', email);
     await target.fill('#password', PASSWORD);
     await target.click('button[type="submit"]');
     await target.waitForURL(/builder\.html/);
-    await target.locator('.account-name').waitFor();
+    await target.locator('.account-button').waitFor();
   };
-  // Signed in, the header shows only the user's name; Sign out starts from the account page and the studio then asks what to do with the data
   const signOut = async (target, choice) => {
-    await target.goto(`${base}/account`);
-    await target.click('.account-links a[href="/?signout=1"]');
+    await target.click('.account-button');
+    await target.click('[data-action="signout"]');
     await target.locator('.account-dialog button', { hasText: choice }).click();
     await target.waitForLoadState('load');
     await target.locator('.account-signin').waitFor();
@@ -138,16 +137,14 @@ try {
   });
 
   await test('signing up keeps the patches of this browser in the new account', async () => {
-    await page.goto(`${base}/builder.html`);
+    await page.goto(`${base}/ms-60b/builder.html`);
     await page.click('.account-signin');
     await page.click('text=Create an account');
     await page.fill('#email', 'e2e@example.com');
     await page.fill('#password', PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL(/builder\.html/);
-    await page.locator('.account-name').waitFor();
-    assert.equal(await page.locator('.account-name').innerText(), 'e2e@example.com', 'the header shows the user name (the email when there is no name)');
-    assert.equal(await page.locator('.account-slot details, .account-dropdown').count(), 0, 'and no menu');
+    await page.locator('.account-button').waitFor();
     await page.locator('.update-bar', { hasText: 'now kept in your account' }).waitFor();
     assert.equal(await page.locator('.account-local').isVisible(), false);
   });
@@ -166,22 +163,22 @@ try {
     const { context, page: first } = await device({ welcome: true });
     await reminder(first).waitFor();
     assert.match(await reminder(first).innerText(), /free account[\s\S]*every device/);
-    assert.equal(await reminder(first).locator('a[href="/register?next=%2Fbuilder.html"]').count(), 1, 'sign-up link back to this page');
-    assert.equal(await reminder(first).locator('a[href="/login?next=%2Fbuilder.html"]').count(), 1, 'sign-in link back to this page');
+    assert.equal(await reminder(first).locator('a[href="/register?next=%2Fms-60b%2Fbuilder.html"]').count(), 1, 'sign-up link back to this page');
+    assert.equal(await reminder(first).locator('a[href="/login?next=%2Fms-60b%2Fbuilder.html"]').count(), 1, 'sign-in link back to this page');
     // Esc counts as "Maybe later": not again in this tab, whatever the page...
     await first.keyboard.press('Escape');
     await first.locator('.account-welcome').waitFor({ state: 'detached', timeout: 3000 });
     await first.reload();
     await settle(first);
     assert.equal(await first.locator('.account-welcome').count(), 0, 'not again after a reload');
-    await first.goto(`${base}/tones.html`);
+    await first.goto(`${base}/ms-60b/tones.html`);
     await settle(first);
     assert.equal(await first.locator('.account-welcome').count(), 0, 'not again on another page of the same visit');
     // ...but the next visit (a new tab) asks again
     const second = await context.newPage();
-    await second.goto(`${base}/tones.html`);
+    await second.goto(`${base}/ms-60b/tones.html`);
     await reminder(second).waitFor();
-    assert.equal(await reminder(second).locator('a[href="/register?next=%2Ftones.html"]').count(), 1);
+    assert.equal(await reminder(second).locator('a[href="/register?next=%2Fms-60b%2Ftones.html"]').count(), 1);
     await reminder(second).locator('button', { hasText: 'Ignore this message' }).click();
     await second.locator('.account-welcome').waitFor({ state: 'detached', timeout: 3000 });
     assert.equal(await second.evaluate(() => localStorage.getItem('account-welcome')), 'ignored');
@@ -197,7 +194,7 @@ try {
     const visitor = await device({ welcome: true });
     await visitor.page.goto(`${base}/`);
     await reminder(visitor.page).waitFor();
-    for (const file of ['guide.html', 'privacy.html', 'resources.html', 'landing/']) {
+    for (const file of ['ms-60b/guide.html', 'privacy.html', 'ms-60b/resources.html', 'landing/']) {
       const tab = await visitor.context.newPage();
       await tab.goto(`${base}/${file}`);
       await settle(tab);
@@ -217,7 +214,7 @@ try {
     await addEffect(tablet.page, 'DYNAMIC COMPRESSOR');
     await tablet.page.fill('#patch-name', 'TABLET ONLY');
     await tablet.page.click('#save-patch');
-    await tablet.page.goto(`${base}/login?next=/builder.html`);
+    await tablet.page.goto(`${base}/login?next=/ms-60b/builder.html`);
     await tablet.page.fill('#email', 'e2e@example.com');
     await tablet.page.fill('#password', PASSWORD);
     await tablet.page.click('button[type="submit"]');
@@ -227,21 +224,18 @@ try {
     await dialog.locator('button', { hasText: 'Not now' }).click();
     await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '2');
     assert.doesNotMatch(await tablet.page.locator('#library-list').innerText(), /TABLET ONLY/);
-    assert.equal(await tablet.page.locator('.account-aside').innerText(), '+1', 'a small button next to the name adds the patches kept aside');
+    await tablet.page.click('.account-button');
     await tablet.page.click('[data-action="aside"]');
     await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
-    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-name')?.title || ''));
-    assert.equal(await tablet.page.locator('.account-aside').count(), 0, 'nothing is kept aside any more');
+    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-state')?.textContent || ''));
     await tablet.context.close();
   });
 
   await test('sign-out removes the data from this browser by default; it comes back at the next sign-in', async () => {
-    await page.goto(`${base}/builder.html`);
-    await page.locator('.account-name').waitFor();
+    await page.goto(`${base}/ms-60b/builder.html`);
+    await page.locator('.account-button').waitFor();
     await page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
     await signOut(page, 'Remove from this browser');
-    await page.goto(`${base}/builder.html`);
-    await page.waitForFunction(() => document.querySelector('#library-count'));
     assert.equal(await page.locator('#library-count').innerText(), '0');
     assert.equal(await page.evaluate(() => localStorage.getItem('ms60b-library')), null);
     await signIn(page, 'e2e@example.com');
@@ -255,7 +249,7 @@ try {
 
   await test('a tone idea opens in the builder with its chain', async () => {
     const fresh = await device();
-    await fresh.page.goto(`${base}/tones.html`);
+    await fresh.page.goto(`${base}/ms-60b/tones.html`);
     assert.ok(await fresh.page.locator('#tone-styles .tone-card').count() >= 5);
     await fresh.page.locator('#bassist-wolstenholme .btn-primary').click();
     await fresh.page.waitForURL(/builder\.html/);

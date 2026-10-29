@@ -104,7 +104,7 @@ try {
     await seed(context, site, { 'ms60b-library': [patch('pb', 'NEW ONE', '2026-10-22T10:00:00.000Z')], 'ms50g-view': 'list' });
     const tab = await context.newPage();
     await tab.goto(`${old}/builder.html?add=hall#frag`);
-    await tab.waitForURL(url => url.origin === site && url.pathname === '/builder.html', { timeout: 15000 });
+    await tab.waitForURL(url => url.origin === site && url.pathname === '/ms-60b/builder.html', { timeout: 15000 });
     const kept = await tab.evaluate(() => {
       const get = key => localStorage.getItem(key);
       return {
@@ -123,7 +123,7 @@ try {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const tab = await context.newPage();
     await tab.goto(`${old}/guide.html#shortcuts`);
-    await tab.waitForURL(url => url.origin === site && url.pathname === '/guide.html', { timeout: 15000 });
+    await tab.waitForURL(url => url.origin === site && url.pathname === '/ms-60b/guide.html', { timeout: 15000 });
     assert.equal(new URL(tab.url()).hash, '#shortcuts');
     await context.close();
   });

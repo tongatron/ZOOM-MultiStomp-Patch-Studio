@@ -4,10 +4,11 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v15';
+const CACHE = 'ms60b-v16';
 const CORE = [
-  './', 'index.html', 'builder.html', 'tones.html', 'pedal-manager.html', 'resources.html', 'technical-notes.html', 'technical-notes.md', 'guide.html', 'privacy.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
-  ...Array.from({ length: 97 }, (_, i) => `assets/effects/fx-${String(i).padStart(3, '0')}.png`)
+  // No './' here: the root answers with a redirect, and a redirected response cannot be served for a page load
+  'ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/technical-notes.md', 'ms-60b/guide.html', 'privacy.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
+  ...Array.from({ length: 97 }, (_, i) => `ms-60b/assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 
 // Sign-in and account pages are always asked to the server (they depend on the session); so is /moved, which receives

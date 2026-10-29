@@ -9,7 +9,7 @@ import vm from 'node:vm';
 
 const SITE = new URL('../site/', import.meta.url);
 const ctx = vm.createContext({ console });
-const files = ['effects-data.js', 'firmware-data.js', 'zptc.js', 'advice-engine.js', 'advice-rules.js'];
+const files = ['ms-60b/effects-data.js', 'ms-60b/firmware-data.js', 'zptc.js', 'advice-engine.js', 'ms-60b/advice-rules.js'];
 vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE;`, ctx);
 const { ADVICE } = ctx;
 
