@@ -508,6 +508,8 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 }
 .chip-filter:hover { background: var(--bg-hover); }
 .chip-filter[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-subtle); }
+.chip-filter .fav-chip-star { display: inline-flex; color: #e3b341; }
+.chip-filter[aria-pressed="true"] .fav-chip-star svg { filter: none; }
 .chip-filter .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .picker-list { margin: 0; padding: 4px 0; list-style: none; overflow: auto; }
 .picker-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }

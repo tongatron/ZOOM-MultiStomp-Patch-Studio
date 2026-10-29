@@ -727,8 +727,12 @@ document.addEventListener('drop', event => {
 
 // ---- effect picker ----------------------------------------------------------------------------
 const picker = $('#picker');
-const pickerState = { query: '', category: null, replace: null }; // replace: the slot being swapped, null when adding
+const pickerState = { query: '', category: null, favOnly: false, replace: null }; // replace: the slot being swapped, null when adding
 let addCategory = null; // category filter of "Add effect", restored after a replacement
+let addFavOnly = false;
+// Favorites are starred in the Effects page and kept in this browser
+const readFavorites = () => { try { return new Set(JSON.parse(localStorage.getItem(`${PEDAL.id}-favorites`)) ?? []); } catch { return new Set(); } };
+const STAR_PATH = '<path fill="currentColor" d="M8 .25a.75.75 0 0 1 .67.42l1.88 3.8 4.2.61a.75.75 0 0 1 .42 1.28l-3.04 2.96.72 4.18a.75.75 0 0 1-1.09.79L8 12.32l-3.76 1.97a.75.75 0 0 1-1.09-.79l.72-4.18L.83 6.36a.75.75 0 0 1 .42-1.28l4.2-.61L7.33.67A.75.75 0 0 1 8 .25Z"/>';
 
 function renderPicker() {
   const current = pickerState.replace;
@@ -736,7 +740,10 @@ function renderPicker() {
   $('#picker-title').textContent = current ? `Replace ${catalog[current.index].name}` : 'Add effect';
   $('#picker-cats').innerHTML = [[null, 'All'], ...Object.entries(CATEGORIES).map(([key, c]) => [key, c.label])]
     .map(([key, label]) => `<button class="chip-filter" data-cat="${key ?? ''}" aria-pressed="${pickerState.category === key}">${key ? `<span class="dot" style="--c:${CATEGORIES[key].color}"></span>` : ''}${label}</button>`).join('');
-  const items = catalog.filter(fx => fx.usable && (!pickerState.category || fx.category === pickerState.category)
+  const favorites = readFavorites();
+  const favCount = catalog.filter(fx => fx.usable && favorites.has(fx.slug)).length;
+  $('#picker-cats').insertAdjacentHTML('beforeend', `<button class="chip-filter" data-favorites aria-pressed="${pickerState.favOnly}" title="Only the effects you starred in Effects"><span class="fav-chip-star">${icon(STAR_PATH, 12)}</span>Favorites ${favCount}</button>`);
+  const items = catalog.filter(fx => fx.usable && (!pickerState.category || fx.category === pickerState.category) && (!pickerState.favOnly || favorites.has(fx.slug))
     && (!pickerState.query || `${fx.name} ${fx.lcd} ${fx.category} ${fx.description}`.toLowerCase().includes(pickerState.query)));
   $('#picker-list').innerHTML = items.length ? items.map(fx => {
     const over = total + fx.dsp > 100;
@@ -747,13 +754,13 @@ function renderPicker() {
       <span class="picker-main"><span class="picker-name">${escapeHtml(fx.name)} ${categoryLabel(fx)}</span><span class="picker-desc" lang="en">${escapeHtml(fx.description)}</span></span>
       <span class="picker-dsp${over ? ' is-over' : near ? ' is-near' : ''}" title="${over ? 'With this effect the patch goes over 100%' : near ? 'With this effect the patch is close to 100%' : 'DSP load and resulting total'}">${pct(fx.dsp)}<small>→ ${pct(total + fx.dsp)}${over ? ' · over' : ''}</small></span>
     </button></li>`;
-  }).join('') : '<li class="blankslate"><p>No effects found.</p></li>';
+  }).join('') : `<li class="blankslate"><p>${pickerState.favOnly && !favCount ? 'No favorites yet: star effects in the Effects page.' : 'No effects found.'}</p></li>`;
 }
 // With a slot: replace that effect, starting from its own category
 function openPicker(slot = null) {
   if (!slot && state.effects.length >= ZPTC.MAX_EFFECTS) return;
   pickerState.replace = slot;
-  if (slot) { addCategory = pickerState.category; pickerState.category = catalog[slot.index].category; }
+  if (slot) { addCategory = pickerState.category; addFavOnly = pickerState.favOnly; pickerState.category = catalog[slot.index].category; pickerState.favOnly = false; }
   renderPicker();
   picker.showModal();
   $('#picker-query').focus();
@@ -761,11 +768,12 @@ function openPicker(slot = null) {
 $('#add-effect').addEventListener('click', () => openPicker());
 $('#picker-close').addEventListener('click', () => picker.close());
 picker.addEventListener('close', () => {
-  if (pickerState.replace) pickerState.category = addCategory;
+  if (pickerState.replace) { pickerState.category = addCategory; pickerState.favOnly = addFavOnly; }
   pickerState.replace = null;
 });
 picker.addEventListener('click', event => {
   if (event.target === picker) { picker.close(); return; }
+  if (event.target.closest('[data-favorites]')) { pickerState.favOnly = !pickerState.favOnly; renderPicker(); return; }
   const cat = event.target.closest('[data-cat]');
   if (cat) { pickerState.category = cat.dataset.cat || null; renderPicker(); return; }
   const item = event.target.closest('.picker-item');
