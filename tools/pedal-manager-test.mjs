@@ -11,19 +11,22 @@ const server = spawn('node', ['deploy/server.mjs'], { env: { ...process.env, POR
 await new Promise(resolve => setTimeout(resolve, 1500));
 const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
 let passed = 0;
+// A fake Web MIDI access wired to the simulated pedal (runs in the page); MIDI access counts as already granted
+function mockMidi({ source, patches }) {
+  localStorage.setItem('account-welcome', 'ignored');
+  const answer = eval(`(${source})`)(patches.map(p => new Uint8Array(p)), { device: 0x6e });
+  const input = { id: 'in', name: 'ZOOM MS Plus Series', open: async () => {}, onmidimessage: null };
+  const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => { const r = answer(message); if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1); } };
+  navigator.requestMIDIAccess = async () => ({ inputs: new Map([['in', input]]), outputs: new Map([['out', output]]), onstatechange: null });
+  Object.defineProperty(navigator, 'permissions', { value: { query: async () => ({ state: 'granted' }) }, configurable: true });
+}
 const test = async (name, fn) => { try { await fn(); passed++; console.log(`✓ ${name}`); } catch (error) { process.exitCode = 1; console.log(`✗ ${name}\n  ${error.message}`); } };
 
 try {
   const good = [...fs.readFileSync('patches/01base.zptc')];
   const garbage = Array(848).fill(88); // not a PTCF file: the page cannot decode it
   const page = await (await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 800 } })).newPage();
-  await page.addInitScript(({ source, patches }) => {
-    localStorage.setItem('account-welcome', 'ignored');
-    const answer = eval(`(${source})`)(patches.map(p => new Uint8Array(p)), { device: 0x6e });
-    const input = { id: 'in', name: 'ZOOM MS Plus Series', open: async () => {}, onmidimessage: null };
-    const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => { const r = answer(message); if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1); } };
-    navigator.requestMIDIAccess = async () => ({ inputs: new Map([['in', input]]), outputs: new Map([['out', output]]), onstatechange: null });
-  }, { source: fakePedal.toString(), patches: [good, garbage] });
+  await page.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, garbage] });
   await page.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
   await page.click('#usb-connect');
   await page.locator('#usb-memories li[data-state="ok"]').first().waitFor({ timeout: 20000 });
@@ -64,13 +67,7 @@ try {
   // Dragging a memory in the list opens the new order with its Write button
   const other = [...fs.readFileSync('patches/06FLIP.zptc')];
   const page2 = await (await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 800 } })).newPage();
-  await page2.addInitScript(({ source, patches }) => {
-    localStorage.setItem('account-welcome', 'ignored');
-    const answer = eval(`(${source})`)(patches.map(p => new Uint8Array(p)), { device: 0x6e });
-    const input = { id: 'in', name: 'ZOOM MS Plus Series', open: async () => {}, onmidimessage: null };
-    const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => { const r = answer(message); if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1); } };
-    navigator.requestMIDIAccess = async () => ({ inputs: new Map([['in', input]]), outputs: new Map([['out', output]]), onstatechange: null });
-  }, { source: fakePedal.toString(), patches: [good, other] });
+  await page2.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other] });
   await page2.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
   await page2.click('#usb-connect');
   await page2.waitForFunction(() => document.querySelectorAll('#usb-memories li[data-state="ok"]').length === 100, null, { timeout: 90000 });
@@ -92,6 +89,32 @@ try {
     await page2.click('#usb-confirm-yes');
     await page2.waitForFunction(() => /Arranged/.test(document.querySelector('#usb-status')?.textContent || ''), null, { timeout: 60000 });
     assert.deepEqual([await nameOf(1), await nameOf(2)], [second, first]);
+  });
+
+  // The connection is made again by itself on a new page, and stays off after Disconnect
+  const page3 = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+  await page3.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other] });
+  await page3.addInitScript(() => localStorage.setItem('ms60b-library', JSON.stringify([{ id: 'p1', name: 'My patch', effects: [{ index: 0, on: true, values: {} }], updatedAt: new Date().toISOString() }])));
+  await page3.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
+  await test('before each send button My patches has an Edit button that opens the patch in the builder', async () => {
+    const edit = page3.locator('#usb-locals li[data-key="lib:p1"] .usb-edit');
+    assert.equal(await edit.innerText(), 'Edit');
+    assert.match(await edit.getAttribute('href'), /^builder\.html#p=/);
+    assert.equal(await edit.evaluate(el => el.nextElementSibling.matches('[data-act="send"]')), true, 'it sits just before the send button');
+  });
+  await test('the pedal connects by itself after the first connection, also on a new page', async () => {
+    await page3.click('#usb-connect');
+    await page3.locator('#usb-disconnect:not([hidden])').waitFor({ timeout: 20000 });
+    await page3.goto(`http://localhost:${PORT}/ms-60b/guide.html`);
+    await page3.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
+    await page3.locator('#usb-disconnect:not([hidden])').waitFor({ timeout: 20000 });
+    await page3.locator('#usb-memories li[data-state="ok"]').first().waitFor({ timeout: 20000 });
+  });
+  await test('after Disconnect the next visit does not connect by itself', async () => {
+    await page3.click('#usb-disconnect');
+    await page3.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
+    await page3.waitForTimeout(1500);
+    assert.equal(await page3.locator('#usb-connect').isVisible(), true);
   });
 } finally {
   await browser.close();

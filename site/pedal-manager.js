@@ -135,6 +135,18 @@
     renderBackups();
   }
 
+  // The page is a new page each time the visitor goes elsewhere in the site, so the connection is made again by itself
+  // when it was open before and the browser still allows MIDI with SysEx (no prompt: it only asks when it was never granted)
+  const AUTO_KEY = `${PEDAL.id}-usb-auto`;
+  const setAuto = on => { try { if (on) localStorage.setItem(AUTO_KEY, '1'); else localStorage.removeItem(AUTO_KEY); } catch {} };
+  async function autoConnect() {
+    let wanted = false;
+    try { wanted = localStorage.getItem(AUTO_KEY) === '1'; } catch {}
+    if (!wanted || !PEDALMIDI.supported()) return;
+    try { if ((await navigator.permissions.query({ name: 'midi', sysex: true })).state !== 'granted') return; } catch { return; }
+    status('Reconnecting the pedal…');
+    $('#usb-connect').click();
+  }
   $('#usb-connect').addEventListener('click', async () => {
     if (!PEDALMIDI.supported()) { status(NO_MIDI, 'danger'); return; }
     if (!(await step('Asking for MIDI access', listPorts)).ok) return;
@@ -145,9 +157,11 @@
     if ((await step('Editor mode', PEDALMIDI.editorOn)).ok) info = (await step('Reading the patch memory size', PEDALMIDI.patchInfo)).value;
     $('#usb-facts').textContent = [ports.value.output, id.ok && `firmware ${id.value.version}`, info && `${info.count} memories`].filter(Boolean).join(' · ');
     setConnected(true);
+    setAuto(true);
     if (info) readAll();
   });
   async function disconnect() {
+    setAuto(false); // a Disconnect pressed on purpose: the next visit does not connect by itself
     reading++;
     try { await PEDALMIDI.editorOff(); } catch {}
     PEDALMIDI.disconnect();
@@ -393,12 +407,14 @@
         const patch = getPatch();
         const chain = patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => EFFECTS_DATA[e.index][0]);
         const edit = key === 'draft' ? activeEdit() : null;
-        try { items.push({ key, label, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null }); }
-        catch (error) { items.push({ key, label, name: patch.name || '(no name)', chain, error: error.message }); }
+        // The builder already holds its own patch (draft); the others open in it through a patch link
+        const href = key === 'draft' ? 'builder.html' : PATCHLINK.url(patch);
+        try { items.push({ key, label, href, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null }); }
+        catch (error) { items.push({ key, label, href, name: patch.name || '(no name)', chain, error: error.message }); }
       } catch {}
     };
     if (fileItem) {
-      try { const d = ZPTC.decode(fileItem.bytes); items.push({ key: 'file', label: `File ${fileItem.fileName}`, name: d.name, chain: d.effects.map(e => e.effect), bytes: fileItem.bytes }); }
+      try { const d = ZPTC.decode(fileItem.bytes); items.push({ key: 'file', label: `File ${fileItem.fileName}`, href: PATCHLINK.url(toPatch(d)), name: d.name, chain: d.effects.map(e => e.effect), bytes: fileItem.bytes }); }
       catch (error) { items.push({ key: 'file', label: `File ${fileItem.fileName}`, name: fileItem.fileName, chain: [], error: error.message }); }
     }
     const draft = readJson(DRAFT_KEY, null);
@@ -415,9 +431,12 @@
     $('#usb-locals').innerHTML = items.length ? items.map(item => `<li class="usb-local" data-key="${escapeHtml(item.key)}">
         <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
-        <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
-          aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
-          title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
+        <span class="usb-local-actions">
+          ${item.href ? `<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : ''}
+          <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
+            aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
+            title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
+        </span>
       </li>`).join('') : '<li class="usb-empty">No patches yet. Build one in the <a href="builder.html">patch builder</a> and save it, or send a <code>.zptc</code> file.</li>';
   }
   $('#usb-locals').addEventListener('click', event => {
@@ -835,5 +854,5 @@
   if (pendingSend) {
     status(`Connect the pedal to send the builder's patch to memory ${pendingSend}`);
     $('#usb-connect').click(); // works without a click when MIDI access was granted before; otherwise press Connect
-  }
+  } else autoConnect();
 })();

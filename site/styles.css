@@ -841,6 +841,8 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-local-main { min-width: 0; }
 .usb-local-main small { margin-left: 8px; color: var(--fg-subtle); font-size: 12px; }
 .usb-local .btn { flex: none; }
+.usb-local-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.usb-edit { height: 32px; }
 .usb-empty { padding: 12px 16px; color: var(--fg-muted); font-size: 13px; }
 .usb-box > summary { cursor: pointer; list-style: none; user-select: none; }
 .usb-box > summary::-webkit-details-marker { display: none; }
