@@ -788,11 +788,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-steps b { color: var(--fg); font-weight: 600; }
 .usb-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 13px; }
 /* Connection state as a pill with a coloured dot */
-.usb-status { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border: 1px solid var(--border-muted); border-radius: 999px; color: var(--fg-muted); font-size: 13px; }
-.usb-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--fg-subtle); }
+.usb-status { display: inline-flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-muted); border-radius: 6px; color: var(--fg-muted); font-size: 13px; line-height: 1.4; }
+.usb-status::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--fg-subtle); }
 .usb-status[data-kind="ok"] { border-color: rgba(63, 185, 80, 0.4); color: #3fb950; }
 .usb-status[data-kind="ok"]::before { background: #3fb950; }
-.usb-status[data-kind="danger"] { border-color: rgba(248, 81, 73, 0.4); color: #f85149; }
+.usb-status[data-kind="danger"] { border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.08); color: #f85149; }
 .usb-status[data-kind="danger"]::before { background: #f85149; }
 .usb-facts { margin-left: auto; color: var(--fg-muted); font: 12px var(--mono); }
 .usb-ports { border-top: 1px solid var(--border-muted); }

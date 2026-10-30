@@ -268,7 +268,6 @@ const ACCOUNT = (() => {
             <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
             <div class="account-state" role="status">${esc(state)}</div>
             ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
-            <a class="account-item" href="/account">Account</a>
             ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
             <button class="account-item" type="button" data-action="signout">Sign out</button>
           </div>`
