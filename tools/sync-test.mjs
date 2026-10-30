@@ -199,6 +199,14 @@ try {
     assert.equal((await fetch(`${base}/ms-60b/builder.html`, { headers: { 'If-Modified-Since': page.headers.get('last-modified') } })).status, 304);
     assert.equal((await fetch(`${base}/landing`, { redirect: "manual" })).status, 301);
     assert.equal((await fetch(`${base}/landing/`)).status, 200); // a small page that sends the browser to the home page
+    const home = await (await fetch(`${base}/`)).text();
+    assert.match(home, /src="ms-60b\/assets\/effects\/fx-000\.png"/, 'the home page uses the MS-60B+ asset root');
+    assert.doesNotMatch(home, /src="assets\/effects\/fx-\d+\.png"/, 'the home page does not point at a missing root asset directory');
+    for (const image of ['fx-000.png', 'fx-030.png', 'fx-065.png', 'fx-087.png']) {
+      const asset = await fetch(`${base}/ms-60b/assets/effects/${image}`);
+      assert.equal(asset.status, 200, `MS-60B+ home image ${image}`);
+      assert.match(asset.headers.get('content-type'), /^image\/png/);
+    }
     assert.match((await fetch(`${base}/sitemap.xml`)).headers.get("content-type"), /xml/);
     const worker = await (await fetch(`${base}/sw.js`)).text();
     assert.match(worker, /ms-50g\/builder\.html/, 'the offline shell includes MS-50G+');
