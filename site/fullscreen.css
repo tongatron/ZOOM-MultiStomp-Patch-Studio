@@ -122,8 +122,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
   .fs-effects .filter-heading { display: none; }
 }
 
-/* ---- Patch builder: chain | patch and Advice | My patches ---- */
-.fs-builder { grid-template-columns: minmax(0, 1fr) minmax(320px, 30%) 300px; }
+/* ---- Patch builder: My patches | chain | patch and Advice ---- */
+.fs-builder { grid-template-columns: 300px minmax(0, 1fr) minmax(320px, 30%); }
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
 .fs-builder .side-box { padding: 0; gap: 0; }
 .fs-builder .patch-box { flex: none; }

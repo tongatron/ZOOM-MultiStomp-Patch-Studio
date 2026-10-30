@@ -776,7 +776,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-connect > :not(.usb-pedal) { grid-column: 2; }
 .usb-connect > .usb-ports { grid-column: 1 / -1; }
 .usb-connect-main { align-self: center; }
-.usb-pedal { grid-column: 1; grid-row: 1; align-self: center; width: 92px; height: auto; margin: 12px 0 12px 16px;
+.usb-pedal { grid-column: 1; grid-row: 1; align-self: center; width: 120px; height: auto; margin: 12px 0 12px 12px;
   filter: grayscale(1) brightness(.5); opacity: .55; transition: filter .3s, opacity .3s;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); }
 .usb-connect.is-connected .usb-pedal { filter: none; opacity: 1; }
@@ -787,13 +787,13 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-steps { margin: 0; padding: 16px 16px 0 36px; color: var(--fg-muted); font-size: 14px; line-height: 1.6; }
 .usb-steps b { color: var(--fg); font-weight: 600; }
 .usb-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 13px; }
-/* Connection state as a pill with a coloured dot */
-.usb-status { display: inline-flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-muted); border-radius: 6px; color: var(--fg-muted); font-size: 13px; line-height: 1.4; }
+/* Connection state in a small box with a coloured dot (an error has no dot: its colour and box say it) */
+.usb-status { display: inline-flex; align-items: flex-start; gap: 8px; padding: 6px 10px; border: 1px solid var(--border-muted); border-radius: 6px; color: var(--fg-muted); font-size: 13px; line-height: 1.4; }
 .usb-status::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--fg-subtle); }
 .usb-status[data-kind="ok"] { border-color: rgba(63, 185, 80, 0.4); color: #3fb950; }
 .usb-status[data-kind="ok"]::before { background: #3fb950; }
-.usb-status[data-kind="danger"] { border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.08); color: #f85149; }
-.usb-status[data-kind="danger"]::before { background: #f85149; }
+.usb-status[data-kind="danger"] { border-color: rgba(248, 81, 73, 0.4); background: rgba(248, 81, 73, 0.08); color: #f85149; font-size: 12px; line-height: 1.35; }
+.usb-status[data-kind="danger"]::before { display: none; }
 .usb-facts { margin-left: auto; color: var(--fg-muted); font: 12px var(--mono); }
 .usb-ports { border-top: 1px solid var(--border-muted); }
 .usb-ports summary { padding: 12px 16px; color: var(--fg-muted); font-size: 13px; cursor: pointer; }

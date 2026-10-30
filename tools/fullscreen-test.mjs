@@ -604,8 +604,8 @@ try {
     await page.waitForFunction(() => { const css = getComputedStyle(document.querySelector('.usb-pedal')); return css.opacity === '1' && css.filter === 'none'; }); // the colour comes back with a short transition
     assert.deepEqual(await look(), { filter: 'none', opacity: 1 }, 'normal colours once connected');
     await page.evaluate(() => document.querySelector('.usb-connect').classList.remove('is-connected'));
-    const sits = await page.evaluate(() => { const i = document.querySelector('.usb-pedal').getBoundingClientRect(), s = document.querySelector('.usb-howto > summary').getBoundingClientRect(), c = document.querySelector('.usb-connect').getBoundingClientRect(); return { leftOfText: i.right <= s.left, size: i.width >= 80 && i.width <= 110 && i.height <= 160, inside: i.top >= c.top && i.bottom <= c.bottom }; });
-    assert.deepEqual(sits, { leftOfText: true, size: true, inside: true }, 'a small pedal (a bit bigger than a thumbnail) at the left of the connection text');
+    const sits = await page.evaluate(() => { const i = document.querySelector('.usb-pedal').getBoundingClientRect(), s = document.querySelector('.usb-howto > summary').getBoundingClientRect(), c = document.querySelector('.usb-connect').getBoundingClientRect(); return { leftOfText: i.right <= s.left, size: i.width >= 110 && i.width <= 140 && i.height <= 210, inside: i.top >= c.top && i.bottom <= c.bottom }; });
+    assert.deepEqual(sits, { leftOfText: true, size: true, inside: true }, 'a small pedal (120 px wide) at the left of the connection text');
 
     // How to connect: a box that is closed until opened, with the three steps
     assert.equal(await page.locator('#usb-howto').evaluate(box => box.open), false, 'How to connect starts closed');
@@ -676,7 +676,7 @@ try {
     await page.evaluate(() => localStorage.removeItem(`${PEDAL.id}-advice`));
   });
 
-  await test('builder: chain | patch with Advice under it | My patches; the DSP bar is thin; there is no arrow to fold the patch', async () => {
+  await test('builder: My patches | chain | patch with Advice under it; the DSP bar is thin; there is no arrow to fold the patch', async () => {
     const boxes = () => page.evaluate(() => Object.fromEntries(['.builder-chain', '.patch-box', '#advice', '.builder-mine'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [s, { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom) }]; })));
     for (const size of SIZES) {
       await open('builder.html', size);
@@ -686,9 +686,9 @@ try {
       assert.ok(Math.abs(box['#advice'].left - box['.patch-box'].left) <= 1 && box['#advice'].top >= box['.patch-box'].bottom - 1, `Advice under the patch: ${where}`);
       assert.ok(box['#advice'].bottom - box['#advice'].top >= 120, `Advice keeps some height: ${where}`);
       if (size[0] >= 1200) {
-        // three columns: the chain, the patch with Advice, My patches at the right
-        assert.ok(box['.builder-chain'].right <= box['.patch-box'].left && box['.patch-box'].right <= box['.builder-mine'].left, `chain | patch | My patches: ${where}`);
-        assert.ok(box['.builder-mine'].right >= size[0] - 20, `My patches is the last column: ${where}`);
+        // three columns: My patches at the left, the chain, the patch with Advice
+        assert.ok(box['.builder-mine'].right <= box['.builder-chain'].left && box['.builder-chain'].right <= box['.patch-box'].left, `My patches | chain | patch: ${where}`);
+        assert.ok(box['.builder-mine'].left <= 20, `My patches is the first column: ${where}`);
       } else {
         // two columns: My patches goes under the chain
         assert.ok(box['.builder-mine'].left === box['.builder-chain'].left && box['.builder-mine'].top >= box['.builder-chain'].bottom - 1, `My patches under the chain: ${where}`);
