@@ -257,6 +257,7 @@ try {
     assert.match(page, /admin-accounts-table/);
     assert.match(page, /data-label="Email"/);
     assert.match(page, /overflow: visible/);
+    assert.doesNotMatch(page, /Sign out everywhere|Download data|Make admin/, 'the account table exposes only the necessary actions');
     assert.match(page, /new3@example\.com/);
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');

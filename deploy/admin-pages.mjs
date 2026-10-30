@@ -27,7 +27,7 @@ const STYLE = `<style>
   .admin-accounts-table th:nth-child(6), .admin-accounts-table td:nth-child(6) { width: 7%; }
   .admin-accounts-table th:nth-child(7), .admin-accounts-table td:nth-child(7) { width: 12%; }
   .admin-accounts-table th:nth-child(8), .admin-accounts-table td:nth-child(8) { width: 18%; }
-  .admin .acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  .admin .acts { display: grid; grid-template-columns: 1fr; gap: 4px; }
   .admin .acts form { margin: 0; }
   .admin .btn { width: auto; }
   .admin .acts .btn { width: 100%; white-space: normal; }
@@ -67,9 +67,7 @@ export function adminPage({ me, users, query = '', sort = 'created', dir = 'desc
     <td data-label="Name">${esc(u.name) || '<span class="muted">—</span>'}</td><td data-label="Signed up">${date(u.created_at)}</td><td data-label="Last sign-in">${date(u.last_login)}</td>
     <td data-label="MS-60B+">${u.ms60b}</td><td data-label="MS-50G+">${u.ms50g}</td><td data-label="Last change">${dateTime(u.last_change)}</td>
     <td data-label="Actions">${u.id === me.id ? '<span class="muted">you</span>' : `<div class="acts">
-      ${act('reset', u.id, 'Send reset link')}${act('signout', u.id, 'Sign out everywhere')}
-      ${act('role', u.id, u.role === 'admin' ? 'Remove admin' : 'Make admin', `<input type="hidden" name="role" value="${u.role === 'admin' ? 'user' : 'admin'}">`)}
-      <a class="btn btn-sm" href="/admin/user/${esc(u.id)}/export" download>Download data</a>
+      ${act('reset', u.id, 'Send reset link')}
       <a class="btn btn-sm btn-danger" href="/admin?delete=${esc(u.id)}">Delete</a></div>`}</td></tr>`).join('');
   return page('Users', `${STYLE}<main class="admin">${bar}
 ${error ? `<div class="auth-error" role="alert">${esc(error)}</div>` : ''}${note ? `<div class="auth-ok" role="status">${esc(note)}${link ? `<br><code>${esc(link)}</code>` : ''}</div>` : ''}
