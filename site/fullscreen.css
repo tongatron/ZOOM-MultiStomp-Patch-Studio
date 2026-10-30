@@ -151,8 +151,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
   .fs-builder .builder-mid { grid-column: 2; grid-row: 1 / -1; }
 }
 
-/* ---- Pedal manager: My patches | On the pedal | connection, backups and MIDI log ---- */
-.fs-usb { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 340px; }
+/* ---- Pedal manager: connection, backups and MIDI log | On the pedal | My patches ---- */
+.fs-usb { grid-template-columns: 340px minmax(0, 1fr) minmax(0, 1fr); }
 .fs-usb .usb-panel { display: flex; }
 .fs-usb .usb-hint { flex: none; }
 .fs-usb .usb-memories, .fs-usb .usb-locals { flex: 1; min-height: 0; max-height: none; overscroll-behavior: contain; }
@@ -172,7 +172,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-usb .usb-log { margin: 0 16px 12px; }
 @media (max-width: 1199px) {
   .fs-usb { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
-  .fs-usb .fs-col { grid-column: 1 / -1; flex-direction: row; }
+  .fs-usb .fs-col { grid-column: 1 / -1; grid-row: 2; flex-direction: row; }
   .fs-usb .fs-col > * { flex: 1 1 0; }
   .fs-usb .usb-box:not([open]) { align-self: flex-start; }
 }

@@ -26,7 +26,7 @@
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
     <link rel="stylesheet" href="../styles.css?v=zoom68-20261030" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="../fullscreen.css?v=fs29-20261029" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs30-20261030" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
   <body data-account-notice data-account-welcome>
@@ -53,45 +53,6 @@
     </header>
 
     <main class="fs-main fs-usb">
-      <section class="Box fs-pane usb-panel" aria-labelledby="usb-local-title">
-        <div class="Box-header">
-          <h2 class="Box-title" id="usb-local-title">My patches <span class="Counter" id="usb-local-count">0</span></h2>
-          <div class="toolbar-right">
-            <label class="btn btn-sm" for="usb-file">Send a .zptc file</label>
-            <input type="file" id="usb-file" accept=".zptc" hidden />
-          </div>
-        </div>
-        <p class="field-hint usb-hint">Select a slot on the pedal to load a patch.</p>
-        <ul class="usb-locals" id="usb-locals" tabindex="0" aria-label="My patches"></ul>
-      </section>
-
-      <section class="Box fs-pane usb-panel" aria-labelledby="usb-pedal-title">
-        <div class="Box-header">
-          <h2 class="Box-title" id="usb-pedal-title">On the pedal <span class="Counter" id="usb-pedal-count">0</span></h2>
-          <div class="toolbar-right"><button class="btn btn-sm" id="usb-arrange" disabled title="Change the order of the patches on the pedal">Arrange</button><button class="btn btn-sm" id="usb-refresh" disabled>Read again</button></div>
-        </div>
-        <p class="field-hint usb-hint" id="usb-pedal-hint">Select a memory: it is where a patch from the left goes.</p>
-        <ul class="usb-memories" id="usb-memories" aria-live="polite" tabindex="0" aria-label="Memories on the pedal"></ul>
-        <div class="usb-arrange" id="usb-arrange-panel" hidden>
-          <p class="field-hint usb-hint">Drag a patch to a new place, or select several (Shift-click for a range) and move them as a block. Nothing is written until you press Write.</p>
-          <div class="usb-arrange-bar">
-            <span class="usb-arrange-count" id="usb-arr-selected">No patch selected</span>
-            <button class="btn btn-sm" id="usb-arr-up" title="Move the selected patches up one place (Alt+↑)" aria-label="Move up">↑</button>
-            <button class="btn btn-sm" id="usb-arr-down" title="Move the selected patches down one place (Alt+↓)" aria-label="Move down">↓</button>
-            <label>To memory <input class="form-control form-control--sm" id="usb-arr-pos" type="number" min="1" inputmode="numeric" /></label>
-            <button class="btn btn-sm" id="usb-arr-to">Move</button>
-            <button class="btn btn-sm btn-invisible" id="usb-arr-none">Clear selection</button>
-          </div>
-          <ul class="usb-memories usb-arrange-list" id="usb-arrange-list" aria-label="New order of the patches"></ul>
-          <div class="usb-arrange-foot">
-            <span id="usb-arr-changes">No changes yet</span>
-            <button class="btn btn-sm btn-invisible" id="usb-arr-reset">Undo all</button>
-            <button class="btn btn-sm" id="usb-arr-cancel">Cancel</button>
-            <button class="btn btn-sm btn-primary" id="usb-arr-write" disabled>Write to the pedal</button>
-          </div>
-        </div>
-      </section>
-
       <div class="fs-col">
         <section class="Box usb-connect" aria-label="Connection">
           <img class="usb-pedal" src="../landing/pedal-ms60b-small.webp" alt="" width="192" height="285" />
@@ -139,13 +100,52 @@
           </div>
         </details>
       </div>
+
+      <section class="Box fs-pane usb-panel" aria-labelledby="usb-pedal-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="usb-pedal-title">On the pedal <span class="Counter" id="usb-pedal-count">0</span></h2>
+          <div class="toolbar-right"><button class="btn btn-sm" id="usb-arrange" disabled title="Change the order of the patches on the pedal">Arrange</button><button class="btn btn-sm" id="usb-refresh" disabled>Read again</button></div>
+        </div>
+        <p class="field-hint usb-hint" id="usb-pedal-hint">Select a memory: it is where a patch from My patches goes.</p>
+        <ul class="usb-memories" id="usb-memories" aria-live="polite" tabindex="0" aria-label="Memories on the pedal"></ul>
+        <div class="usb-arrange" id="usb-arrange-panel" hidden>
+          <p class="field-hint usb-hint">Drag a patch to a new place, or select several (Shift-click for a range) and move them as a block. Nothing is written until you press Write.</p>
+          <div class="usb-arrange-bar">
+            <span class="usb-arrange-count" id="usb-arr-selected">No patch selected</span>
+            <button class="btn btn-sm" id="usb-arr-up" title="Move the selected patches up one place (Alt+↑)" aria-label="Move up">↑</button>
+            <button class="btn btn-sm" id="usb-arr-down" title="Move the selected patches down one place (Alt+↓)" aria-label="Move down">↓</button>
+            <label>To memory <input class="form-control form-control--sm" id="usb-arr-pos" type="number" min="1" inputmode="numeric" /></label>
+            <button class="btn btn-sm" id="usb-arr-to">Move</button>
+            <button class="btn btn-sm btn-invisible" id="usb-arr-none">Clear selection</button>
+          </div>
+          <ul class="usb-memories usb-arrange-list" id="usb-arrange-list" aria-label="New order of the patches"></ul>
+          <div class="usb-arrange-foot">
+            <span id="usb-arr-changes">No changes yet</span>
+            <button class="btn btn-sm btn-invisible" id="usb-arr-reset">Undo all</button>
+            <button class="btn btn-sm" id="usb-arr-cancel">Cancel</button>
+            <button class="btn btn-sm btn-primary" id="usb-arr-write" disabled>Write to the pedal</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="Box fs-pane usb-panel" aria-labelledby="usb-local-title">
+        <div class="Box-header">
+          <h2 class="Box-title" id="usb-local-title">My patches <span class="Counter" id="usb-local-count">0</span></h2>
+          <div class="toolbar-right">
+            <label class="btn btn-sm" for="usb-file">Send a .zptc file</label>
+            <input type="file" id="usb-file" accept=".zptc" hidden />
+          </div>
+        </div>
+        <p class="field-hint usb-hint">Select a slot on the pedal to load a patch.</p>
+        <ul class="usb-locals" id="usb-locals" tabindex="0" aria-label="My patches"></ul>
+      </section>
     </main>
 
     <footer class="fs-status">
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-10-30T00:03Z">Last update 30 October 2026 01:03</time>
+      <time class="gh-updated" datetime="2026-10-30T00:24Z">Last update 30 October 2026 01:24</time>
     </footer>
 
     <dialog class="Overlay Overlay--small" id="usb-confirm" aria-labelledby="usb-confirm-title">
@@ -164,7 +164,7 @@
     <script src="../zptc.js?v=zoom46-20261028"></script>
     <script src="../patch-link.js?v=zoom24-20261026"></script>
     <script src="../pedal-midi.js?v=zoom24-20261026"></script>
-    <script src="../pedal-manager.js?v=zoom58-20261029"></script>
+    <script src="../pedal-manager.js?v=zoom59-20261030"></script>
     <script src="../library-merge.js?v=zoom29-20261028"></script>
     <script src="../account.js?v=zoom52-20261030"></script>
     <script src="../report.js?v=report6-20261029"></script>

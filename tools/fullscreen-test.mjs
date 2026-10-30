@@ -229,7 +229,7 @@ try {
     }
   });
 
-  await test('signed in, the header has the account menu (the initial, then the name, Account and Sign out), Account opens the account page, and the top bar fits at 800 px', async () => {
+  await test('signed in, the header has the account menu (the initial, then the name and Sign out, no Account entry), and the top bar fits at 800 px', async () => {
     const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: 'Header Tester', password: 'header password 1' }, maxRedirects: 0 });
     assert.equal(made.status(), 303);
     for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html']) {
@@ -244,11 +244,8 @@ try {
     await open('builder.html', SIZES[1]);
     await page.locator('.account-slot .account-button').click();
     const items = await page.locator('.account-dropdown .account-item').allInnerTexts();
-    assert.deepEqual(items.map(t => t.trim()), ['Account', 'Sign out'], 'a normal user has Account and Sign out');
+    assert.deepEqual(items.map(t => t.trim()), ['Sign out'], 'a normal user has only Sign out');
     assert.match(await page.locator('.account-dropdown .account-who').innerText(), /Header Tester[\s\S]*header@example\.com/);
-    await page.locator('.account-dropdown a.account-item', { hasText: 'Account' }).click();
-    await page.waitForURL(/\/account$/);
-    assert.match(await page.locator('body').innerText(), /header@example\.com/, 'the account page opens, not the sign-in page');
     await page.context().clearCookies();
     await page.evaluate(() => { try { sessionStorage.clear(); } catch {} });
   });
@@ -577,7 +574,7 @@ try {
     await page.waitForSelector('#usb-memories .usb-mem');
 
     // My patches: a hint that asks for a slot on the pedal, and nothing about the browser
-    const hint = (await page.locator('.usb-panel').first().locator('.usb-hint').textContent()).trim();
+    const hint = (await page.locator('.usb-panel:has(#usb-locals) .usb-hint').textContent()).trim();
     assert.equal(hint, 'Select a slot on the pedal to load a patch.');
 
     // Not connected: the last-read patches open to their effects, and can be copied or downloaded

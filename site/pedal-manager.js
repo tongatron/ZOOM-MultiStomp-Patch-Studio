@@ -19,7 +19,7 @@
   // The memories as last read, so the list stays visible (greyed, read-only) while the pedal is not connected:
   // { at, count, memories: { n: base64 of the PTCF file | null for an empty memory } }
   const LAST_READ_KEY = `${PEDAL.id}-usb-last-read`;
-  const PEDAL_HINT = 'Select a memory: it is where a patch from the left goes. Drag a memory to another place to change the order, then Write.';
+  const PEDAL_HINT = 'Select a memory: it is where a patch from My patches goes. Drag a memory to another place to change the order, then Write.';
   const lines = [];
   let info = null; // { count, size, bankSize } from the pedal
   let connected = false;
