@@ -137,6 +137,41 @@ try {
     await fresh.context.close();
   });
 
+  await test('the builder Undo button also takes back a deleted or duplicated patch; Redo does it again', async () => {
+    const fresh = await device();
+    const p = fresh.page;
+    const ask = p.locator('dialog.account-dialog[open]');
+    const count = n => p.waitForFunction(want => document.querySelector('#library-count').textContent === want, String(n));
+    await addEffect(p, 'DYNAMIC COMPRESSOR');
+    await p.fill('#patch-name', 'KEEP ME');
+    await p.click('#save-patch');
+    const id = await p.evaluate(() => state.currentId);
+    assert.equal(await p.locator('#undo').innerText(), 'Undo', 'the button says what it is');
+    await p.locator('[data-lib="delete"]').click();
+    await ask.getByRole('button', { name: 'Delete', exact: true }).click();
+    await count(0);
+    assert.equal(await p.evaluate(() => state.currentId), null, 'the patch in the editor is not saved any more');
+    assert.match(await p.locator('#undo').getAttribute('title'), /^Undo: Deleted “KEEP ME”/);
+    await p.locator('.dialogs-toast [data-toast="action"]').click(); // the Undo button of the message
+    await count(1);
+    assert.equal(await p.evaluate(() => state.currentId), id, 'the editor is tied to the patch again');
+    await p.click('#redo');
+    await count(0);
+    await p.click('#undo'); // the Undo button of the page
+    await count(1);
+    await p.locator('[data-lib="delete"]').click();
+    await ask.getByRole('button', { name: 'Delete', exact: true }).click();
+    await count(0);
+    await p.keyboard.press('Control+z');
+    await count(1);
+    await p.locator('[data-lib="duplicate"]').click();
+    await count(2);
+    await p.click('#undo');
+    await count(1);
+    assert.equal(await p.locator('#library-list .library-item').count(), 1);
+    await fresh.context.close();
+  });
+
   const PASSWORD = 'e2e password 123';
   const signIn = async (target, email) => {
     await target.goto(`${base}/login?next=/ms-60b/builder.html`);

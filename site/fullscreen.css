@@ -151,6 +151,12 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
   .fs-builder .builder-mid { grid-column: 2; grid-row: 1 / -1; }
 }
 
+/* At the smallest widths the Undo button of the builder is only its icon: the label would wrap the Chain header */
+@media (max-width: 899px) {
+  .fs-builder #undo { width: 28px; padding: 0; justify-content: center; }
+  .fs-builder #undo span { display: none; }
+}
+
 /* ---- Pedal manager: connection, backups and MIDI log | On the pedal | My patches ---- */
 .fs-usb { grid-template-columns: 340px minmax(0, 1fr) minmax(0, 1fr); }
 .fs-usb .usb-panel { display: flex; }

@@ -73,9 +73,23 @@ function save() {
 // patch it belonged to (so undoing never makes "Save" overwrite another patch). Changes less than 700 ms apart,
 // like dragging a slider or typing a name, collapse into one undo step. History lives in memory only.
 const patchHistory = { undo: [], redo: [], last: null, lastChangeAt: 0, restoring: false };
+// A step of the list is either a snapshot of the patch in the editor or, for a change to My patches, { kind: 'library', label, undo, redo }
 function updateHistoryButtons() {
-  $('#undo').disabled = !patchHistory.undo.length;
-  $('#redo').disabled = !patchHistory.redo.length;
+  const back = patchHistory.undo.at(-1), forward = patchHistory.redo.at(-1);
+  $('#undo').disabled = !back;
+  $('#redo').disabled = !forward;
+  $('#undo').title = back?.kind === 'library' ? `Undo: ${back.label} (Ctrl/⌘ + Z)` : 'Undo (Ctrl/⌘ + Z)';
+  $('#redo').title = forward?.kind === 'library' ? `Redo: ${forward.label} (Shift + Ctrl/⌘ + Z)` : 'Redo (Shift + Ctrl/⌘ + Z)';
+}
+// Deleting or duplicating a patch in My patches goes on the same list, so Undo and Redo take it back and forth in order with the edits
+function recordLibraryStep(label, undoStep, redoStep) {
+  const step = { kind: 'library', label, undo: undoStep, redo: redoStep };
+  patchHistory.undo.push(step);
+  if (patchHistory.undo.length > 100) patchHistory.undo.shift();
+  patchHistory.redo = [];
+  patchHistory.lastChangeAt = 0; // the next edit is a step of its own
+  updateHistoryButtons();
+  return step;
 }
 function recordHistory() {
   if (patchHistory.restoring) return;
@@ -103,8 +117,20 @@ function restoreSnapshot(snap) {
   patchHistory.lastChangeAt = 0;
   updateHistoryButtons();
 }
-function undo() { if (patchHistory.undo.length) { patchHistory.redo.push(patchHistory.last); restoreSnapshot(patchHistory.undo.pop()); } }
-function redo() { if (patchHistory.redo.length) { patchHistory.undo.push(patchHistory.last); restoreSnapshot(patchHistory.redo.pop()); } }
+function undo() {
+  if (!patchHistory.undo.length) return;
+  const step = patchHistory.undo.pop();
+  if (step.kind === 'library') { patchHistory.redo.push(step); step.undo(); updateHistoryButtons(); return; }
+  patchHistory.redo.push(patchHistory.last);
+  restoreSnapshot(step);
+}
+function redo() {
+  if (!patchHistory.redo.length) return;
+  const step = patchHistory.redo.pop();
+  if (step.kind === 'library') { patchHistory.undo.push(step); step.redo(); updateHistoryButtons(); return; }
+  patchHistory.undo.push(patchHistory.last);
+  restoreSnapshot(step);
+}
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -620,15 +646,43 @@ $('#library-list').addEventListener('click', async event => {
       break;
     case 'duplicate': {
       const copy = addToLibrary({ ...entry, name: `${entry.name.slice(0, 24)} COPY` }, list);
-      if (writeLibrary(list)) { renderLibrary(); notify('muted', `Created "${copy.name}".`); }
+      if (!writeLibrary(list)) break;
+      renderLibrary();
+      notify('muted', `Created "${copy.name}".`);
+      // Undo takes the copy away again (and Redo puts it back); the copy may have been opened in the editor meanwhile
+      recordLibraryStep(`Created “${copy.name}”`, () => {
+        writeLibrary(readLibrary().filter(e => e.id !== copy.id));
+        if (state.currentId === copy.id) state.currentId = null;
+        render();
+      }, () => {
+        const now = readLibrary();
+        if (!now.some(e => e.id === copy.id)) { now.unshift({ ...copy }); writeLibrary(now); }
+        renderLibrary();
+      });
       break;
     }
-    case 'delete':
+    case 'delete': {
       if (!await DIALOGS.confirm({ title: 'Delete patch', html: `<p>Delete <b>${escapeHtml(entry.name)}</b> from My patches?</p>`, ok: 'Delete', danger: true })) return;
-      if (!writeLibrary(readLibrary().filter(e => e.id !== id))) return; // read again: another tab may have changed the list meanwhile
-      if (id === state.currentId) state.currentId = null;
+      const before = readLibrary(); // read again: another tab may have changed the list meanwhile
+      const index = before.findIndex(e => e.id === id);
+      if (!writeLibrary(before.filter(e => e.id !== id))) return;
+      const wasOpen = id === state.currentId; // the patch in the editor stays, as an unsaved one
+      if (wasOpen) state.currentId = null;
       render();
+      // Undo puts the patch back where it was, and the editor is tied to it again when it still shows that patch
+      const step = recordLibraryStep(`Deleted “${entry.name}”`, () => {
+        const now = readLibrary();
+        if (!now.some(e => e.id === id)) { now.splice(Math.min(index, now.length), 0, { ...entry, name: uniqueName(entry.name, now) }); writeLibrary(now); }
+        if (wasOpen && state.currentId === null) state.currentId = id;
+        render();
+      }, () => {
+        writeLibrary(readLibrary().filter(e => e.id !== id));
+        if (state.currentId === id) state.currentId = null;
+        render();
+      });
+      DIALOGS.toast(`Deleted “${entry.name}”`, { action: 'Undo', onAction: () => { if (patchHistory.undo.at(-1) === step) undo(); } });
       break;
+    }
   }
 });
 
