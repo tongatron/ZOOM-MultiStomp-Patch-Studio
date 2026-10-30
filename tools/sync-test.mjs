@@ -200,6 +200,9 @@ try {
     assert.equal((await fetch(`${base}/landing`, { redirect: "manual" })).status, 301);
     assert.equal((await fetch(`${base}/landing/`)).status, 200); // a small page that sends the browser to the home page
     assert.match((await fetch(`${base}/sitemap.xml`)).headers.get("content-type"), /xml/);
+    const worker = await (await fetch(`${base}/sw.js`)).text();
+    assert.match(worker, /ms-50g\/builder\.html/, 'the offline shell includes MS-50G+');
+    assert.match(worker, /length: 127/, 'the offline shell includes all MS-50G+ effect images');
     assert.doesNotMatch(await rawGet('/../deploy/server.mjs'), /createServer/);
     assert.doesNotMatch(await rawGet('/%2e%2e/deploy/server.mjs'), /createServer/);
   });
@@ -209,6 +212,7 @@ try {
     assert.match(await rawGet('//ms-60b/builder.html'), /^HTTP\/1\.1 200 /);
     assert.match(await rawGet('//example.com/builder.html'), /^HTTP\/1\.1 404 /, 'a host after // is not followed');
     assert.match(await rawGet('http://['), /^HTTP\/1\.1 400 /);
+    assert.match(await rawGet('/%E0%A4%A'), /^HTTP\/1\.1 400 /, 'malformed percent encoding is a client error');
   });
 } finally {
   server.kill();

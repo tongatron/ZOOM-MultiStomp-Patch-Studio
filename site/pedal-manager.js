@@ -47,7 +47,7 @@
   const note = text => { lines.push(`   ${text}`); showLog(); };
   // Octicons "upload": the send button of each patch (its tooltip names the memory)
   const ICON_SEND = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>';
-  // Octicons "trash": the delete button of each saved patch
+  // Octicons "trash": the delete control of each My patches row
   const ICON_TRASH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>';
   const status = (text, kind = '') => { $('#usb-status').textContent = text; $('#usb-status').dataset.kind = kind; };
   const result = (ok, text) => { $('#usb-result').innerHTML = text ? `<p class="usb-result" data-ok="${ok}">${escapeHtml(text)}</p>` : ''; };
@@ -67,7 +67,18 @@
   const ptcfOf = bytes => bytes.slice(0, Math.min(bytes.length, new DataView(bytes.buffer, bytes.byteOffset).getUint32(4, true) || bytes.length));
   const sameBytes = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
   const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
-  const when = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const validDate = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
+  const validBase64 = value => typeof value === 'string' && value.length >= 12 && value.length <= 200_000 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
+  const validBackup = backup => {
+    if (!backup || typeof backup !== 'object' || typeof backup.id !== 'string' || backup.id.length > 80 || !validDate(backup.at)) return false;
+    if (backup.deleted === true) return true;
+    if (Array.isArray(backup.group)) return backup.group.length > 0 && backup.group.every(item => Number.isInteger(item?.memory) && typeof item.name === 'string' && validBase64(item.data));
+    return Number.isInteger(backup.memory) && typeof backup.name === 'string' && validBase64(backup.data);
+  };
+  const when = iso => {
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime()) ? 'unknown date' : date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
   const fileName = text => text.replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'PATCH';
   const download = (bytes, name) => {
     const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
@@ -489,8 +500,8 @@
         <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
         <span class="usb-local-actions">
-          ${item.key.startsWith('lib:') ? `<button class="btn btn-sm btn-icon btn-invisible btn-danger usb-delete" data-act="delete" aria-label="Delete ${escapeHtml(item.name)} from My patches" title="Delete from My patches">${ICON_TRASH}</button>` : ''}
-          ${item.href ?`<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : ''}
+          <button class="btn btn-sm btn-icon btn-invisible btn-danger usb-delete"${item.key.startsWith('lib:') ? ' data-act="delete"' : ' disabled'} aria-label="Delete ${escapeHtml(item.name)} from My patches" title="${item.key.startsWith('lib:') ? 'Delete from My patches' : 'Only saved patches can be deleted'}">${ICON_TRASH}</button>
+          ${item.href ? `<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : '<button class="btn btn-sm usb-edit" disabled title="This file cannot be opened in the patch builder">Edit</button>'}
           <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
             aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
             title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
@@ -518,7 +529,7 @@
   window.addEventListener('account-synced', event => { if (event.detail.pedal === PEDAL.id) { renderLocals(); renderBackups(); } });
 
   // ---- writing ---------------------------------------------------------------------------------------
-  const storedBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list : []; };
+  const storedBackups = () => { const list = readJson(BACKUP_KEY, []); return Array.isArray(list) ? list.filter(validBackup) : []; };
   const readBackups = () => storedBackups().filter(b => !b.deleted);
   // The last MAX_BACKUPS, and no more than about 190 kB so the list still fits in an account (see account-sync.mjs).
   // The deletion records of the last 90 days are kept next to them.

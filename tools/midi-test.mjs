@@ -13,7 +13,15 @@ const patches = ['01base.zptc', '06FLIP.zptc', '07Big Black .zptc'].map(f => new
 const answer = fakePedal(patches, { device: 0x6e });
 // A fake Web MIDI access with one ZOOM input and output wired to the simulated pedal
 const input = { id: 'in', name: 'ZOOM MS Plus Series', open: async () => {}, onmidimessage: null };
-const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => { const r = answer(message); if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1); } };
+let unsolicitedSent = false;
+const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => {
+  if (!unsolicitedSent && message[4] === 0x50) {
+    unsolicitedSent = true;
+    input.onmidimessage?.({ data: new Uint8Array([0xf0, 0x52, 0x00, 0x6e, 0x43, 0xf7]) });
+  }
+  const r = answer(message);
+  if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1);
+} };
 ctx.navigator = { requestMIDIAccess: async () => ({ inputs: new Map([['in', input]]), outputs: new Map([['out', output]]) }) };
 
 let passed = 0;

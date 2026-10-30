@@ -11,6 +11,12 @@ const PORT = 8109;
 const server = spawn('node', ['deploy/server.mjs'], { env: { ...process.env, PORT: String(PORT), DATA_DIR: fs.mkdtempSync('/tmp/pm-test-') }, stdio: 'ignore' });
 await new Promise(resolve => setTimeout(resolve, 1500));
 const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
+const stop = child => new Promise(resolve => {
+  if (child.exitCode !== null) return resolve();
+  const timer = setTimeout(() => { child.kill('SIGKILL'); resolve(); }, 2000);
+  child.once('exit', () => { clearTimeout(timer); resolve(); });
+  child.kill();
+});
 let passed = 0;
 // A fake Web MIDI access wired to the simulated pedal (runs in the page); MIDI access counts as already granted
 function mockMidi({ source, patches }) {
@@ -151,7 +157,12 @@ try {
   const page3 = watch(await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage());
   await page3.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other] });
   await page3.addInitScript(() => localStorage.setItem('ms60b-library', JSON.stringify([{ id: 'p1', name: 'My patch', effects: [{ index: 0, on: true, values: {} }], updatedAt: new Date().toISOString() }])));
+  await page3.addInitScript(() => localStorage.setItem('ms60b-usb-backups', JSON.stringify([null, { id: 'bad', at: 'not-a-date', data: 'not-base64' }])));
   await page3.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
+  await test('corrupted local USB backups are ignored without breaking the manager', async () => {
+    assert.equal(await page3.locator('#usb-backup-count').innerText(), '0');
+    assert.equal(await page3.locator('#usb-backups-clear').isDisabled(), true);
+  });
   await test('before each send button My patches has an Edit button that opens the patch in the builder', async () => {
     const edit = page3.locator('#usb-locals li[data-key="lib:p1"] .usb-edit');
     assert.equal(await edit.innerText(), 'Edit');
@@ -215,7 +226,7 @@ try {
     assert.deepEqual(nativeDialogs, []);
   });
 } finally {
+  await stop(server);
   await browser.close();
-  server.kill();
 }
 console.log(`${passed} passed`);

@@ -8,7 +8,7 @@
 
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { mkdir, stat } from 'node:fs/promises';
+import { mkdir, realpath, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +20,7 @@ import { LEGACY_ORIGINS, SITE_URL } from './site-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(process.env.ROOT || join(here, '..', 'site'));
+const ROOT_REAL = await realpath(ROOT).catch(() => ROOT);
 const DATA_DIR = resolve(process.env.DATA_DIR || join(here, '..', 'sync-data'));
 const PORT = Number(process.env.PORT || 8097);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -95,13 +96,21 @@ async function readBody(request) {
 }
 
 async function serveStatic(request, response, pathname) {
-  let target = normalize(join(ROOT, decodeURIComponent(pathname)));
+  let decoded;
+  try { decoded = decodeURIComponent(pathname); } catch { return send(response, 400, 'Bad request', { 'Content-Type': 'text/plain; charset=utf-8' }); }
+  let target = normalize(join(ROOT, decoded));
   if (target !== ROOT && !target.startsWith(ROOT + sep)) return send(response, 403, 'Forbidden');
   let info = await stat(target).catch(() => null);
+  const insideRoot = async file => {
+    const actual = await realpath(file).catch(() => null);
+    return actual && (actual === ROOT_REAL || actual.startsWith(ROOT_REAL + sep));
+  };
+  if (info && !await insideRoot(target)) return send(response, 403, 'Forbidden');
   if (info?.isDirectory()) {
     if (!pathname.endsWith('/')) return send(response, 301, '', { Location: `${pathname}/` });
     target = join(target, 'index.html');
     info = await stat(target).catch(() => null);
+    if (info && !await insideRoot(target)) return send(response, 403, 'Forbidden');
   }
   if (!info?.isFile()) return send(response, 404, 'Not found', { 'Content-Type': 'text/plain; charset=utf-8' });
   const lastModified = info.mtime.toUTCString();

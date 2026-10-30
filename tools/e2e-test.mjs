@@ -16,6 +16,12 @@ const dataDir = await mkdtemp(join(tmpdir(), 'ms60b-e2e-'));
 const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', fileURLToPath(new URL('../deploy/server.mjs', import.meta.url))], { env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, PBKDF2_ITER: '1000', MAIL_OUTBOX: join(dataDir, 'mail') }, stdio: ['ignore', 'pipe', 'inherit'] });
 await new Promise(resolve => server.stdout.once('data', resolve));
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
+const stop = child => new Promise(resolve => {
+  if (child.exitCode !== null) return resolve();
+  const timer = setTimeout(() => { child.kill('SIGKILL'); resolve(); }, 2000);
+  child.once('exit', () => { clearTimeout(timer); resolve(); });
+  child.kill();
+});
 
 let passed = 0;
 const errors = [];
@@ -336,8 +342,8 @@ try {
   passed++;
   console.log('✓ no errors in the browser console');
 } finally {
+  await stop(server);
   await browser.close();
-  server.kill();
   await rm(dataDir, { recursive: true, force: true });
 }
 console.log(`\n${passed} passed`);

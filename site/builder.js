@@ -37,13 +37,14 @@ const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index]
 // Current draft (STORAGE_KEY) and saved patch library (LIBRARY_KEY), both in the browser's localStorage.
 const LIBRARY_KEY = `${PEDAL.id}-library`;
 const DELETED_KEY = `${PEDAL.id}-deleted`; // { patchId: ISO time } deletions waiting to reach other devices
+const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
 function slotFor(index, values = null) {
   const fx = catalog[index];
   const defaults = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? p.codec.fallback : 0]));
-  return { uid: ++uid, index, on: true, values: { ...defaults, ...values }, open: true };
+  return { uid: ++uid, index, on: true, values: { ...defaults, ...normalizeValues(index, values) }, open: true };
 }
 // Serializable patch shape: { name, effects: [{ index, on, values }] }
 const serialize = source => ({ name: source.name, effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })) });
@@ -60,8 +61,8 @@ function carriedValues(slot, index) {
 }
 const sameContent = (a, b) => JSON.stringify(serialize(a)) === JSON.stringify(serialize(b));
 function hydrate(patch) {
-  return (patch.effects || []).filter(e => catalog[e.index]).slice(0, ZPTC.MAX_EFFECTS)
-    .map(e => ({ ...slotFor(e.index, e.values), on: e.on !== false, open: false }));
+  return (patch.effects || []).filter(e => e && catalog[e.index]).slice(0, ZPTC.MAX_EFFECTS)
+    .map(e => ({ ...slotFor(e.index, e.values && typeof e.values === 'object' ? e.values : {}), on: e.on !== false, open: false }));
 }
 function save() {
   recordHistory();
@@ -144,7 +145,7 @@ function load() {
 // ---- library ----------------------------------------------------------------------------------
 let storageOk = true;
 function readLibrary() {
-  try { const list = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); return Array.isArray(list) ? list : []; }
+  try { const list = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); return Array.isArray(list) ? list.map(normalizeLibraryEntry).filter(Boolean) : []; }
   catch { storageOk = false; return []; }
 }
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -177,6 +178,35 @@ function uniqueName(name, list, ignoreId = null) {
 }
 // Where the patch plugs in ('amp' | 'mixer' | null), remembered with each saved patch
 const validOutput = value => (value === 'amp' || value === 'mixer') ? value : null;
+function normalizeLibraryEntry(entry) {
+  if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || !PATCH_ID.test(entry.id) || typeof entry.name !== 'string' || !Array.isArray(entry.effects)) return null;
+  const effects = entry.effects.filter(effect => effect && catalog[effect.index]).slice(0, ZPTC.MAX_EFFECTS).map(effect => ({
+    index: effect.index,
+    on: effect.on !== false,
+    values: normalizeValues(effect.index, effect.values)
+  }));
+  const updatedAt = typeof entry.updatedAt === 'string' && Number.isFinite(Date.parse(entry.updatedAt))
+    ? entry.updatedAt
+    : new Date(0).toISOString();
+  return { id: entry.id, name: entry.name.slice(0, 28), output: validOutput(entry.output), effects, updatedAt };
+}
+function normalizeValues(index, values) {
+  const source = values && typeof values === 'object' && !Array.isArray(values) ? values : {};
+  return Object.fromEntries(catalog[index].params.flatMap(p => {
+    const value = source[p.name];
+    if (value === undefined || value === null) return [];
+    if (!p.codec) {
+      const raw = Math.round(Number(value));
+      return Number.isFinite(raw) ? [[p.name, Math.max(0, Math.min(2 ** p.bits - 1, raw))]] : [];
+    }
+    const c = p.codec;
+    if (c.kind === 'enum') return c.options.includes(value) ? [[p.name, value]] : [];
+    if (c.kind === 'off-number' && String(value).toUpperCase() === 'OFF') return [[p.name, 'OFF']];
+    const number = Number(value);
+    const validStep = Number.isFinite(number) && number >= c.min && number <= c.max && Math.abs((number - c.min) / c.step - Math.round((number - c.min) / c.step)) < 1e-9;
+    return validStep ? [[p.name, number]] : [];
+  }));
+}
 function addToLibrary(patch, list = readLibrary()) {
   const entry = { id: newId(), ...serialize(patch), output: validOutput(patch.output), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
   list.unshift(entry);
@@ -196,7 +226,7 @@ function paramControl(slot, p) {
   let control;
   let shown = value;
   if (!c) {
-    control = `<input class="form-control form-control--sm" type="number" id="${id}" min="0" max="${2 ** p.bits - 1}" step="1" value="${value}" data-raw="1" />`;
+    control = `<input class="form-control form-control--sm" type="number" id="${id}" min="0" max="${2 ** p.bits - 1}" step="1" value="${escapeHtml(value)}" data-raw="1" />`;
     shown = `raw ${value}`;
   } else if (c.kind === 'enum') {
     control = `<select class="form-control form-control--sm" id="${id}">${c.options.map(o => `<option${o === value ? ' selected' : ''}>${escapeHtml(o)}</option>`).join('')}</select>`;
@@ -204,7 +234,7 @@ function paramControl(slot, p) {
     const isOff = c.kind === 'off-number';
     const min = isOff ? c.min - 1 : c.min;
     const current = isOff && value === 'OFF' ? min : value;
-    control = `<input type="range" class="slider" id="${id}" min="${min}" max="${c.max}" step="${c.step}" value="${current}" ${isOff ? 'data-off="1"' : ''} />`;
+    control = `<input type="range" class="slider" id="${id}" min="${min}" max="${c.max}" step="${c.step}" value="${escapeHtml(current)}" ${isOff ? 'data-off="1"' : ''} />`;
     shown = isOff && value === 'OFF' ? 'OFF' : c.label ? c.label(value) : c.step < 1 ? Number(value).toFixed(1) : value;
   }
   const badge = !c ? '<span class="Label Label--attention" title="Format not decoded yet: enter the stored value">raw</span>'
@@ -299,7 +329,10 @@ function renderSummary() {
   renderAdvice();
 }
 
-const formatDate = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const formatDate = iso => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? 'unknown date' : date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
 function renderSaveState() {
   const entry = state.currentId ? findEntry(state.currentId) : null;
   if (state.currentId && !entry) state.currentId = null;
@@ -323,7 +356,7 @@ function renderLibrary() {
     const effects = entry.effects.filter(e => catalog[e.index]);
     const dsp = effects.reduce((s, e) => s + catalog[e.index].dsp, 0);
     const chain = effects.map(e => catalog[e.index].lcd).join(' → ');
-    return `<li class="library-item${entry.id === state.currentId ? ' is-current' : ''}" data-id="${entry.id}">
+    return `<li class="library-item${entry.id === state.currentId ? ' is-current' : ''}" data-id="${escapeHtml(entry.id)}">
       <button class="library-open" data-lib="open" title="Open in the builder">
         <span class="library-name">${escapeHtml(entry.name)}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
@@ -341,6 +374,13 @@ function renderLibrary() {
 }
 
 function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
+let editorRenderFrame = 0;
+let editorSaveTimer = 0;
+function scheduleEditorUpdate() {
+  if (!editorRenderFrame) editorRenderFrame = requestAnimationFrame(() => { editorRenderFrame = 0; renderSummary(); });
+  clearTimeout(editorSaveTimer);
+  editorSaveTimer = setTimeout(() => { editorSaveTimer = 0; save(); }, 250);
+}
 // Rendering rebuilds the chain, so keyboard focus is put back on the same control of the same effect.
 const announce = text => { $('#sr-status').textContent = ''; setTimeout(() => { $('#sr-status').textContent = text; }, 50); };
 function renderKeepingFocus(uid, action) {
@@ -405,11 +445,10 @@ $('#chain-list').addEventListener('input', event => {
   }
   slot.values[name] = value;
   card.querySelector('.param-val').textContent = shown;
-  renderSummary();
-  save();
+  scheduleEditorUpdate();
 });
 
-$('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
+$('#patch-name').addEventListener('input', event => { state.name = event.target.value; scheduleEditorUpdate(); });
 const confirmDiscard = async () => !isDirty() || !state.effects.length
   || DIALOGS.confirm({ title: 'Unsaved changes', text: 'The current patch has unsaved changes. Continue and lose them?', ok: 'Lose the changes', cancel: 'Keep editing', danger: true });
 function loadPatch(patch, currentId = null) {
@@ -719,7 +758,17 @@ function patchesFromBackup(text) {
   // Effect indexes differ between pedals: a backup of another pedal would load the wrong effects
   if (data?.format && data.format !== `${PEDAL.id}-patch-library`) throw new Error('a backup made for another pedal');
   return patches.filter(p => p && typeof p.name === 'string' && Array.isArray(p.effects))
-    .map(p => ({ id: typeof p.id === 'string' ? p.id : null, updatedAt: p.updatedAt, name: p.name.slice(0, 28), output: validOutput(p.output), effects: p.effects.filter(e => catalog[e?.index]?.usable).slice(0, ZPTC.MAX_EFFECTS) }));
+    .map(p => ({
+      id: typeof p.id === 'string' && PATCH_ID.test(p.id) ? p.id : null,
+      updatedAt: typeof p.updatedAt === 'string' && Number.isFinite(Date.parse(p.updatedAt)) ? p.updatedAt : new Date().toISOString(),
+      name: p.name.slice(0, 28),
+      output: validOutput(p.output),
+      effects: p.effects.filter(e => e && catalog[e?.index]?.usable).slice(0, ZPTC.MAX_EFFECTS).map(e => ({
+        index: e.index,
+        on: e.on !== false,
+        values: e.values && typeof e.values === 'object' && !Array.isArray(e.values) ? { ...e.values } : {}
+      }))
+    }));
 }
 
 async function importFiles(files) {

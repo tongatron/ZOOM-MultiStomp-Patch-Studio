@@ -38,9 +38,12 @@ const PEDALMIDI = (() => {
 
   function onMessage(event) {
     const bytes = event.data;
-    if (bytes[0] !== 0xf0) return; // ignore program changes, clock and the tuner's control changes
+    if (!bytes || bytes[0] !== 0xf0 || bytes.at(-1) !== 0xf7) return; // ignore program changes, clock and tuner controls
     log('in', bytes);
-    waiting.shift()?.resolve(bytes);
+    const index = waiting.findIndex(entry => entry.matches(bytes));
+    if (index === -1) return; // an unsolicited or late answer must not complete another command
+    const [entry] = waiting.splice(index, 1);
+    entry.resolve(bytes);
   }
 
   // Asks the browser for MIDI with SysEx (it shows a permission prompt) and returns the ports
@@ -66,27 +69,43 @@ const PEDALMIDI = (() => {
     waiting.splice(0).forEach(w => w.reject(new Error('Disconnected')));
   }
 
-  // Sends F0 <bytes> F7 and waits for the next SysEx answer
-  function request(bytes) {
+  const identityReply = bytes => bytes[1] === 0x7e && bytes[3] === 0x06 && bytes[4] === 0x02 && bytes[5] === 0x52;
+  const zoomReply = command => bytes => {
+    if (bytes[1] !== 0x52 || bytes[3] !== device) return false;
+    const response = bytes[4];
+    if (command === 0x44) return response === 0x43;
+    if (command === 0x46) return response === 0x45;
+    if (command === 0x64) return response === 0x64;
+    return response === 0x00 || response === 0x01;
+  };
+
+  // Sends F0 <bytes> F7 and waits for the matching SysEx answer
+  function request(bytes, matches = () => true) {
     if (!output) return Promise.reject(new Error('Not connected'));
     const message = [0xf0, ...bytes, 0xf7];
     log('out', message);
     return new Promise((resolve, reject) => {
-      const entry = { resolve: data => { clearTimeout(timer); resolve(data); }, reject };
-      const timer = setTimeout(() => {
+      let timer;
+      const entry = { matches, resolve: data => { clearTimeout(timer); resolve(data); }, reject };
+      timer = setTimeout(() => {
         const i = waiting.indexOf(entry);
         if (i !== -1) waiting.splice(i, 1);
         reject(new Error(`No answer from the pedal within ${TIMEOUT / 1000} s`));
       }, TIMEOUT);
       waiting.push(entry);
-      output.send(message);
+      try { output.send(message); } catch (error) {
+        const i = waiting.indexOf(entry);
+        if (i !== -1) waiting.splice(i, 1);
+        clearTimeout(timer);
+        reject(error);
+      }
     });
   }
-  const zoom = (...command) => request([0x52, 0x00, device, ...command]);
+  const zoom = (...command) => request([0x52, 0x00, device, ...command], zoomReply(command[0]));
 
   // Universal identity request (standard MIDI). The reply carries the ZOOM model byte and the firmware version.
   async function identify() {
-    const r = await request([0x7e, 0x7f, 0x06, 0x01]);
+    const r = await request([0x7e, 0x7f, 0x06, 0x01], identityReply);
     if (r[1] !== 0x7e || r[3] !== 0x06 || r[4] !== 0x02) throw new Error(`Unexpected identity reply: ${hex(r)}`);
     if (r[5] !== 0x52) throw new Error('The device answering is not a ZOOM product.');
     device = r[6];

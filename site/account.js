@@ -84,7 +84,13 @@ const ACCOUNT = (() => {
   const here = () => location.pathname + location.search;
 
   function start() {
-    const sync = createSync({ storage: localStorage, request: (...args) => fetch(...args), merge: LIBMERGE });
+    const REQUEST_TIMEOUT = 15000;
+    const requestWithTimeout = (input, init = {}) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+      return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+    };
+    const sync = createSync({ storage: localStorage, request: requestWithTimeout, merge: LIBMERGE });
     const seen = {}; // fingerprint of each pedal after its last sync
     let running = null;
     let again = false;
@@ -98,7 +104,7 @@ const ACCOUNT = (() => {
     let answered = false; // the last /api/me request was answered by the server (not the offline fallback below)
     async function refreshMe() {
       try {
-        const response = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' });
+        const response = await requestWithTimeout('/api/me', { credentials: 'same-origin', cache: 'no-store' });
         account.me = await response.json();
         answered = true;
         try { sessionStorage.setItem('account-me', JSON.stringify(account.me)); } catch {}
@@ -129,7 +135,7 @@ const ACCOUNT = (() => {
           return true;
         } catch (error) {
           if (error.signedOut) await refreshMe();
-          else account.status.error = error instanceof TypeError ? 'Cannot reach the server: will retry.' : error.message;
+          else account.status.error = error instanceof TypeError || error?.name === 'AbortError' ? 'Cannot reach the server: will retry.' : error.message;
           return false;
         } finally {
           account.status.syncing = false;
@@ -146,7 +152,7 @@ const ACCOUNT = (() => {
     // ---- first sign-in on this browser ----
     // The account's copy without changing it: a sync that sends nothing
     async function peek(pedal) {
-      const response = await fetch(`/api/account/sync/${pedal}`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{"patches":[],"deleted":{}}' });
+      const response = await requestWithTimeout(`/api/account/sync/${pedal}`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{"patches":[],"deleted":{}}' });
       if (!response.ok) throw new Error(`Server error ${response.status}.`);
       return response.json();
     }
@@ -154,7 +160,18 @@ const ACCOUNT = (() => {
       const owner = (localStorage.getItem(OWNER_KEY) || '').toLowerCase();
       const email = account.me.email.toLowerCase();
       if (owner === email) return;
-      if (owner) for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-account-sync`); // synced with another account
+      const ownerChanged = owner && owner !== email;
+      const hasLocalData = ownerChanged && PEDALS.some(pedal => ['library', 'deleted', 'pedal-edit', ...KINDS].some(kind => localStorage.getItem(`${pedal}-${kind}`) !== null));
+      if (hasLocalData) {
+        const add = await choose({
+          title: 'Dati locali e nuovo account',
+          text: 'Questo browser contiene dati associati a un altro account.',
+          note: 'Aggiungerli invierà i dati locali al nuovo account. Iniziare dai dati del nuovo account rimuoverà la copia locale da questo browser.',
+          primary: 'Aggiungi al nuovo account', secondary: 'Inizia dai dati account'
+        });
+        if (add !== true) clearBrowser();
+      }
+      if (ownerChanged) for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-account-sync`); // synced with another account
       const local = PEDALS.flatMap(pedal => list(`${pedal}-library`).map(p => ({ pedal, id: p.id })));
       let missing = local;
       let accountHas = 0;
@@ -398,8 +415,14 @@ const ACCOUNT = (() => {
     render();
     refreshMe().then(async me => {
       if (me.signedIn) {
-        try { await firstSignIn(); ready = true; } catch { account.status.error = 'Cannot reach the server: reload the page to sync.'; render(); }
-        await syncAll();
+        try {
+          await firstSignIn();
+          ready = true;
+          await syncAll();
+        } catch {
+          account.status.error = 'Cannot reach the server: reload the page to sync.';
+          render();
+        }
       } else if (answered) showWelcome();
     });
   }

@@ -2,6 +2,9 @@
   "private": true,
   "name": "zoom-multistomp-patch-studio",
   "description": "Dev tooling only: the site itself has no build step and no dependencies.",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "test": "node tools/zptc.mjs roundtrip patches/0* && node tools/advice-test.mjs && node tools/sync-test.mjs && node --disable-warning=ExperimentalWarning tools/auth-test.mjs",
     "test:e2e": "node tools/e2e-test.mjs"

@@ -4,11 +4,13 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v25';
+const CACHE = 'ms60b-v26';
 const CORE = [
   // No './' and no old-address pages here: they only send the visitor on to /ms-60b/
   'ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/technical-notes.md', 'ms-60b/guide.html', 'privacy.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest',
-  ...Array.from({ length: 97 }, (_, i) => `ms-60b/assets/effects/fx-${String(i).padStart(3, '0')}.png`)
+  ...Array.from({ length: 97 }, (_, i) => `ms-60b/assets/effects/fx-${String(i).padStart(3, '0')}.png`),
+  'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'ms-50g/resources.html',
+  ...Array.from({ length: 127 }, (_, i) => `ms-50g/assets/effects/fx-${String(i).padStart(3, '0')}.png`)
 ];
 
 // Sign-in and account pages are always asked to the server (they depend on the session); so is /moved, which receives

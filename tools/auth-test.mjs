@@ -253,7 +253,10 @@ try {
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
     const admin = sessionOf(await post('/login', { email: 'admin@example.com', password: 'admin password 1' }));
     const page = await (await get('/admin', { cookie: admin })).text();
-    assert.match(page, /Summary/);
+    assert.doesNotMatch(page, /<h2>Summary<\/h2>/, 'the Summary section is gone');
+    assert.match(page, /admin-accounts-table/);
+    assert.match(page, /data-label="Email"/);
+    assert.match(page, /overflow: visible/);
     assert.match(page, /new3@example\.com/);
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');

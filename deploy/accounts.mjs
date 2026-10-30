@@ -5,7 +5,6 @@
 // Environment: DB_FILE (default DATA_DIR/studio.db), SESSION_SECRET (64 hex; otherwise one is generated and kept in the
 // database), SITE_URL (links in emails, see site-url.mjs), MAIL_FILE / TELEGRAM_FILE (see mail.mjs).
 
-import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
@@ -122,18 +121,9 @@ export function createAccounts({ dataDir }) {
     dir = dir === 'asc' ? 'asc' : 'desc';
     const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
     const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT 500`).all({ q: like });
-    const since = days => new Date(Date.now() - days * 864e5).toISOString();
-    const one = (sql, ...args) => Object.values(store.db.prepare(sql).get(...args))[0];
-    const fileSize = file => { try { return statSync(file).size; } catch { return 0; } };
-    const stats = {
-      users: one('SELECT COUNT(*) FROM users'), new7: one('SELECT COUNT(*) FROM users WHERE created_at >= ?', since(7)),
-      new30: one('SELECT COUNT(*) FROM users WHERE created_at >= ?', since(30)), active30: one('SELECT COUNT(*) FROM users WHERE last_login >= ?', since(30)),
-      ms60b: one("SELECT COUNT(*) FROM patches WHERE pedal = 'ms60b' AND deleted_at IS NULL"), ms50g: one("SELECT COUNT(*) FROM patches WHERE pedal = 'ms50g' AND deleted_at IS NULL"),
-      dbBytes: fileSize(dbFile) + fileSize(`${dbFile}-wal`)
-    };
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, stats, users, query, sort, dir, log, ...rest }));
+    html(response, status, adminPage({ me, users, query, sort, dir, log, ...rest }));
   }
 
   // The account an admin action is about; never the admin's own (so an admin cannot lock themselves out)

@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Round-trip every reference patch byte for byte
         run: node tools/zptc.mjs roundtrip patches/0*
       - name: Advice engine and starter chains
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Install Playwright and Chromium
         run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
       - name: Builder end to end (build, save, share, compare, download, sync)
