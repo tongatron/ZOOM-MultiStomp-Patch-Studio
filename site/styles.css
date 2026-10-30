@@ -418,14 +418,15 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .chain-list { margin: 0; padding: 0; list-style: none; }
 .chain-item { position: relative; border-top: 1px solid var(--border-muted); }
 .chain-item:first-child { border-top: 0; }
-.chain-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
 .chain-item.is-off { background: rgba(110, 118, 129, .06); }
 .chain-item.is-off .fx-thumb, .chain-item.is-off .chain-name { opacity: .5; }
-.chain-head { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; }
+.chain-head { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
 .chain-slot {
   display: grid; place-items: center; width: 24px; height: 24px; flex: none;
-  font: 600 12px var(--mono); color: var(--fg-muted); border: 1px solid var(--border); border-radius: 50%;
+  font: 600 12px var(--mono); color: var(--c, var(--fg-muted)); border: 2px solid var(--c, var(--border)); border-radius: 50%;
+  background: color-mix(in srgb, var(--c, transparent) 18%, transparent);
 }
+.chain-item.is-off .chain-slot { opacity: .5; }
 .chain-head .fx-thumb { width: 40px; }
 .chain-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 0; background: none; border: 0; text-align: left; cursor: pointer; }
 .chain-name { font-size: 15px; font-weight: 600; color: var(--accent-fg); }
