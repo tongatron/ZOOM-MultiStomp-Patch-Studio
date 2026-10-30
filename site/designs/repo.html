@@ -228,7 +228,7 @@
       }
       const openPalette = () => { $('#palette').classList.add('open'); $('#pal-q').value = ''; palIndex = 0; renderPalette(); $('#pal-q').focus(); };
       const closePalette = () => $('#palette').classList.remove('open');
-      const add = index => { if (!P.actions.add(index)) alert(`A patch holds up to ${P.MAX} effects.`); closePalette(); tab = 'chain'; render(P.state); };
+      const add = index => { if (!P.actions.add(index)) P.notice(`A patch holds up to ${P.MAX} effects.`); closePalette(); tab = 'chain'; render(P.state); };
 
       document.addEventListener('click', e => {
         const t = e.target.closest('[data-tab],[data-open],[data-toggle],[data-move],[data-remove],[data-fix],[data-load],[data-add],[data-palette],#open-palette');

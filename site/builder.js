@@ -384,7 +384,8 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; renderSummary(); save(); });
-const confirmDiscard = () => !isDirty() || !state.effects.length || confirm('The current patch has unsaved changes. Continue and lose them?');
+const confirmDiscard = async () => !isDirty() || !state.effects.length
+  || DIALOGS.confirm({ title: 'Unsaved changes', text: 'The current patch has unsaved changes. Continue and lose them?', ok: 'Lose the changes', cancel: 'Keep editing', danger: true });
 function loadPatch(patch, currentId = null) {
   endPedalEdit(); // another patch replaces the one being edited for the pedal
   state.name = patch.name;
@@ -393,8 +394,8 @@ function loadPatch(patch, currentId = null) {
   $('#patch-name').value = patch.name;
   render();
 }
-$('#clear-chain').addEventListener('click', () => {
-  if (!confirmDiscard()) return;
+$('#clear-chain').addEventListener('click', async () => {
+  if (!await confirmDiscard()) return;
   loadPatch({ name: '', effects: [] });
   $('#patch-name').focus();
 });
@@ -532,13 +533,13 @@ $('#clear-chain').addEventListener('click', () => {
     }
     renderCompare();
   }
-  $('#compare-body').addEventListener('click', event => {
+  $('#compare-body').addEventListener('click', async event => {
     const copy = event.target.closest('[data-cmp-copy]');
     if (copy) { copyValue(copy.dataset.cmpCopy, Number(copy.dataset.row), copy.dataset.param); return; }
     const button = event.target.closest('[data-cmp-open]');
     if (!button) return;
     const entry = findEntry(button.dataset.cmpOpen);
-    if (!entry || !confirmDiscard()) return;
+    if (!entry || !await confirmDiscard()) return;
     dialog.close();
     loadPatch(entry, entry.id);
     if (validOutput(entry.output)) { adviceSettings.output = entry.output; saveAdvice(); renderAdvice(); }
@@ -600,7 +601,7 @@ function downloadPatch(source) {
 }
 $('#download').addEventListener('click', () => downloadPatch(state));
 
-$('#library-list').addEventListener('click', event => {
+$('#library-list').addEventListener('click', async event => {
   const button = event.target.closest('[data-lib]');
   if (!button) return;
   const id = button.closest('.library-item').dataset.id;
@@ -609,7 +610,7 @@ $('#library-list').addEventListener('click', event => {
   if (!entry) return;
   switch (button.dataset.lib) {
     case 'open':
-      if (id === state.currentId || !confirmDiscard()) return;
+      if (id === state.currentId || !await confirmDiscard()) return;
       loadPatch(entry, id);
       if (validOutput(entry.output)) { adviceSettings.output = entry.output; saveAdvice(); renderAdvice(); }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -623,8 +624,8 @@ $('#library-list').addEventListener('click', event => {
       break;
     }
     case 'delete':
-      if (!confirm(`Delete "${entry.name}" from My patches?`)) return;
-      if (!writeLibrary(list.filter(e => e.id !== id))) return;
+      if (!await DIALOGS.confirm({ title: 'Delete patch', html: `<p>Delete <b>${escapeHtml(entry.name)}</b> from My patches?</p>`, ok: 'Delete', danger: true })) return;
+      if (!writeLibrary(readLibrary().filter(e => e.id !== id))) return; // read again: another tab may have changed the list meanwhile
       if (id === state.currentId) state.currentId = null;
       render();
       break;
@@ -700,7 +701,7 @@ async function importFiles(files) {
   if ((added.length || updated) && !writeLibrary(list)) return;
   // A single imported .zptc opens straight in the builder
   const single = files.length === 1 && added.length === 1 && !/\.json$/i.test(files[0].name);
-  if (single && confirmDiscard()) loadPatch(added[0], added[0].id);
+  if (single && await confirmDiscard()) loadPatch(added[0], added[0].id);
   else render();
   problems.forEach(p => notify('attention', p));
   if (added.length || updated) notify('muted', `Imported ${added.length} patch${added.length === 1 ? '' : 'es'}${updated ? `, updated ${updated}` : ''}.`);
@@ -771,7 +772,7 @@ picker.addEventListener('close', () => {
   if (pickerState.replace) { pickerState.category = addCategory; pickerState.favOnly = addFavOnly; }
   pickerState.replace = null;
 });
-picker.addEventListener('click', event => {
+picker.addEventListener('click', async event => {
   if (event.target === picker) { picker.close(); return; }
   if (event.target.closest('[data-favorites]')) { pickerState.favOnly = !pickerState.favOnly; renderPicker(); return; }
   const cat = event.target.closest('[data-cat]');
@@ -782,7 +783,7 @@ picker.addEventListener('click', event => {
   const old = pickerState.replace;
   if (old) {
     const i = state.effects.indexOf(old);
-    if (i === -1 || !fitsDsp(fx, catalog[old.index].dsp)) return;
+    if (i === -1 || !await fitsDsp(fx, catalog[old.index].dsp)) return;
     picker.close();
     const next = { ...slotFor(fx.index, carriedValues(old, fx.index)), on: old.on, open: old.open };
     state.effects[i] = next;
@@ -790,7 +791,7 @@ picker.addEventListener('click', event => {
     renderKeepingFocus(next.uid, 'replace');
     return;
   }
-  if (!fitsDsp(fx)) return; // the picker stays open to choose a lighter effect
+  if (!await fitsDsp(fx)) return; // the picker stays open to choose a lighter effect
   picker.close();
   state.effects.forEach(slot => { slot.open = false; });
   state.effects.push(slotFor(fx.index));
@@ -894,12 +895,12 @@ const addChoice = $('#add-choice');
 let pendingAdd = null;
 // Asks before an addition that takes the estimated load over 100% (the pedal would show PROCESS OVERFLOW)
 // freed: the load of an effect that the new one replaces
-function fitsDsp(fx, freed = 0) {
+async function fitsDsp(fx, freed = 0) {
   const after = totalDsp() - freed + fx.dsp;
-  return after <= 100 || confirm(`With ${fx.name} the estimated load goes to ${pct(after)}. Above 100% the pedal shows PROCESS OVERFLOW and bypasses the effects. Continue anyway?`);
+  return after <= 100 || DIALOGS.confirm({ title: 'Over the DSP limit', text: `With ${fx.name} the estimated load goes to ${pct(after)}. Above 100% the pedal shows PROCESS OVERFLOW and bypasses the effects. Continue anyway?`, ok: 'Continue anyway' });
 }
-function appendEffect(fx) {
-  if (!fitsDsp(fx)) return;
+async function appendEffect(fx) {
+  if (!await fitsDsp(fx)) return;
   state.effects.forEach(slot => { slot.open = false; });
   state.effects.push(slotFor(fx.index));
   render();
@@ -1003,14 +1004,14 @@ $('#pack-new').addEventListener('click', () => RULEEDITOR.open(null, pack => {
   notify('muted', `Created rule pack "${pack.name}".`);
 }));
 $('#pack-example').addEventListener('click', () => downloadPack(RULEPACK.EXAMPLE));
-$('#advice-packs').addEventListener('click', event => {
+$('#advice-packs').addEventListener('click', async event => {
   const button = event.target.closest('button[data-pack]');
   if (!button) return;
   const entry = rulePacks.find(e => e.pack.id === button.dataset.id);
   if (!entry) return;
   if (button.dataset.pack === 'export') downloadPack(entry.pack);
   if (button.dataset.pack === 'edit') RULEEDITOR.open(entry.pack, pack => { entry.pack = pack; savePacks(); notify('muted', `Saved rule pack "${pack.name}".`); });
-  if (button.dataset.pack === 'remove' && confirm(`Remove the rule pack "${entry.pack.name}"? Export it first if you want to keep it.`)) { rulePacks = rulePacks.filter(e => e !== entry); savePacks(); }
+  if (button.dataset.pack === 'remove' && await DIALOGS.confirm({ title: 'Remove rule pack', html: `<p>Remove the rule pack <b>${escapeHtml(entry.pack.name)}</b>? Export it first if you want to keep it.</p>`, ok: 'Remove', danger: true })) { rulePacks = rulePacks.filter(e => e !== entry); savePacks(); }
 });
 $('#advice-packs').addEventListener('change', event => {
   if (event.target.dataset.pack !== 'toggle') return;
@@ -1046,27 +1047,30 @@ const pedalMemory = Number(new URLSearchParams(location.hash.replace(/^#/, '')).
 history.replaceState(null, '', location.pathname);
 $('#patch-name').value = state.name;
 render();
-if (sharedLink) {
-  try {
-    const shared = PATCHLINK.decode(sharedLink.code, ZPTC.MAX_EFFECTS);
-    shared.effects = shared.effects.filter(e => catalog[e.index].usable);
-    if (!shared.effects.length) throw new Error('empty');
-    const edit = readJson(PEDAL_EDIT_KEY, null);
-    const fromPedal = pedalMemory && edit?.memory === pedalMemory && edit.pending;
-    if (confirmDiscard()) {
-      loadPatch(shared);
-      if (fromPedal) {
-        try { localStorage.setItem(PEDAL_EDIT_KEY, JSON.stringify({ ...edit, pending: false })); } catch {}
-        notify('muted', `Opened memory ${pedalMemory} of the pedal. Edit it, then press Send to memory ${pedalMemory}.`);
-      } else notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`);
-    } else if (fromPedal) endPedalEdit();
-  } catch {
-    notify('danger', 'This share link is broken or incomplete.');
+// Opening a link may ask a question first (unsaved changes), so the rest of the startup waits for the answer
+(async () => {
+  if (sharedLink) {
+    try {
+      const shared = PATCHLINK.decode(sharedLink.code, ZPTC.MAX_EFFECTS);
+      shared.effects = shared.effects.filter(e => catalog[e.index].usable);
+      if (!shared.effects.length) throw new Error('empty');
+      const edit = readJson(PEDAL_EDIT_KEY, null);
+      const fromPedal = pedalMemory && edit?.memory === pedalMemory && edit.pending;
+      if (await confirmDiscard()) {
+        loadPatch(shared);
+        if (fromPedal) {
+          try { localStorage.setItem(PEDAL_EDIT_KEY, JSON.stringify({ ...edit, pending: false })); } catch {}
+          notify('muted', `Opened memory ${pedalMemory} of the pedal. Edit it, then press Send to memory ${pedalMemory}.`);
+        } else notify('muted', `Opened the shared patch "${shared.name || 'Untitled'}". Save it to keep it in My patches.`);
+      } else if (fromPedal) endPedalEdit();
+    } catch {
+      notify('danger', 'This share link is broken or incomplete.');
+    }
   }
-}
-const addFx = addSlug && catalog.find(item => item.slug === addSlug && item.usable);
-if (addFx) {
-  if (state.effects.length) askWhereToAdd(addFx);
-  else appendEffect(addFx);
-}
-renderPedalEdit();
+  const addFx = addSlug && catalog.find(item => item.slug === addSlug && item.usable);
+  if (addFx) {
+    if (state.effects.length) askWhereToAdd(addFx);
+    else await appendEffect(addFx);
+  }
+  renderPedalEdit();
+})();

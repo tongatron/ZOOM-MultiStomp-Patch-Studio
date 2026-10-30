@@ -189,7 +189,7 @@
         const d = t.dataset;
         if (t.id === 'add') openPicker();
         else if (t.id === 'close') closePicker();
-        else if (d.add) { if (!P.actions.add(+d.add)) alert(`The board is full: ${P.MAX} pedals max.`); closePicker(); }
+        else if (d.add) { if (!P.actions.add(+d.add)) P.notice(`The board is full: ${P.MAX} pedals max.`); closePicker(); }
         else if (d.toggle) P.actions.toggle(+d.toggle);
         else if (d.move) P.actions.move(+d.move, +d.d);
         else if (d.remove) P.actions.remove(+d.remove);

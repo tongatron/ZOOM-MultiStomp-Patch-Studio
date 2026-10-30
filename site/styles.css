@@ -928,6 +928,10 @@ body.is-dropping .drop-overlay { display: grid; }
 .gh-footer .gh-privacy:hover { text-decoration: underline; }
 .usb-send { width: 32px; height: 32px; flex: none; }
 .usb-send.btn-primary { color: #fff; }
+.usb-delete { width: 32px; height: 32px; flex: none; }
+.usb-undo { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; margin: 0; padding: 0 16px 12px; }
+.usb-undo .btn { flex: none; }
+.usb-undo-text { max-width: 100%; overflow-wrap: anywhere; color: var(--fg-muted); font-size: 13px; line-height: 1.4; }
 
 /* ---- arranging the pedal ---- */
 .usb-arrange-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-muted); background: var(--bg-subtle); position: sticky; top: 0; z-index: 2; }

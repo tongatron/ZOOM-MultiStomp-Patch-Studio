@@ -29,7 +29,8 @@ async function device({ welcome = false } = {}) {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  page.on('dialog', dialog => dialog.accept());
+  // The site asks its questions in the page; a dialog of the browser (alert, confirm, prompt) is an error
+  page.on('dialog', dialog => { errors.push(`browser ${dialog.type()}: ${dialog.message()}`); dialog.dismiss(); });
   await page.goto(`${base}/ms-60b/builder.html`);
   return { context, page };
 }
@@ -102,6 +103,38 @@ try {
     await page.locator('[data-cmp-copy="a"][data-param="State"]').click();
     assert.match(await page.locator('#compare-body').innerText(), /identical/);
     await page.click('#compare-close');
+  });
+
+  await test('the builder asks in the page: unsaved changes, deleting a patch and the DSP limit have their own dialogs', async () => {
+    const fresh = await device();
+    const p = fresh.page;
+    const ask = p.locator('dialog.account-dialog[open]');
+    await addEffect(p, 'DYNAMIC COMPRESSOR');
+    await p.click('#clear-chain'); // an unsaved chain: asks before it is thrown away
+    await ask.waitFor();
+    assert.match(await ask.innerText(), /unsaved changes/);
+    await ask.getByRole('button', { name: 'Keep editing' }).click();
+    assert.equal(await chain(p), 1, 'Keep editing keeps the chain');
+    await p.click('#clear-chain');
+    await ask.getByRole('button', { name: 'Lose the changes' }).click();
+    await p.waitForFunction(() => document.querySelectorAll('#chain-list .chain-item').length === 0);
+    await addEffect(p, 'DYNAMIC COMPRESSOR');
+    await p.fill('#patch-name', 'ASK ME');
+    await p.click('#save-patch');
+    await p.locator('[data-lib="delete"]').click();
+    await ask.waitFor();
+    assert.match(await ask.innerText(), /Delete ASK ME from My patches\?/);
+    await ask.getByRole('button', { name: 'Cancel' }).click();
+    assert.equal(await p.locator('#library-count').innerText(), '1', 'Cancel keeps the patch');
+    await p.locator('[data-lib="delete"]').click();
+    await ask.getByRole('button', { name: 'Delete', exact: true }).click();
+    await p.waitForFunction(() => document.querySelector('#library-count').textContent === '0');
+    const over = p.evaluate(() => fitsDsp({ name: 'TEST FX', dsp: 500 })); // an effect that takes the load over 100%
+    await ask.waitFor();
+    assert.match(await ask.innerText(), /Above 100% the pedal shows PROCESS OVERFLOW/);
+    await ask.getByRole('button', { name: 'Cancel' }).click();
+    assert.equal(await over, false);
+    await fresh.context.close();
   });
 
   const PASSWORD = 'e2e password 123';

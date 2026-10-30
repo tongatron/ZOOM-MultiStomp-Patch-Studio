@@ -24,9 +24,9 @@
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-    <link rel="stylesheet" href="../styles.css?v=zoom70-20261030" />
+    <link rel="stylesheet" href="../styles.css?v=zoom71-20261030" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
-    <link rel="stylesheet" href="../fullscreen.css?v=fs31-20261030" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs32-20261030" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
   </head>
   <body data-account-notice data-account-welcome>
@@ -70,6 +70,10 @@
               <button class="btn btn-sm" id="usb-disconnect" hidden>Disconnect</button>
               <span class="usb-status" id="usb-status" role="status">Not connected</span>
               <span class="usb-facts" id="usb-facts"></span>
+            </div>
+            <div class="usb-undo" role="group" aria-label="Undo">
+              <button class="btn btn-sm" id="usb-undo" type="button" disabled title="Nothing to undo"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3.72 1.22a.75.75 0 0 1 0 1.06L2.56 3.44H9A5.25 5.25 0 0 1 9 13.94H6a.75.75 0 0 1 0-1.5h3a3.75 3.75 0 0 0 0-7.5H2.56l1.16 1.16a.75.75 0 0 1-1.06 1.06L.22 4.22a.75.75 0 0 1 0-1.06l2.44-2.44a.75.75 0 0 1 1.06 0Z"/></svg> Undo</button>
+              <span class="usb-undo-text" id="usb-undo-text">Nothing to undo yet</span>
             </div>
           </div>
           <details class="usb-ports">
@@ -164,7 +168,8 @@
     <script src="../zptc.js?v=zoom46-20261028"></script>
     <script src="../patch-link.js?v=zoom24-20261026"></script>
     <script src="../pedal-midi.js?v=zoom24-20261026"></script>
-    <script src="../pedal-manager.js?v=zoom59-20261030"></script>
+    <script src="../dialogs.js?v=dialogs1-20261030"></script>
+    <script src="../pedal-manager.js?v=zoom60-20261030"></script>
     <script src="../library-merge.js?v=zoom29-20261028"></script>
     <script src="../account.js?v=zoom52-20261030"></script>
     <script src="../report.js?v=report6-20261029"></script>

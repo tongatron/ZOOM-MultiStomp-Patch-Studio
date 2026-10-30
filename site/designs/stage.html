@@ -178,7 +178,7 @@
           P.actions.move(to - (name === 'down' ? 1 : -1), name === 'down' ? 1 : -1);
           return;
         }
-        if (name === 'add') { if (s.chain.length >= P.MAX) { alert(`All ${P.MAX} slots are in use.`); return; } ui.browse = { cat: 0, i: 0 }; }
+        if (name === 'add') { if (s.chain.length >= P.MAX) { P.notice(`All ${P.MAX} slots are in use.`); return; } ui.browse = { cat: 0, i: 0 }; }
         if (name === 'del' && s.chain[ui.sel]) { P.actions.remove(ui.sel); return; }
         if (name === 'enter' && s.chain[ui.sel]) { P.actions.toggle(ui.sel); return; }
         if (name === 'style') { const st = P.styles(); const i = st.findIndex(x => x.id === s.style); P.actions.style(st[(i + 1) % st.length].id); return; }

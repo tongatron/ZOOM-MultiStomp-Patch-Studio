@@ -8,6 +8,7 @@
   const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const NO_MIDI = 'This browser has no Web MIDI. Use Chrome or Edge on a computer.';
   const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, updatedAt }]
+  const DELETED_KEY = `${PEDAL.id}-deleted`; // { patchId: ISO time }: deletions waiting to reach other devices, kept by the builder too
   const DRAFT_KEY = `${PEDAL.id}-builder`;
   const EDIT_KEY = `${PEDAL.id}-pedal-edit`; // { memory, name, base: base64 PTCF, at } while a memory is edited in the builder
   const CLEARED_NAME = 'Empty'; // name of a cleared memory: no effects, only the BLANK slot
@@ -46,6 +47,8 @@
   const note = text => { lines.push(`   ${text}`); showLog(); };
   // Octicons "upload": the send button of each patch (its tooltip names the memory)
   const ICON_SEND = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M11.78 4.72a.749.749 0 1 1-1.06 1.06L8.75 3.811V9.5a.75.75 0 0 1-1.5 0V3.811L5.28 5.78a.749.749 0 1 1-1.06-1.06l3.25-3.25a.749.749 0 0 1 1.06 0l3.25 3.25Z"/></svg>';
+  // Octicons "trash": the delete button of each saved patch
+  const ICON_TRASH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>';
   const status = (text, kind = '') => { $('#usb-status').textContent = text; $('#usb-status').dataset.kind = kind; };
   const result = (ok, text) => { $('#usb-result').innerHTML = text ? `<p class="usb-result" data-ok="${ok}">${escapeHtml(text)}</p>` : ''; };
   // Runs one step; a failure shows in the status line and the log
@@ -361,14 +364,17 @@
       case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
       case 'copy': {
         const patch = toPatch(m.decoded);
-        const list = readJson(LIBRARY_KEY, []);
-        const taken = new Set(list.map(e => String(e.name).toLowerCase()));
-        let name = patch.name;
-        for (let i = 2; taken.has(name.toLowerCase()); i++) name = `${patch.name.slice(0, 28 - ` ${i}`.length)} ${i}`;
-        list.unshift({ id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name, effects: patch.effects, output: null, updatedAt: new Date().toISOString() });
-        try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); } catch { status('This browser does not allow this site to store data.', 'danger'); return; }
+        const list = readLibrary();
+        const entry = { id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: freeName(patch.name, list), effects: patch.effects, output: null, updatedAt: new Date().toISOString() };
+        list.unshift(entry);
+        if (!storeLibrary(list)) return;
         renderLocals();
-        status(`“${name}” copied to My patches`, 'ok');
+        status(`“${entry.name}” copied to My patches`, 'ok');
+        pushUndo(`Copied “${entry.name}” to My patches`, async () => {
+          const gone = removePatch(entry.id);
+          renderLocals();
+          return { ok: true, text: gone ? `“${entry.name}” removed from My patches` : `“${entry.name}” is not in My patches any more` };
+        }, { toast: true });
         break;
       }
     }
@@ -393,10 +399,60 @@
     let bytes;
     try { bytes = renamed(m.data, name); } catch (error) { status(error.message, 'danger'); return; }
     renaming = null;
-    send(n, bytes);
+    send(n, bytes, false, `Renamed “${m.decoded.name}” to “${name}”`);
   });
 
   const activeEdit = () => { const edit = readJson(EDIT_KEY, null); return edit?.memory && !edit.pending ? edit : null; };
+
+  // ---- My patches in storage -------------------------------------------------------------------------
+  const readLibrary = () => { const list = readJson(LIBRARY_KEY, []); return Array.isArray(list) ? list : []; };
+  // Same rules as the builder's writeLibrary: a patch that is gone from the list is remembered as deleted (an account deletes it
+  // on the other devices too), and one that comes back after a deletion counts as a new edit, so the deletion does not win
+  function storeLibrary(list) {
+    const now = new Date().toISOString();
+    const saved = readJson(DELETED_KEY, {});
+    const deleted = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+    const ids = new Set(list.map(e => e.id));
+    readLibrary().forEach(e => { if (!ids.has(e.id)) deleted[e.id] = now; });
+    list.forEach(e => { if (deleted[e.id]) { delete deleted[e.id]; e.updatedAt = now; } });
+    try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); localStorage.setItem(DELETED_KEY, JSON.stringify(deleted)); }
+    catch { status('This browser does not allow this site to store data.', 'danger'); return false; }
+    if (typeof ACCOUNT !== 'undefined') ACCOUNT.changed();
+    return true;
+  }
+  // A name that no patch in the list has yet: "Name", then "Name 2", "Name 3"…
+  function freeName(name, list) {
+    const taken = new Set(list.map(e => String(e.name).toLowerCase()));
+    let free = name;
+    for (let i = 2; taken.has(free.toLowerCase()); i++) free = `${name.slice(0, 28 - ` ${i}`.length)} ${i}`;
+    return free;
+  }
+  // Takes a patch out of My patches; gives the entry and the place it had, or null when it is not there or cannot be stored
+  function removePatch(id) {
+    const list = readLibrary();
+    const index = list.findIndex(e => e.id === id);
+    if (index === -1) return null;
+    const [entry] = list.splice(index, 1);
+    return storeLibrary(list) ? { entry, index } : null;
+  }
+  async function deletePatch(id) {
+    const found = readLibrary().find(e => e.id === id);
+    if (!found) return;
+    const yes = await confirmWrite(`<p>Delete <b>${escapeHtml(found.name)}</b> from My patches?</p><p>Nothing on the pedal changes. Undo brings the patch back for as long as you stay on this page.</p>`, 'Delete', 'Delete patch');
+    if (!yes) return;
+    const gone = removePatch(id);
+    if (!gone) return;
+    renderLocals();
+    status(`“${gone.entry.name}” deleted from My patches`, 'ok');
+    pushUndo(`Deleted “${gone.entry.name}”`, async () => {
+      const list = readLibrary();
+      if (list.some(e => e.id === gone.entry.id)) return { ok: true, text: `“${gone.entry.name}” is already in My patches` };
+      list.splice(Math.min(gone.index, list.length), 0, { ...gone.entry, name: freeName(gone.entry.name, list) }); // the name may have been taken meanwhile
+      if (!storeLibrary(list)) return { ok: false, text: 'This browser does not allow this site to store data.' };
+      renderLocals();
+      return { ok: true, text: `“${gone.entry.name}” is back in My patches` };
+    }, { toast: true });
+  }
 
   // ---- local patches ---------------------------------------------------------------------------------
   // [{ key, name, label, chain, bytes | error }]: the builder's open patch, a chosen .zptc file, then My patches
@@ -425,6 +481,7 @@
   }
   function renderLocals() {
     updateArrangeButton();
+    renderUndo(); // busy and connected change the same moments as this list
     const items = localItems();
     $('#usb-local-count').textContent = items.filter(i => i.key.startsWith('lib:')).length;
     const target = selected && memories.get(selected)?.state !== 'loading' ? selected : null;
@@ -432,7 +489,8 @@
         <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
         <span class="usb-local-actions">
-          ${item.href ? `<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : ''}
+          ${item.key.startsWith('lib:') ? `<button class="btn btn-sm btn-icon btn-invisible btn-danger usb-delete" data-act="delete" aria-label="Delete ${escapeHtml(item.name)} from My patches" title="Delete from My patches">${ICON_TRASH}</button>` : ''}
+          ${item.href ?`<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : ''}
           <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
             aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
             title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
@@ -440,6 +498,8 @@
       </li>`).join('') : '<li class="usb-empty">No patches yet. Build one in the <a href="builder.html">patch builder</a> and save it, or send a <code>.zptc</code> file.</li>';
   }
   $('#usb-locals').addEventListener('click', event => {
+    const trash = event.target.closest('[data-act="delete"]');
+    if (trash) { deletePatch(trash.closest('[data-key]').dataset.key.slice('lib:'.length)); return; }
     const button = event.target.closest('[data-act="send"]');
     if (!button || !selected) return;
     const item = localItems().find(i => i.key === button.closest('[data-key]').dataset.key);
@@ -486,11 +546,104 @@
       </li>`).join('') : '<li class="usb-empty">No backups yet.</li>';
   }
 
+  // ---- undo ------------------------------------------------------------------------------------------
+  // What was done on this page can be taken back, newest first: deleting or copying a patch in My patches, everything written to the
+  // pedal (a patch, a new name, a cleared memory, a new order, a restored backup) and, while a new order is planned, each move.
+  // The list lives in the page and is gone when the visitor leaves it. Deleting backups is not on it: that asks first.
+  // A change to the pedal is undone like any write to it: the memory is read, backed up, confirmed, written and read back.
+  const MAX_UNDO = 20;
+  const undoStack = []; // [{ label, needsPedal, run: async () → { ok, text } | { cancelled: true } }], newest last
+  let undoing = false;
+  function pushUndo(label, run, { needsPedal = false, toast = false } = {}) {
+    const entry = { label, needsPedal, run };
+    undoStack.push(entry);
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    renderUndo();
+    if (toast) DIALOGS.toast(label, { action: 'Undo', onAction: () => { if (undoStack.at(-1) === entry && !arranging) undo(); } });
+  }
+  function renderUndo() {
+    const top = undoStack.at(-1);
+    let label = 'Nothing to undo yet', enabled = false, hint = 'Nothing to undo';
+    if (arranging) {
+      enabled = arranging.history.length > 0;
+      label = enabled ? 'Last move in the new order' : 'No move to undo yet';
+    } else if (top) {
+      label = `${top.label}${undoStack.length > 1 ? ` · ${undoStack.length - 1} earlier` : ''}`;
+      enabled = !undoing && (!top.needsPedal || (connected && !busy)); // a patch in My patches does not need the pedal
+      hint = top.needsPedal && !connected ? 'Connect the pedal to undo this change' : top.needsPedal && busy ? 'Wait until the pedal is free' : '';
+    }
+    $('#usb-undo').disabled = !enabled;
+    $('#usb-undo').title = enabled ? 'Undo (Ctrl/⌘ + Z)' : hint;
+    $('#usb-undo-text').textContent = label;
+  }
+  async function undo() {
+    if (arranging) { undoMove(); return; }
+    const entry = undoStack.at(-1);
+    if (!entry || undoing || (entry.needsPedal && busy)) return;
+    if (entry.needsPedal && !connected) { status('Connect the pedal to undo this change', 'danger'); return; }
+    undoing = true;
+    if (entry.needsPedal) busy = true; // nothing else talks to the pedal while it is put back
+    renderLocals();
+    let r;
+    try { r = await entry.run(); } catch (error) { r = { ok: false, text: error.message }; }
+    undoing = false;
+    if (entry.needsPedal) busy = false;
+    if (r.ok) undoStack.pop(); // a change that could not be undone stays on the list, to try again
+    if (entry.needsPedal) renderMemories(); // the rows rewritten while busy are not draggable yet
+    renderLocals();
+    renderBackups();
+    if (r.cancelled) { status('Nothing changed'); return; }
+    if (entry.needsPedal) { result(r.ok, r.text); status(r.ok ? 'Undone' : 'Check the pedal', r.ok ? 'ok' : 'danger'); }
+    else { status(r.text, r.ok ? 'ok' : 'danger'); DIALOGS.toast(r.text); }
+  }
+  // What a memory holds now, read fresh, so that a write to it can be undone; null when it cannot be read safely
+  async function snapshotOf(number) {
+    await readOne(number);
+    const m = memories.get(number);
+    return m.state === 'ok' && m.crcOk ? { number, before: m.memory, name: m.decoded.name || '(no name)' } : null;
+  }
+  // Puts back what memories held before a change. changes: [{ number, before: the whole memory as it was, name, wrote: the PTCF
+  // file the change put there }]. Asks first, and tells when a memory is no longer what the change left (the pedal was edited since).
+  async function undoWrites(changes) {
+    const now = [];
+    for (const [k, c] of changes.entries()) {
+      status(`Reading memory ${c.number} (${k + 1} of ${changes.length})`);
+      await readOne(c.number);
+      renderMemory(c.number);
+      const m = memories.get(c.number);
+      if (!m.memory) return { ok: false, text: `Memory ${c.number} could not be read, so nothing was written.` };
+      now.push({ memory: c.number, name: m.decoded?.name || '(unreadable)', data: toBase64(m.memory), edited: !(m.state === 'ok' && sameBytes(m.data, c.wrote)) });
+    }
+    const shown = changes.slice(0, 12).map((c, k) => `<li>Memory ${c.number}: <b>${escapeHtml(c.name)}</b> replaces <b>${escapeHtml(now[k].name)}</b>${now[k].edited ? ' (the pedal was changed since)' : ''}</li>`).join('');
+    const yes = await confirmWrite(`<p>Undo: put ${changes.length === 1 ? 'the previous patch' : `the previous ${changes.length} patches`} back?</p><ul>${shown}${changes.length > 12 ? `<li>and ${changes.length - 12} more</li>` : ''}</ul>
+      <p>A backup of ${changes.length === 1 ? 'what the memory holds' : 'what these memories hold'} now is kept in Backups.</p>`, changes.length === 1 ? `Put back in memory ${changes[0].number}` : `Put back ${changes.length} memories`, 'Undo');
+    if (!yes) return { cancelled: true };
+    const at = new Date().toISOString();
+    const entry = changes.length === 1 ? { id: `${Date.now()}`, memory: now[0].memory, name: now[0].name, at, data: now[0].data }
+      : { id: `${Date.now()}-undo`, memory: now[0].memory, name: `Before undoing ${changes.length} memories`, at, group: now.map(({ memory, name, data }) => ({ memory, name, data })) };
+    if (!writeBackups([entry, ...readBackups()])) return { ok: false, text: 'This browser could not keep the backup, so nothing was written.' };
+    renderBackups();
+    for (const [k, c] of changes.entries()) {
+      status(`Writing memory ${c.number} (${k + 1} of ${changes.length})`);
+      const r = await writeAndCheck(c.number, c.before);
+      if (!r.ok) return { ok: false, text: changes.length === 1 ? r.text : `${r.text} Stopped after ${k} of ${changes.length} memories: restore “${entry.name}” in Backups to go back.` };
+    }
+    return { ok: true, text: changes.length === 1 ? `Undone: memory ${changes[0].number} holds “${changes[0].name}” again, read back and identical.` : `Undone: ${changes.length} memories hold what they did before, each read back and identical.` };
+  }
+  $('#usb-undo').addEventListener('click', undo);
+  // Ctrl/⌘ + Z, unless a text field is being edited (it has its own undo) or a dialog is open
+  document.addEventListener('keydown', event => {
+    if (event.key.toLowerCase() !== 'z' || !(event.metaKey || event.ctrlKey) || event.shiftKey || event.altKey) return;
+    if (document.querySelector('dialog[open]') || event.target.closest?.('textarea, select, [contenteditable="true"], input:not([type="checkbox"], [type="radio"], [type="button"])')) return;
+    event.preventDefault();
+    undo();
+  });
+
   // ---- arranging the pedal ---------------------------------------------------------------------------
   // A new order is planned in the page first: plan[i] is the memory whose patch goes to memory i + 1. Selected patches
   // move as a block. Writing keeps one backup of every memory that changes, checks that the pedal still holds what was
   // read, then writes and reads back each memory in turn.
-  let arranging = null; // { plan: [memory numbers], snap: Map(memory → { memory: bytes, name }), selection: Set, anchor }
+  let arranging = null; // { plan: [memory numbers], history: [earlier plans, for Undo], snap: Map(memory → { memory: bytes, name }), selection: Set, anchor }
   const allRead = () => info && [...Array(info.count).keys()].every(i => { const m = memories.get(i + 1); return m?.state === 'ok' && m.crcOk; });
   function updateArrangeButton() {
     const button = $('#usb-arrange');
@@ -502,7 +655,7 @@
     if (!connected || busy || !allRead()) return;
     const snap = new Map();
     for (let n = 1; n <= info.count; n++) { const m = memories.get(n); snap.set(n, { memory: m.memory, name: m.decoded.name || '(no name)' }); }
-    arranging = { plan: Array.from({ length: info.count }, (_, i) => i + 1), snap, selection: new Set(), anchor: null };
+    arranging = { plan: Array.from({ length: info.count }, (_, i) => i + 1), history: [], snap, selection: new Set(), anchor: null };
     busy = true; // nothing else talks to the pedal or changes it while a new order is planned
     selected = null;
     $('#usb-memories').hidden = true;
@@ -523,6 +676,19 @@
     renderBackups();
   }
   const changesOf = plan => plan.map((from, i) => ({ to: i + 1, from })).filter(c => c.to !== c.from);
+  // Every change of the plan goes through here, so that Undo can go back one move at a time (plans are replaced, never edited)
+  function setPlan(plan) {
+    if (sameBytes(plan, arranging.plan)) return;
+    arranging.history.push(arranging.plan);
+    if (arranging.history.length > 100) arranging.history.shift();
+    arranging.plan = plan;
+  }
+  function undoMove() {
+    const plan = arranging.history.pop();
+    if (!plan) return;
+    arranging.plan = plan;
+    renderArrange();
+  }
   function renderArrange(focusId) {
     const { plan, snap, selection } = arranging;
     $('#usb-arrange-list').innerHTML = plan.map((from, i) => `<li class="usb-arr-item${selection.has(from) ? ' is-checked' : ''}${from !== i + 1 ? ' is-moved' : ''}" draggable="true" data-from="${from}" tabindex="-1">
@@ -538,6 +704,7 @@
     $('#usb-arr-write').disabled = !changes.length;
     $('#usb-arr-write').textContent = changes.length ? `Write ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}` : 'Write to the pedal';
     $('#usb-arr-reset').disabled = !changes.length;
+    renderUndo();
     if (focusId) $(`#usb-arrange-list [data-from="${focusId}"]`)?.focus();
   }
   // Puts the selected patches, in their current order, at index k of the list without them
@@ -546,7 +713,7 @@
     const block = plan.filter(id => selection.has(id));
     const rest = plan.filter(id => !selection.has(id));
     k = Math.max(0, Math.min(k, rest.length));
-    arranging.plan = [...rest.slice(0, k), ...block, ...rest.slice(k)];
+    setPlan([...rest.slice(0, k), ...block, ...rest.slice(k)]);
   }
   function shift(dir) {
     const { plan, selection } = arranging;
@@ -556,7 +723,7 @@
       const j = i + dir;
       if (j >= 0 && j < p.length && !selection.has(p[j])) [p[i], p[j]] = [p[j], p[i]];
     }
-    arranging.plan = p;
+    setPlan(p);
   }
   function choose(from, { range = false, toggle = true } = {}) {
     const { plan, selection } = arranging;
@@ -570,7 +737,7 @@
   }
   $('#usb-arrange').addEventListener('click', startArranging);
   $('#usb-arr-cancel').addEventListener('click', stopArranging);
-  $('#usb-arr-reset').addEventListener('click', () => { arranging.plan = Array.from({ length: info.count }, (_, i) => i + 1); renderArrange(); });
+  $('#usb-arr-reset').addEventListener('click', () => { setPlan(Array.from({ length: info.count }, (_, i) => i + 1)); renderArrange(); });
   $('#usb-arr-none').addEventListener('click', () => { arranging.selection.clear(); renderArrange(); });
   $('#usb-arr-up').addEventListener('click', () => { shift(-1); renderArrange(); });
   $('#usb-arr-down').addEventListener('click', () => { shift(1); renderArrange(); });
@@ -704,6 +871,8 @@
     }
     result(true, `New order written: ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}, each read back and identical.`);
     status('Arranged', 'ok');
+    pushUndo(`Rearranged ${changes.length} ${changes.length === 1 ? 'memory' : 'memories'}`,
+      () => undoWrites(changes.map(c => ({ number: c.to, before: snap.get(c.to).memory, name: snap.get(c.to).name, wrote: ptcfOf(snap.get(c.from).memory) }))), { needsPedal: true });
     stopArranging();
   });
 
@@ -739,13 +908,14 @@
       : { ok: false, text: `Memory ${number} was read back but differs from what was sent. Restore the backup if the patch is wrong.` };
   }
 
-  async function send(number, bytes, clearing = false) {
+  // label: what the change is called on the Undo list (a rename passes its own)
+  async function send(number, bytes, clearing = false, label = '') {
     if (busy) return;
     busy = true;
     renderLocals();
-    try { await sendNow(number, bytes, clearing); } finally { busy = false; renderLocals(); }
+    try { await sendNow(number, bytes, clearing, label); } finally { busy = false; renderLocals(); }
   }
-  async function sendNow(number, bytes, clearing = false) {
+  async function sendNow(number, bytes, clearing = false, label = '') {
     result(true, '');
     let d;
     try { d = ZPTC.decode(bytes); } catch (error) { status(`Not a patch: ${error.message}`, 'danger'); return; }
@@ -781,6 +951,9 @@
     const r = await writeAndCheck(number, bytes);
     result(r.ok, r.text);
     status(r.ok ? (clearing ? 'Cleared' : 'Written') : 'Check the pedal', r.ok ? 'ok' : 'danger');
+    // A memory that could not be read as a valid patch is only kept in Backups: writing its raw bytes back cannot be read back to check
+    if (r.ok && readable) pushUndo(label || (clearing ? `Cleared memory ${number}` : `Wrote “${d.name}” to memory ${number}`),
+      () => undoWrites([{ number, before: old.memory, name: oldName, wrote: ptcfOf(bytes) }]), { needsPedal: true });
   }
 
   $('#usb-backups').addEventListener('click', async event => {
@@ -798,6 +971,8 @@
       busy = true;
       renderLocals();
       try {
+        const before = []; // what the memories hold now, so that Undo can put it back
+        for (const g of backup.group) before.push(await snapshotOf(g.memory));
         for (const [k, g] of backup.group.entries()) {
           status(`Restoring memory ${g.memory} (${k + 1} of ${backup.group.length})`);
           const r = await writeAndCheck(g.memory, fromBase64(g.data));
@@ -805,6 +980,7 @@
         }
         result(true, `${backup.group.length} memories restored: each read back and identical.`);
         status('Restored', 'ok');
+        if (before.every(Boolean)) pushUndo(`Restored “${backup.name}”`, () => undoWrites(before.map((b, k) => ({ ...b, wrote: ptcfOf(fromBase64(backup.group[k].data)) }))), { needsPedal: true });
       } finally { busy = false; renderLocals(); renderBackups(); }
       return;
     }
@@ -812,9 +988,11 @@
       const yes = await confirmWrite(`<p>Put <b>${escapeHtml(backup.name)}</b> (backup of ${escapeHtml(when(backup.at))}) back into <b>memory ${backup.memory}</b>?</p><p>It replaces what that memory holds now.</p>`, `Restore memory ${backup.memory}`);
       if (!yes || busy) return;
       busy = true;
+      const before = await snapshotOf(backup.memory); // what the memory holds now, so that Undo can put it back
       const r = await writeAndCheck(backup.memory, memory).finally(() => { busy = false; renderLocals(); });
       result(r.ok, r.ok ? r.text.replace('now holds', 'holds its backup again,') : r.text);
       status(r.ok ? 'Restored' : 'Check the pedal', r.ok ? 'ok' : 'danger');
+      if (r.ok && before) pushUndo(`Restored “${backup.name}” to memory ${backup.memory}`, () => undoWrites([{ ...before, wrote: ptcfOf(memory) }]), { needsPedal: true });
     }
   });
 

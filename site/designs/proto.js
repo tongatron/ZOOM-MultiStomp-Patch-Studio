@@ -58,8 +58,20 @@ const PROTO = (() => {
   const styles = () => ADVICE.styles.filter(s => s.starter);
   const escapeHtml = text => String(text).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
+  // A short message at the bottom of the page, in place of the browser's alert (these pages have their own styles)
+  function notice(text) {
+    document.querySelectorAll('.proto-notice').forEach(el => el.remove());
+    const bar = document.createElement('div');
+    bar.className = 'proto-notice';
+    bar.setAttribute('role', 'status');
+    bar.textContent = text;
+    bar.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99;max-width:calc(100vw - 24px);padding:8px 16px;background:#161b22;color:#e6edf3;border:1px solid #30363d;border-radius:8px;font:13px system-ui,sans-serif';
+    document.body.append(bar);
+    setTimeout(() => bar.remove(), 4000);
+  }
+
   return {
-    MAX, effects, thumb, desc, color, categoryLabel, control, actions, dsp, advice, builderLink, search, styles, escapeHtml,
+    MAX, effects, thumb, desc, color, categoryLabel, control, actions, dsp, advice, builderLink, search, styles, escapeHtml, notice,
     get state() { return state; },
     onChange(fn) { listeners.push(fn); fn(state); }
   };
