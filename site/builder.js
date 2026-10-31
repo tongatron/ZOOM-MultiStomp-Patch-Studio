@@ -43,7 +43,18 @@ const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, in
 
 // Live mode talks to the pedal's current edit buffer. It deliberately does not write a stored memory:
 // parameter and ON/OFF changes are sent as editor commands, while structural changes still use Send.
-const live = { enabled: false, connected: false, current: null, queue: new Map(), sending: false, flushTimer: 0 };
+const LIVE_ADMIN_EMAIL = 'giovanni.bindi@gmail.com';
+const live = { allowed: false, enabled: false, connected: false, current: null, queue: new Map(), sending: false, flushTimer: 0 };
+function setLiveAccess(me) {
+  live.allowed = !!me?.signedIn && me.admin === true && String(me.email).toLowerCase() === LIVE_ADMIN_EMAIL;
+  const panel = $('#live-mode');
+  if (panel) panel.hidden = !live.allowed;
+  if (!live.allowed) {
+    live.enabled = false;
+    live.queue.clear();
+    if (live.connected) disconnectLive();
+  }
+}
 function setLiveStatus(text, kind = '') {
   const status = $('#live-status');
   if (!status) return;
@@ -97,7 +108,7 @@ function liveRawValue(parameter, value) {
   return parameter.codec.encode(value);
 }
 function queueLiveValue(slot, parameter, raw) {
-  if (!live.enabled || !live.connected) return;
+  if (!live.allowed || !live.enabled || !live.connected) return;
   if (!updateLiveCompatibility()) return;
   const key = `${slot.uid}:${parameter}`;
   live.queue.set(key, { slot, parameter, raw });
@@ -106,10 +117,10 @@ function queueLiveValue(slot, parameter, raw) {
 }
 async function flushLiveQueue() {
   live.flushTimer = 0;
-  if (live.sending || !live.enabled || !live.connected) return;
+  if (live.sending || !live.allowed || !live.enabled || !live.connected) return;
   live.sending = true;
   try {
-    while (live.queue.size && live.enabled && live.connected) {
+    while (live.queue.size && live.allowed && live.enabled && live.connected) {
       if (!updateLiveCompatibility()) { live.queue.clear(); break; }
       const [key, item] = live.queue.entries().next().value;
       live.queue.delete(key);
@@ -139,6 +150,7 @@ async function disconnectLive() {
   setLiveStatus('Off');
 }
 async function connectLive() {
+  if (!live.allowed) return;
   const toggle = $('#live-toggle');
   const connect = $('#live-connect');
   if (connect) connect.disabled = true;
@@ -169,11 +181,12 @@ async function connectLive() {
   }
 }
 
-$('#live-connect').addEventListener('click', () => { $('#live-toggle').checked = true; connectLive(); });
+window.addEventListener('account-change', event => setLiveAccess(event.detail));
+$('#live-connect').addEventListener('click', () => { if (!live.allowed) return; $('#live-toggle').checked = true; connectLive(); });
 $('#live-disconnect').addEventListener('click', disconnectLive);
-$('#live-toggle').addEventListener('change', event => event.target.checked ? connectLive() : disconnectLive());
+$('#live-toggle').addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });
 $('#live-load').addEventListener('click', () => {
-  if (!live.current) return;
+  if (!live.allowed || !live.current) return;
   try { loadPatch(decodedToBuilderPatch(live.current.decoded)); updateLiveCompatibility(); }
   catch (error) { setLiveStatus(error.message, 'danger'); }
 });

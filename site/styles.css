@@ -542,6 +542,7 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .save-info .btn { margin-right: -10px; color: var(--fg-muted); } /* the text lines up with the right edge of the buttons above */
 .save-info .btn:hover { color: var(--fg); }
 .live-mode { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-muted); }
+.live-mode[hidden] { display: none; }
 .live-mode .field-label--row { margin-bottom: 6px; }
 .live-mode .field-hint { margin: 0; }
 .live-mode-actions { display: flex; flex-wrap: wrap; margin: 10px 0 0; }

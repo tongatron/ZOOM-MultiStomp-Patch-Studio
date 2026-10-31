@@ -127,8 +127,8 @@
               <div class="save-status" id="save-status" aria-live="polite"></div>
               <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
             </div>
-            <section class="live-mode" id="live-mode" aria-labelledby="live-mode-title">
-              <div class="field-label field-label--row"><span id="live-mode-title">Live mode</span><label class="switch" title="Send parameter changes to the current patch on the pedal"><input type="checkbox" id="live-toggle" /><span></span><b>OFF</b></label></div>
+            <section class="live-mode" id="live-mode" aria-labelledby="live-mode-title" hidden>
+              <div class="field-label field-label--row"><span id="live-mode-title">Live mode <span class="Label Label--attention">to test, admin mode</span></span><label class="switch" title="Send parameter changes to the current patch on the pedal"><input type="checkbox" id="live-toggle" /><span></span><b>OFF</b></label></div>
               <p class="field-hint">When enabled, parameter and ON/OFF changes are sent immediately to the patch currently loaded in the pedal's edit buffer, not to a stored memory. Effect order, replacements and the patch name still use the normal Send action.</p>
               <div class="save-row live-mode-actions">
                 <button class="btn btn-sm btn-primary" id="live-connect" type="button">Connect pedal</button>
@@ -175,7 +175,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-10-31T01:06Z">Last update 31 October 2026 02:06</time>
+      <time class="gh-updated" datetime="2026-10-31T01:19Z">Last update 31 October 2026 02:19</time>
     </footer>
 
     <dialog class="Overlay" id="picker" aria-labelledby="picker-title">
@@ -246,7 +246,7 @@
     <script src="advice-rules.js?v=zoom43-20261027"></script>
     <script src="../rule-pack-editor.js?v=zoom24-20261026"></script>
     <script src="../dialogs.js?v=dialogs1-20261030"></script>
-    <script src="../builder.js?v=zoom61-20261031"></script>
+    <script src="../builder.js?v=zoom62-20261031"></script>
     <script src="../account.js?v=zoom52-20261030"></script>
     <script src="../report.js?v=report6-20261029"></script>
     <script src="../pwa.js?v=zoom26-20261031"></script>
