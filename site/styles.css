@@ -544,7 +544,8 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .live-mode { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-muted); }
 .live-mode .field-label--row { margin-bottom: 6px; }
 .live-mode .field-hint { margin: 0; }
-.live-mode-actions { margin: 10px 0 0; }
+.live-mode-actions { display: flex; flex-wrap: wrap; margin: 10px 0 0; }
+.live-mode-actions [hidden] { display: none; }
 .live-mode-actions .usb-status { margin-left: auto; }
 .library { gap: 12px; }
 .library-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
