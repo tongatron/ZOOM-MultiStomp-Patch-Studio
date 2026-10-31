@@ -45,6 +45,11 @@ await test('the current patch arrives intact, checksum OK, and decodes', async (
   assert.deepEqual(Array.from(r.data), Array.from(patches[0]));
   assert.ok(ZPTC.decode(r.data).effects.length > 0);
 });
+await test('live parameter updates use the current-patch editor command', async () => {
+  const reply = await PEDALMIDI.writeCurrentParameter(2, 5, 0x1234);
+  assert.equal(reply[4], 0x64);
+  assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x02, 0x05, 0x34, 0x24, 0x00, 0x00]);
+});
 await test('a patch memory arrives intact (bank and slot addressing)', async () => {
   const info = await PEDALMIDI.patchInfo();
   const r = await PEDALMIDI.readMemory(13, info); // bank 1, slot 2 → patch 12 % 3 = 0

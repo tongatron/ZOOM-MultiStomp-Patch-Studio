@@ -140,6 +140,14 @@ const PEDALMIDI = (() => {
     return [bank & 0x7f, bank >> 7, slot & 0x7f, slot >> 7];
   };
   const readCurrent = async () => patchFrom(await zoom(0x64, 0x13), 7);
+  // Updates one parameter in the current edit buffer. This is the editor-mode command documented by
+  // the community protocol notes; it does not write a stored memory directly.
+  const writeCurrentParameter = (effectSlot, parameter, value) => {
+    if (!Number.isInteger(effectSlot) || effectSlot < 0 || effectSlot > 8) throw new Error('The live effect slot must be between 0 and 8');
+    if (!Number.isInteger(parameter) || parameter < 0 || parameter > 63) throw new Error('The live parameter number is invalid');
+    if (!Number.isInteger(value) || value < 0 || value > 0x3fff) throw new Error('The live parameter value must be between 0 and 16383');
+    return request([0x52, 0x00, device, 0x64, 0x20, 0x00, effectSlot, parameter, value & 0x7f, value >> 7, 0x00, 0x00, 0x00], zoomReply(0x64));
+  };
   // A stored patch: memory 1…count
   const readMemory = async (number, info) => patchFrom(await zoom(0x46, 0x00, 0x00, ...address(number, info)), 11);
   // Overwrites a stored patch. bytes: a PTCF file (padded with zeros to the memory size) or a whole memory from
@@ -155,7 +163,7 @@ const PEDALMIDI = (() => {
   }
 
   return {
-    supported, ports, connect, disconnect, identify, editorOn, editorOff, patchInfo, readCurrent, readMemory, writeMemory,
+    supported, ports, connect, disconnect, identify, editorOn, editorOff, patchInfo, readCurrent, writeCurrentParameter, readMemory, writeMemory,
     hex, pack, unpack, crc32, onLog: fn => { log = fn; }, get device() { return device; }
   };
 })();

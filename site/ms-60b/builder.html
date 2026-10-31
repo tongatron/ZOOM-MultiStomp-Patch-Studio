@@ -24,7 +24,7 @@
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-    <link rel="stylesheet" href="../styles.css?v=zoom71-20261030" />
+    <link rel="stylesheet" href="../styles.css?v=zoom72-20261031" />
     <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
     <link rel="stylesheet" href="../fullscreen.css?v=fs33-20261030" />
       <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
@@ -127,6 +127,16 @@
               <div class="save-status" id="save-status" aria-live="polite"></div>
               <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
             </div>
+            <section class="live-mode" id="live-mode" aria-labelledby="live-mode-title">
+              <div class="field-label field-label--row"><span id="live-mode-title">Live mode</span><label class="switch" title="Send parameter changes to the current patch on the pedal"><input type="checkbox" id="live-toggle" /><span></span><b>OFF</b></label></div>
+              <p class="field-hint">When enabled, parameter and ON/OFF changes are sent immediately to the current patch on the connected pedal. Effect order, replacements and the patch name still use the normal Send action.</p>
+              <div class="save-row live-mode-actions">
+                <button class="btn btn-sm btn-primary" id="live-connect" type="button">Connect pedal</button>
+                <button class="btn btn-sm" id="live-load" type="button" hidden>Load current patch</button>
+                <button class="btn btn-sm btn-invisible" id="live-disconnect" type="button" hidden>Disconnect</button>
+                <span class="usb-status" id="live-status" role="status">Off</span>
+              </div>
+            </section>
           </div>
         </div>
         <section class="Box fs-pane advice" id="advice" aria-labelledby="advice-title">
@@ -227,6 +237,7 @@
     <script src="../fullscreen.js?v=fs10-20261029"></script>
     <script src="effects-data.js?v=zoom24-20261026"></script>
     <script src="firmware-data.js?v=zoom24-20261026"></script>
+    <script src="../pedal-midi.js?v=zoom25-20261031"></script>
     <script src="../library-merge.js?v=zoom29-20261028"></script>
     <script src="../patch-link.js?v=zoom24-20261026"></script>
     <script src="../zptc.js?v=zoom46-20261028"></script>
@@ -235,7 +246,7 @@
     <script src="advice-rules.js?v=zoom43-20261027"></script>
     <script src="../rule-pack-editor.js?v=zoom24-20261026"></script>
     <script src="../dialogs.js?v=dialogs1-20261030"></script>
-    <script src="../builder.js?v=zoom60-20261030"></script>
+    <script src="../builder.js?v=zoom61-20261031"></script>
     <script src="../account.js?v=zoom52-20261030"></script>
     <script src="../report.js?v=report6-20261029"></script>
     <script src="../pwa.js?v=zoom26-20261031"></script>

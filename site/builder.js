@@ -41,6 +41,144 @@ const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
+// Live mode talks to the pedal's current edit buffer. It deliberately does not write a stored memory:
+// parameter and ON/OFF changes are sent as editor commands, while structural changes still use Send.
+const live = { enabled: false, connected: false, current: null, queue: new Map(), sending: false, flushTimer: 0 };
+function setLiveStatus(text, kind = '') {
+  const status = $('#live-status');
+  if (!status) return;
+  status.textContent = text;
+  status.dataset.kind = kind;
+}
+function liveStructureMatches() {
+  if (!live.current) return false;
+  const effects = live.current.decoded.effects;
+  return effects.length === state.effects.length && state.effects.every((slot, i) => {
+    const id = ZPTC.effects[slot.index]?.id;
+    return id !== null && id !== undefined && effects[i]?.id?.toLowerCase() === `0x${id.toString(16).padStart(8, '0')}`;
+  });
+}
+function updateLiveCompatibility() {
+  if (!live.connected || !live.current) return false;
+  const matches = liveStructureMatches();
+  const load = $('#live-load');
+  if (load) load.hidden = matches;
+  if (!live.sending) setLiveStatus(matches ? 'Ready: values are live' : 'Current patch differs: load it first', matches ? 'ok' : 'danger');
+  return matches;
+}
+function renderLiveControls() {
+  const toggle = $('#live-toggle');
+  if (toggle) {
+    toggle.checked = live.enabled;
+    toggle.closest('label')?.querySelector('b')?.replaceChildren(document.createTextNode(live.enabled ? 'ON' : 'OFF'));
+  }
+  $('#live-connect')?.toggleAttribute('hidden', live.connected);
+  $('#live-disconnect')?.toggleAttribute('hidden', !live.connected);
+  if (!live.connected) $('#live-load')?.setAttribute('hidden', '');
+}
+function decodedToBuilderPatch(decoded) {
+  const effects = decoded.effects.map(effect => {
+    const index = EFFECTS_DATA.findIndex(([name]) => name === effect.effect);
+    if (index < 0) throw new Error(`The current patch contains an effect not available in this builder: ${effect.effect}`);
+    return {
+      index,
+      on: effect.on,
+      values: Object.fromEntries(Object.entries(effect.params).map(([name, value]) => [name, value && typeof value === 'object' ? value.raw : value]))
+    };
+  });
+  return { name: decoded.name, effects };
+}
+function liveEffectSlot(effectIndex) {
+  return state.effects.slice(0, effectIndex).reduce((slot, effect) => slot + (catalog[effect.index].params.length > 4 ? 2 : 1), 0);
+}
+function liveRawValue(parameter, value) {
+  if (!parameter.codec) return Number(value) || 0;
+  if (parameter.codec.kind === 'off-number' && value === 'OFF') return 0;
+  return parameter.codec.encode(value);
+}
+function queueLiveValue(slot, parameter, raw) {
+  if (!live.enabled || !live.connected) return;
+  if (!updateLiveCompatibility()) return;
+  const key = `${slot.uid}:${parameter}`;
+  live.queue.set(key, { slot, parameter, raw });
+  clearTimeout(live.flushTimer);
+  live.flushTimer = setTimeout(flushLiveQueue, 60);
+}
+async function flushLiveQueue() {
+  live.flushTimer = 0;
+  if (live.sending || !live.enabled || !live.connected) return;
+  live.sending = true;
+  try {
+    while (live.queue.size && live.enabled && live.connected) {
+      if (!updateLiveCompatibility()) { live.queue.clear(); break; }
+      const [key, item] = live.queue.entries().next().value;
+      live.queue.delete(key);
+      const effectIndex = state.effects.indexOf(item.slot);
+      if (effectIndex < 0) continue;
+      await PEDALMIDI.writeCurrentParameter(liveEffectSlot(effectIndex), item.parameter, item.raw);
+      const effect = catalog[item.slot.index];
+      setLiveStatus(`Live: ${effect.lcd} updated`, 'ok');
+    }
+  } catch (error) {
+    live.queue.clear();
+    setLiveStatus(`Live error: ${error.message}`, 'danger');
+  } finally {
+    live.sending = false;
+  }
+}
+async function disconnectLive() {
+  clearTimeout(live.flushTimer);
+  live.flushTimer = 0;
+  live.queue.clear();
+  live.enabled = false;
+  if (live.connected) { try { await PEDALMIDI.editorOff(); } catch {} }
+  PEDALMIDI.disconnect();
+  live.connected = false;
+  live.current = null;
+  renderLiveControls();
+  setLiveStatus('Off');
+}
+async function connectLive() {
+  const toggle = $('#live-toggle');
+  const connect = $('#live-connect');
+  if (connect) connect.disabled = true;
+  if (toggle) toggle.disabled = true;
+  setLiveStatus('Connecting…');
+  try {
+    const ports = await PEDALMIDI.ports();
+    const input = ports.inputs.find(port => /zoom/i.test(port.name || '')) || ports.inputs[0];
+    const output = ports.outputs.find(port => /zoom/i.test(port.name || '')) || ports.outputs[0];
+    if (!input || !output) throw new Error('No ZOOM MIDI port found. Connect the pedal first.');
+    await PEDALMIDI.connect(input.id, output.id);
+    await PEDALMIDI.identify();
+    await PEDALMIDI.editorOn();
+    const current = await PEDALMIDI.readCurrent();
+    if (!current?.crcOk) throw new Error('The pedal returned the current patch with a checksum mismatch.');
+    live.current = { memory: current, decoded: ZPTC.decode(current.data) };
+    live.connected = true;
+    live.enabled = true;
+    renderLiveControls();
+    updateLiveCompatibility();
+  } catch (error) {
+    await disconnectLive();
+    if (toggle) toggle.checked = false;
+    setLiveStatus(error.message, 'danger');
+  } finally {
+    if (connect) connect.disabled = false;
+    if (toggle) toggle.disabled = false;
+  }
+}
+
+$('#live-connect').addEventListener('click', () => { $('#live-toggle').checked = true; connectLive(); });
+$('#live-disconnect').addEventListener('click', disconnectLive);
+$('#live-toggle').addEventListener('change', event => event.target.checked ? connectLive() : disconnectLive());
+$('#live-load').addEventListener('click', () => {
+  if (!live.current) return;
+  try { loadPatch(decodedToBuilderPatch(live.current.decoded)); updateLiveCompatibility(); }
+  catch (error) { setLiveStatus(error.message, 'danger'); }
+});
+window.addEventListener('pagehide', () => { if (live.connected) { PEDALMIDI.editorOff().catch(() => {}); PEDALMIDI.disconnect(); } });
+
 function slotFor(index, values = null) {
   const fx = catalog[index];
   const defaults = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? p.codec.fallback : 0]));
@@ -373,7 +511,7 @@ function renderLibrary() {
   $('#compare-open').disabled = list.length + (state.effects.length ? 1 : 0) < 2;
 }
 
-function render() { renderChain(); renderSummary(); renderLibrary(); save(); }
+function render() { renderChain(); renderSummary(); renderLibrary(); save(); updateLiveCompatibility(); renderLiveControls(); }
 let editorRenderFrame = 0;
 let editorSaveTimer = 0;
 function scheduleEditorUpdate() {
@@ -424,6 +562,7 @@ $('#chain-list').addEventListener('change', event => {
   if (event.target.dataset.action !== 'toggle-on') return;
   const slot = state.effects.find(s => s.uid === Number(event.target.closest('.chain-item').dataset.uid));
   slot.on = event.target.checked;
+  queueLiveValue(slot, 0, slot.on ? 1 : 0);
   render();
   $('#chain-list').querySelector(`.chain-item[data-uid="${slot.uid}"] [data-action="toggle-on"]`)?.focus();
 });
@@ -445,6 +584,8 @@ $('#chain-list').addEventListener('input', event => {
   }
   slot.values[name] = value;
   card.querySelector('.param-val').textContent = shown;
+  try { queueLiveValue(slot, catalog[slot.index].params.indexOf(p) + 2, liveRawValue(p, value)); }
+  catch (error) { setLiveStatus(`Live error: ${error.message}`, 'danger'); }
   scheduleEditorUpdate();
 });
 

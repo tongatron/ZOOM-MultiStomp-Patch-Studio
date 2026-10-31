@@ -35,6 +35,7 @@ export function fakePedal(patches, { device = 0x6e, version = '1.20', count = 10
     if (cmd === 0x51) { editor = false; return [0xf0, 0x52, 0x00, device, 0x00, 0x00, 0xf7]; }
     if (cmd === 0x44) return [0xf0, 0x52, 0x00, device, 0x43, count & 0x7f, count >> 7, size & 0x7f, size >> 7, count & 0x7f, count >> 7, bankSize & 0x7f, bankSize >> 7, 0x02, ...Array(15).fill(0), 0xf7];
     if (cmd === 0x64 && m[5] === 0x13) return editor ? framed([0x52, 0x00, device, 0x64, 0x12, 0x01], patches[0]) : null;
+    if (cmd === 0x64 && m[5] === 0x20) return [0xf0, 0x52, 0x00, device, 0x64, 0x20, 0x01, ...m.slice(7, 13), 0xf7];
     const number = (m[7] | m[8] << 7) * bankSize + (m[9] | m[10] << 7);
     if (cmd === 0x46) {
       const { padded, crc } = framedMemory(memories.get(number) ?? patches[number % patches.length]);
