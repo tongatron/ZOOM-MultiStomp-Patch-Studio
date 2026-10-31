@@ -241,6 +241,7 @@ try {
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] [data-act="copy"]').click();
+    assert.match(await page3.locator('#usb-result').innerText(), /copied to My patches$/);
     assert.equal(await page3.locator('#usb-local-count').innerText(), '2');
     const copiedId = await page3.evaluate(() => JSON.parse(localStorage.getItem('ms60b-library')).find(p => p.id !== 'p1').id);
     await page3.evaluate(id => localStorage.setItem('ms60b-pedal-sync', JSON.stringify({ enabled: false, links: { 1: { patchId: id, pedalBaseline: 'changed', libraryBaseline: 'changed' } } })), copiedId);

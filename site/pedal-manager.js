@@ -425,7 +425,9 @@
         if (!storeLibrary(list)) return;
         linkMemory(n, entry.id, patch);
         renderLocals();
-        status(`“${entry.name}” copied to My patches`, 'ok');
+        const copiedMessage = `“${entry.name}” copied to My patches`;
+        result(true, copiedMessage);
+        status(copiedMessage, 'ok');
         pushUndo(`Copied “${entry.name}” to My patches`, async () => {
           const gone = removePatch(entry.id);
           renderLocals();
