@@ -1155,7 +1155,9 @@
       linkMemory(number, copy.id, found.pedalPatch);
       renderLocals();
       renderMemories();
-      status(`“${copy.name}” saved as a new My patch`, 'ok');
+      const savedMessage = `“${copy.name}” saved as a new My patch`;
+      result(true, savedMessage);
+      status(savedMessage, 'ok');
       pushUndo(`Saved “${copy.name}” as a new My patch`, async () => {
         const now = readLibrary();
         if (!storeLibrary(now.filter(item => item.id !== copy.id))) return { ok: false, text: 'This browser does not allow this site to store data.' };
