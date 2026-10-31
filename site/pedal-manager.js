@@ -32,6 +32,14 @@
   let fileItem = null; // { name, bytes } from "Send a .zptc file"
   let renaming = null; // memory number whose rename field is open
   let staleOpen = null; // memory number whose saved patch is open in the list shown while the pedal is not connected
+  function needsReadAgain() {
+    return connected && [...memories.values()].some(m => m.state === 'error' || (m.state === 'ok' && !m.crcOk));
+  }
+  function updateReadAgainButton() {
+    const button = $('#usb-refresh');
+    button.classList.toggle('btn-warning', needsReadAgain());
+    button.title = needsReadAgain() ? 'A memory needs to be read again' : 'Read all pedal memories again';
+  }
   // "Send to memory N" in the builder opens this page with #send=N: once the pedal is read, the builder's patch goes there
   let pendingSend = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('send')) || null;
   if (pendingSend) history.replaceState(null, '', location.pathname);
@@ -50,7 +58,13 @@
   // Octicons "trash": the delete control of each My patches row
   const ICON_TRASH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75ZM4.496 6.675l.66 6.6a.25.25 0 0 0 .249.225h5.19a.25.25 0 0 0 .249-.225l.66-6.6a.75.75 0 0 1 1.492.149l-.66 6.6A1.748 1.748 0 0 1 10.595 15h-5.19a1.75 1.75 0 0 1-1.741-1.575l-.66-6.6a.75.75 0 1 1 1.492-.15ZM6.5 1.75V3h3V1.75a.25.25 0 0 0-.25-.25h-2.5a.25.25 0 0 0-.25.25Z"/></svg>';
   const status = (text, kind = '') => { $('#usb-status').textContent = text; $('#usb-status').dataset.kind = kind; };
-  const result = (ok, text) => { $('#usb-result').innerHTML = text ? `<p class="usb-result" data-ok="${ok}">${escapeHtml(text)}</p>` : ''; };
+  const result = (ok, text, action = null) => {
+    if (!text) { $('#usb-result').innerHTML = ''; return; }
+    const reread = action?.type === 'reread' && Number.isInteger(action.memory)
+      ? `<button class="btn btn-sm btn-warning usb-read-again" data-result-act="reread" data-memory="${action.memory}">Read again</button>`
+      : '';
+    $('#usb-result').innerHTML = `<div class="usb-result" data-ok="${ok}"><p>${escapeHtml(text)}</p>${reread}</div>`;
+  };
   // Runs one step; a failure shows in the status line and the log
   async function step(label, fn) {
     status(`${label}…`);
@@ -144,6 +158,7 @@
     $('#usb-howto').hidden = on; // the instructions are for a pedal that is not connected yet
     $('.usb-connect').classList.toggle('is-connected', on); // the pedal in the connection box: dim when off, in colour when connected
     $('#usb-refresh').disabled = !on || !info;
+    updateReadAgainButton();
     renderMemories();
     renderLocals();
     renderBackups();
@@ -200,6 +215,7 @@
       memories.set(number, { state: 'error', error: e.message });
       note(`Memory ${number}: ${e.message}`);
     }
+    updateReadAgainButton();
     if (!fullRead) saveLastRead();
   }
   function saveLastRead() {
@@ -259,6 +275,20 @@
     send(n, item.bytes);
   }
   $('#usb-refresh').addEventListener('click', () => { if (info) readAll(); });
+  $('#usb-result').addEventListener('click', async event => {
+    const button = event.target.closest('[data-result-act="reread"]');
+    if (!button || !connected || busy) return;
+    const n = Number(button.dataset.memory);
+    if (!Number.isInteger(n) || !info?.count || n < 1 || n > info.count) return;
+    button.disabled = true;
+    await readOne(n);
+    renderMemory(n);
+    const m = memories.get(n);
+    updateReadAgainButton();
+    if (m?.state === 'ok' && m.crcOk) result(true, `Memory ${n} read again successfully. You can arrange again.`);
+    else result(false, `Memory ${n} still needs to be read correctly.`, { type: 'reread', memory: n });
+    status(m?.state === 'ok' && m.crcOk ? `Memory ${n} read again` : `Memory ${n} needs to be read again`, m?.state === 'ok' && m.crcOk ? 'ok' : 'danger');
+  });
 
   function memoryHtml(n) {
     const m = memories.get(n) || { state: 'loading' };
@@ -274,12 +304,12 @@
       ${isSelected && m.state === 'error' ? `<div class="usb-mem-detail">
         <p class="usb-warn">${escapeHtml(m.error || 'This memory could not be read.')} It cannot be shown, renamed or moved${m.memory ? '' : '; nothing was received from the pedal, so it cannot be cleared either'}.</p>
         <div class="usb-row">
-          <button class="btn btn-sm btn-invisible" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button>
+          <button class="btn btn-sm btn-warning usb-read-again" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button>
           <button class="btn btn-sm btn-danger usb-clear" data-act="clear" ${connected && !busy && m.memory ? '' : 'disabled'} title="A backup of what the memory holds now is kept first">Clear patch</button>
         </div>
       </div>` : ''}
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
-        ${m.crcOk ? '' : '<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly. Read it again, or clear it.</p>'}
+        ${m.crcOk ? '' : `<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly.</p><div class="usb-row"><button class="btn btn-sm btn-warning usb-read-again" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button></div>`}
         ${chainCards(d)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
           <label>New name <input class="form-control form-control--sm" name="name" maxlength="28" value="${escapeHtml(d.name)}" required spellcheck="false" autocomplete="off" /></label>
@@ -861,7 +891,7 @@
       const expected = snap.get(c.to);
       if (now.state !== 'ok' || !now.crcOk || !sameBytes(now.data, expected.data)) {
         const reason = now.state !== 'ok' ? `could not be read (${now.error || now.state})` : !now.crcOk ? 'returned a checksum mismatch' : 'changed on the pedal';
-        result(false, `Memory ${c.to} ${reason} since it was read: nothing was written. Press Read again and arrange again.`);
+        result(false, `Memory ${c.to} ${reason} since it was read: nothing was written. Read it again before arranging again.`, { type: 'reread', memory: c.to });
         status('Nothing written', 'danger');
         stopArranging();
         return;

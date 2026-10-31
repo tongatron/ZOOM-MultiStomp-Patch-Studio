@@ -384,6 +384,8 @@ mark { background: rgba(187, 128, 9, .4); color: var(--fg); border-radius: 2px; 
 /* ---- Buttons and forms ---- */
 .btn-primary { background: #238636; border-color: rgba(240, 246, 252, .1); color: #fff; font-weight: 600; }
 .btn-primary:hover { background: #2ea043; border-color: rgba(240, 246, 252, .1); }
+.btn-warning { background: rgba(187, 128, 9, .22); border-color: #d29922; color: #f2cc60; font-weight: 600; }
+.btn-warning:hover:not(:disabled) { background: rgba(187, 128, 9, .4); border-color: #e3b341; color: #fff; }
 .btn:disabled, .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 .btn-primary:disabled:hover { background: #238636; }
 .btn-block { width: 100%; justify-content: center; }
@@ -875,6 +877,8 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-backups .usb-row { margin: 0; gap: 4px; }
 .usb-backups .btn-invisible { margin-right: -10px; } /* the text of Delete lines up with the 16px gutter; keeps the three buttons on one line */
 .usb-result { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(248, 81, 73, .4); color: #f85149; font-size: 13px; }
+.usb-result p { margin: 0; }
+.usb-result .usb-read-again { margin-top: 8px; }
 .usb-result[data-ok="true"] { border-color: rgba(63, 185, 80, .4); color: #3fb950; }
 .usb-warn { color: #d29922; }
 .usb-confirm-actions { justify-content: flex-end; margin: 0; padding: 0 20px 20px; }
