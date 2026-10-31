@@ -654,7 +654,7 @@
   // A new order is planned in the page first: plan[i] is the memory whose patch goes to memory i + 1. Selected patches
   // move as a block. Writing keeps one backup of every memory that changes, checks that the pedal still holds what was
   // read, then writes and reads back each memory in turn.
-  let arranging = null; // { plan: [memory numbers], history: [earlier plans, for Undo], snap: Map(memory → { memory: bytes, name }), selection: Set, anchor }
+  let arranging = null; // { plan: [memory numbers], history: [earlier plans, for Undo], snap: Map(memory → { data: PTCF bytes, memory: bytes, name }), selection: Set, anchor }
   const allRead = () => info && [...Array(info.count).keys()].every(i => { const m = memories.get(i + 1); return m?.state === 'ok' && m.crcOk; });
   function updateArrangeButton() {
     const button = $('#usb-arrange');
@@ -665,7 +665,7 @@
   function startArranging() {
     if (!connected || busy || !allRead()) return;
     const snap = new Map();
-    for (let n = 1; n <= info.count; n++) { const m = memories.get(n); snap.set(n, { memory: m.memory, name: m.decoded.name || '(no name)' }); }
+    for (let n = 1; n <= info.count; n++) { const m = memories.get(n); snap.set(n, { data: m.data, memory: m.memory, name: m.decoded.name || '(no name)' }); }
     arranging = { plan: Array.from({ length: info.count }, (_, i) => i + 1), history: [], snap, selection: new Set(), anchor: null };
     busy = true; // nothing else talks to the pedal or changes it while a new order is planned
     selected = null;
@@ -858,8 +858,10 @@
       status(`Checking memory ${c.to} (${k + 1} of ${changes.length})`);
       await readOne(c.to);
       const now = memories.get(c.to);
-      if (now.state !== 'ok' || !now.crcOk || !sameBytes(now.memory, snap.get(c.to).memory)) {
-        result(false, `Memory ${c.to} changed on the pedal (or could not be read) since it was read: nothing was written. Press Read again and arrange again.`);
+      const expected = snap.get(c.to);
+      if (now.state !== 'ok' || !now.crcOk || !sameBytes(now.data, expected.data)) {
+        const reason = now.state !== 'ok' ? `could not be read (${now.error || now.state})` : !now.crcOk ? 'returned a checksum mismatch' : 'changed on the pedal';
+        result(false, `Memory ${c.to} ${reason} since it was read: nothing was written. Press Read again and arrange again.`);
         status('Nothing written', 'danger');
         stopArranging();
         return;

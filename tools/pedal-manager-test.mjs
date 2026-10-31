@@ -19,9 +19,9 @@ const stop = child => new Promise(resolve => {
 });
 let passed = 0;
 // A fake Web MIDI access wired to the simulated pedal (runs in the page); MIDI access counts as already granted
-function mockMidi({ source, patches }) {
+function mockMidi({ source, patches, options = {} }) {
   localStorage.setItem('account-welcome', 'ignored');
-  const answer = eval(`(${source})`)(patches.map(p => new Uint8Array(p)), { device: 0x6e });
+  const answer = eval(`(${source})`)(patches.map(p => new Uint8Array(p)), { device: 0x6e, ...options });
   const input = { id: 'in', name: 'ZOOM MS Plus Series', open: async () => {}, onmidimessage: null };
   const output = { id: 'out', name: 'ZOOM MS Plus Series', open: async () => {}, send: message => { const r = answer(message); if (r) setTimeout(() => input.onmidimessage?.({ data: new Uint8Array(r) }), 1); } };
   navigator.requestMIDIAccess = async () => ({ inputs: new Map([['in', input]]), outputs: new Map([['out', output]]), onstatechange: null });
@@ -112,7 +112,7 @@ try {
   // Dragging a memory in the list opens the new order with its Write button
   const other = [...fs.readFileSync('patches/06FLIP.zptc')];
   const page2 = watch(await (await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 800 } })).newPage());
-  await page2.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other] });
+  await page2.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other], options: { volatilePadding: true } });
   await page2.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
   await page2.click('#usb-connect');
   await page2.waitForFunction(() => document.querySelectorAll('#usb-memories li[data-state="ok"]').length === 100, null, { timeout: 90000 });
