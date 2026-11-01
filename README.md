@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | **MS-60B+** bass | [97 effects](https://zoommultistompstudio.tongatron.org/ms-60b/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-60b/builder.html) | [Tone ideas](https://zoommultistompstudio.tongatron.org/ms-60b/tones.html) · [Pedal manager](https://zoommultistompstudio.tongatron.org/ms-60b/pedal-manager.html) · [Resources](https://zoommultistompstudio.tongatron.org/ms-60b/resources.html) | ✅ Tested on firmware 1.20 |
 | **MS-50G+** guitar | [127 effects](https://zoommultistompstudio.tongatron.org/ms-50g/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-50g/builder.html) | [Resources](https://zoommultistompstudio.tongatron.org/ms-50g/resources.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-50g) |
-| **MS-70CDR+** spatial | [149 effects](https://zoommultistompstudio.tongatron.org/ms-70cdr/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-70cdr/builder.html) | [Resources](https://zoommultistompstudio.tongatron.org/ms-70cdr/resources.html) · [Help test](https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-70cdr) |
+| **MS-70CDR+** spatial | [149 effects](https://zoommultistompstudio.tongatron.org/ms-70cdr/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-70cdr/builder.html) | [Pedal manager](https://zoommultistompstudio.tongatron.org/ms-70cdr/pedal-manager.html) · [Resources](https://zoommultistompstudio.tongatron.org/ms-70cdr/resources.html) · [Help test](https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-70cdr) |
 
 ## 💡 Why
 
@@ -52,7 +52,7 @@ MultiStomp Studio puts the whole pedal on your desk:
 | 💾 **`.zptc` export / import** | Straight into Handy Guitar Lab — reverse-engineered format, byte-for-byte exact. |
 | 📚 **My patches** | A library per pedal, side-by-side comparison, share links, backup and restore. |
 | 🎨 **Tone ideas** | Starting chains by style and by bassist, with a soft spot for alternative rock (grunge, post-punk, indie, fuzz). Every gear fact is sourced; one click opens the chain in the builder. |
-| 🔌 **Pedal manager** | Over USB in Chrome or Edge: see the pedal's 100 memories next to My patches, read them, send patches, and reorder the memories by dragging them (or **Arrange** for block moves). Every write keeps a backup and is checked by reading it back. |
+| 🔌 **Pedal manager** | Over USB in Chrome or Edge: see the pedal's memories next to My patches, read them, send `.zptc` patches, and reorder memories by dragging them (or **Arrange** for block moves). Every write keeps a backup and is checked by reading it back. |
 | 📖 **Resources** | The official ZOOM manual (English and Italian) and the Effects List PDF, one tab away. |
 | ☁️ **Free account** *(optional)* | Sign in to sync patches, settings, rule packs and pedal backups across devices. Without an account everything stays in your browser. |
 | 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |
@@ -79,7 +79,7 @@ The MS-50G+ section is built from the official ZOOM documentation, but nobody ha
 
 ## 🙋 Help test the MS-70CDR+
 
-The MS-70CDR+ section is built from the official ZOOM documentation, but nobody has tried it on a real pedal yet. The short test page explains what would help, from checking a generated patch to confirming six-effect chains and the processor percentage.
+The MS-70CDR+ section is built from the official ZOOM documentation, but nobody has tried it on a real pedal yet. The short test page now starts with a USB Pedal manager smoke test, then explains what would help with generated patches, six-effect chains and the processor percentage.
 
 👉 **[What would help, and how to get in touch](https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html)**
 

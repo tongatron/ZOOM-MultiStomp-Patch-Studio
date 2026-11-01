@@ -47,6 +47,7 @@
         </div>
         <a href="./">Effects</a>
         <a href="builder.html">Patch builder</a>
+        <a href="pedal-manager.html">Pedal manager</a>
       </nav>
       <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621A2.25 2.25 0 0 1 8 13.25a2.25 2.25 0 0 1-1.591-.659l-.622-.621A2.25 2.25 0 0 0 4.196 11.31H.75A.75.75 0 0 1 0 10.56Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
     </header>
@@ -60,7 +61,8 @@
         <div class="Box-header"><h1 class="Box-title" id="doc-title">Help us test the MS-70CDR+</h1></div>
         <div class="fs-pane-body" tabindex="0" aria-label="Help us test the MS-70CDR+">
           <article class="markdown-body" id="doc">
-            <p>The MS-70CDR+ pages are built from the official ZOOM manual, Effects List and Handy Guitar Lab documentation. The file format and DSP figures are still assumptions until someone checks a patch on a real pedal.</p>
+            <p>The MS-70CDR+ pages are built from the official ZOOM manual, Effects List and Handy Guitar Lab documentation. The file format, USB manager and DSP figures are still assumptions until someone checks a patch on a real pedal.</p>
+            <p>The new <a href="pedal-manager.html">Pedal manager</a> can connect over USB, read the memories, load a <code>.zptc</code> file into a selected slot, keep a backup and read the slot back after writing. Please use a free test memory: nothing is written until you confirm it.</p>
             <p>Nobody is expected to do everything. If you have the pedal, write to us with the time you have available; we can organise the checks together and agree on the easiest way to share the results.</p>
             <p><button class="btn btn-primary" type="button" id="contact-us" data-report="contact" data-intro="Tell us how much time you could give to the MS-70CDR+ tests: we will organise them together, according to the time you have.">Contact us</button></p>
             <p class="field-hint">The form asks for an email address so we can reply. It is fine to start with just one short check.</p>
@@ -71,6 +73,7 @@
                 <thead><tr><th>Check</th><th>What it would tell us</th><th>Time (about)</th><th>What we would need back</th></tr></thead>
                 <tbody>
                   <tr><td><a href="#preparation">Preparation</a></td><td>Firmware and app versions, plus a safe backup</td><td>10 min</td><td>Versions</td></tr>
+                  <tr><td><a href="#test-manager">0. Pedal Manager smoke test</a></td><td>Whether USB connection, memory reading and one write work</td><td>10 min</td><td>Screenshot and MIDI log</td></tr>
                   <tr><td><a href="#test-1">1. A generated patch</a></td><td>Whether a patch made here reaches the pedal with its values</td><td>15 min</td><td>Answers and screenshots</td></tr>
                   <tr><td><a href="#test-2">2. A patch made in the app</a></td><td>How Handy Guitar Lab exports the patch format</td><td>10 min</td><td>1 .zptc file</td></tr>
                   <tr><td><a href="#test-3">3. Six effects</a></td><td>Whether all six positions survive the transfer</td><td>15 min</td><td>Answers</td></tr>
@@ -80,19 +83,28 @@
                 </tbody>
               </table>
             </div>
-            <p><b>The short version:</b> preparation and checks 1–3 take about 50 minutes. Any single check is useful.</p>
+            <p><b>The short version:</b> preparation, the manager smoke test and checks 1–3 take about one hour. Any single check is useful.</p>
 
             <h2 id="preparation">What it would take</h2>
             <ul>
               <li>The MS-70CDR+, switched on, and an iPhone or iPad with Handy Guitar Lab for MS-70CDR+.</li>
               <li>A USB data cable and the adapter or connection described in the <a href="https://zoomcorp.com/media/documents/E_HandyGuitarLab_for_MS-70CDRplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide</a>.</li>
-              <li>A computer or sideways tablet to open this site, download test patches and move files to the iPhone or iPad.</li>
+              <li>A computer with Chrome or Edge to open this site and use the Pedal manager, or a sideways tablet to download test patches and move files to the iPhone or iPad.</li>
               <li>The pedal firmware version, Handy Guitar Lab version, and iPhone/iPad model and system version.</li>
             </ul>
-            <p>Copying a patch to the pedal overwrites that memory, so a backup of your own memories and a few free test memories would keep your presets safe.</p>
+            <p>Copying or writing a patch to the pedal overwrites that memory, so a backup of your own memories and a few free test memories would keep your presets safe. The Pedal manager also makes a backup immediately before each write.</p>
+
+            <h2 id="test-manager">Test 0: Pedal Manager and one effect</h2>
+            <p><b>About 10 minutes.</b> On a computer, close Handy Guitar Lab and other MIDI applications, connect the MS-70CDR+ with a USB data cable and open the <a href="pedal-manager.html">Pedal manager</a>.</p>
+            <ol>
+              <li>Press <b>Connect the pedal</b>, allow MIDI access and wait until the manager has read the memories.</li>
+              <li>Choose a free test memory. Use <b>Send a .zptc file</b> to load a one-effect patch made in the builder, or send a patch already saved in <b>My patches</b>.</li>
+              <li>Confirm the write. Check that the memory shows the expected effect, the backup appears in <b>Backups</b>, and the result says the memory was read back and is identical.</li>
+            </ol>
+            <p>Send a screenshot of the manager, the downloaded backup if it was created, and the MIDI log if anything fails. Please note the firmware version and the memory number used.</p>
 
             <h2 id="test-1">Test 1: a generated patch on the pedal</h2>
-            <p><b>About 15 minutes.</b> Make a short chain in the <a href="builder.html">Patch builder</a> with CHORUS, DELAY and REVERB, download the <code>.zptc</code>, import it in Handy Guitar Lab and copy it to a free memory.</p>
+            <p><b>About 15 minutes.</b> Make a short chain in the <a href="builder.html">Patch builder</a> with CHORUS, DELAY and REVERB, download the <code>.zptc</code>, then load it into a free memory with the <a href="pedal-manager.html">Pedal manager</a> or Handy Guitar Lab.</p>
             <p>We would need to know whether the three effects arrive in the same order, whether the app and pedal show the same parameter values, the Processor percentage, and whether the sound is clean. A screenshot of the app and the pedal display is enough.</p>
 
             <h2 id="test-2">Test 2: a patch made in Handy Guitar Lab</h2>
@@ -100,7 +112,7 @@
             <p>We would need the exported <code>.zptc</code> file and the values shown for the effect. This tells us how the MS-70CDR+ writes its own files.</p>
 
             <h2 id="test-3">Test 3: six effects in one patch</h2>
-            <p><b>About 15 minutes.</b> Build a six-effect chain using low-load effects such as CHORUS, FLANGER, DELAY, ROOM REVERB, FILTER and AUTO PAN. Copy it to a free memory and step through the chain on the pedal.</p>
+            <p><b>About 15 minutes.</b> Build a six-effect chain using low-load effects such as CHORUS, FLANGER, DELAY, ROOM REVERB, FILTER and AUTO PAN. Load it into a free memory with the <a href="pedal-manager.html">Pedal manager</a> or Handy Guitar Lab and step through the chain on the pedal.</p>
             <p>We would need to know how many effects Handy Guitar Lab shows after the copy, how many are reachable on the pedal, and whether the last effect is still present.</p>
 
             <h2 id="test-4">Test 4: parameter round-trip</h2>
@@ -123,7 +135,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-01T04:10Z">Last update 1 November 2026 05:10</time>
+      <time class="gh-updated" datetime="2026-11-01T15:44Z">Last update 1 November 2026 16:44</time>
     </footer>
 
     <script src="pedal.js?v=zoom26-20261101"></script>

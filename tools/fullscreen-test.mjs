@@ -47,10 +47,11 @@ const PAGES_50G = {
   'ms-50g/guide.html': PAGES['guide.html'],
   'ms-50g/help.html': PAGES['guide.html']
 };
-// The MS-70CDR+ has the same shared Effects/Builder/Resources/Guide shell, plus its tester page.
+// The MS-70CDR+ has the shared Effects/Builder/Resources/Guide shell, its tester page and a USB Pedal manager.
 const PAGES_70CDR = {
   'ms-70cdr/index.html': PAGES['index.html'],
   'ms-70cdr/builder.html': PAGES['builder.html'].filter(([selector]) => !selector.includes('tones.html')),
+  'ms-70cdr/pedal-manager.html': PAGES['pedal-manager.html'],
   'ms-70cdr/resources.html': PAGES['resources.html'],
   'ms-70cdr/guide.html': PAGES['guide.html'],
   'ms-70cdr/help.html': PAGES['guide.html']

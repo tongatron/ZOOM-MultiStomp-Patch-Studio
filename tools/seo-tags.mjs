@@ -45,6 +45,8 @@ const PAGES = [
     'Explore all 149 effects of the ZOOM MS-70CDR+ spatial multi-effects pedal with the original Effects List text, every parameter and range, and the estimated DSP load. Not tested on the pedal yet.', IMG70, 0.9],
   ['ms-70cdr/builder.html', '/ms-70cdr/builder.html', 'ZOOM MS-70CDR+ patch builder: design a spatial effects patch and export .zptc',
     'Build ZOOM MS-70CDR+ patches in your browser (not tested on the pedal yet): pick up to 6 effects, set every parameter, watch the DSP load and export a .zptc file for Handy Guitar Lab.', IMG70, 0.8],
+  ['ms-70cdr/pedal-manager.html', '/ms-70cdr/pedal-manager.html', 'ZOOM MS-70CDR+ USB pedal manager: load and write effects',
+    'Connect a ZOOM MS-70CDR+ in Chrome or Edge, read its memories, load a .zptc patch into a test slot and write it back with a backup before every change. Not tested on the pedal yet.', IMG70, 0.7],
   ['ms-70cdr/guide.html', '/ms-70cdr/guide.html', 'ZOOM MS-70CDR+ guide: build a patch and load it with Handy Guitar Lab',
     'How to use the studio with the ZOOM MS-70CDR+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with Handy Guitar Lab.', IMG70, 0.5],
   ['ms-70cdr/resources.html', '/ms-70cdr/resources.html', 'ZOOM MS-70CDR+ manual and Effects List (PDF)',
@@ -66,7 +68,7 @@ const LD = JSON.stringify({
     { '@type': 'WebApplication', '@id': `${ORIGIN}/#app`, name: NAME, url: `${ORIGIN}/`, applicationCategory: 'MultimediaApplication',
       operatingSystem: 'Any (modern browser; USB manager needs Chrome or Edge)', browserRequirements: 'Window of at least 800 × 640 px',
       isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }, inLanguage: 'en',
-      description: 'Browse every effect of the ZOOM MS-60B+, MS-50G+ and MS-70CDR+, build patches with a live DSP meter and advice, export .zptc files for Handy Guitar Lab and manage the MS-60B+ over USB.',
+      description: 'Browse every effect of the ZOOM MS-60B+, MS-50G+ and MS-70CDR+, build patches with a live DSP meter and advice, export .zptc files for Handy Guitar Lab and manage the MS-60B+ or MS-70CDR+ over USB.',
       keywords: 'ZOOM MS-60B+, ZOOM MS-50G+, ZOOM MS-70CDR+, MultiStomp, patch editor, effects list, Handy Guitar Lab, zptc',
       isPartOf: { '@id': `${ORIGIN}/#website` }, sameAs: ['https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio'] }
   ]

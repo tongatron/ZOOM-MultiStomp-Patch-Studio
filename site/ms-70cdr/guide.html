@@ -47,6 +47,7 @@
           </div>
           <a href="./">Effects</a>
           <a href="builder.html">Patch builder</a>
+          <a href="pedal-manager.html">Pedal manager</a>
       </nav>
       <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal" aria-current="page"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
     </header>
@@ -64,12 +65,13 @@
             <p>How to use ZOOM MultiStomp Studio with the ZOOM MS-70CDR+, from finding an effect to playing the patch. There is nothing to install and you do not need an account to start. The site is made for a computer or a tablet held sideways: it needs a window of at least 800 × 640 px, and below that it shows a notice instead (try the full-screen mode of the browser, <kbd class="gh-kbd">F11</kbd>).</p>
 
             <p><b>Not tested yet.</b> This section is built from the official MS-70CDR+ documentation and the same file format as the MS-60B+, but no generated patch has been checked on a real MS-70CDR+. Own the pedal? <a href="help.html">Help us test it</a>: a few short tests at home, with the time each one takes.</p>
+            <p><a class="btn btn-sm btn-primary" href="pedal-manager.html">Open the Pedal manager</a> to connect the MS-70CDR+ over USB, read its memories and load a <code>.zptc</code> patch into a test slot. The manager is new for this pedal and is waiting for its first hardware check.</p>
 
             <h2 id="quick-start">Quick start</h2>
             <ol>
               <li><b>Build the chain.</b> In the <a href="builder.html">Patch builder</a> pick up to 6 effects, put them in order and set every parameter with the real ranges.</li>
               <li><b>Check it.</b> Watch the DSP load against the 100% limit and read the advice before you leave the desk.</li>
-              <li><b>Send it to the pedal.</b> Download the <code>.zptc</code> file and load it with Handy Guitar Lab (<a href="#load-on-pedal">how to do it</a>).</li>
+              <li><b>Send it to the pedal.</b> Download the <code>.zptc</code> file and load it with the <a href="pedal-manager.html">Pedal manager</a> over USB, or with Handy Guitar Lab (<a href="#load-on-pedal">how to do it</a>).</li>
             </ol>
 
             <h2 id="tasks">I want to…</h2>
@@ -81,6 +83,7 @@
                   <tr><td>Make a patch from scratch</td><td><a href="#build">Build a patch</a></td></tr>
                   <tr><td>Know whether my chain makes sense before I play it</td><td><a href="#advice">Read the advice</a></td></tr>
                   <tr><td>Put a patch on the pedal</td><td><a href="#load-on-pedal">How to load it on the pedal</a></td></tr>
+                  <tr><td>Read memories or load effects over USB</td><td><a href="#pedal-manager">Use the Pedal manager</a></td></tr>
                   <tr><td>Find my patches on another computer</td><td><a href="#account">Keep your patches safe</a></td></tr>
                   <tr><td>Fix a problem</td><td><a href="#troubleshooting">Troubleshooting</a></td></tr>
                 </tbody>
@@ -132,7 +135,17 @@
               <li><b>Backup</b> downloads all your saved patches as a <code>.json</code> file. <b>Import</b> reads <code>.zptc</code> files, for example from Handy Guitar Lab, and <code>.json</code> backups; you can also drop the files onto the page.</li>
             </ul>
 
-            <h2 id="load-on-pedal">How to load it on the pedal</h2>
+            <h2 id="pedal-manager">Load effects with the Pedal manager</h2>
+            <p>The <a href="pedal-manager.html">Pedal manager</a> is the quickest way to test a patch directly on the MS-70CDR+ from a computer. It works in Chrome or Edge with Web MIDI.</p>
+            <ol>
+              <li>Close Handy Guitar Lab and other MIDI applications, connect the pedal with a USB data cable and switch it on.</li>
+              <li>Press <b>Connect the pedal</b>, allow MIDI access, then wait for the manager to read all memories.</li>
+              <li>Choose a free test memory. In <b>My patches</b>, use <b>Send a .zptc file</b> or choose a patch saved in the builder, then press the upload button for that memory.</li>
+              <li>Read the confirmation carefully and press <b>Write</b>. The manager keeps a backup before every overwrite and reads the memory back afterwards.</li>
+            </ol>
+            <p>Use a free memory or make a backup first: writing replaces the selected patch. If a check fails, copy the MIDI log and send it with the memory number and the patch file.</p>
+
+            <h2 id="load-on-pedal">How to load it with Handy Guitar Lab</h2>
             <ol>
               <li>In Handy Guitar Lab open <b>Patch</b>, tap the import icon and pick the <code>.zptc</code> file: it lands in the <b>Pool</b>.</li>
               <li>In the Pool tap <b>Select</b>, choose the patch and tap <b>Copy to Device</b>.</li>
@@ -199,7 +212,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-01T04:10Z">Last update 1 November 2026 05:10</time>
+      <time class="gh-updated" datetime="2026-11-01T15:44Z">Last update 1 November 2026 16:44</time>
     </footer>
 
     <script src="pedal.js?v=zoom25-20261028"></script>
