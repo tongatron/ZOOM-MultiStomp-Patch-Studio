@@ -812,7 +812,8 @@ try {
     assert.equal(await contact.textContent(), 'Contact us');
     assert.equal(await contact.getAttribute('data-report'), 'contact', 'it opens the form of report.js, not an email program');
     assert.equal(await page.locator('#doc a[href^="mailto:"]').count(), 0, 'no email address on the page');
-    assert.equal(await page.locator('#doc .btn').count(), 1, 'one button');
+    assert.equal(await page.locator('#doc .btn').count(), 2, 'Contact us and the tester checklist');
+    assert.equal(await page.locator('#doc a[download][href="ms-50g-test-checklist.xlsx"]').count(), 1, 'the tester checklist download');
     // Contact us comes right after the description (which says the tests are organised according to the time the person has), before the list of tests
     assert.equal(await page.evaluate(() => {
       const button = document.querySelector('#contact-us'), glance = document.querySelector('#at-a-glance');
