@@ -40,11 +40,13 @@
       .lp-hero .lp-lead { font-size: 18px; margin-bottom: 32px; }
       .lp-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 380px); gap: 48px; align-items: center; }
       .lp-hero-grid h1 { font-size: clamp(32px, 4.6vw, 54px); }
-      /* Pedal carousel: the cut-outs have no background and share one size, so they stack in one grid cell and cross-fade. */
+      /* Pedal carousel: the cut-outs stack in one shared, bottom-aligned frame and cross-fade. */
       .lp-hero-pedal { margin: 0; }
-      .lp-pedal-stage { position: relative; display: grid; }
+      .lp-pedal-stage { position: relative; display: grid; aspect-ratio: 854 / 1266; }
       /* The cables fade out instead of ending at the image edge. */
-      .lp-pedal-img { grid-area: 1 / 1; display: block; width: 100%; height: auto; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .5)); }
+      .lp-pedal-img { grid-area: 1 / 1; align-self: end; display: block; width: 100%; height: auto; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility 0s linear .35s; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .5)); }
+      /* The MS-70CDR+ source has a wider canvas than the two 854×1266 assets. Match the pedal body size and keep its base on the same line. */
+      .lp-pedal-img--cdr { transform: scale(1.18) translateY(-7%); transform-origin: center bottom; }
       .lp-pedal-img.is-active { opacity: 1; visibility: visible; transition-delay: 0s; }
       .lp-pedal-nav { position: absolute; top: 50%; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; margin-top: -20px; border: 1px solid var(--border); border-radius: 50%; color: var(--fg); background: rgba(13, 17, 23, .72); cursor: pointer; transition: background .12s, border-color .12s; }
       .lp-pedal-nav:hover { background: var(--bg-muted); border-color: var(--fg-muted); }
@@ -173,7 +175,7 @@
             <div class="lp-pedal-stage">
               <img class="lp-pedal-img is-active" src="landing/pedal-ms60b.webp" alt="The ZOOM MultiStomp MS-60B+ bass pedal in red, with two jacks on the left, one on the right and the display showing CLEAR DRIVER PREAMP." width="854" height="1266" fetchpriority="high" />
               <img class="lp-pedal-img" src="landing/pedal-ms50g.webp" alt="The ZOOM MultiStomp MS-50G+ guitar pedal in white, with two jacks on the left, one on the right and the display showing KRAMPUS DRIVE." width="854" height="1266" aria-hidden="true" />
-              <img class="lp-pedal-img" src="landing/pedal-ms70cdr.png" alt="The ZOOM MultiStomp MS-70CDR+ spatial pedal in blue, with four audio jacks and the display showing HD HALL REVERB." width="1189" height="1323" aria-hidden="true" />
+              <img class="lp-pedal-img lp-pedal-img--cdr" src="landing/pedal-ms70cdr.png" alt="The ZOOM MultiStomp MS-70CDR+ spatial pedal in blue, with four audio jacks and the display showing HD HALL REVERB." width="1189" height="1323" aria-hidden="true" />
               <button class="lp-pedal-nav lp-pedal-nav--prev" type="button" aria-label="Previous pedal" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M10 3 5 8l5 5"/></svg></button>
               <button class="lp-pedal-nav lp-pedal-nav--next" type="button" aria-label="Next pedal" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m6 3 5 5-5 5"/></svg></button>
             </div>
@@ -436,7 +438,7 @@
         <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
         <div class="gh-footer-meta">
           <a class="gh-privacy" href="privacy.html">Privacy</a>
-          <time class="gh-updated" datetime="2026-11-01T16:31Z">Last update 1 November 2026 17:31</time>
+          <time class="gh-updated" datetime="2026-11-01T17:34Z">Last update 1 November 2026 18:34</time>
         </div>
       </div>
     </footer>
