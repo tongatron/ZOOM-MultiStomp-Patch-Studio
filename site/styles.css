@@ -834,6 +834,8 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-mem[data-state="error"] .usb-name { color: #f85149; }
 .usb-num { color: var(--fg-muted); font: 13px var(--mono); text-align: right; }
 .usb-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-linked { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--accent-fg); font-size: 11px; font-weight: 500; vertical-align: middle; }
+.usb-link-symbol { font-size: 14px; line-height: 1; }
 .usb-meta { color: var(--fg-muted); font: 12px var(--mono); }
 .usb-mem-detail { padding: 0 16px 10px 62px; }
 .usb-fx { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; list-style: none; counter-reset: fx; }

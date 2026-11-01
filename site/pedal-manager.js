@@ -301,7 +301,10 @@
     const m = memories.get(n) || { state: 'loading' };
     const d = m.decoded;
     const linked = m.state === 'ok' && m.crcOk ? syncInfo(n) : null;
-    const linkedPatch = readPedalSync().links[n]?.patchId;
+    const syncLink = readPedalSync().links[n];
+    const linkedPatch = syncLink?.patchId;
+    const linkedEntry = linkedPatch ? readLibrary().find(item => item.id === linkedPatch) : null;
+    const linkedLabel = linkedPatch ? `<span class="usb-linked" title="Linked to My patch"><span class="usb-link-symbol" aria-hidden="true">↔</span>${escapeHtml(linkedEntry?.name || 'My patch unavailable')}</span>` : '';
     const linkLabel = linkedPatch ? 'Change My patch link' : 'Link to My patch';
     const isSelected = n === selected;
     const name = m.state === 'ok' ? d.name || '(no name)' : m.state === 'loading' ? 'Reading…' : m.state === 'empty' ? '(empty)' : `Unreadable: ${m.error}`;
@@ -309,7 +312,7 @@
     const drag = canArrange() && renaming !== n;
     return `<li class="usb-mem${isSelected ? ' is-selected' : ''}${drag ? ' is-draggable' : ''}" data-n="${n}" data-state="${m.state}"${drag ? ' draggable="true"' : ''}>
       <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
-        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}</span><span class="usb-meta">${escapeHtml(meta)}</span>${drag ? '<span class="usb-grip" aria-hidden="true" title="Drag to another place">⠿</span>' : ''}
+        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}${linkedLabel}</span><span class="usb-meta">${escapeHtml(meta)}</span>${drag ? '<span class="usb-grip" aria-hidden="true" title="Drag to another place">⠿</span>' : ''}
       </button>
       ${isSelected && m.state === 'error' ? `<div class="usb-mem-detail">
         <p class="usb-warn">${escapeHtml(m.error || 'This memory could not be read.')} It cannot be shown, renamed or moved${m.memory ? '' : '; nothing was received from the pedal, so it cannot be cleared either'}.</p>

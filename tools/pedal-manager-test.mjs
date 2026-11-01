@@ -237,6 +237,7 @@ try {
     await page3.selectOption('#usb-link-patch', 'p1');
     await page3.click('#usb-confirm-yes');
     assert.equal(await page3.evaluate(() => JSON.parse(localStorage.getItem('ms60b-pedal-sync')).links[1].patchId), 'p1');
+    assert.match(await page3.locator('#usb-memories li[data-n="1"] .usb-linked').innerText(), /^↔\s*My patch$/);
     assert.equal(await page3.locator('#usb-memories li[data-n="1"] [data-act="link"]').innerText(), 'Change My patch link');
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
