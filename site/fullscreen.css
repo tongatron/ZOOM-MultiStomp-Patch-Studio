@@ -20,6 +20,9 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 @media (max-width: 899px) { .fs-guide { padding: 6px 8px; } .fs-guide-text { display: none; }  }
 /* Firmware the MS-60B+ was tested on, in the header just left of the Guide button (the same text at every width) */
 .fs-fw { margin-left: auto; flex: none; white-space: nowrap; }
+.fs-test-tag { flex: none; white-space: nowrap; }
+.fs-test-tag:first-of-type { margin-left: auto; }
+.fs-test-tag + .fs-test-tag, .fs-test-tag + .fs-fw { margin-left: 0; }
 .fs-fw + .fs-guide { margin-left: 0; }
 
 /* Pedal menu: a button that opens the list of the two Zoom pedals */
