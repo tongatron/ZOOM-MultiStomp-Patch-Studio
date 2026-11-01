@@ -790,8 +790,6 @@ body.is-dropping .drop-overlay { display: grid; }
   filter: grayscale(1) brightness(.5); opacity: .55; transition: filter .3s, opacity .3s;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 84%, transparent); }
 .usb-connect.is-connected .usb-pedal { filter: none; opacity: 1; }
-.usb-pedal-placeholder { display: flex; align-items: center; justify-content: center; height: 190px; padding: 0 10px; border: 1px solid var(--border-muted); border-radius: 12px; background: linear-gradient(150deg, #30363d, #161b22 62%); color: var(--fg-muted); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-align: center; -webkit-mask-image: none; mask-image: none; }
-.usb-connect.is-connected .usb-pedal-placeholder { border-color: #3fb950; color: var(--fg); }
 @media (prefers-reduced-motion: reduce) { .usb-pedal { transition: none; } }
 .usb-howto summary { padding: 12px 16px; color: var(--fg-muted); font-size: 13px; cursor: pointer; }
 .usb-howto summary:hover { color: var(--fg); background: var(--bg-hover); }
