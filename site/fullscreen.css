@@ -28,7 +28,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* Pedal menu: a button that opens the list of the two Zoom pedals */
 .fs-menu { display: flex; align-items: center; gap: 8px; }
 .fs-menu-label { color: var(--fg-muted); font-size: 13px; }
-@media (max-width: 899px) { .fs-top { gap: 6px; padding: 0 12px; } .fs-menu { gap: 6px; margin-right: 2px; padding-right: 6px; } .fs-menu-button { padding-left: 9px; } .fs-nav > a { padding: 5px 10px; } .fs-menu-label { font-size: 12px; } }
+@media (max-width: 899px) { .fs-top { gap: 6px; padding: 0 12px; } .fs-menu { gap: 6px; margin-right: 2px; padding-right: 6px; } .fs-menu-button { padding-left: 9px; } .fs-nav > a { padding: 5px 8px; } .fs-menu-label { font-size: 12px; } }
 .fs-menu { position: relative; margin-right: 6px; padding-right: 8px; border-right: 1px solid var(--border-muted); }
 /* The button shows the selected pedal; the arrow says it can be changed */
 .fs-menu-button { display: inline-flex; align-items: center; gap: 8px; padding-right: 10px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; }
@@ -50,7 +50,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 
 /* Bars that scripts add under the header stay compact */
 .account-notice { flex: none; padding: 6px 16px; }
-/* "Not tested yet" bar under the header of the MS-50G+ pages: the text, and the "Help us" button at the right end */
+/* "Not tested yet" bar under the header of the untested pedal pages: the text, and the "Help us" button at the right end */
 .fs-note { flex: none; display: flex; align-items: center; gap: 16px; padding: 6px 16px; background: rgba(248, 81, 73, .1); border-bottom: 1px solid rgba(248, 81, 73, .4); font-size: 13px; line-height: 1.5; }
 .fs-note p { flex: 1; min-width: 0; margin: 0; }
 .fs-note .btn { flex: none; white-space: nowrap; }

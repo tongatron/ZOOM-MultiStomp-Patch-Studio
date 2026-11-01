@@ -39,10 +39,11 @@ const PAGES = {
   'privacy.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]],
   'guide.html': [['.fs-guide', 'Guide button'], ['#toc a', 'contents'], ['#doc-title', 'title'], ['.fs-doc .fs-pane-body', 'document', 300]]
 };
-// The MS-50G+ has Effects, Patch builder, Resources, the Guide and the help page for its testers (no Pedal manager, no Tone ideas)
+// The MS-50G+ has Effects, Patch builder, Pedal manager, Resources, the Guide and the help page for its testers (no Tone ideas)
 const PAGES_50G = {
   'ms-50g/index.html': PAGES['index.html'],
   'ms-50g/builder.html': PAGES['builder.html'].filter(([selector]) => !selector.includes('tones.html')),
+  'ms-50g/pedal-manager.html': PAGES['pedal-manager.html'],
   'ms-50g/resources.html': PAGES['resources.html'],
   'ms-50g/guide.html': PAGES['guide.html'],
   'ms-50g/help.html': PAGES['guide.html']
@@ -729,10 +730,10 @@ try {
     await page.waitForURL(url => url.pathname === '/ms-60b/builder.html');
   });
 
-  await test('MS-50G+: the same layout with its own data, no Pedal manager or Tone ideas, and the "Not tested" bar', async () => {
+  await test('MS-50G+: the same layout with its own data, Pedal manager and the "Not tested" bar', async () => {
     await open('ms-50g/index.html', SIZES[1]);
     assert.equal(await page.locator('.fs-menu-current').textContent(), 'MS-50G+ guitar');
-    assert.deepEqual(await page.locator('.fs-nav > a').allTextContents(), ['Effects', 'Patch builder']);
+    assert.deepEqual(await page.locator('.fs-nav > a').allTextContents(), ['Effects', 'Patch builder', 'Pedal manager']);
     assert.match(await page.locator('.fs-note').textContent(), /^Not tested yet\./);
     assert.equal(await page.locator('#result-count').textContent(), '127 effects');
     assert.equal(await page.evaluate(() => PEDAL.id), 'ms50g');
@@ -765,8 +766,9 @@ try {
 
     // the guide and resources: the pedal's own text and links
     await open('ms-50g/guide.html', SIZES[1]);
-    assert.equal(await page.locator('#toc a[href="#pedal-manager"], #toc a[href="#tone-ideas"]').count(), 0, 'no Pedal manager or Tone ideas section');
-    assert.equal(await page.locator('#doc').getByText('Pedal manager').count(), 0);
+    assert.equal(await page.locator('#toc a[href="#pedal-manager"]').count(), 1, 'the Pedal manager section is in the guide');
+    assert.equal(await page.locator('#toc a[href="#tone-ideas"]').count(), 0, 'no Tone ideas section');
+    assert.match(await page.locator('#doc').textContent(), /Pedal manager/);
     assert.match(await page.locator('#load-on-pedal ~ p a[href*="HandyGuitarLab"]').first().getAttribute('href'), /MS-50Gplus/);
     assert.equal(await page.locator('#toc a[href="#resources"]').count(), 1);
     await page.locator('#doc a[href="resources.html"]').click();
@@ -796,9 +798,9 @@ try {
     await page.locator('.fs-note > a.btn').click();
     await page.waitForURL(/\/ms-50g\/help\.html$/);
 
-    // the help page: no bar of its own, Contact us after the description, one section per test with its time, the two test patches
+    // the help page: the Not tested bar, Contact us after the description, one section per test with its time, the two test patches
     await open('ms-50g/help.html', SIZES[1]);
-    assert.equal(await page.locator('.fs-note').count(), 0, 'the page is the invitation: no "Not tested" bar on it');
+    assert.equal(await page.locator('.fs-note').count(), 1, 'the page keeps the "Not tested" bar');
     assert.equal(await page.locator('#doc-title').textContent(), 'Help us test the MS-50G+');
     for (const id of ['at-a-glance', 'what-it-takes', ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => `test-${n}`)]) assert.equal(await page.locator(`#toc a[href="#${id}"]`).count(), 1, `contents: ${id}`);
     for (let n = 1; n <= 8; n++) {

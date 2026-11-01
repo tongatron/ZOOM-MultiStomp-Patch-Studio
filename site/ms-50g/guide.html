@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with Handy Guitar Lab." />
+    <meta name="description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with the Pedal manager or Handy Guitar Lab." />
     <link rel="canonical" href="https://zoommultistompstudio.tongatron.org/ms-50g/guide.html" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ZOOM MultiStomp Studio" />
     <meta property="og:title" content="ZOOM MS-50G+ guide: build a patch and load it with Handy Guitar Lab | MultiStomp Studio" />
-    <meta property="og:description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with Handy Guitar Lab." />
+    <meta property="og:description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with the Pedal manager or Handy Guitar Lab." />
     <meta property="og:url" content="https://zoommultistompstudio.tongatron.org/ms-50g/guide.html" />
     <meta property="og:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
@@ -17,7 +17,7 @@
     <meta property="og:image:alt" content="ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor for the MS-60B+, MS-50G+ and MS-70CDR+." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ZOOM MS-50G+ guide: build a patch and load it with Handy Guitar Lab | MultiStomp Studio" />
-    <meta name="twitter:description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with Handy Guitar Lab." />
+    <meta name="twitter:description" content="How to use the studio with the ZOOM MS-50G+ (not tested on the pedal yet): find an effect, build a patch, save and share it, and load it with the Pedal manager or Handy Guitar Lab." />
     <meta name="twitter:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
     <meta name="theme-color" content="#0d1117" />
     <title>ZOOM MS-50G+ guide: build a patch and load it with Handy Guitar Lab | MultiStomp Studio</title>
@@ -47,6 +47,7 @@
           </div>
           <a href="./">Effects</a>
           <a href="builder.html">Patch builder</a>
+          <a href="pedal-manager.html">Pedal manager</a>
       </nav>
       <span class="Label Label--attention fs-test-tag" title="The MS-50G+ is awaiting its first hardware test">Not tested on MS-50G+</span>
       <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal" aria-current="page"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
@@ -70,7 +71,7 @@
             <ol>
               <li><b>Build the chain.</b> In the <a href="builder.html">Patch builder</a> pick up to 6 effects, put them in order and set every parameter with the real ranges.</li>
               <li><b>Check it.</b> Watch the DSP load against the 100% limit and read the advice before you leave the desk.</li>
-              <li><b>Send it to the pedal.</b> Download the <code>.zptc</code> file and load it with Handy Guitar Lab (<a href="#load-on-pedal">how to do it</a>).</li>
+              <li><b>Send it to the pedal.</b> Download the <code>.zptc</code> file and load it with the <a href="pedal-manager.html">Pedal manager</a> over USB, or with Handy Guitar Lab (<a href="#load-on-pedal">how to do it</a>).</li>
             </ol>
 
             <h2 id="tasks">I want to…</h2>
@@ -82,6 +83,7 @@
                   <tr><td>Make a patch from scratch</td><td><a href="#build">Build a patch</a></td></tr>
                   <tr><td>Know whether my chain makes sense before I play it</td><td><a href="#advice">Read the advice</a></td></tr>
                   <tr><td>Put a patch on the pedal</td><td><a href="#load-on-pedal">How to load it on the pedal</a></td></tr>
+                  <tr><td>Read memories or load effects over USB</td><td><a href="#pedal-manager">Use the Pedal manager</a></td></tr>
                   <tr><td>Find my patches on another computer</td><td><a href="#account">Keep your patches safe</a></td></tr>
                   <tr><td>Fix a problem</td><td><a href="#troubleshooting">Troubleshooting</a></td></tr>
                 </tbody>
@@ -140,6 +142,9 @@
               <li>Pick a free memory: copying <b>overwrites</b> the destination patch.</li>
             </ol>
             <p>Get the file with <b>Download .zptc</b> in the Patch builder. More in the <a href="https://zoomcorp.com/media/documents/E_HandyGuitarLab_for_MS-50Gplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide (PDF)</a>.</p>
+
+            <h2 id="pedal-manager">Load effects with the Pedal manager</h2>
+            <p>The <a href="pedal-manager.html">Pedal manager</a> can connect to the MS-50G+ over USB in Chrome or Edge. It reads the pedal memories, loads a saved patch or a <code>.zptc</code> file into a selected slot, keeps a backup before every write and reads the slot back afterwards. It has not been checked on a real MS-50G+ yet, so use a free test memory and confirm every write.</p>
 
             <h2 id="account">Keep your patches safe</h2>
             <p>You can use everything without signing in, but then your work lives only in one browser: clearing browsing data or using a private window loses it, and another browser or device won't have it.</p>
@@ -200,7 +205,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-01T16:12Z">Last update 1 November 2026 17:12</time>
+      <time class="gh-updated" datetime="2026-11-01T16:31Z">Last update 1 November 2026 17:31</time>
     </footer>
 
     <script src="pedal.js?v=zoom25-20261028"></script>
