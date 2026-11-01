@@ -1,4 +1,4 @@
-// Layout of the site, both pedals (MS-60B+ in site/, MS-50G+ in site/ms-50g/): every page must fit the window at each target size without scrolling.
+// Layout of the site, all pedals (MS-60B+ in site/, MS-50G+ in site/ms-50g/, MS-70CDR+ in site/ms-70cdr/): every page must fit the window at each target size without scrolling.
 // The page and the work area are never cut, every pane fits, the main controls are on screen and each work area keeps
 // a useful height. Below 800 × 640 px there is no layout: a notice replaces the page (no phone version, by decision).
 // The builder is also checked with a full chain of 6 effects, signed out (with the account notice).
@@ -47,7 +47,15 @@ const PAGES_50G = {
   'ms-50g/guide.html': PAGES['guide.html'],
   'ms-50g/help.html': PAGES['guide.html']
 };
-const ALL_PAGES = { ...PAGES, ...PAGES_50G };
+// The MS-70CDR+ has the same shared Effects/Builder/Resources/Guide shell, plus its tester page.
+const PAGES_70CDR = {
+  'ms-70cdr/index.html': PAGES['index.html'],
+  'ms-70cdr/builder.html': PAGES['builder.html'].filter(([selector]) => !selector.includes('tones.html')),
+  'ms-70cdr/resources.html': PAGES['resources.html'],
+  'ms-70cdr/guide.html': PAGES['guide.html'],
+  'ms-70cdr/help.html': PAGES['guide.html']
+};
+const ALL_PAGES = { ...PAGES, ...PAGES_50G, ...PAGES_70CDR };
 
 // Runs in the page: what is cut, off screen or too small
 function check(keys) {
@@ -238,7 +246,7 @@ try {
   await test('signed in, the header has the account menu (the initial, then the name and Sign out, no Account entry), and the top bar fits at 800 px', async () => {
     const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: 'Header Tester', password: 'header password 1' }, maxRedirects: 0 });
     assert.equal(made.status(), 303);
-    for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html']) {
+    for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html', 'ms-70cdr/builder.html']) {
       for (const size of [[1280, 680], [800, 700]]) {
         await open(file, size);
         const button = page.locator('.account-slot .account-button');
@@ -410,7 +418,7 @@ try {
     assert.equal(await page.getByText('How to load it on the pedal').count(), 0);
   });
 
-  await test('the Pedal menu comes first, lists the two Zoom pedals and closes', async () => {
+  await test('the Pedal menu comes first, lists the three Zoom pedals and closes', async () => {
     await open('builder.html', SIZES[1]);
     assert.equal((await page.locator('.fs-nav > *').first().getAttribute('class')), 'fs-menu', 'the menu is the first item of the bar');
     // the button shows the selected pedal and an arrow, not a generic word
@@ -422,7 +430,7 @@ try {
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Not tested']);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0, 'the firmware tag is not in the menu any more');
     assert.equal(await page.locator('.fs-menu-list a[aria-current]').evaluate(a => a.firstChild.textContent.trim()), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
@@ -531,7 +539,7 @@ try {
   });
 
   await test('builder: Plug into, Amp and the mixer choice sit on one line at every size, for each pedal, above the Errors / Warnings / Tips row', async () => {
-    for (const file of ['builder.html', 'ms-50g/builder.html']) {
+    for (const file of ['builder.html', 'ms-50g/builder.html', 'ms-70cdr/builder.html']) {
       for (const size of SIZES) {
         await open(file, size);
         assert.equal(await page.evaluate(() => !!(document.querySelector('#advice-output').compareDocumentPosition(document.querySelector('#advice-filters')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, `${file}: Plug into comes before the filters row`);
@@ -541,7 +549,8 @@ try {
           const middle = el => { const r = el.getBoundingClientRect(); return (r.top + r.bottom) / 2; };
           return { texts: items.map(el => el.textContent.trim()), oneLine: items.every(el => Math.abs(middle(el) - middle(items[0])) < 4), fits: box.scrollWidth <= box.clientWidth + 1 };
         });
-        assert.deepEqual(row, { texts: ['Plug into', 'Amp', 'Mixer / PA / headphones'], oneLine: true, fits: true }, `${file} at ${size.join(' × ')}`);
+        const expectedAmp = file === 'ms-70cdr/builder.html' ? 'Line' : 'Amp';
+        assert.deepEqual(row, { texts: ['Plug into', expectedAmp, 'Mixer / PA / headphones'], oneLine: true, fits: true }, `${file} at ${size.join(' × ')}`);
       }
     }
   });
@@ -573,7 +582,7 @@ try {
   await test('pedal manager: the hint under My patches, the effects of the last-read patches, Delete all and the MIDI log in full screen', async () => {
     const memories = { 1: '01base.zptc', 2: '06FLIP.zptc', 3: '07Big Black .zptc' };
     const lastRead = { at: '2026-10-28T10:00:00.000Z', count: 6, memories: { ...Object.fromEntries(Object.entries(memories).map(([n, f]) => [n, readFileSync(new URL(`../patches/${f}`, import.meta.url)).toString('base64')])), 4: null } };
-    const backups = [3, 2, 1].map(i => ({ id: `b${i}`, memory: i, name: `Patch ${i}`, at: new Date(Date.now() - i * 60000).toISOString(), data: 'AAAA' }));
+    const backups = [3, 2, 1].map(i => ({ id: `b${i}`, memory: i, name: `Patch ${i}`, at: new Date(Date.now() - i * 60000).toISOString(), data: 'AAAAAAAAAAAA' }));
     await open('pedal-manager.html', SIZES[1]);
     await page.evaluate(([read, saved]) => { localStorage.setItem('ms60b-usb-last-read', read); localStorage.setItem('ms60b-usb-backups', saved); }, [JSON.stringify(lastRead), JSON.stringify(backups)]);
     await page.reload();
@@ -732,7 +741,7 @@ try {
     assert.equal(await page.locator('.flash').count(), 0, 'no notice about the official manual');
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Not tested']);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0);
     assert.equal(await page.locator('.fs-fw').count(), 0, 'the firmware tag of the MS-60B+ is not on the MS-50G+ pages');
     await page.keyboard.press('Escape');

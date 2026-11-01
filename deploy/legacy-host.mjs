@@ -80,7 +80,7 @@ function receiverPage(origins) {
 <script>
 (() => {
   const FROM = ${JSON.stringify(origins)};
-  const PEDALS = ['ms60b', 'ms50g'];
+  const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
   const DOCS = ['advice', 'view', 'builder', 'rulepacks', 'usb-backups', 'usb-last-read', 'pedal-edit'];
   const from = (() => { try { return new URL(document.referrer).origin; } catch { return ''; } })();
   if (!FROM.includes(from)) return;

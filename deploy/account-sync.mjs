@@ -4,7 +4,7 @@
 
 // The browser keys `${pedal}-${kind}` kept in an account, with their maximum size in characters
 export const DOC_LIMITS = { advice: 4_000, view: 100, builder: 20_000, rulepacks: 200_000, 'usb-backups': 200_000 };
-export const PEDALS = ['ms60b', 'ms50g'];
+export const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
 const isoDate = value => typeof value === 'string' && value.length <= 40 && Number.isFinite(Date.parse(value));
 
 export function cleanDocs(docs) {

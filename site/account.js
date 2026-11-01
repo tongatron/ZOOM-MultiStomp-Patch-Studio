@@ -1,11 +1,11 @@
-// Account sync: keeps My patches and the other stored data of both pedals in the signed-in user's account.
+// Account sync: keeps My patches and the other stored data of all supported pedals in the signed-in user's account.
 // Needs library-merge.js. Without an account nothing changes: the data stays in this browser only.
 // The data of each pedal is sent to /api/account/sync/<pedal> and the merged copy is stored back. A stored value that
 // differs from the one sent last time counts as a change made here (with the time it was noticed).
 // Events on window: 'account-change' (detail: /api/me answer), 'account-synced' (detail: { pedal, changed: [keys] }).
 
 const ACCOUNT = (() => {
-  const PEDALS = ['ms60b', 'ms50g'];
+  const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
   const KINDS = ['advice', 'view', 'builder', 'rulepacks', 'usb-backups']; // stored as `${pedal}-${kind}`
 
   // storage: a localStorage-like object; request: fetch. Separate from the page so tools/sync-test.mjs can run it.
@@ -117,7 +117,7 @@ const ACCOUNT = (() => {
       return account.me;
     }
 
-    // Syncs both pedals; resolves true when everything reached the server
+    // Syncs all supported pedals; resolves true when everything reached the server
     function syncAll() {
       if (!account.me?.signedIn || !ready) return Promise.resolve(false);
       if (running) { again = true; return running; }
@@ -334,7 +334,7 @@ const ACCOUNT = (() => {
         <div class="Overlay-body">
           <p>You are using the studio without an account, so your patches, settings and pedal backups are stored only in this browser.</p>
           <ul class="account-perks">
-            <li>Everything is saved on the server, for both pedals, and is the same on every device where you sign in.</li>
+            <li>Everything is saved on the server for all supported pedals and is the same on every device where you sign in.</li>
             <li>The patches already in this browser come with you when you sign up.</li>
             <li>Only an email and a password are needed. Download everything or delete the account whenever you want.</li>
           </ul>

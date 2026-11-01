@@ -24,9 +24,10 @@ const STYLE = `<style>
   .admin-accounts-table th:nth-child(3), .admin-accounts-table td:nth-child(3) { width: 11%; }
   .admin-accounts-table th:nth-child(4), .admin-accounts-table td:nth-child(4) { width: 12%; }
   .admin-accounts-table th:nth-child(5), .admin-accounts-table td:nth-child(5),
-  .admin-accounts-table th:nth-child(6), .admin-accounts-table td:nth-child(6) { width: 7%; }
-  .admin-accounts-table th:nth-child(7), .admin-accounts-table td:nth-child(7) { width: 12%; }
-  .admin-accounts-table th:nth-child(8), .admin-accounts-table td:nth-child(8) { width: 18%; }
+  .admin-accounts-table th:nth-child(6), .admin-accounts-table td:nth-child(6),
+  .admin-accounts-table th:nth-child(7), .admin-accounts-table td:nth-child(7) { width: 6%; }
+  .admin-accounts-table th:nth-child(8), .admin-accounts-table td:nth-child(8) { width: 10%; }
+  .admin-accounts-table th:nth-child(9), .admin-accounts-table td:nth-child(9) { width: 16%; }
   .admin .acts { display: grid; grid-template-columns: 1fr; gap: 4px; }
   .admin .acts form { margin: 0; }
   .admin .btn { width: auto; }
@@ -54,7 +55,7 @@ const STYLE = `<style>
 const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a><a class="btn btn-sm" href="/admin">Users</a><a class="btn btn-sm" href="/account">Your account</a></nav>`;
 const act = (action, id, label, extra = '') => `<form method="post" action="/admin/${action}"><input type="hidden" name="id" value="${esc(id)}">${extra}<button class="btn btn-sm" type="submit">${esc(label)}</button></form>`;
 
-const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['login', 'Last sign-in'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['change', 'Last change']];
+const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['login', 'Last sign-in'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
 export function adminPage({ me, users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log }) {
   const sortLink = key => {
@@ -65,19 +66,19 @@ export function adminPage({ me, users, query = '', sort = 'created', dir = 'desc
   const rows = users.map(u => `<tr>
     <td data-label="Email"><a href="/admin/user/${esc(u.id)}">${esc(u.email)}</a> ${u.role === 'admin' ? '<span class="tag admin-role">admin</span>' : ''} ${u.email_verified_at ? '' : '<span class="tag" title="Email not confirmed">unconfirmed</span>'}</td>
     <td data-label="Name">${esc(u.name) || '<span class="muted">—</span>'}</td><td data-label="Signed up">${date(u.created_at)}</td><td data-label="Last sign-in">${date(u.last_login)}</td>
-    <td data-label="MS-60B+">${u.ms60b}</td><td data-label="MS-50G+">${u.ms50g}</td><td data-label="Last change">${dateTime(u.last_change)}</td>
+    <td data-label="MS-60B+">${u.ms60b}</td><td data-label="MS-50G+">${u.ms50g}</td><td data-label="MS-70CDR+">${u.ms70cdr}</td><td data-label="Last change">${dateTime(u.last_change)}</td>
     <td data-label="Actions">${u.id === me.id ? '<span class="muted">you</span>' : `<div class="acts">
       ${act('reset', u.id, 'Send reset link')}
       <a class="btn btn-sm btn-danger" href="/admin?delete=${esc(u.id)}">Delete</a></div>`}</td></tr>`).join('');
   return page('Users', `${STYLE}<main class="admin">${bar}
 ${error ? `<div class="auth-error" role="alert">${esc(error)}</div>` : ''}${note ? `<div class="auth-ok" role="status">${esc(note)}${link ? `<br><code>${esc(link)}</code>` : ''}</div>` : ''}
-${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Delete the account of <b>${esc(confirm.email)}</b> and everything kept in it (${confirm.ms60b + confirm.ms50g} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
+${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Delete the account of <b>${esc(confirm.email)}</b> and everything kept in it (${confirm.ms60b + confirm.ms50g + confirm.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
   <input type="hidden" name="id" value="${esc(confirm.id)}"><div class="acts"><a class="btn" href="/admin">Cancel</a><button class="btn btn-danger" type="submit">Delete the account</button></div></form>` : ''}
 <section class="auth-card"><h2>Accounts</h2>
   <form class="admin-search" method="get" action="/admin"><input name="q" type="search" placeholder="Search by email or name" value="${esc(query)}" aria-label="Search accounts">
   <input type="hidden" name="sort" value="${esc(sort)}"><input type="hidden" name="dir" value="${esc(dir)}"><button class="btn btn-sm" type="submit">Search</button></form>
   <div class="admin-table admin-accounts-table"><table aria-label="Accounts"><thead><tr>${COLUMNS.map(([key, label]) => `<th scope="col">${sortLink(key)}${label}</a></th>`).join('')}<th scope="col">Actions</th></tr></thead>
-  <tbody>${rows || `<tr><td colspan="8" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
+  <tbody>${rows || `<tr><td colspan="9" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
 </section>
 <section class="auth-card"><h2>Admin log</h2>
   ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}
@@ -85,7 +86,7 @@ ${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Del
 }
 
 export function adminUserPage({ user, pedals }) {
-  const names = { ms60b: 'MS-60B+', ms50g: 'MS-50G+' };
+  const names = { ms60b: 'MS-60B+', ms50g: 'MS-50G+', ms70cdr: 'MS-70CDR+' };
   const sections = Object.entries(names).map(([pedal, label]) => {
     const list = pedals[pedal] || [];
     return `<section class="auth-card"><h2>${label} patches (${list.length})</h2>${list.length ? `<div class="admin-table"><table><thead><tr><th>Name</th><th>Effects</th><th>Last change</th></tr></thead><tbody>

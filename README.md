@@ -6,7 +6,7 @@
 
 ### Stop squinting at a tiny pedal screen. Design your tone on a big one.
 
-**224 effects. One calm workspace.** Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
+**373 effects. One calm workspace.** Explore every effect · build patches with a live DSP meter and smart advice · export `.zptc` for Handy Guitar Lab · manage the pedal over USB
 
 [![Open the site](https://img.shields.io/badge/▶_open_the_site-zoommultistompstudio.tongatron.org-ffcc00?style=for-the-badge&labelColor=0d1117)](https://zoommultistompstudio.tongatron.org/)
 
@@ -26,6 +26,7 @@
 |---|---|---|---|---|
 | **MS-60B+** bass | [97 effects](https://zoommultistompstudio.tongatron.org/ms-60b/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-60b/builder.html) | [Tone ideas](https://zoommultistompstudio.tongatron.org/ms-60b/tones.html) · [Pedal manager](https://zoommultistompstudio.tongatron.org/ms-60b/pedal-manager.html) · [Resources](https://zoommultistompstudio.tongatron.org/ms-60b/resources.html) | ✅ Tested on firmware 1.20 |
 | **MS-50G+** guitar | [127 effects](https://zoommultistompstudio.tongatron.org/ms-50g/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-50g/builder.html) | [Resources](https://zoommultistompstudio.tongatron.org/ms-50g/resources.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-50g) |
+| **MS-70CDR+** spatial | [149 effects](https://zoommultistompstudio.tongatron.org/ms-70cdr/) | [Patch builder](https://zoommultistompstudio.tongatron.org/ms-70cdr/builder.html) | [Resources](https://zoommultistompstudio.tongatron.org/ms-70cdr/resources.html) · [Help test](https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html) | 🧪 Not tested — [help wanted](#-help-test-the-ms-70cdr) |
 
 ## 💡 Why
 
@@ -56,25 +57,31 @@ MultiStomp Studio puts the whole pedal on your desk:
 | ☁️ **Free account** *(optional)* | Sign in to sync patches, settings, rule packs and pedal backups across devices. Without an account everything stays in your browser. |
 | 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |
 
-## 🆚 The two pedals
+## 🆚 The three pedals
 
-| | MS-60B+ bass | MS-50G+ guitar |
-|---|---|---|
-| Effects | 97 | 127 (24 are Handy Guitar Lab add-ons) |
-| Usable in the builder | 97 | 103 (add-on IDs not known yet) |
-| Amp models | 11 bass amps | 22 amps (PREAMP) |
-| Advice | Order, levels, low end, output | Objective checks only (DSP, levels, routing) |
-| Tone ideas | ✅ | ⏳ not yet |
-| Pedal manager | ✅ | ⏳ not yet |
-| Tested on the pedal | ✅ firmware 1.20 | ❌ not yet |
+| | MS-60B+ bass | MS-50G+ guitar | MS-70CDR+ spatial |
+|---|---|---|---|
+| Effects | 97 | 127 | 149 |
+| Usable in the builder | 97 | 103 (add-on IDs not known yet) | 149 |
+| Amp models | 11 bass amps | 22 amps (PREAMP) | — |
+| Advice | Order, levels, low end, output | Objective checks only (DSP, levels, routing) | Objective checks only (DSP, levels, routing) |
+| Tone ideas | ✅ | ⏳ not yet | ⏳ not yet |
+| Pedal manager | ✅ | ⏳ not yet | ⏳ not yet |
+| Tested on the pedal | ✅ firmware 1.20 | ❌ not yet | ❌ not yet |
 
-Both pedals share the codec, builder and catalog code; each keeps its own data (`pedal.js`, `effects-data.js`, `firmware-data.js`, effect images) in `site/` (MS-60B+) or `site/ms-50g/` (MS-50G+).
+All three pedals share the codec, builder and catalog code; each keeps its own data (`pedal.js`, `effects-data.js`, `firmware-data.js`, effect images) in `site/` (MS-60B+), `site/ms-50g/` (MS-50G+) or `site/ms-70cdr/` (MS-70CDR+).
 
 ## 🙋 Help test the MS-50G+
 
 The MS-50G+ section is built from the official ZOOM documentation, but nobody has tried it on a real pedal yet. Own one? There are a few short tests, from five minutes up, and you choose how much time to give. All you need is the pedal and the Handy Guitar Lab app on an iPhone or iPad.
 
 👉 **[What would help, and how to get in touch](https://zoommultistompstudio.tongatron.org/ms-50g/help.html)**
+
+## 🙋 Help test the MS-70CDR+
+
+The MS-70CDR+ section is built from the official ZOOM documentation, but nobody has tried it on a real pedal yet. The short test page explains what would help, from checking a generated patch to confirming six-effect chains and the processor percentage.
+
+👉 **[What would help, and how to get in touch](https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html)**
 
 ## 🔬 Under the hood: cracking `.zptc`
 
@@ -98,7 +105,7 @@ No tracking cookies, no newsletter. Without an account your data never leaves th
 
 - 🇬🇧 The site is English-only.
 - 📜 Effect and parameter descriptions are copied **verbatim** from the official ZOOM Effects Lists.
-- 🎚️ MS-60B+ tested on firmware 1.20 · MS-50G+ not tested yet.
+- 🎚️ MS-60B+ tested on firmware 1.20 · MS-50G+ and MS-70CDR+ not tested yet.
 - 🧭 Effect order is convention: order advice is a tip or a warning, never an error.
 
 ## ⚖️ Credits and legal

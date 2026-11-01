@@ -127,7 +127,7 @@ export const accountPage = ({ user, counts = {}, done = '', error = '', minPassw
 <div class="auth-card">
   <p><b>${esc(user.email)}</b>${user.name ? `<br>${esc(user.name)}` : ''}<br>
   <span class="hint">${user.email_verified_at ? 'Email confirmed' : 'Email not confirmed yet'} · member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
-  <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}.</p>
+  <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}, ${counts.ms70cdr || 0} MS-70CDR+ ${counts.ms70cdr === 1 ? 'patch' : 'patches'}.</p>
   ${user.email_verified_at ? '' : `<form method="post" action="/account/verify"><button class="btn" type="submit">Send the confirmation email again</button></form>`}
 </div>
 <form class="auth-card account-section" method="post" action="/account/password">

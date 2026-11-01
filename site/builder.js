@@ -182,10 +182,10 @@ async function connectLive() {
 }
 
 window.addEventListener('account-change', event => setLiveAccess(event.detail));
-$('#live-connect').addEventListener('click', () => { if (!live.allowed) return; $('#live-toggle').checked = true; connectLive(); });
-$('#live-disconnect').addEventListener('click', disconnectLive);
-$('#live-toggle').addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });
-$('#live-load').addEventListener('click', () => {
+$('#live-connect')?.addEventListener('click', () => { if (!live.allowed) return; const toggle = $('#live-toggle'); if (toggle) toggle.checked = true; connectLive(); });
+$('#live-disconnect')?.addEventListener('click', disconnectLive);
+$('#live-toggle')?.addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });
+$('#live-load')?.addEventListener('click', () => {
   if (!live.allowed || !live.current) return;
   try { loadPatch(decodedToBuilderPatch(live.current.decoded)); updateLiveCompatibility(); }
   catch (error) { setLiveStatus(error.message, 'danger'); }

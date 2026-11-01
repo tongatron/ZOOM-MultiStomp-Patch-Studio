@@ -101,9 +101,9 @@ export function createAccounts({ dataDir }) {
   }
 
   // ---- user console (admins only) --------------------------------------------------------------
-  const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', change: 'last_change' };
+  const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', ms70cdr: 'ms70cdr', change: 'last_change' };
   const countOf = pedal => `(SELECT COUNT(*) FROM patches p WHERE p.user_id = u.id AND p.pedal = '${pedal}' AND p.deleted_at IS NULL)`;
-  const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g,
+  const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g, ${countOf('ms70cdr')} AS ms70cdr,
     MAX(COALESCE((SELECT MAX(updated_at) FROM patches WHERE user_id = u.id), ''), COALESCE((SELECT MAX(updated_at) FROM docs WHERE user_id = u.id), '')) AS last_change
     FROM users u WHERE (u.email LIKE :q ESCAPE '\\' OR u.name LIKE :q ESCAPE '\\')`;
   const logAdmin = (admin, action, target) => store.db.prepare('INSERT INTO admin_log (at, admin_id, action, target_id) VALUES (?, ?, ?, ?)')

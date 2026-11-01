@@ -11,7 +11,7 @@
   notice.innerHTML = `
     <h1><img src="${new URL('favicon.svg', here)}" alt="" width="28" height="28" /> ZOOM MultiStomp Studio</h1>
     <p class="fs-small-warn"><b>This window is too small.</b> The site shows every page in one screen and needs a window of at least 800 × 640 px; this one is <span data-size></span>. Open it on a computer or on a tablet held sideways, make the window bigger, or switch the browser to full screen (<kbd class="gh-kbd">F11</kbd>, or <kbd class="gh-kbd">⌃</kbd> <kbd class="gh-kbd">⌘</kbd> <kbd class="gh-kbd">F</kbd> on a Mac).</p>
-    <p>A free tool, with nothing to install, to plan patches for the ZOOM MS-60B+ (bass) and MS-50G+ (guitar) MultiStomp pedals:</p>
+    <p>A free tool, with nothing to install, to plan patches for the ZOOM MS-60B+ (bass), MS-50G+ (guitar) and MS-70CDR+ (spatial multi-effects) pedals:</p>
     <ul>
       <li><b>Effects</b>: every effect of the pedal with the original text of the ZOOM Effects List, its estimated DSP load, and all its parameters with their ranges.</li>
       <li><b>Patch builder</b>: pick up to 6 effects, put them in order and set their parameters while the DSP load and the advice on order and levels follow along. Download the patch as a <code>.zptc</code> file for Handy Guitar Lab.</li>
