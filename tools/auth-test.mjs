@@ -257,6 +257,9 @@ try {
     assert.match(page, /admin-accounts-table/);
     assert.match(page, /data-label="Email"/);
     assert.match(page, /overflow: visible/);
+    assert.doesNotMatch(page, /Last sign-in/, 'the users table does not show last sign-in');
+    assert.match(page, /\.admin \.acts \{ display: flex; flex-wrap: nowrap;/, 'account actions stay on one row');
+    assert.match(page, /<form method="get" action="\/admin"><input type="hidden" name="delete" value="[a-f0-9]{32}"><button class="btn btn-sm btn-danger" type="submit">Delete<\/button><\/form>/, 'delete is a button');
     assert.doesNotMatch(page, /Sign out everywhere|Download data|Make admin/, 'the account table exposes only the necessary actions');
     assert.match(page, /new3@example\.com/);
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
