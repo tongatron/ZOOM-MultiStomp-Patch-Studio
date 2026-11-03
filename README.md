@@ -99,6 +99,8 @@ Clone it, start one Node command, and the whole studio is on `localhost`. No bui
 
 👉 **[How to install](INSTALL.md)**: run it locally, repository layout, and the test suite.
 
+👉 **[Deploy runbook](docs/DEPLOY.md)**: test, commit, push, package `dist/` and publish a new Sites version.
+
 ## 🔐 Privacy
 
 No tracking cookies, no newsletter. Without an account your data never leaves the browser; with one, it lives on a server run by tongatron.org, backed up daily and kept 30 days. The details: [`site/privacy.html`](site/privacy.html).
