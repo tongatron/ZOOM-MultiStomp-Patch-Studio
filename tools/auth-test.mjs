@@ -104,7 +104,9 @@ async function mailNumber(count) {
     if (files.length >= count) {
       const raw = await readFile(join(mailDir, files[count - 1]), 'utf8');
       const part = raw.split(/\r\n--zms-/).find(p => p.includes('text/plain'));
-      return { raw, text: Buffer.from(part.split('\r\n\r\n')[1].replace(/\r\n/g, ''), 'base64').toString() };
+      const htmlPart = raw.split(/\r\n--zms-/).find(p => p.includes('text/html'));
+      const decode = part => Buffer.from(part.split('\r\n\r\n')[1].replace(/\r\n/g, ''), 'base64').toString();
+      return { raw, text: decode(part), html: decode(htmlPart) };
     }
     await new Promise(ok => setTimeout(ok, 50));
   }
@@ -262,16 +264,44 @@ try {
     assert.match(page, /<form method="get" action="\/admin"><input type="hidden" name="delete" value="[a-f0-9]{32}"><button class="btn btn-sm btn-danger" type="submit">Delete<\/button><\/form>/, 'delete is a button');
     assert.doesNotMatch(page, /Sign out everywhere|Download data|Make admin/, 'the account table exposes only the necessary actions');
     assert.match(page, /new3@example\.com/);
+    assert.match(page, /All users \(including admins\)/, 'the message form includes admins in the broadcast');
+    assert.match(page, /name="date" type="date"/, 'the message form has a date');
+    assert.match(page, /name="title" type="text"/, 'the message form has a title');
+    assert.match(page, /name="objects"/, 'the message form has objects');
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');
     assert.match(page, /<!--email_off-->[\s\S]*new3@example\.com[\s\S]*<!--\/email_off-->/, 'the emails are marked so that Cloudflare does not hide them');
     const found = await (await get('/admin?q=PLAYER&sort=bogus&dir=up', { cookie: admin })).text();
     assert.match(found, /Player@Example\.com/);
-    assert.doesNotMatch(found, /new3@example\.com/);
+    assert.doesNotMatch(found, /<td data-label="Email"><a href="\/admin\/user\/[a-f0-9]{32}">new3@example\.com/);
     assert.match(await (await get('/admin?q=%25', { cookie: admin })).text(), /No accounts match this search/, '% is searched literally');
 
     assert.match(await (await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: admin })).text(), /is now an administrator/);
     assert.equal(store.userByEmail('new2@example.com').role, 'admin');
+    const countMail = async () => (await readdir(mailDir)).length;
+    const beforeAdminMessage = await countMail();
+    const adminMessage = await post('/admin/message', {
+      recipient: idOf('admin@example.com'), date: '2026-11-04', title: 'Admin test', objects: 'Open https://example.com/test?ok=1&ready=2.'
+    }, { cookie: admin });
+    assert.equal(adminMessage.status, 200);
+    assert.match(await adminMessage.text(), /Message queued for 1 account/);
+    const one = await mailNumber(beforeAdminMessage + 1);
+    assert.match(one.raw, /^To: <admin@example\.com>$/m, 'an admin can message another admin, including themselves');
+    assert.match(one.text, /Date: 4 November 2026[\s\S]*Title: Admin test[\s\S]*https:\/\/example\.com\/test\?ok=1&ready=2\./);
+    assert.match(one.html, /href="https:\/\/example\.com\/test\?ok=1&amp;ready=2"/, 'message URLs are clickable in the HTML email');
+    const usersBeforeBroadcast = store.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+    const beforeBroadcast = await countMail();
+    const broadcast = await post('/admin/message', {
+      recipient: 'all', date: '2026-11-04', title: 'Broadcast test', objects: 'This reaches users and admins.'
+    }, { cookie: admin });
+    assert.equal(broadcast.status, 200);
+    assert.match(await broadcast.text(), new RegExp(`Message queued for ${usersBeforeBroadcast} accounts`));
+    for (let i = 0; i < 40 && await countMail() < beforeBroadcast + usersBeforeBroadcast; i++) await new Promise(ok => setTimeout(ok, 50));
+    assert.equal(await countMail(), beforeBroadcast + usersBeforeBroadcast, 'the broadcast sends one email per account');
+    const broadcastMails = await Promise.all((await readdir(mailDir)).sort().slice(beforeBroadcast).map(name => readFile(join(mailDir, name), 'utf8')));
+    assert.ok(broadcastMails.some(raw => /^To: <admin@example\.com>$/m.test(raw)), 'the broadcast includes admins');
+    assert.ok(broadcastMails.some(raw => /^To: <new3@example\.com>$/m.test(raw)), 'the broadcast includes normal users');
+    assert.equal((await post('/admin/message', { recipient: idOf('new3@example.com'), date: 'bad', title: 'x', objects: 'y' }, { cookie: admin })).status, 400);
     await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
     assert.match(await (await post('/admin/reset', { id: idOf('new1@example.com') }, { cookie: admin })).text(), /A new-password link was sent to new1@example\.com/);

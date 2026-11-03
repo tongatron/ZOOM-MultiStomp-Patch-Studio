@@ -13,7 +13,7 @@ import {
 } from './auth.mjs';
 import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
-import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
+import { mailConfig, mailHtml, messageHtml, sendMail, sendTelegram } from './mail.mjs';
 import { SITE_URL } from './site-url.mjs';
 import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
@@ -21,6 +21,9 @@ const RESET_TTL = 3600; // seconds
 const VERIFY_TTL = 24 * 3600;
 const MAX_FORM = 16_384;
 const MAX_REPORT_FORM = 48_000; // a report of 3000 characters can grow to 9 bytes per character once percent-encoded
+const MAX_MESSAGE_FORM = 64_000;
+const MAX_MESSAGE_TITLE = 160;
+const MAX_MESSAGE_OBJECTS = 10_000;
 // Per 15 minutes: failed sign-ins per address and per email, sign-ups, reset requests, token links, problem reports
 const LIMITS = { login: 10, loginEmail: 5, register: 5, forgot: 5, forgotEmail: 3, token: 20, report: 5 };
 const PAGE_HEADERS = {
@@ -121,10 +124,19 @@ export function createAccounts({ dataDir }) {
     dir = dir === 'asc' ? 'asc' : 'desc';
     const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
     const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT 500`).all({ q: like });
+    const recipients = store.db.prepare('SELECT id, email, name, role FROM users ORDER BY email LIMIT 1000').all();
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, users, query, sort, dir, log, ...rest }));
+    html(response, status, adminPage({ me, users, recipients, query, sort, dir, log, ...rest }));
   }
+
+  const cleanMessageText = (value, max) => String(value || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim().slice(0, max);
+  const validMessageDate = value => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  const messageDateLabel = value => new Date(`${value}T00:00:00.000Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   // The account an admin action is about; never the admin's own (so an admin cannot lock themselves out)
   function adminTarget(response, me, id) {
@@ -168,6 +180,33 @@ export function createAccounts({ dataDir }) {
       logAdmin(me, 'reset link', target);
       if (mailConfig()) { resetMail(target, token); return showAdmin(response, me, { note: `A new-password link was sent to ${target.email}.` }); }
       showAdmin(response, me, { note: `Email is not configured: send this link to ${target.email} yourself (valid for one hour, works once).`, link: `${siteUrl}/reset?token=${token}` });
+    },
+    'POST /admin/message': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const recipient = String(form.recipient || 'all');
+      const date = String(form.date || '');
+      const rawTitle = String(form.title || '');
+      const rawObjects = String(form.objects || '');
+      const title = cleanMessageText(rawTitle, MAX_MESSAGE_TITLE);
+      const objects = cleanMessageText(rawObjects, MAX_MESSAGE_OBJECTS);
+      const message = { recipient, date, title, objects };
+      const fail = error => showAdmin(response, me, { status: 400, message: { ...message, error } });
+      if (!validMessageDate(date)) return fail('Choose a valid date.');
+      if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
+      if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
+      if (recipient !== 'all' && !/^[a-f0-9]{32}$/.test(recipient)) return fail('Choose a valid recipient.');
+      if (!mailConfig()) return fail('Email is not configured, so the message was not sent.');
+      const targets = recipient === 'all' ? store.db.prepare('SELECT * FROM users ORDER BY email').all() : [store.userById(recipient)].filter(Boolean);
+      if (!targets.length) return fail('That account does not exist (any more).');
+      const sender = me.name || me.email;
+      const label = messageDateLabel(date);
+      const text = [`Message from ${sender}`, `Date: ${label}`, `Title: ${title}`, '', objects, '', `ZOOM MultiStomp Studio: ${siteUrl}/`].join('\n');
+      const html = mailHtml({ title, intro: `Message from ${sender}`, date: label, body: messageHtml(objects), outro: `Sent by ${sender} via ZOOM MultiStomp Studio.` });
+      for (const target of targets) sendMail(target.email, `ZOOM MultiStomp Studio: ${title}`, text, html);
+      const action = recipient === 'all' ? `message to all users (${targets.length}): ${title}` : `message: ${title}`;
+      logAdmin(me, action, recipient === 'all' ? null : targets[0]);
+      showAdmin(response, me, { note: `Message queued for ${targets.length} account${targets.length === 1 ? '' : 's'}.` });
     },
     'POST /admin/signout': (request, response, form) => {
       const me = adminOnly(request, response);
@@ -407,7 +446,8 @@ export function createAccounts({ dataDir }) {
       else html(response, 403, messagePage('Request refused', 'This request came from another site and was refused.'));
       return true;
     }
-    await route(request, response, await readForm(request, path === '/api/report' ? MAX_REPORT_FORM : MAX_FORM), ip);
+    const formLimit = path === '/api/report' ? MAX_REPORT_FORM : path === '/admin/message' ? MAX_MESSAGE_FORM : MAX_FORM;
+    await route(request, response, await readForm(request, formLimit), ip);
     return true;
   }
 

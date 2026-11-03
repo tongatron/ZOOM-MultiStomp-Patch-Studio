@@ -13,6 +13,11 @@ const STYLE = `<style>
   .admin-search { display: flex; gap: 8px; margin-bottom: 12px; }
   .admin-search input { margin: 0; max-width: 320px; }
   .admin-search .btn { flex: none; }
+  .admin-message select, .admin-message textarea { display: block; width: 100%; margin: 0 0 16px; padding: 7px 12px; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 14px; }
+  .admin-message select { height: 36px; }
+  .admin-message textarea { min-height: 160px; resize: vertical; line-height: 1.5; }
+  .admin-message .hint { display: block; margin: -10px 0 16px; color: var(--fg-muted); font-size: 12px; }
   .admin-table { max-width: 100%; overflow: visible; }
   .admin table { width: 100%; max-width: 100%; border-collapse: collapse; font-size: 13px; }
   .admin th, .admin td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-muted); white-space: normal; overflow-wrap: anywhere; vertical-align: middle; }
@@ -56,7 +61,7 @@ const confirmDelete = id => `<form method="get" action="/admin"><input type="hid
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
-export function adminPage({ me, users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log, message = {} }) {
   const sortLink = key => {
     const nextDir = sort === key && dir === 'desc' ? 'asc' : 'desc';
     const params = new URLSearchParams({ ...(query ? { q: query } : {}), sort: key, dir: nextDir });
@@ -69,10 +74,31 @@ export function adminPage({ me, users, query = '', sort = 'created', dir = 'desc
     <td data-label="Actions">${u.id === me.id ? '<span class="muted">you</span>' : `<div class="acts">
       ${act('reset', u.id, 'Send reset link')}
       ${confirmDelete(u.id)}</div>`}</td></tr>`).join('');
+  const messageDate = message.date || new Date().toISOString().slice(0, 10);
+  const recipientOptions = recipients.map(u => `<option value="${esc(u.id)}"${message.recipient === u.id ? ' selected' : ''}>${esc(u.email)}${u.name ? ` — ${esc(u.name)}` : ''}${u.role === 'admin' ? ' (admin)' : ''}</option>`).join('');
   return page('Users', `${STYLE}<main class="admin">${bar}
 ${error ? `<div class="auth-error" role="alert">${esc(error)}</div>` : ''}${note ? `<div class="auth-ok" role="status">${esc(note)}${link ? `<br><code>${esc(link)}</code>` : ''}</div>` : ''}
 ${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Delete the account of <b>${esc(confirm.email)}</b> and everything kept in it (${confirm.ms60b + confirm.ms50g + confirm.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
   <input type="hidden" name="id" value="${esc(confirm.id)}"><div class="acts"><a class="btn" href="/admin">Cancel</a><button class="btn btn-danger" type="submit">Delete the account</button></div></form>` : ''}
+<section class="auth-card admin-message"><h2>Send a message</h2>
+  <p>Send an email to one account or to every account. Administrator accounts are included, and you can select yourself for an admin-to-admin test. Full <code>http(s)</code> links in Objects become clickable links.</p>
+  ${message.error ? `<div class="auth-error" role="alert">${esc(message.error)}</div>` : ''}
+  <form method="post" action="/admin/message">
+    <label for="message-recipient">To</label>
+    <select id="message-recipient" name="recipient" required>
+      <option value="all"${message.recipient === 'all' || !message.recipient ? ' selected' : ''}>All users (including admins)</option>
+      ${recipientOptions}
+    </select>
+    <label for="message-date">Date</label>
+    <input id="message-date" name="date" type="date" value="${esc(messageDate)}" required>
+    <label for="message-title">Title</label>
+    <input id="message-title" name="title" type="text" maxlength="160" value="${esc(message.title || '')}" required>
+    <label for="message-objects">Objects</label>
+    <textarea id="message-objects" name="objects" maxlength="10000" required>${esc(message.objects || '')}</textarea>
+    <span class="hint">Plain text is preserved; paste complete links beginning with http:// or https:// to make them clickable in the email.</span>
+    <button class="btn btn-primary" type="submit">Send message</button>
+  </form>
+</section>
 <section class="auth-card"><h2>Accounts</h2>
   <form class="admin-search" method="get" action="/admin"><input name="q" type="search" placeholder="Search by email or name" value="${esc(query)}" aria-label="Search accounts">
   <input type="hidden" name="sort" value="${esc(sort)}"><input type="hidden" name="dir" value="${esc(dir)}"><button class="btn btn-sm" type="submit">Search</button></form>

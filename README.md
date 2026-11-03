@@ -53,6 +53,7 @@ MultiStomp Studio puts the whole pedal on your desk:
 | 📚 **My patches** | A library per pedal, side-by-side comparison, share links, backup and restore. |
 | 🎨 **Tone ideas** | Starting chains by style and by bassist, with a soft spot for alternative rock (grunge, post-punk, indie, fuzz). Every gear fact is sourced; one click opens the chain in the builder. |
 | 🔌 **Pedal manager** | Over USB in Chrome or Edge: see the pedal's memories next to My patches, read them, send `.zptc` patches, and reorder memories by dragging them (or **Arrange** for block moves). Every write keeps a backup and is checked by reading it back. |
+| 👥 **Admin messages** | Administrators can email one account or all accounts, including admins for testing, with a date, title and linked message objects. |
 | 📖 **Resources** | The official ZOOM manual (English and Italian) and the Effects List PDF, one tab away. |
 | ☁️ **Free account** *(optional)* | Sign in to sync patches, settings, rule packs and pedal backups across devices. Without an account everything stays in your browser. |
 | 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |
