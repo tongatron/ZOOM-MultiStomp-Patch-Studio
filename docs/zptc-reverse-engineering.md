@@ -1,6 +1,6 @@
 # How the ZOOM MS-60B+ `.zptc` format was reconstructed
 
-This document explains how the patch generator (`site/zptc.js`, used by the Patch Builder and by `tools/zptc.mjs`) came about: where the information comes from, how the format was deciphered and how it was verified.
+This document explains how the patch generator (`site/zptc.js`, used by the Patch Builder, Pedal manager and `tools/zptc.mjs`) came about: where the information comes from, how the format was deciphered and how it was verified. The shared codec now takes the current pedal profile from `pedal.js`, including the PTCF target mask; the MS-60B+ value is measured, while the MS-50G+ and MS-70CDR+ values remain source-based until hardware read-back tests are completed.
 
 ## In short: no compiled file was decompiled
 
@@ -64,7 +64,7 @@ offset  content
 0x04    u32  total file size
 0x08    u32  version (2)
 0x0C    u32  number of slots (effects + 1)
-0x10    10 bytes  00 00 08 00 00 00 00 00 00 00   (constant in all exports)
+  0x10    10 bytes  target mask (little-endian) + opaque metadata, configured per pedal profile
 0x1A    10 chars  short name, ASCII, padded with spaces
 0x24    slots × u32  effect ID per slot (slot 0 is 0)
 

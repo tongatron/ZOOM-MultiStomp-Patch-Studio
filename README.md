@@ -89,6 +89,8 @@ ZOOM documents the effects, not the patch file, so the format was **rebuilt from
 
 The codec is proven four ways on the MS-60B+: byte-for-byte round-trips, files rebuilt from readable values, generated patches checked on a real pedal (firmware 1.20), and the browser builder producing the same bytes. The MS-50G+ reuses it with its own effect table; effect IDs, DSP figures and the USB protocol come from the open-source [zoom-zt2](https://github.com/mungewell/zoom-zt2) project (MIT).
 
+Official firmware is audited without checking proprietary binaries into the repository: `npm run test:firmware` validates the three local effect catalogs, and `node tools/firmware-audit.mjs <pedal> <updater-or-extracted-directory>` inspects supplied updater contents for embedded `ZDLF`/`.ZD2` effects, IDs, versions, targets and DSP values. See [`firmware/README.md`](firmware/README.md).
+
 📄 Read the full story: [Technical notes](https://zoommultistompstudio.tongatron.org/ms-60b/technical-notes.html) · [`docs/zptc-reverse-engineering.md`](docs/zptc-reverse-engineering.md)
 
 ## 🛠️ Run it yourself

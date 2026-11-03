@@ -24,6 +24,7 @@
   const PEDAL_HINT = 'Select a memory: it is where a patch from My patches goes. Drag a memory to another place to change the order, then Write.';
   const lines = [];
   let info = null; // { count, size, bankSize } from the pedal
+  let identity = null; // { device, family, model, version } from the connected pedal
   let connected = false;
   let reading = 0; // bumps on every full read, so an older read stops
   let busy = false; // a full read or a write is running: one exchange with the pedal at a time
@@ -133,7 +134,7 @@
     let kept = {};
     if (base) {
       const b = ZPTC.decode(base);
-      kept = { _version: b._version, _header: b._header, _txj1: b._txj1, _slot0: b._slot0, _noBlank: b._noBlank, _prm2: b._prm2, _prm2Refresh: true,
+      kept = { _version: b._version, _header: b._header, _txj1: b._txj1, _trailing: b._trailing, _slot0: b._slot0, _noBlank: b._noBlank, _prm2: b._prm2, _prm2Refresh: true,
         description: b.description, shortName: patch.name.trim() === b.name ? b.shortName : undefined };
       Object.keys(kept).forEach(k => kept[k] === undefined && delete kept[k]);
     }
@@ -188,8 +189,10 @@
     if (!ports.ok) return;
     note(`Ports: ${ports.value.input} / ${ports.value.output}`);
     const id = await step('Identifying the pedal', PEDALMIDI.identify);
+    if (!id.ok) { PEDALMIDI.disconnect(); status(`Could not identify the pedal: ${id.error.message}`, 'danger'); return; }
+    identity = id.value;
     if ((await step('Editor mode', PEDALMIDI.editorOn)).ok) info = (await step('Reading the patch memory size', PEDALMIDI.patchInfo)).value;
-    $('#usb-facts').textContent = [ports.value.output, id.ok && `firmware ${id.value.version}`, info && `${info.count} memories`].filter(Boolean).join(' · ');
+    $('#usb-facts').textContent = [ports.value.output, `firmware ${id.value.version}`, `MIDI model ${id.value.model}`, info && `${info.count} memories`].filter(Boolean).join(' · ');
     setConnected(true);
     setAuto(true);
     if (info) readAll();
@@ -200,6 +203,7 @@
     try { await PEDALMIDI.editorOff(); } catch {}
     PEDALMIDI.disconnect();
     info = null;
+    identity = null;
     $('#usb-facts').textContent = '';
     setConnected(false);
     status('Not connected');
@@ -1226,6 +1230,10 @@
     result(true, '');
     let d;
     try { d = ZPTC.decode(bytes); } catch (error) { status(`Not a patch: ${error.message}`, 'danger'); return; }
+    if (Number.isInteger(d.targetMask) && Number.isInteger(PEDAL.targetMask) && (d.targetMask & PEDAL.targetMask) === 0) {
+      status(`This patch targets another pedal (0x${d.targetMask.toString(16).padStart(8, '0')}); nothing was written.`, 'danger');
+      return;
+    }
     if (d.effects.length > ZPTC.MAX_EFFECTS) { status(`A patch holds at most ${ZPTC.MAX_EFFECTS} effects; this one has ${d.effects.length}.`, 'danger'); return; }
     // A full chain goes without the BLANK slot that starts a file: the pedal holds at most 6 entries and would drop the last effect
     const sendable = ZPTC.forPedal(bytes);

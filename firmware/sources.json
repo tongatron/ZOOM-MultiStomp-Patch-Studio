@@ -1,0 +1,26 @@
+{
+  "ms-60b": {
+    "name": "ZOOM MS-60B+",
+    "firmware": "1.20",
+    "targetMask": "0x00080000",
+    "supportUrl": "https://zoomcorp.com/en/us/multi-effects/multistomp-pedals/ms-60b-plus/ms-60b-support/",
+    "sourceUrl": "https://github.com/mungewell/zoom-zt2/tree/master/zoom_fx_ms-plus/ms-60bp",
+    "notes": "Firmware target and effect catalog are measured on this project hardware where noted."
+  },
+  "ms-50g": {
+    "name": "ZOOM MS-50G+",
+    "firmware": "1.40",
+    "targetMask": "0x00040000",
+    "supportUrl": "https://zoomcorp.com/en/de/multi-effects/multistomp-pedals/ms-50gplus/ms-50g-support/",
+    "sourceUrl": "https://github.com/mungewell/zoom-zt2/tree/master/zoom_fx_ms-plus/ms-50gp",
+    "notes": "USB MIDI was added in firmware 1.30; this manager profile still needs hardware read-back."
+  },
+  "ms-70cdr": {
+    "name": "ZOOM MS-70CDR+",
+    "firmware": "1.20",
+    "targetMask": "0x00040000",
+    "supportUrl": "https://zoomcorp.com/en/us/multi-effects/multistomp-pedals/ms-70cdr-plus/ms-70cdr-plus_support/",
+    "sourceUrl": "https://github.com/mungewell/zoom-zt2/tree/master/zoom_fx_HGL/zoom_fx/MS70CDRPLUS",
+    "notes": "The target mask is source-based and still needs a physical export/read-back."
+  }
+}

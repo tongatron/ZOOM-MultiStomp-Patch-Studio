@@ -5,6 +5,26 @@ Each item says what is missing and how to close it.
 
 The checks to run on the real pedal and on real devices are in [`controlli-pedale.md`](controlli-pedale.md) (Italian checklist with a tick box for each item).
 
+## Hardware available and test policy
+
+The local hardware available to this project is the **MS-60B+**. “MS-50B+” is not a model name used by this repository; if that was intentional, update this note before running hardware tests.
+
+The **MS-50G+** and **MS-70CDR+** must be treated as remote-tester devices: they cannot be connected to this development computer. Their checks therefore use test patches, Handy Guitar Lab exports/screenshots and short reports supplied by testers. No local change should describe their USB manager, target mask or six-slot behavior as hardware-tested until that evidence arrives.
+
+Priority order under this constraint:
+
+1. Finish the MS-60B+ hardware smoke test locally: read current patch, read memories across a bank boundary, write to a sacrificial memory, read back, restore the backup, rename, clear and arrange.
+2. Capture the real MS-60B+ SysEx exchanges as replay fixtures and keep the fake-pedal tests aligned with them.
+3. Prepare a small remote tester kit for each other pedal: firmware/version screenshot, one simple patch, one six-effect patch, one parameter-delta export, processor percentage and the exported `.zptc` files.
+4. Use the firmware audit and catalog checks for all three pedals without requiring local hardware; accept extracted `.ZD2` directories or tester-supplied artifacts.
+5. Enable or advertise MS-50G+/MS-70CDR+ USB writing only after a tester confirms identity, memory geometry, write/read-back and restore behavior.
+
+Firmware emulation remains out of scope: it would not replace the remote hardware evidence and would not reliably reproduce the proprietary USB/MIDI peripherals.
+
+## 0b. Firmware corpus audit — static checks built
+
+`firmware/sources.json` records the official support pages for the three current firmware versions. `tools/firmware-audit.mjs` accepts an updater, ZIP or extracted directory without modifying it, scans for embedded `ZDLF`/`.ZD2` containers, and compares their effect IDs, versions and DSP values with the site's catalogs. The proprietary binaries stay outside Git; use `npm run test:firmware` for the catalog-only check. This does not emulate the pedal or replace USB tests on real hardware.
+
 ## 0. Zoom MS-50G+ (guitar) — not tested
 
 `site/ms-50g/` reuses the MS-60B+ codec, builder and catalog with the MS-50G+ Effects List (127 effects) and the zoom-zt2 firmware table (103 IDs). Nothing has been checked on a real MS-50G+. A tester with the pedal should:

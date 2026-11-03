@@ -6,6 +6,9 @@ const PEDAL = {
   name: 'Zoom MS-60B+',
   amp: 'Amp', // "Plug into" choice in the advice panel
   tested: true, // false: generated patches have not been checked on the pedal yet
+  targetMask: 0x00080000, // PTCF target bit measured on the MS-60B+
+  targetEvidence: 'measured',
+  maxEffects: 6,
   fxListUrl: 'https://zoomcorp.com/media/documents/E_MS-60Bplus_FX-list.pdf',
   manualUrl: 'https://zoomcorp.com/manuals/ms-60bplus-en/#unique_41',
   fwSourceUrl: 'https://github.com/mungewell/zoom-zt2/blob/master/zoom_fx_ms-plus/ms-60bp/effects_sort.txt'

@@ -1,8 +1,9 @@
-// Codec for Zoom MS-60B+ .zptc (PTCF) patch files, shared by the site (builder.js) and the CLI (tools/zptc.mjs).
-// Requires EFFECTS_DATA, FIRMWARE_DATA and DSP_SCALE to be loaded first.
+// Codec for ZOOM .zptc (PTCF) patch files, shared by the site (builder.js) and the CLI (tools/zptc.mjs).
+// Requires EFFECTS_DATA, FIRMWARE_DATA and DSP_SCALE to be loaded first. PEDAL is optional; when present its
+// targetMask and maxEffects configure the current model.
 //
 // Structure derived from the exported patches in patches/ and from mungewell/zoom-zt2 (decode_preset.py):
-//   "PTCF" u32 size, u32 version(2), u32 slotCount, 10 bytes (00 00 08 00 …), 10-char name, slotCount × u32 effect ID
+//   "PTCF" u32 size, u32 version(2), u32 slotCount, 10 bytes (target mask + opaque metadata), 10-char name, slotCount × u32 effect ID
 //   "TXJ1" u32 len + text, "TXE1" u32 len + description
 //   "EDTB" u32 len, slotCount × 24 byte: bit 0 = ON, bit 1–29 = ID, then parameters 5×12 / 3×8 / 4×12 bits (little endian)
 //   "PRM2" u32 len(32) + patch data (partly known), "NAME" u32 len(32) + 28-char name + 4 zero bytes
@@ -20,11 +21,13 @@ const ZPTC = (() => {
 
   const WIDTHS = [12, 12, 12, 12, 12, 8, 8, 8, 12, 12, 12, 12];
   const ENTRY = 24;
-  const MAX_EFFECTS = 6;
+  const DEFAULT_TARGET_MASK = 0x00080000; // MS-60B+ fallback for callers that do not load pedal.js
+  const PEDAL_TARGET_MASK = typeof PEDAL !== 'undefined' && Number.isInteger(PEDAL.targetMask) ? PEDAL.targetMask : DEFAULT_TARGET_MASK;
+  const MAX_EFFECTS = typeof PEDAL !== 'undefined' && Number.isInteger(PEDAL.maxEffects) ? PEDAL.maxEffects : 6;
   const NAME_CHARS = /^[!%&'+,\-.=_ A-Za-z0-9]*$/; // characters accepted by Handy Guitar Lab
   const hex = s => Uint8Array.from(s.match(/../g), b => parseInt(b, 16));
   const toHex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-  const HEADER_MAGIC = '00000800000000000000';
+  const DEFAULT_HEADER = '00000000000000000000';
   // PRM2 of an exported patch with a single effect and no amp (patches/01base.zptc).
   const PRM2_TEMPLATE = '000000000000000000802c000000000000000000000000000000000000008007';
   // Hidden parameters (beyond the documented ones) seen in exports.
@@ -131,22 +134,36 @@ const ZPTC = (() => {
   const concat = parts => { const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0)); let o = 0; parts.forEach(p => { out.set(p, o); o += p.length; }); return out; };
   const chunk = (tag, data) => concat([text(tag, 4), u32le(data.length), data]);
   const equal = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+  function defaultHeader() {
+    const header = hex(DEFAULT_HEADER);
+    new DataView(header.buffer).setUint32(0, PEDAL_TARGET_MASK, true);
+    return header;
+  }
 
   // ---- decode -------------------------------------------------------------------------------------
   function decode(input) {
     const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-    if (latin1(bytes, 0, 4) !== 'PTCF') throw new Error('Not a PTCF file');
+    if (bytes.length < 36 || latin1(bytes, 0, 4) !== 'PTCF') throw new Error('Not a PTCF file or truncated header');
     const size = u32(bytes, 4), version = u32(bytes, 8), slots = u32(bytes, 12);
-    if (size !== bytes.length) throw new Error(`Declared size ${size} ≠ ${bytes.length}`);
-    const header = bytes.subarray(16, 26);
-    const shortName = latin1(bytes, 26, 36);
+    if (size < 36 || size > bytes.length) throw new Error(`Invalid declared size ${size} for ${bytes.length} bytes`);
+    if (version !== 2) throw new Error(`Unsupported PTCF version ${version}; this codec supports version 2 only`);
+    if (slots > Math.floor((size - 36) / 4)) throw new Error('The effect table exceeds the declared file size');
+    const body = bytes.subarray(0, size);
+    const header = body.slice(16, 26);
+    const targetMask = u32(body, 16);
+    const shortName = latin1(body, 26, 36);
     let off = 36;
-    const ids = []; for (let i = 0; i < slots; i++, off += 4) ids.push(u32(bytes, off));
+    const ids = []; for (let i = 0; i < slots; i++, off += 4) ids.push(u32(body, off));
     const chunks = {};
-    while (off < bytes.length) {
-      const tag = latin1(bytes, off, off + 4), len = u32(bytes, off + 4);
-      chunks[tag] = bytes.subarray(off + 8, off + 8 + len); off += 8 + len;
+    while (off < size) {
+      if (size - off < 8) throw new Error('Truncated PTCF section header');
+      const tag = latin1(body, off, off + 4), len = u32(body, off + 4);
+      if (len > size - off - 8) throw new Error(`Section ${tag} exceeds the declared file size`);
+      if (tag in chunks) throw new Error(`Duplicate PTCF section ${tag}`);
+      chunks[tag] = body.slice(off + 8, off + 8 + len); off += 8 + len;
     }
+    if (!chunks.EDTB || chunks.EDTB.length !== slots * ENTRY) throw new Error('Invalid EDTB section');
+    if (!chunks.PRM2 || chunks.PRM2.length !== 32) throw new Error('Invalid PRM2 section');
     const entries = [];
     for (let i = 0; i < slots; i++) entries.push(unpackEntry(chunks.EDTB.subarray(i * ENTRY, (i + 1) * ENTRY)));
     entries.forEach((e, i) => { if (e.id !== ids[i]) throw new Error(`Slot ${i} ID differs between header and EDTB`); });
@@ -155,9 +172,10 @@ const ZPTC = (() => {
     const blank = slot0?.id === 0;
     const fxEntries = blank ? entries.slice(1) : entries;
     return {
-      name: latin1(chunks.NAME, 0, 28).trimEnd(),
+      name: chunks.NAME ? latin1(chunks.NAME, 0, 28).trimEnd() : shortName.trimEnd(),
       shortName: shortName.trimEnd(),
       description: chunks.TXE1 ? latin1(chunks.TXE1, 0).replace(/\0+$/, '').trimEnd() : '',
+      targetMask,
       dspTotal: +fxEntries.reduce((s, e) => s + (byId.get(e.id)?.dsp ?? 0), 0).toFixed(2),
       effects: fxEntries.map((entry, i) => {
         const fx = byId.get(entry.id);
@@ -179,9 +197,10 @@ const ZPTC = (() => {
       }),
       ...(!blank ? { _noBlank: true } : slot0.on && slot0.raw.every(v => v === 0) && !slot0.tail ? {} : { _slot0: slot0 }),
       ...(version !== 2 ? { _version: version } : {}),
-      ...(toHex(header) === HEADER_MAGIC ? {} : { _header: toHex(header) }),
+      ...(toHex(header) === toHex(defaultHeader()) ? {} : { _header: toHex(header) }),
       ...(chunks.TXJ1?.length ? { _txj1: toHex(chunks.TXJ1) } : {}),
-      _prm2: toHex(chunks.PRM2)
+      ...(bytes.length > size ? { _trailing: toHex(bytes.slice(size)) } : {}),
+      ...(chunks.PRM2 ? { _prm2: toHex(chunks.PRM2) } : {})
     };
   }
 
@@ -234,7 +253,7 @@ const ZPTC = (() => {
     const description = spec.description ? text(spec.description, (spec.description.length + 4) & ~3) : new Uint8Array(0);
     const file = concat([
       text('PTCF', 4), u32le(0), u32le(spec._version ?? 2), u32le(entries.length),
-      hex(spec._header ?? HEADER_MAGIC),
+      hex(spec._header ?? toHex(defaultHeader())),
       text(spec.shortName ?? name, 10),
       concat(entries.map(e => u32le(e.id))),
       chunk('TXJ1', spec._txj1 ? hex(spec._txj1) : new Uint8Array(0)),
@@ -243,8 +262,9 @@ const ZPTC = (() => {
       chunk('PRM2', prm2),
       chunk('NAME', concat([text(name, 28), new Uint8Array(4)]))
     ]);
+    const trailing = spec._trailing ? hex(spec._trailing) : new Uint8Array(0);
     new DataView(file.buffer).setUint32(4, file.length, true);
-    return { file, warnings, dsp };
+    return { file: concat([file, trailing]), warnings, dsp };
   }
 
   // Re-encodes a decoded patch from its raw values: the result must be byte-for-byte identical.

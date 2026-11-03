@@ -4,6 +4,8 @@ tmp/
 .DS_Store
 sync-data/
 node_modules/
+firmware/downloads/
+firmware/extracted/
 deploy/mail.json
 deploy/telegram.json
 deploy/.env
