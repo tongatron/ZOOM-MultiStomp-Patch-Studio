@@ -1,0 +1,37 @@
+/* GitHub flat demo: shared base. Replaces stage.css on top of styles.css (Primer): flat backgrounds,
+   no gradients, glows, lifts or blur. The variants (primer.css, dimmed.css, lime.css, contrast.css) only set tokens and accents. */
+body { background: var(--bg); }
+.gh-header { background: var(--bg-inset); backdrop-filter: none; }
+.gh-brand img { box-shadow: none; }
+.gh-brand-name { font-weight: 600; font-size: 14px; color: var(--fg); }
+.gh-brand-name span { color: var(--fg-muted); font-weight: 400; }
+
+/* Tabs: GitHub underline nav with an accent bar */
+.UnderlineNav { border-bottom: 1px solid var(--border-muted); margin-bottom: 16px; }
+.UnderlineNav-item[aria-current="page"]::after { background: var(--tab-bar, #f78166); }
+
+/* Primary button: solid colour, no glow */
+.btn-primary { background: var(--primary); color: var(--primary-fg, #fff); border-color: var(--btn-border); box-shadow: none; }
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--btn-border); }
+.btn-primary:disabled:hover { background: var(--primary); }
+.switch input:checked + span { background: var(--primary); border-color: var(--primary-hover); }
+.switch input:checked + span::after { background: var(--primary-fg, #fff); }
+
+/* Everything that glowed or lifted in the Stage theme stays flat */
+.pedal-switch a[aria-current="page"] { background: var(--bg-muted); color: var(--fg); box-shadow: inset 0 0 0 1px var(--border); }
+.pedal-switch a[aria-current="page"]::before { background: var(--primary); }
+.gh-footer .tt-badge:hover, .gh-footer .gh-repo:hover { transform: none; box-shadow: 0 0 0 1px var(--border); }
+.fx-list[data-view="grid"] .fx-link { transition: border-color .12s, background-color .12s; }
+.chain-item.is-dragging { box-shadow: 0 0 0 1px var(--accent); }
+.usb-mem.is-selected { background: var(--bg-subtle); box-shadow: inset 2px 0 0 var(--accent); }
+dialog.Overlay { box-shadow: 0 0 0 1px var(--border), 0 8px 24px rgba(1, 4, 9, .6); }
+
+/* Non-theme rules that live in stage.css: kept so the pages still work */
+.update-bar { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 8px 8px 8px 16px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; }
+.update-bar span { flex: 1; white-space: nowrap; }
+.gh-manual { gap: 6px; cursor: default; }
+.gh-manual:hover { background: var(--btn-bg); border-color: var(--btn-border); }
+.gh-manual a { color: var(--accent-fg); font-weight: 600; }
+.gh-manual > span[aria-hidden] { color: var(--fg-subtle); margin: 0 -2px; }
+@media (max-width: 520px) { .gh-manual-label { display: none; } }
+.flip { transform: scaleX(-1); }
