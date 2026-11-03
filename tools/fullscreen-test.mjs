@@ -231,17 +231,19 @@ try {
       for (const size of SIZES) {
         await open(file, size);
         const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
-        assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
+        assert.equal(labels.length, file === 'privacy.html' ? 5 : 6, `${file}: ${labels.join(' | ')}`);
         assert.deepEqual(labels.slice(0, 4), ['tongatron.org', 'Source on GitHub', 'Privacy', 'Report a problem'], file);
-        assert.match(labels[4], /^Last update /, file);
+        if (file !== 'privacy.html') assert.equal(labels[4], 'Download .zptc', file);
+        assert.match(labels[file === 'privacy.html' ? 4 : 5], /^Last update /, file);
         assert.equal(await page.locator('.fs-status').getByText('ZOOM CORPORATION').count(), 0, `${file}: the data note is not in the status bar`);
         const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
         edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
-        assert.ok(edges[4][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
+        assert.ok(edges[file === 'privacy.html' ? 4 : 5][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
         assert.ok(edges[0][0] <= 16, `${file}: the tongatron.org button is all the way to the left`);
       }
       assert.equal(await page.locator('.fs-status a[href="resources.html"]').count(), 0, `${file}: no Resources in the status bar`);
       assert.equal(await page.locator('.fs-status').getByText('Classic view').count(), 0, `${file}: no Classic view in the status bar`);
+      assert.equal(await page.locator('.fs-download').count(), file === 'privacy.html' ? 0 : 1, `${file}: .zptc download action`);
     }
   });
 
