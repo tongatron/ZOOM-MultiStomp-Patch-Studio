@@ -3,6 +3,26 @@
 
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const nextQuery = next => (next && next !== '/' ? `?next=${encodeURIComponent(next)}` : '');
+const MESSAGE_URL_RE = /https?:\/\/[^\s<>"']+/gi;
+const trimMessageUrl = url => url.replace(/[.,!?;:]+$/, '');
+const messageLine = line => {
+  let html = '';
+  let last = 0;
+  for (const match of line.matchAll(MESSAGE_URL_RE)) {
+    const raw = match[0];
+    const link = trimMessageUrl(raw);
+    html += esc(line.slice(last, match.index));
+    html += `<a href="${esc(link)}" target="_blank" rel="noreferrer">${esc(link)}</a>${esc(raw.slice(link.length))}`;
+    last = match.index + raw.length;
+  }
+  return html + esc(line.slice(last));
+};
+export const messageHtml = value => String(value ?? '').replace(/\r\n?/g, '\n').split('\n').map(messageLine).join('<br>\n');
+const messageDate = value => (value ? new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '—');
+const messageCards = messages => messages.map(m => `<article class="account-message">
+  <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(messageDate(m.message_date))}</time></div>
+  <div class="account-message-body">${messageHtml(m.objects)}</div>
+</article>`).join('');
 const SITE_FOOTER = `<footer class="gh-footer container">
   <div class="gh-footer-left">
     <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
@@ -52,6 +72,12 @@ export function page(title, body) {
   .auth-card .hint { color: var(--fg-muted); font-size: 12px; }
   .account-section { margin-top: 16px; }
   .account-section h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+  .account-messages { max-width: none; }
+  .account-message + .account-message { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
+  .account-message-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 8px; }
+  .account-message-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .account-message-head time { flex: none; color: var(--fg-muted); font-size: 12px; }
+  .account-message-body { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
   .account-danger { border-color: rgba(248, 81, 73, .4); }
   .btn-danger { color: #f85149; }
   .btn-danger:hover { color: #fff; background: #da3633; border-color: #f85149; }
@@ -137,13 +163,14 @@ const ACCOUNT_DONE = {
   verify: 'We sent you a new confirmation link (valid for 24 hours).'
 };
 
-export const accountPage = ({ user, counts = {}, done = '', error = '', minPassword = 10 }) => page('Your account', `${errorBox(error)}${okBox(ACCOUNT_DONE[done] || '')}
+export const accountPage = ({ user, counts = {}, messages = [], done = '', error = '', minPassword = 10 }) => page('Your account', `${errorBox(error)}${okBox(ACCOUNT_DONE[done] || '')}
 <div class="auth-card">
   <p><b>${esc(user.email)}</b>${user.name ? `<br>${esc(user.name)}` : ''}<br>
   <span class="hint">${user.email_verified_at ? 'Email confirmed' : 'Email not confirmed yet'} · member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
   <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}, ${counts.ms70cdr || 0} MS-70CDR+ ${counts.ms70cdr === 1 ? 'patch' : 'patches'}.</p>
   ${user.email_verified_at ? '' : `<form method="post" action="/account/verify"><button class="btn" type="submit">Send the confirmation email again</button></form>`}
 </div>
+${messages.length ? `<section class="auth-card account-section account-messages"><h2>Messages</h2>${messageCards(messages)}</section>` : ''}
 <form class="auth-card account-section" method="post" action="/account/password">
   <h2>Change password</h2>
   <input type="email" name="email" value="${esc(user.email)}" autocomplete="username" hidden>

@@ -132,27 +132,8 @@ export async function sendTelegram(text) {
 // ---- template -----------------------------------------------------------------------------------
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// Message bodies are plain text. Only explicit http(s) URLs become links in the HTML part;
-// escaping happens before insertion so an admin cannot inject markup into an email.
-const URL_RE = /https?:\/\/[^\s<>"']+/gi;
-const trimUrlPunctuation = url => url.replace(/[.,!?;:]+$/, '');
-const lineWithLinks = line => {
-  let html = '';
-  let last = 0;
-  for (const match of line.matchAll(URL_RE)) {
-    const raw = match[0];
-    const link = trimUrlPunctuation(raw);
-    html += esc(line.slice(last, match.index));
-    html += `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>${esc(raw.slice(link.length))}`;
-    last = match.index + raw.length;
-  }
-  return html + esc(line.slice(last));
-};
-
-export const messageHtml = value => String(value ?? '').replace(/\r\n?/g, '\n').split('\n').map(lineWithLinks).join('<br>\n');
-
 // One layout for every email, in the site's GitHub colours (light, so it reads well in every mail app).
-export function mailHtml({ title, intro, button, url, date = '', body = '', outro = '' }) {
+export function mailHtml({ title, intro, button, url, outro = '' }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"></head>
 <body style="margin:0;background:#f6f8fa;padding:24px 12px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#1f2328;">
 <div style="max-width:480px;margin:0 auto;background:#fff;border:1px solid #d0d7de;border-radius:6px;padding:24px;">
@@ -160,8 +141,6 @@ export function mailHtml({ title, intro, button, url, date = '', body = '', outr
 <div style="height:1px;background:#d0d7de;margin:12px 0 20px;"></div>
 <h1 style="font-size:20px;font-weight:600;margin:0 0 10px;">${esc(title)}</h1>
 <p style="font-size:14px;line-height:1.5;margin:0 0 20px;">${esc(intro)}</p>
-${date ? `<p style="font-size:12px;color:#656d76;margin:0 0 20px;"><b>Date:</b> ${esc(date)}</p>` : ''}
-${body ? `<div style="font-size:14px;line-height:1.6;margin:0 0 20px;">${body}</div>` : ''}
 ${button ? `<a href="${esc(url)}" style="display:inline-block;background:#1f883d;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:8px 16px;border-radius:6px;">${esc(button)}</a>` : ''}
 ${outro ? `<p style="font-size:12px;line-height:1.5;color:#656d76;margin:20px 0 0;">${esc(outro)}</p>` : ''}
 </div></body></html>`;

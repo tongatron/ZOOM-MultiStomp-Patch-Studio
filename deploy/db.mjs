@@ -34,7 +34,18 @@ const MIGRATIONS = [
      pedal TEXT NOT NULL, kind TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL,
      PRIMARY KEY (user_id, pedal, kind)
    );
-   CREATE TABLE admin_log (at TEXT NOT NULL, admin_id TEXT NOT NULL, action TEXT NOT NULL, target_id TEXT);`
+   CREATE TABLE admin_log (at TEXT NOT NULL, admin_id TEXT NOT NULL, action TEXT NOT NULL, target_id TEXT);`,
+  `CREATE TABLE messages (
+     id TEXT PRIMARY KEY,
+     sender_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+     recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     message_date TEXT NOT NULL,
+     title TEXT NOT NULL,
+     objects TEXT NOT NULL,
+     created_at TEXT NOT NULL,
+     read_at TEXT
+   );
+   CREATE INDEX messages_recipient ON messages (recipient_id, read_at, created_at);`
 ];
 
 export function openDb(file) {
@@ -68,6 +79,13 @@ function accounts(db) {
     setName: q('UPDATE users SET name = ? WHERE id = ?'),
     loggedIn: q('UPDATE users SET last_login = ? WHERE id = ?'),
     verified: q('UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?'),
+    addMessage: q(`INSERT INTO messages (id, sender_id, recipient_id, message_date, title, objects, created_at)
+                   VALUES (:id, :sender_id, :recipient_id, :message_date, :title, :objects, :created_at)`),
+    unreadMessages: q(`SELECT m.*, s.email AS sender_email, s.name AS sender_name
+                       FROM messages m LEFT JOIN users s ON s.id = m.sender_id
+                       WHERE m.recipient_id = ? AND m.read_at IS NULL
+                       ORDER BY m.message_date DESC, m.created_at DESC`),
+    markMessagesRead: q('UPDATE messages SET read_at = ? WHERE recipient_id = ? AND read_at IS NULL'),
     addToken: q('INSERT INTO tokens (hash, user_id, purpose, expires_at) VALUES (?, ?, ?, ?)'),
     findToken: q('SELECT * FROM tokens WHERE hash = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?'),
     useToken: q('UPDATE tokens SET used_at = ? WHERE hash = ?'),
@@ -92,6 +110,9 @@ function accounts(db) {
     setName: (id, name) => s.setName.run(name, id),
     touchLogin: id => s.loggedIn.run(now(), id),
     markVerified: id => s.verified.run(now(), id),
+    addMessage: ({ id, senderId, recipientId, date, title, objects, createdAt = now() }) => s.addMessage.run({ id, sender_id: senderId, recipient_id: recipientId, message_date: date, title, objects, created_at: createdAt }),
+    unreadMessages: userId => s.unreadMessages.all(userId),
+    markMessagesRead: userId => s.markMessagesRead.run(now(), userId),
     addToken: (hash, userId, purpose, ttlSeconds, at = Date.now()) => s.addToken.run(hash, userId, purpose, at + ttlSeconds * 1000),
     // The token's user, or null if the token is unknown, used or expired. `consume` marks it used.
     tokenUser: (hash, purpose, consume = false) => {

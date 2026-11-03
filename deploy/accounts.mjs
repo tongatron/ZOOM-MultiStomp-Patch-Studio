@@ -13,7 +13,7 @@ import {
 } from './auth.mjs';
 import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
-import { mailConfig, mailHtml, messageHtml, sendMail, sendTelegram } from './mail.mjs';
+import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
 import { SITE_URL } from './site-url.mjs';
 import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
@@ -91,6 +91,13 @@ export function createAccounts({ dataDir }) {
   }
 
   const patchCounts = userId => Object.fromEntries(store.db.prepare('SELECT pedal, COUNT(*) AS n FROM patches WHERE user_id = ? AND deleted_at IS NULL GROUP BY pedal').all(userId).map(r => [r.pedal, r.n]));
+  const takeMessages = userId => {
+    const messages = store.unreadMessages(userId);
+    if (messages.length) store.markMessagesRead(userId);
+    return messages;
+  };
+  const publicMessages = messages => messages.map(m => ({ id: m.id, message_date: m.message_date, title: m.title, objects: m.objects,
+    sender_name: m.sender_name || '', sender_email: m.sender_email || '', created_at: m.created_at }));
   function exportData(user) {
     const pedals = {};
     for (const row of store.db.prepare('SELECT pedal, data FROM patches WHERE user_id = ? AND deleted_at IS NULL ORDER BY pedal, pos').all(user.id)) {
@@ -125,9 +132,10 @@ export function createAccounts({ dataDir }) {
     const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
     const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT 500`).all({ q: like });
     const recipients = store.db.prepare('SELECT id, email, name, role FROM users ORDER BY email LIMIT 1000').all();
+    const inbox = takeMessages(me.id);
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, users, recipients, query, sort, dir, log, ...rest }));
+    html(response, status, adminPage({ me, users, recipients, query, sort, dir, log, inbox, ...rest }));
   }
 
   const cleanMessageText = (value, max) => String(value || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim().slice(0, max);
@@ -136,7 +144,6 @@ export function createAccounts({ dataDir }) {
     const parsed = new Date(`${value}T00:00:00.000Z`);
     return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   };
-  const messageDateLabel = value => new Date(`${value}T00:00:00.000Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
   // The account an admin action is about; never the admin's own (so an admin cannot lock themselves out)
   function adminTarget(response, me, id) {
@@ -196,17 +203,12 @@ export function createAccounts({ dataDir }) {
       if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
       if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
       if (recipient !== 'all' && !/^[a-f0-9]{32}$/.test(recipient)) return fail('Choose a valid recipient.');
-      if (!mailConfig()) return fail('Email is not configured, so the message was not sent.');
       const targets = recipient === 'all' ? store.db.prepare('SELECT * FROM users ORDER BY email').all() : [store.userById(recipient)].filter(Boolean);
       if (!targets.length) return fail('That account does not exist (any more).');
-      const sender = me.name || me.email;
-      const label = messageDateLabel(date);
-      const text = [`Message from ${sender}`, `Date: ${label}`, `Title: ${title}`, '', objects, '', `ZOOM MultiStomp Studio: ${siteUrl}/`].join('\n');
-      const html = mailHtml({ title, intro: `Message from ${sender}`, date: label, body: messageHtml(objects), outro: `Sent by ${sender} via ZOOM MultiStomp Studio.` });
-      for (const target of targets) sendMail(target.email, `ZOOM MultiStomp Studio: ${title}`, text, html);
+      for (const target of targets) store.addMessage({ id: newUserId(), senderId: me.id, recipientId: target.id, date, title, objects });
       const action = recipient === 'all' ? `message to all users (${targets.length}): ${title}` : `message: ${title}`;
       logAdmin(me, action, recipient === 'all' ? null : targets[0]);
-      showAdmin(response, me, { note: `Message queued for ${targets.length} account${targets.length === 1 ? '' : 's'}.` });
+      showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.` });
     },
     'POST /admin/signout': (request, response, form) => {
       const me = adminOnly(request, response);
@@ -342,7 +344,7 @@ export function createAccounts({ dataDir }) {
     'GET /account': (request, response, url) => {
       const session = current(request);
       if (!session) return redirect(response, '/login?next=/account');
-      html(response, 200, accountPage({ user: session.user, counts: patchCounts(session.user.id), done: url.searchParams.get('done') || '', minPassword: MIN_PASSWORD }));
+      html(response, 200, accountPage({ user: session.user, counts: patchCounts(session.user.id), messages: takeMessages(session.user.id), done: url.searchParams.get('done') || '', minPassword: MIN_PASSWORD }));
     },
     'POST /account/password': async (request, response, form) => {
       const session = current(request);
@@ -418,9 +420,10 @@ export function createAccounts({ dataDir }) {
       const session = current(request);
       if (!session) return json(response, 200, { signedIn: false });
       const { user, expires } = session;
+      const messages = takeMessages(user.id);
       // A session used in its last week is renewed for another 30 days
       const renew = expires - Date.now() < 7 * 864e5 ? { 'Set-Cookie': signIn(request, user) } : {};
-      json(response, 200, { signedIn: true, email: user.email, name: user.name, verified: !!user.email_verified_at, admin: user.role === 'admin' }, renew);
+      json(response, 200, { signedIn: true, email: user.email, name: user.name, verified: !!user.email_verified_at, admin: user.role === 'admin', messages: publicMessages(messages) }, renew);
     }
   };
 

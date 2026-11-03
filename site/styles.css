@@ -917,6 +917,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .account-dialog .Overlay-body p { margin: 0 0 12px; }
 .account-note { color: var(--fg-muted); font-size: 13px; }
 .account-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.account-message-card + .account-message-card { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
+.account-message-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 8px; }
+.account-message-card-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.account-message-card-head time { flex: none; color: var(--fg-muted); font-size: 12px; }
+.account-message-card-body { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .account-perks { display: grid; gap: 6px; margin: 0 0 4px; padding-left: 20px; }
 .account-later { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin-top: 8px; }
 .account-welcome .account-note { margin: 8px 0 0; }

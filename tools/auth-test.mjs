@@ -143,7 +143,7 @@ try {
     assert.equal(response.headers.get('location'), '/builder.html');
     assert.match(response.headers.get('set-cookie'), /^zms_session=v2\.[a-f0-9]{32}\.1\.\d+\.[a-f0-9]{64}; Path=\/; HttpOnly; SameSite=Lax; Max-Age=2592000$/);
     cookie = sessionOf(response);
-    assert.deepEqual(await me(cookie), { signedIn: true, email: EMAIL, name: 'Ron', verified: false, admin: false });
+    assert.deepEqual(await me(cookie), { signedIn: true, email: EMAIL, name: 'Ron', verified: false, admin: false, messages: [] });
     const { raw, text } = await mailNumber(1);
     assert.match(raw, /^To: <Player@Example\.com>/m);
     assert.ok(!text.includes(PASSWORD), 'the password is never emailed');
@@ -242,7 +242,7 @@ try {
     const code = await new Promise(ok => child.on('exit', ok));
     assert.equal(code, 0);
     const session = sessionOf(await post('/login', { email: 'admin@example.com', password: 'admin password 1' }));
-    assert.deepEqual(await me(session), { signedIn: true, email: 'admin@example.com', name: 'Giovanni', verified: false, admin: true });
+    assert.deepEqual(await me(session), { signedIn: true, email: 'admin@example.com', name: 'Giovanni', verified: false, admin: true, messages: [] });
   });
 
   await test('the user console is for admins only and never acts on the admin themselves', async () => {
@@ -282,29 +282,28 @@ try {
 
     assert.match(await (await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: admin })).text(), /is now an administrator/);
     assert.equal(store.userByEmail('new2@example.com').role, 'admin');
-    const countMail = async () => (await readdir(mailDir)).length;
-    const beforeAdminMessage = await countMail();
+    const new3Session = sessionOf(await post('/login', { email: 'new3@example.com', password: PASSWORD }));
     const adminMessage = await post('/admin/message', {
       recipient: idOf('admin@example.com'), date: '2026-11-04', title: 'Admin test', objects: 'Open https://example.com/test?ok=1&ready=2.'
     }, { cookie: admin });
     assert.equal(adminMessage.status, 200);
-    assert.match(await adminMessage.text(), /Message queued for 1 account/);
-    const one = await mailNumber(beforeAdminMessage + 1);
-    assert.match(one.raw, /^To: <admin@example\.com>$/m, 'an admin can message another admin, including themselves');
-    assert.match(one.text, /Date: 4 November 2026[\s\S]*Title: Admin test[\s\S]*https:\/\/example\.com\/test\?ok=1&ready=2\./);
-    assert.match(one.html, /href="https:\/\/example\.com\/test\?ok=1&amp;ready=2"/, 'message URLs are clickable in the HTML email');
+    const adminMessagePage = await adminMessage.text();
+    assert.match(adminMessagePage, /Message saved for 1 account/);
+    assert.match(adminMessagePage, /<h3>Admin test<\/h3>/, 'an admin can message another admin, including themselves');
+    assert.match(adminMessagePage, /href="https:\/\/example\.com\/test\?ok=1&amp;ready=2"/, 'message URLs are clickable in the admin interface');
     const usersBeforeBroadcast = store.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
-    const beforeBroadcast = await countMail();
     const broadcast = await post('/admin/message', {
       recipient: 'all', date: '2026-11-04', title: 'Broadcast test', objects: 'This reaches users and admins.'
     }, { cookie: admin });
     assert.equal(broadcast.status, 200);
-    assert.match(await broadcast.text(), new RegExp(`Message queued for ${usersBeforeBroadcast} accounts`));
-    for (let i = 0; i < 40 && await countMail() < beforeBroadcast + usersBeforeBroadcast; i++) await new Promise(ok => setTimeout(ok, 50));
-    assert.equal(await countMail(), beforeBroadcast + usersBeforeBroadcast, 'the broadcast sends one email per account');
-    const broadcastMails = await Promise.all((await readdir(mailDir)).sort().slice(beforeBroadcast).map(name => readFile(join(mailDir, name), 'utf8')));
-    assert.ok(broadcastMails.some(raw => /^To: <admin@example\.com>$/m.test(raw)), 'the broadcast includes admins');
-    assert.ok(broadcastMails.some(raw => /^To: <new3@example\.com>$/m.test(raw)), 'the broadcast includes normal users');
+    assert.match(await broadcast.text(), new RegExp(`Message saved for ${usersBeforeBroadcast} accounts`));
+    assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM messages WHERE title = ?').get('Broadcast test').n, usersBeforeBroadcast, 'the broadcast stores one message per account');
+    const new3Messages = await me(new3Session);
+    assert.equal(new3Messages.messages.length, 1, 'the next account access receives the in-app message');
+    assert.deepEqual(new3Messages.messages[0], {
+      id: new3Messages.messages[0].id, message_date: '2026-11-04', title: 'Broadcast test', objects: 'This reaches users and admins.', sender_name: 'Giovanni', sender_email: 'admin@example.com', created_at: new3Messages.messages[0].created_at
+    });
+    assert.deepEqual((await me(new3Session)).messages, [], 'the message is marked read after delivery');
     assert.equal((await post('/admin/message', { recipient: idOf('new3@example.com'), date: 'bad', title: 'x', objects: 'y' }, { cookie: admin })).status, 400);
     await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
@@ -323,7 +322,7 @@ try {
     assert.match(await (await post('/admin/delete', { id: target }, { cookie: admin })).text(), /The account of new3@example\.com has been deleted/);
     assert.equal(store.userById(target), null);
     const log = await (await get('/admin', { cookie: admin })).text();
-    for (const action of ['make admin', 'remove admin', 'reset link', 'sign out everywhere', 'download data', 'delete account new3@example.com']) assert.match(log, new RegExp(action));
+    for (const action of ['make admin', 'remove admin', 'message: Admin test', 'message to all users', 'reset link', 'sign out everywhere', 'download data', 'delete account new3@example.com']) assert.match(log, new RegExp(action));
     store.close();
   });
 

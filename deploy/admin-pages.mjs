@@ -1,12 +1,13 @@
 // Pages of the user console (/admin), for administrators only. Rendered by the server like the sign-in pages.
-import { esc, page } from './pages.mjs';
+import { esc, messageHtml, page } from './pages.mjs';
 
 const date = value => (value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const dateTime = value => (value ? new Date(value).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 
 const STYLE = `<style>
   body { align-items: stretch; }
-  .auth-brand, .admin { width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
+  .auth-brand, .admin { width: 100%; max-width: 1280px; margin-left: auto; margin-right: auto; }
+  .admin { padding-left: 16px; padding-right: 16px; }
   .admin .auth-card, .admin .auth-ok, .admin .auth-error { max-width: none; margin-bottom: 16px; }
   .admin h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
   .admin-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
@@ -61,7 +62,7 @@ const confirmDelete = id => `<form method="get" action="/admin"><input type="hid
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
-export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log, message = {} }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', note = '', error = '', link = '', confirm = null, log, inbox = [], message = {} }) {
   const sortLink = key => {
     const nextDir = sort === key && dir === 'desc' ? 'asc' : 'desc';
     const params = new URLSearchParams({ ...(query ? { q: query } : {}), sort: key, dir: nextDir });
@@ -76,12 +77,26 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
       ${confirmDelete(u.id)}</div>`}</td></tr>`).join('');
   const messageDate = message.date || new Date().toISOString().slice(0, 10);
   const recipientOptions = recipients.map(u => `<option value="${esc(u.id)}"${message.recipient === u.id ? ' selected' : ''}>${esc(u.email)}${u.name ? ` — ${esc(u.name)}` : ''}${u.role === 'admin' ? ' (admin)' : ''}</option>`).join('');
+  const inboxSection = inbox.length ? `<section class="auth-card admin-inbox"><h2>New messages</h2>${inbox.map(m => `<article class="account-message">
+    <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(date(m.message_date))}</time></div>
+    <div class="account-message-body">${messageHtml(m.objects)}</div>
+  </article>`).join('')}</section>` : '';
   return page('Users', `${STYLE}<main class="admin">${bar}
 ${error ? `<div class="auth-error" role="alert">${esc(error)}</div>` : ''}${note ? `<div class="auth-ok" role="status">${esc(note)}${link ? `<br><code>${esc(link)}</code>` : ''}</div>` : ''}
 ${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Delete the account of <b>${esc(confirm.email)}</b> and everything kept in it (${confirm.ms60b + confirm.ms50g + confirm.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
   <input type="hidden" name="id" value="${esc(confirm.id)}"><div class="acts"><a class="btn" href="/admin">Cancel</a><button class="btn btn-danger" type="submit">Delete the account</button></div></form>` : ''}
+${inboxSection}
+<section class="auth-card"><h2>Accounts</h2>
+  <form class="admin-search" method="get" action="/admin"><input name="q" type="search" placeholder="Search by email or name" value="${esc(query)}" aria-label="Search accounts">
+  <input type="hidden" name="sort" value="${esc(sort)}"><input type="hidden" name="dir" value="${esc(dir)}"><button class="btn btn-sm" type="submit">Search</button></form>
+  <div class="admin-table admin-accounts-table"><table aria-label="Accounts"><thead><tr>${COLUMNS.map(([key, label]) => `<th scope="col">${sortLink(key)}${label}</a></th>`).join('')}<th scope="col">Actions</th></tr></thead>
+  <tbody>${rows || `<tr><td colspan="8" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
+</section>
+<section class="auth-card"><h2>Admin log</h2>
+  ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}
+</section>
 <section class="auth-card admin-message"><h2>Send a message</h2>
-  <p>Send an email to one account or to every account. Administrator accounts are included, and you can select yourself for an admin-to-admin test. Full <code>http(s)</code> links in Objects become clickable links.</p>
+  <p>Create an in-app message for one account or every account. Administrator accounts are included, and you can select yourself for an admin-to-admin test. Full <code>http(s)</code> links in Objects become clickable links.</p>
   ${message.error ? `<div class="auth-error" role="alert">${esc(message.error)}</div>` : ''}
   <form method="post" action="/admin/message">
     <label for="message-recipient">To</label>
@@ -95,18 +110,9 @@ ${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Del
     <input id="message-title" name="title" type="text" maxlength="160" value="${esc(message.title || '')}" required>
     <label for="message-objects">Objects</label>
     <textarea id="message-objects" name="objects" maxlength="10000" required>${esc(message.objects || '')}</textarea>
-    <span class="hint">Plain text is preserved; paste complete links beginning with http:// or https:// to make them clickable in the email.</span>
+    <span class="hint">The message appears in the recipient's interface on the next access. Paste complete http:// or https:// links to make them clickable.</span>
     <button class="btn btn-primary" type="submit">Send message</button>
   </form>
-</section>
-<section class="auth-card"><h2>Accounts</h2>
-  <form class="admin-search" method="get" action="/admin"><input name="q" type="search" placeholder="Search by email or name" value="${esc(query)}" aria-label="Search accounts">
-  <input type="hidden" name="sort" value="${esc(sort)}"><input type="hidden" name="dir" value="${esc(dir)}"><button class="btn btn-sm" type="submit">Search</button></form>
-  <div class="admin-table admin-accounts-table"><table aria-label="Accounts"><thead><tr>${COLUMNS.map(([key, label]) => `<th scope="col">${sortLink(key)}${label}</a></th>`).join('')}<th scope="col">Actions</th></tr></thead>
-  <tbody>${rows || `<tr><td colspan="8" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
-</section>
-<section class="auth-card"><h2>Admin log</h2>
-  ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}
 </section></main>`);
 }
 
