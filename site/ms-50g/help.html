@@ -64,11 +64,18 @@
         <div class="fs-pane-body" tabindex="0" aria-label="Help us test the MS-50G+">
           <article class="markdown-body" id="doc">
             <p>The MS-50G+ pages of this site are built from the official ZOOM documents and from the file format of the MS-60B+, which has been checked on a real pedal. Nobody has tried a patch made here on a real MS-50G+ yet, so we are looking for someone who owns one and would like to help.</p>
-            <p>This page lists what we would need, from the shortest check to the longest. Nobody is expected to do it all. If you can spare some time, write to us and tell us how much: this way we organise the tests together, according to the time you have, and we agree on how to send the results.</p>
+            <p>This page is a self-contained test sheet. It gives the exact steps, patch names, values and files we would need; you do not need to find another test instruction. Nobody is expected to do it all. If you can spare some time, write to us and tell us how much: this way we organise the tests together, according to the time you have, and we agree on how to send the results.</p>
             <p><button class="btn btn-primary" type="button" id="contact-us" data-report="contact" data-intro="Tell us how much time you could give to the MS-50G+ tests: we organise them together, according to the time you have.">Contact us</button></p>
             <p class="field-hint">The button opens a form: the message goes straight to the people who make this site. Add your email address, so we can answer.</p>
-            <p><a class="btn" href="ms-50g-test-checklist.xlsx?v=20261101-2" download>Download tester checklist (.xlsx)</a></p>
+            <p><a class="btn" href="ms-50g-test-checklist.xlsx?v=20261103-1" download>Download tester checklist (.xlsx)</a></p>
             <p class="field-hint">The checklist marks the pedal as “Tested - core path” only when every Core check passes. The Extended checks are for full coverage.</p>
+
+            <h2 id="before-starting">Before starting</h2>
+            <ol>
+              <li>Download <a href="test-patches/TEST-A.zptc" download><code>TEST-A.zptc</code></a> and <a href="test-patches/TEST-C.zptc" download><code>TEST-C.zptc</code></a> to the iPhone or iPad, using Files, Mail or AirDrop. These are the two generated patches used below.</li>
+              <li>Open Handy Guitar Lab for MS-50G+, connect the pedal, and make a backup of your memories before copying anything. Use a free memory for every test.</li>
+              <li>For a <code>.zptc</code> file, use this sequence: open <b>Patch</b>, tap the import icon, choose the file, open the <b>Pool</b>, tap <b>Select</b>, tick the patch, tap <b>Copy to Device</b>, and choose the free memory. Copying replaces that memory.</li>
+            </ol>
 
             <h2 id="at-a-glance">The tests we would need</h2>
             <div class="md-table">
@@ -93,7 +100,7 @@
             <p><b>On your side we would need</b></p>
             <ul>
               <li>The MS-50G+, switched on, and an iPhone or iPad with the free <b>Handy Guitar Lab for MS-50G+</b> app (App Store), connected to the pedal with a USB data cable. The <a href="https://zoomcorp.com/media/documents/E_HandyGuitarLab_for_MS-50Gplus.pdf" target="_blank" rel="noreferrer">Handy Guitar Lab guide</a> (PDF) says which cable and adapter your device needs.</li>
-              <li>A computer, or an iPad held sideways, to open this site and download the test patches, and a way to move a file to the iPhone or iPad (AirDrop, Mail or Files).</li>
+              <li>A computer, or an iPad held sideways, to download the two test files from this page, and a way to move them to the iPhone or iPad (AirDrop, Mail or Files).</li>
               <li>An email address to send the files from.</li>
             </ul>
             <p><b>Looking after your patches</b></p>
@@ -107,9 +114,16 @@
               <li>The version of the Handy Guitar Lab app, and the model and system version of the iPhone or iPad.</li>
             </ul>
 
-            <h2 id="test-1">Test 1: a generated patch on the pedal</h2>
-            <p><b>About 15 minutes.</b> We would need to know whether the app and the pedal accept a patch made on this site, and whether its values arrive as they were set. The values of the test patch are unusual on purpose, so that a value that ends up in the wrong place is easy to see.</p>
-            <p><b>What it involves.</b> Opening the <a href="builder.html#p=WyJURVNUIEEiLFtbMCwxLFs2LCJGQVNUIiw1LDUwXV0sWzUzLDEsWzMwLDcwLDYwLDQwLDU1LDY1LDQ1XV0sWzk5LDEsWzM1MCwiTE9ORyIsMzAsMjVdXV1d">TEST A patch in the Patch builder</a> (the builder shows a DSP load of about 39.6%), downloading it as a <code>.zptc</code> file, importing it in Handy Guitar Lab and copying it to a free memory of the pedal, as described in <a href="guide.html#load-on-pedal">How to load it on the pedal</a>. The patch holds a compressor, an amp and a delay:</p>
+            <h2 id="test-1">Test 1: TEST-A.zptc on the pedal</h2>
+            <p><b>About 15 minutes.</b> This checks whether the MS-50G+ accepts a generated file and preserves its effects and values. The values are deliberately unusual so that a value in the wrong position is easy to spot.</p>
+            <p><b>Do this.</b></p>
+            <ol>
+              <li>Download <code>TEST-A.zptc</code> from the “Before starting” section.</li>
+              <li>Import it into Handy Guitar Lab and copy <b>TEST A</b> to one free pedal memory.</li>
+              <li>On the pedal, open that memory and step through all three effects. Write down exactly what the pedal display shows.</li>
+              <li>Play the patch for a few seconds and note any silence, unexpected noise, clicks or unusable output.</li>
+            </ol>
+            <p>The file contains this chain, in this order:</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Effect</th><th>Values</th></tr></thead>
@@ -128,16 +142,17 @@
               <li>The processor or DSP percentage the app shows for the patch.</li>
               <li>Whether it sounds as it should (no silence, noise or clicks).</li>
             </ul>
-            <p>Screenshots of the app and a photo of the pedal's display would help a lot.</p>
+            <p>Send the imported-patch screenshot, a photo of each pedal screen, the Processor percentage and any error message. The file is designed for about 39.6% DSP in the builder.</p>
 
             <h2 id="test-2">Test 2: a patch made in the app</h2>
             <p><b>About 10 minutes.</b> We would need a patch file written by the app itself, to see how it stores a patch. Nothing from this site is involved.</p>
-            <p><b>What it involves.</b> Adding one <b>COMPRESSOR</b> to a free memory, leaving its values as they are, naming the patch <b>TEST COMP</b>, saving it, and sharing it from the Patch Memory screen (<b>Select</b>, tick the memory, <b>Share</b>; the Handy Guitar Lab guide shows the steps under "Sharing a Patch Memory").</p>
+            <p><b>Do this.</b> In Handy Guitar Lab create a new patch in one free memory, add only <b>COMPRESSOR</b>, leave its values unchanged, name it <b>TEST COMP</b>, and save it. Then open <b>Patch Memory</b>, tap <b>Select</b>, tick <b>TEST COMP</b>, tap <b>Share</b>, and save or send the resulting <code>.zptc</code> file. Record the four displayed values: SENSE, ATTCK, TONE and VOL.</p>
             <p><b>What we would need back:</b> the <code>.zptc</code> file and the four values the app shows for the compressor (SENSE, ATTCK, TONE and VOL).</p>
 
-            <h2 id="test-3">Test 3: six effects in one patch</h2>
-            <p><b>About 15 minutes.</b> On the MS-60B+ a six-effect patch written over USB lost its last effect on the pedal, because the pedal holds six entries. We would need to know whether all six effects of a patch from the builder reach the MS-50G+ through the app.</p>
-            <p><b>What it involves.</b> Opening the <a href="builder.html#p=WyJURVNUIEMiLFtbMCwxLFtudWxsLG51bGwsbnVsbCxudWxsXV0sWzI4LDEsW251bGwsbnVsbCxudWxsLG51bGxdXSxbNTMsMSxbbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbF1dLFsyMCwxLFtudWxsLG51bGwsbnVsbCxudWxsLG51bGwsbnVsbCxudWxsLG51bGxdXSxbNzUsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dLFsxMTgsMSxbbnVsbCxudWxsLG51bGwsbnVsbF1dXV0">TEST C patch in the Patch builder</a> (COMPRESSOR, TS DRIVE, MS1959 DRIVE, GUITAR GRAPHIC EQ7, CLONE CHORUS and HALL REVERB, with their default values; the builder shows a DSP load of about 68.2%), loading it on the pedal as in test 1 and stepping through its effects on the pedal, from the first to the last.</p>
+            <h2 id="test-3">Test 3: TEST-C.zptc with six effects</h2>
+            <p><b>About 15 minutes.</b> This checks whether all six positions survive import and copying to the MS-50G+.</p>
+            <p><b>Do this.</b> Download <code>TEST-C.zptc</code>, import it, copy <b>TEST C</b> to a free memory, and step through the chain on the pedal from the first position to the last. Count the effects on the app and on the pedal separately.</p>
+            <p>The file contains these six effects, in this order, using their default values. It is designed for about 68.2% DSP in the builder.</p>
             <p><b>What we would need to know</b></p>
             <ul>
               <li>How many effects the app shows for the patch after the copy, and which ones.</li>
@@ -148,7 +163,7 @@
 
             <h2 id="test-4">Test 4: parametric EQ values</h2>
             <p><b>About 15 minutes.</b> The builder cannot write the FREQ and Q of the PARAMETRIC EQ yet, because we do not know how the pedal stores them. On the MS-60B+, which has the same ranges, Q grows in steps of 0.1 from 0.5 (checked up to 3.2) and FREQ does not grow in even steps. We would need to see whether the MS-50G+ does the same.</p>
-            <p><b>What it involves.</b> Six patches in free memories, each with a single <b>PARAMETRIC EQ</b> (GAIN and VOL left as they are) set to the FREQ and Q of the table, named after the values the app shows (for example <b>PEQ 50Hz 3.2</b>) and shared together. If the app cannot show exactly a value of the table, the nearest one will do, with the patch named after what it really shows.</p>
+            <p><b>Do this.</b> In Handy Guitar Lab make six separate patches, each with only <b>PARAMETRIC EQ</b>. Leave GAIN and VOL unchanged. Set FREQ and Q to the six pairs below, name each patch after the values actually shown, save them, and share all six from <b>Patch Memory &gt; Select &gt; Share</b>. If a value is unavailable, use the nearest value and write the displayed value in the checklist.</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Patch</th><th>FREQ</th><th>Q</th></tr></thead>
@@ -165,7 +180,7 @@
             <p><b>What we would need back:</b> the six files.</p>
 
             <h2 id="test-5">Test 5: filter values</h2>
-            <p><b>About 25 minutes.</b> Same method as test 4: one patch for each value, named after the values and shared together. The values of these filters are stored in a way we do not know yet.</p>
+            <p><b>About 25 minutes.</b> Make and share the patches below in Handy Guitar Lab. Each patch has only the named effect, is saved with the displayed values in its name, and is exported through <b>Patch Memory &gt; Select &gt; Share</b>. The values of these filters are stored in a way we do not know yet.</p>
             <p><b>LOW-PASS FILTER.</b> Six patches, each with a single <b>LOW-PASS FILTER</b> and the SENSE and RESO below, named after the values the app shows (for example <b>LPF FST100 2P-10</b>):</p>
             <div class="md-table">
               <table>
@@ -180,11 +195,11 @@
                 </tbody>
               </table>
             </div>
-            <p><b>ENVELOPE GENERATOR FILTER.</b> One patch for each <b>TYPE</b> the app offers, from HPF2 to LPF4, each with a single <b>ENVELOPE GENERATOR FILTER</b>, named after the type (for example <b>EGF HPF2</b>).</p>
+            <p><b>ENVELOPE GENERATOR FILTER.</b> Make one patch for each <b>TYPE</b> the app offers, from HPF2 to LPF4. Each patch contains only <b>ENVELOPE GENERATOR FILTER</b> and is named after the type, for example <b>EGF HPF2</b>. Save and share every patch from <b>Patch Memory &gt; Select &gt; Share</b>.</p>
             <p><b>What we would need back:</b> all the files.</p>
 
             <h2 id="test-6">Test 6: delay and preamp values</h2>
-            <p><b>About 20 minutes.</b> One patch with three effects, <b>MATCH30 DRIVE</b>, <b>DUAL DELAY</b> and <b>SLAP BACK DELAY</b>, copied five times into free memories, with the five values below changed in each copy and the copies named <b>T6 1</b> to <b>T6 5</b>. Every other value is left as it is.</p>
+            <p><b>About 20 minutes.</b> Create one patch with <b>MATCH30 DRIVE</b>, <b>DUAL DELAY</b> and <b>SLAP BACK DELAY</b>, in that order. Save it as <b>T6 base</b>. Make five copies in free memories. In each copy change only the five values in the row below, rename it <b>T6 1</b> through <b>T6 5</b>, save it, and share all five from <b>Patch Memory &gt; Select &gt; Share</b>. Leave every other value unchanged.</p>
             <div class="md-table">
               <table>
                 <thead><tr><th>Copy</th><th>MATCH30 DRIVE VOL</th><th>DUAL DELAY DEPTH</th><th>DUAL DELAY MODE</th><th>SLAP BACK DELAY TIME</th><th>SLAP BACK DELAY SUBDV</th></tr></thead>
@@ -201,12 +216,12 @@
 
             <h2 id="test-7">Test 7: amp models</h2>
             <p><b>About 3 minutes per amp.</b> Amps carry data that ZOOM does not document: on the MS-60B+ every amp has a hidden ninth value and a flag of its own in the patch header. We would like to know whether the MS-50G+ does the same.</p>
-            <p><b>What it involves.</b> A patch with <b>only</b> that amp, its values left as they are, named after the amp and shared. <b>MS1959 DRIVE</b>, <b>FD TWIN-R DRIVE</b> and <b>RECTI DUAL DRIVE</b> come first (about 10 minutes); the more amps the better.</p>
+            <p><b>Do this.</b> For each amp, create a patch with <b>only</b> that amp. Leave all values unchanged, name the patch exactly after the amp, save it, and share it from <b>Patch Memory &gt; Select &gt; Share</b>. Start with <b>MS1959 DRIVE</b>, <b>FD TWIN-R DRIVE</b> and <b>RECTI DUAL DRIVE</b>; add more if time allows.</p>
             <p>The 22 amp models: MS45OS DRIVE, MS1959 DRIVE, MS800 DRIVE, FD B-MAN DRIVE, FD TWIN-R DRIVE, FD DELUXE-R DRIVE, FD MASTER DRIVE, UK 30A DRIVE, BG MARK1 DRIVE, BG MARK3 DRIVE, RECTI DUAL DRIVE, XTASY BLUE DRIVE, HW 100 DRIVE, ORG120 DRIVE, DZ DRIVE, MATCH30 DRIVE, KRAMPUS DRIVE, REDLOOM DRIVE, VELVET DRIVE, MUDDY DRIVE, 7 HEAVEN DRIVE, POLLEX DRIVE.</p>
 
             <h2 id="test-8">Test 8: add-on effects</h2>
             <p><b>About 3 minutes per effect.</b> The effects marked with a star in the ZOOM Effects List are added to the pedal with Handy Guitar Lab, and the builder does not know their identifiers yet, so it cannot use them.</p>
-            <p><b>What it involves.</b> For each add-on effect that is installed: a patch with <b>only</b> that effect, its values left as they are, named after the effect and shared.</p>
+            <p><b>Do this.</b> For each installed add-on effect, create a patch with <b>only</b> that effect. Leave its values unchanged, name the patch exactly after the effect, save it, and share it from <b>Patch Memory &gt; Select &gt; Share</b>.</p>
             <p>The 24 add-on effects: OPTICAL COMPRESSOR, MUTE SWITCH, RESONANCE FILTER, CRY FILTER, LFO FILTER, RANDOM FILTER, GUITAR GRAPHIC EQ, STEREO GUITAR GRAPHIC EQ, EXCITER, LOW EQ, HIGH EQ, BG GRID DRIVE, METAL WORLD DRIVE, TS+BOOST DRIVE, RED CRUNCH DRIVE + BOOST, SPOT BOOSTER, UP OCTAVE BOOSTER, OUTPUT BOOSTER, CHORUS, BEND CHORUS, DUO PHASER, PHASE DELAY, AUTO PAN DELAY, SLOW ATTACK DELAY.</p>
           </article>
         </div>
@@ -217,7 +232,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-02T15:52Z">Last update 2 November 2026 16:52 CET</time>
+      <time class="gh-updated" datetime="2026-11-03T17:30Z">Last update 3 November 2026 18:30 CET</time>
     </footer>
 
     <script src="pedal.js?v=zoom25-20261028"></script>

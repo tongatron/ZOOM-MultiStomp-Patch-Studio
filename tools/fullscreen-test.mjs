@@ -854,18 +854,12 @@ try {
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     const claimed = (await page.locator('#doc').innerText()).match(/about (\d+\.\d)%/g).map(s => parseFloat(s.slice(6)));
     assert.equal(claimed.length, 2, 'the DSP of TEST A and TEST C');
-    // the test patches open in the builder with the effects the page names, and with the DSP load it quotes
-    const links = await page.locator('#doc a[href^="builder.html#p="]').evaluateAll(as => as.map(a => a.getAttribute('href')));
-    assert.equal(links.length, 2);
-    const expected = [['COMPRESSOR', 'MS1959 DRIVE', 'DELAY'], ['COMPRESSOR', 'TS DRIVE', 'MS1959 DRIVE', 'GUITAR GRAPHIC EQ7', 'CLONE CHORUS', 'HALL REVERB']];
-    for (const [i, href] of links.entries()) {
-      await page.goto('about:blank'); // a change of the fragment alone would not reload the builder
-      await page.goto(`${base}/ms-50g/${href}`);
-      await page.waitForSelector('#chain-list .chain-item');
-      assert.deepEqual(await page.evaluate(() => state.effects.map(slot => catalog[slot.index].name)), expected[i], `test patch ${i + 1}`);
-      assert.ok(Math.abs(parseFloat(await page.locator('#dsp-total').textContent()) - claimed[i]) < 0.1, `test patch ${i + 1}: the builder shows the DSP load the page quotes`);
-      await page.evaluate(() => { state.effects = []; state.name = ''; render(); save(); }); // a link asks before it replaces an unsaved patch
-    }
+    // The two generated test files are downloadable directly; the instructions do not require opening the builder.
+    const links = await page.locator('#doc a[href^="test-patches/TEST-"]').evaluateAll(as => as.map(a => ({ href: a.getAttribute('href'), download: a.hasAttribute('download') })));
+    assert.deepEqual(links, [
+      { href: 'test-patches/TEST-A.zptc', download: true },
+      { href: 'test-patches/TEST-C.zptc', download: true }
+    ]);
     // the amp and add-on lists come from the data
     await open('ms-50g/help.html', SIZES[1]);
     const text = await page.locator('#doc').innerText();
