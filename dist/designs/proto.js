@@ -7,7 +7,7 @@ const PROTO = (() => {
   const KEY = 'ms60b-design-lab';
   const MAX = ZPTC.MAX_EFFECTS;
   const effects = ADVICE.effects;
-  const thumb = index => `../assets/effects/fx-${String(index).padStart(3, '0')}.png`;
+  const thumb = index => `../ms-60b/assets/effects/fx-${String(index).padStart(3, '0')}.png`;
   const desc = index => EFFECTS_DATA[index][3];
   const color = index => CATEGORIES[effects[index].category].color;
   const categoryLabel = index => CATEGORIES[effects[index].category].label;
