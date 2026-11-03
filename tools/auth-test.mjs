@@ -255,6 +255,10 @@ try {
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
     const admin = sessionOf(await post('/login', { email: 'admin@example.com', password: 'admin password 1' }));
     const page = await (await get('/admin', { cookie: admin })).text();
+    assert.match(page, /class="gh-footer container"/, 'the admin page has the standard site footer');
+    assert.match(page, /href="https:\/\/tongatron\.org"[\s\S]*tongatron\.org/, 'the footer links to tongatron.org');
+    assert.match(page, /Source on GitHub/);
+    assert.match(page, /href="\/privacy\.html"[^>]*>Privacy<\/a>/);
     assert.doesNotMatch(page, /<h2>Summary<\/h2>/, 'the Summary section is gone');
     assert.match(page, /admin-accounts-table/);
     assert.match(page, /data-label="Email"/);
