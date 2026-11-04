@@ -155,9 +155,8 @@ for (const idea of TONE_IDEAS) {
   });
 }
 
-test('footswitch effects get a usage tip', () => {
-  assert.ok(find(patch(['HOLD DELAY', {}]), 'usage.footswitch'));
-  assert.ok(!find(patch(['DELAY', {}]), 'usage.footswitch'));
+test('footswitch effects get no usage tip (removed 2026-11-04)', () => {
+  assert.ok(!ADVICE.rules.some(r => r.id === 'usage.footswitch'));
 });
 
 test('tempo-synced delay gets a tip, free-time delay does not', () => {
@@ -558,16 +557,12 @@ vm.runInContext(`${cfiles.map(f => readFileSync(new URL(f, SITE), 'utf8')).join(
 }
 
 // ---- all pedals -----------------------------------------------------------------------------------------
-test('the fs tag marks exactly the effects whose Effects List text names the foot switch, and they get the usage tip', () => {
+test('the fs tag marks exactly the effects whose Effects List text names the foot switch', () => {
   for (const [pedal, context] of [['MS-60B+', ctx], ['MS-50G+', gctx], ['MS-70CDR+', cctx]]) {
     const data = vm.runInContext('EFFECTS_DATA', context);
-    const advice = vm.runInContext('ADVICE', context);
-    data.forEach(([name, , , description, tags, params], index) => {
+    data.forEach(([name, , , description, tags, params]) => {
       const named = [description, ...params.flatMap(([, text, range]) => [text, range])].some(text => /foot ?sw/i.test(text));
       assert.equal(tags.includes('fs'), named, `${pedal} ${name}: fs tag ${tags.includes('fs') ? 'without' : 'missing, but'} a foot switch in the Effects List`);
-      if (!named) return;
-      const findings = advice.analyze({ name: 'T', effects: [{ index, on: true, values: {} }] });
-      assert.ok(findings.some(f => f.ruleId === 'usage.footswitch'), `${pedal} ${name}: no footswitch tip`);
     });
   }
 });

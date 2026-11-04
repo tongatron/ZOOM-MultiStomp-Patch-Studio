@@ -167,7 +167,7 @@
       sources: ['zoomFxList', 'andertonsPitch'],
       check: ctx => ctx.active.filter(s => s.fx.name === 'HARMONY PITCH SHIFTER').map(s => ({ slots: [s.i], message: `KEY is ${s.v('KEY') ?? 'not set'}: match it to the song.` }))
     },
-    ...ADVICE.sharedRules('usage.footswitch', 'usage.tempo-sync')
+    ...ADVICE.sharedRules('usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------

@@ -338,7 +338,7 @@
       }
     },
 
-    ...ADVICE.sharedRules('usage.footswitch', 'usage.tempo-sync')
+    ...ADVICE.sharedRules('usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------
