@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Tests for the advice engine (site/advice-engine.js + site/advice-rules.js).
+// Tests for the advice engine (site/advice-engine.js) and the rules of each pedal (site/ms-*/advice-rules.js).
 //   node tools/advice-test.mjs
 
 import { readFileSync } from 'node:fs';

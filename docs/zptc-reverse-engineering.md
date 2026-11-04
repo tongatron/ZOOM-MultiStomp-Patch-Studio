@@ -176,8 +176,8 @@ To decipher a parameter that is still "raw" or "unverified":
 | File | Role |
 |---|---|
 | `site/zptc.js` | Shared codec: decode, encode, round-trip, value conversion |
-| `site/builder.html`, `site/builder.js` | Patch Builder: chain, parameters, DSP, saving, import, download |
-| `site/effects-data.js` | Effects and parameters from the Effects List (original English texts) |
-| `site/firmware-data.js` | IDs, display name, DSP (zoom-zt2) and `DSP_SCALE` |
+| `site/ms-60b/builder.html`, `site/builder.js` | Patch Builder: chain, parameters, DSP, saving, import, download |
+| `site/ms-60b/effects-data.js` | Effects and parameters from the Effects List (original English texts) |
+| `site/ms-60b/firmware-data.js` | IDs, display name, DSP (zoom-zt2) and `DSP_SCALE` |
 | `tools/zptc.mjs` | CLI: `decode`, `encode`, `roundtrip` |
 | `patches/` | Reference exports and generated patches used for the checks |
