@@ -8,10 +8,19 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const SITE = new URL('../site/', import.meta.url);
-const ctx = vm.createContext({ console });
-const files = ['ms-60b/effects-data.js', 'ms-60b/firmware-data.js', 'zptc.js', 'advice-engine.js', 'ms-60b/advice-rules.js'];
-vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE;`, ctx);
-const { ADVICE } = ctx;
+// The sources of every pedal (each has its own advice-rules.js); a link cited by several pedals is checked once.
+const PEDALS = ['ms-60b', 'ms-50g', 'ms-70cdr'];
+const sourceMap = new Map();
+for (const pedal of PEDALS) {
+  const ctx = vm.createContext({ console });
+  const files = [`${pedal}/effects-data.js`, `${pedal}/firmware-data.js`, 'zptc.js', 'advice-engine.js', `${pedal}/advice-rules.js`];
+  vm.runInContext(`${files.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE;`, ctx);
+  for (const [key, source] of Object.entries(ctx.ADVICE.sources)) {
+    const seen = sourceMap.get(source.url);
+    if (seen) seen.key = seen.key.split('/').includes(key) ? seen.key : `${seen.key}/${key}`;
+    else sourceMap.set(source.url, { key, source });
+  }
+}
 
 const HEADERS = { 'user-agent': 'Mozilla/5.0 (compatible; ms60b-source-check)', accept: 'text/html,application/pdf,*/*' };
 async function check(url) {
@@ -23,8 +32,7 @@ async function check(url) {
   }
 }
 
-const entries = Object.entries(ADVICE.sources);
-const results = await Promise.all(entries.map(async ([key, source]) => ({ key, source, ...(await check(source.url)) })));
+const results = await Promise.all([...sourceMap.values()].map(async ({ key, source }) => ({ key, source, ...(await check(source.url)) })));
 let bad = 0;
 for (const r of results) {
   const kind = r.status >= 200 && r.status < 300 ? 'ok' : r.status === 403 || r.status === 429 ? 'blocked' : 'broken';

@@ -135,6 +135,7 @@ function placementTips(effect) {
       <div class="tip-card">
         <span class="Label">${escapeHtml(tip.place)}</span>
         <p>${escapeHtml(tip.text)}</p>
+        ${tip.note ? `<p>${escapeHtml(tip.note)}</p>` : ''}
         ${tip.sources.length ? `<details class="sources"><summary>Sources</summary>${tip.sources.map(src => `<a href="${src.url}" target="_blank" rel="noreferrer">${escapeHtml(src.title)}</a>`).join('')}</details>` : ''}
       </div>
     </section>`;

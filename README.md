@@ -65,7 +65,7 @@ MultiStomp Studio puts the whole pedal on your desk:
 | Effects | 97 | 127 | 149 |
 | Usable in the builder | 97 | 103 (add-on IDs not known yet) | 149 |
 | Amp models | 11 bass amps | 22 amps (PREAMP) | — |
-| Advice | Order, levels, low end, output | Objective checks only (DSP, levels, routing) | Objective checks only (DSP, levels, routing) |
+| Advice | Order, levels, low end, output | Order, one amp model, levels, delay, output (guitar sources) | Order of pitch, modulation, delay and reverb; levels, delay |
 | Tone ideas | ✅ | ⏳ not yet | ⏳ not yet |
 | Pedal manager | ✅ | ⏳ not yet | ⏳ not yet |
 | Tested on the pedal | ✅ firmware 1.20 | ❌ not yet | ❌ not yet |

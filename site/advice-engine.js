@@ -32,9 +32,13 @@ const ADVICE = (() => {
     tracking: ['octave', 'synth', 'pitch']
   };
 
+  // Roles set by a pedal's advice-rules.js (addRoles): its names beat the names above, its categories beat the categories above.
+  const pedalRoles = { names: {}, categories: {} };
+  const roleOf = (name, category) => pedalRoles.names[name] || ROLE_BY_NAME[name] || pedalRoles.categories[category] || ROLE_BY_CATEGORY[category] || 'other';
+
   const effects = EFFECTS_DATA.map(([name, category, model, , tags, params], index) => ({
     index, name, category, model, tags,
-    role: ROLE_BY_NAME[name] || ROLE_BY_CATEGORY[category] || 'other',
+    role: roleOf(name, category),
     params: params.map(([pname, , range]) => ({ name: pname, range })),
     lcd: FIRMWARE_DATA[index]?.[1] ?? '',
     dsp: +((FIRMWARE_DATA[index]?.[0] ?? 0) * DSP_SCALE).toFixed(2)
@@ -127,17 +131,30 @@ const ADVICE = (() => {
   };
   const addSources = map => { Object.assign(sources, map); };
 
-  // Placement guidance for one effect, used by the catalog.
+  // Roles for the effects of another pedal: { names: { 'EFFECT NAME': role }, categories: { CATEGORY: role } }.
+  function addRoles({ names = {}, categories = {} } = {}) {
+    Object.assign(pedalRoles.names, names);
+    Object.assign(pedalRoles.categories, categories);
+    effects.forEach(fx => { fx.role = roleOf(fx.name, fx.category); });
+  }
+
+  // Placement guidance for one effect, used by the catalog: the tip of its role, plus a note for that effect if there is one.
   const roleTips = {};
+  const effectNotes = {};
   const addRoleTips = map => { Object.assign(roleTips, map); };
+  // Note shape: { 'EFFECT NAME': { text, sources: [sourceKey] } }
+  const addEffectTips = map => { Object.assign(effectNotes, map); };
   function effectTips(index) {
     const tip = roleTips[effects[index].role];
-    return tip ? { ...tip, sources: (tip.sources || []).map(key => sources[key]).filter(Boolean) } : null;
+    if (!tip) return null;
+    const note = effectNotes[effects[index].name];
+    const keys = [...new Set([...(tip.sources || []), ...(note?.sources || [])])];
+    return { ...tip, note: note?.text || null, sources: keys.map(key => sources[key]).filter(Boolean) };
   }
 
   return {
     SEVERITIES, rules, styles, sources, preferences, effects, byName, GROUPS, inGroup,
-    analyze, addRules, setUserRules, addStyles, addPreferences, addSources, addRoleTips, effectTips,
+    analyze, addRules, setUserRules, addStyles, addPreferences, addSources, addRoles, addRoleTips, addEffectTips, effectTips,
     edit: { clone, move, moveBefore, moveAfter, setValue }
   };
 })();

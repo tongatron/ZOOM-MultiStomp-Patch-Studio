@@ -358,4 +358,203 @@ test('MS-50G+: rules cite known sources and run on every effect', () => {
   assert.ok(G.ADVICE.analyze({ name: 'T', effects: amps }, {}).some(f => f.ruleId === 'dsp.overflow'), 'four amps overflow');
 });
 
+// ---- checks shared by the pedals with their own rules (MS-50G+, MS-70CDR+) -----------------------------
+// Rules that state a fact about the pedal or the patch itself may cite no source; every other rule must.
+const OBJECTIVE = new Set(['dsp.overflow', 'dsp.near-limit', 'chain.all-off']);
+const helpers = A => {
+  const idx = name => { const fx = A.byName.get(name); assert.ok(fx, `unknown effect ${name}`); return fx.index; };
+  const make = (...effects) => ({ name: 'TEST', effects: effects.map(([name, values = {}, on = true]) => ({ index: idx(name), on, values })) });
+  const run = (p, output) => A.analyze(p, { output });
+  const has = (p, id, output) => run(p, output).some(f => f.ruleId === id);
+  const get = (p, id, output) => run(p, output).find(f => f.ruleId === id);
+  const names = p => p.effects.map(e => A.effects[e.index].name);
+  const fix = (p, id, output) => {
+    const finding = get(p, id, output);
+    assert.ok(finding, `${id} should fire`);
+    assert.ok(finding.fix, `${id} should offer a fix`);
+    const fixed = finding.fix.apply(p);
+    assert.ok(!has(fixed, id, output), `${id} still fires after its fix`);
+    return fixed;
+  };
+  return { idx, make, run, has, get, names, fix };
+};
+// Small deterministic random generator, so a failing chain can be reproduced
+const random = seed => () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+
+function sharedChecks(label, A) {
+  const { make, run } = helpers(A);
+  test(`${label}: every rule cites a known source (objective checks excepted), every preference names a rule`, () => {
+    A.rules.forEach(rule => {
+      assert.ok(OBJECTIVE.has(rule.id) || rule.sources.length, `${rule.id} cites no source`);
+      rule.sources.forEach(key => assert.ok(A.sources[key], `${rule.id}: unknown source ${key}`));
+      if (rule.id.startsWith('order.')) assert.notEqual(rule.severity, 'error', `${rule.id}: order rules are warnings or tips`);
+    });
+    A.preferences.forEach(pref => pref.silences.forEach(id => assert.ok(A.rules.some(r => r.id === id), `${pref.id}: ${id}`)));
+  });
+  test(`${label}: no bass source in the advice of this pedal`, () => {
+    Object.entries(A.sources).forEach(([key, src]) => assert.ok(!/bass/i.test(`${src.title} ${src.url}`), `${key}: ${src.title}`));
+  });
+  test(`${label}: every effect, add-ons included, has placement tips with sources`, () => {
+    A.effects.forEach(fx => {
+      const tip = A.effectTips(fx.index);
+      assert.ok(tip, `${fx.name} (${fx.role}) has no tips`);
+      assert.ok(tip.place && tip.text, fx.name);
+      assert.ok(tip.sources.length || fx.role === 'eq', `${fx.name}: tip without sources`);
+    });
+  });
+  test(`${label}: random chains analyse without errors and every fix gives a valid patch`, () => {
+    const next = random(42);
+    const usable = A.effects.filter(fx => fx.dsp > 0);
+    for (let n = 0; n < 400; n++) {
+      const effects = Array.from({ length: 1 + Math.floor(next() * 6) }, () => {
+        const fx = usable[Math.floor(next() * usable.length)];
+        // Random values in each numeric range, so the value checks get exercised too
+        const values = Object.fromEntries(fx.params.map(p => {
+          const m = p.range.match(/^(-?\d+(?:\.\d+)?) – (-?\d+(?:\.\d+)?)$/);
+          return [p.name, m ? Math.round(+m[1] + next() * (m[2] - m[1])) : undefined];
+        }).filter(([, v]) => v !== undefined));
+        return { index: fx.index, on: next() > 0.1, values };
+      });
+      const p = { name: 'RANDOM', effects };
+      for (const output of [null, 'amp', 'mixer']) {
+        run(p, output).filter(f => f.fix).forEach(f => {
+          const fixed = f.fix.apply(p);
+          assert.ok(fixed.effects.length <= p.effects.length && fixed.effects.length >= p.effects.length - 1, `${f.ruleId}: fix changed the chain length`);
+          assert.equal(p.effects.length, effects.length, `${f.ruleId}: fix changed the original patch`);
+          run(fixed, output);
+        });
+      }
+    }
+  });
+  test(`${label}: an empty patch gives no findings`, () => same(run(make(), null), []));
+}
+
+// ---- MS-50G+ guitar advice ------------------------------------------------------------------------------
+{
+  const A = G.ADVICE;
+  const { make, has, get, names, fix } = helpers(A);
+  sharedChecks('MS-50G+', A);
+  const drive = ['TS DRIVE', { GAIN: 50, TONE: 50, VOL: 70 }];
+  const amp = ['MS1959 DRIVE', { IN1: 60, IN2: 40, VOL: 60 }];
+
+  test('MS-50G+: guitar roles (amp models, filters, simulators, octaver)', () => {
+    same(A.effects.filter(fx => fx.category === 'PREAMP').map(fx => fx.role).filter(r => r !== 'amp'), []);
+    assert.equal(A.byName.get('AUTO WAH').role, 'envfilter');
+    assert.equal(A.byName.get('NOISE GATE').role, 'gate');
+    assert.equal(A.byName.get('ACOUSTIC SIMULATOR').role, 'simulator');
+    assert.equal(A.byName.get('OCTAVER').role, 'octave');
+    assert.equal(A.byName.get('GUITAR GRAPHIC EQ7').role, 'eq');
+  });
+
+  test('MS-50G+: a second amp model is an error, its fix removes it', () => {
+    const p = make(amp, ['FD TWIN-R DRIVE', { GAIN: 40, VOL: 60 }, false]);
+    assert.equal(get(p, 'amp.one-preamp').severity, 'error', 'counts amps that are off too');
+    same(names(fix(p, 'amp.one-preamp')), ['MS1959 DRIVE']);
+  });
+
+  test('MS-50G+: a second Line Selector is an error', () => {
+    same(names(fix(make(['LINE SELECTOR'], drive, ['LINE SELECTOR']), 'linesel.multiple')), ['LINE SELECTOR', 'TS DRIVE']);
+  });
+
+  test('MS-50G+: octaver after the drive → warning, move it first', () => {
+    const p = make(drive, ['OCTAVER', { OCT1: 50, OCT2: 0, TONE: 5, DRY: 80 }]);
+    assert.equal(get(p, 'order.octave-after-gain').severity, 'warning');
+    same(names(fix(p, 'order.octave-after-gain')), ['OCTAVER', 'TS DRIVE']);
+  });
+
+  test('MS-50G+: delay before the amp model → move it after', () => {
+    same(names(fix(make(['DELAY', { MIX: 30 }], amp), 'order.time-before-gain')), ['MS1959 DRIVE', 'DELAY']);
+  });
+
+  test('MS-50G+: gate after the reverb → move it before', () => {
+    same(names(fix(make(drive, ['HALL REVERB', { MIX: 20 }], ['NOISE GATE', {}]), 'order.gate-after-time')), ['TS DRIVE', 'NOISE GATE', 'HALL REVERB']);
+  });
+
+  test('MS-50G+: compressor before the auto-wah, and after the drive', () => {
+    same(names(fix(make(['COMPRESSOR', { SENSE: 5, VOL: 80 }], ['AUTO WAH', { SENSE: 5 }]), 'order.comp-before-envfilter')), ['AUTO WAH', 'COMPRESSOR']);
+    same(names(fix(make(drive, ['COMPRESSOR', { SENSE: 5, VOL: 80 }]), 'order.comp-after-gain')), ['COMPRESSOR', 'TS DRIVE']);
+  });
+
+  test('MS-50G+: modulation before the amp, reverb before the delay', () => {
+    same(names(fix(make(['CHORUS ONE', { MIX: 50 }], amp), 'order.mod-before-gain')), ['MS1959 DRIVE', 'CHORUS ONE']);
+    same(names(fix(make(['ROOM REVERB', { MIX: 20 }], ['DELAY', { MIX: 30 }]), 'order.reverb-before-delay')), ['DELAY', 'ROOM REVERB']);
+  });
+
+  test('MS-50G+: high gain asks for a gate, until there is one', () => {
+    const loud = ['BG MARK3 DRIVE', { GAIN1: 40, GAIN2: 85, VOL: 60 }];
+    assert.ok(has(make(loud), 'gate.suggest'), 'GAIN2 counts');
+    assert.ok(!has(make(loud, ['ZOOM NOISE REDUCTION', {}]), 'gate.suggest'));
+    assert.ok(!has(make(drive), 'gate.suggest'), 'moderate gain');
+  });
+
+  test('MS-50G+: "Plug into" advice for amp models', () => {
+    assert.ok(has(make(amp), 'output.amp-clean', 'amp'));
+    assert.ok(!has(make(amp), 'output.amp-clean', 'mixer'));
+    assert.ok(has(make(drive), 'output.no-amp-mixer', 'mixer'));
+    assert.ok(!has(make(drive, amp), 'output.no-amp-mixer', 'mixer'));
+  });
+
+  test('MS-50G+: values: repeats, delay mix, ratio, two reverbs', () => {
+    assert.equal(fix(make(['DUAL DELAY', { 'REP A': 90, 'REP B': 20 }]), 'delay.repeat-high').effects[0].values['REP A'], 30);
+    assert.equal(fix(make(['DELAY', { MIX: 80 }]), 'delay.mix-high').effects[0].values.MIX, 35);
+    assert.equal(fix(make(['1176 LIMITER', { RATIO: '20:1' }]), 'comp.ratio-high').effects[0].values.RATIO, '4:1');
+    assert.ok(has(make(['ROOM REVERB', { MIX: 20 }], ['HALL REVERB', { MIX: 20 }]), 'time.two-reverbs'));
+  });
+
+  test('MS-50G+: preferences silence their rules, effect notes show in the catalog', () => {
+    const p = make(['CHORUS ONE', { MIX: 50 }], amp);
+    assert.ok(!A.analyze(p, { preferences: ['mod-before-gain'] }).some(f => f.ruleId === 'order.mod-before-gain'));
+    assert.match(A.effectTips(A.byName.get('OCTAVER').index).note, /POLYPHONIC OCTAVER/);
+    assert.equal(A.effectTips(A.byName.get('TS DRIVE').index).note, null);
+  });
+}
+
+// ---- MS-70CDR+ (chorus, delay and reverb) -----------------------------------------------------------------
+const cctx = vm.createContext({ console });
+const cfiles = ['ms-70cdr/effects-data.js', 'ms-70cdr/firmware-data.js', 'zptc.js', 'advice-engine.js', 'ms-70cdr/advice-rules.js'];
+vm.runInContext(`${cfiles.map(f => readFileSync(new URL(f, SITE), 'utf8')).join('\n;\n')}\n;globalThis.ADVICE = ADVICE; globalThis.EFFECTS_DATA = EFFECTS_DATA; globalThis.FIRMWARE_DATA = FIRMWARE_DATA;`, cctx);
+{
+  const A = cctx.ADVICE;
+  const { make, has, get, names, fix } = helpers(A);
+  test('MS-70CDR+: data and firmware tables line up', () => assert.equal(cctx.EFFECTS_DATA.length, cctx.FIRMWARE_DATA.length));
+  sharedChecks('MS-70CDR+', A);
+
+  test('MS-70CDR+: roles (pitch trackers, envelope filters, bit crusher)', () => {
+    ['OCTAVER', 'BASS OCTAVER', 'POLYPHONIC OCTAVER'].forEach(n => assert.equal(A.byName.get(n).role, 'octave', n));
+    assert.equal(A.byName.get('MONO SYNTH').role, 'synth');
+    assert.equal(A.byName.get('AUTO WAH').role, 'envfilter');
+    assert.equal(A.byName.get('BIT CRUSHER').role, 'drive');
+    assert.equal(A.byName.get('DIRTY GATE').role, 'gate');
+    assert.equal(A.byName.get('Z-ORGAN').role, 'sfx');
+  });
+
+  test('MS-70CDR+: a second Line Selector is an error', () => {
+    assert.equal(get(make(['LINE SELECTOR'], ['DELAY', { MIX: 30 }], ['LINE SELECTOR']), 'linesel.multiple').severity, 'error');
+  });
+
+  test('MS-70CDR+: octaver after the delay → warning, move it first', () => {
+    const p = make(['DELAY', { MIX: 30 }], ['POLYPHONIC OCTAVER', { LO: 50, HI: 0, WET: 50, DRY: 80 }]);
+    assert.equal(get(p, 'order.tracking-after-time').severity, 'warning');
+    same(names(fix(p, 'order.tracking-after-time')), ['POLYPHONIC OCTAVER', 'DELAY']);
+  });
+
+  test('MS-70CDR+: chorus after the reverb, gate after the delay, reverb before the delay', () => {
+    same(names(fix(make(['HALL REVERB', { MIX: 30 }], ['CHORUS ONE', { MIX: 50 }]), 'order.mod-after-time')), ['CHORUS ONE', 'HALL REVERB']);
+    same(names(fix(make(['DELAY', { MIX: 30 }], ['NOISE GATE', {}]), 'order.gate-after-time')), ['NOISE GATE', 'DELAY']);
+    same(names(fix(make(['PLATE REVERB', {}], ['TAPE ECHO', { MIX: 30 }]), 'order.reverb-before-delay')), ['TAPE ECHO', 'PLATE REVERB']);
+  });
+
+  test('MS-70CDR+: compressor and auto-wah after the delay', () => {
+    same(names(fix(make(['DELAY', { MIX: 30 }], ['COMPRESSOR', { SENSE: 5, VOL: 80 }]), 'order.comp-after-time')), ['COMPRESSOR', 'DELAY']);
+    same(names(fix(make(['DELAY', { MIX: 30 }], ['AUTO WAH', { SENSE: 5 }]), 'order.envfilter-after-time')), ['AUTO WAH', 'DELAY']);
+  });
+
+  test('MS-70CDR+: two reverbs, many repeats, mono trackers', () => {
+    assert.ok(has(make(['ROOM REVERB', {}], ['SHIMMER REVERB', {}]), 'time.two-reverbs'));
+    assert.ok(!has(make(['DUAL REVERB', {}]), 'time.two-reverbs'), 'one effect with two reverbs');
+    assert.equal(fix(make(['STOMP DELAY', { REPEAT: 95 }]), 'delay.repeat-high').effects[0].values.REPEAT, 30);
+    assert.match(get(make(['MONO SYNTH', {}]), 'pitch.mono-chords').message, /one note at a time/);
+  });
+}
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
