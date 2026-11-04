@@ -55,7 +55,8 @@ const MIGRATIONS = [
      created_at TEXT NOT NULL
    );
    CREATE INDEX changelog_date ON changelog (entry_date, created_at);`,
-  `ALTER TABLE changelog ADD COLUMN kind TEXT NOT NULL DEFAULT 'Change log';`
+  `ALTER TABLE changelog ADD COLUMN kind TEXT NOT NULL DEFAULT 'Change log';`,
+  `ALTER TABLE messages ADD COLUMN audience TEXT NOT NULL DEFAULT '';`
 ];
 
 export function openDb(file) {
@@ -89,8 +90,8 @@ function accounts(db) {
     setName: q('UPDATE users SET name = ? WHERE id = ?'),
     loggedIn: q('UPDATE users SET last_login = ? WHERE id = ?'),
     verified: q('UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?'),
-    addMessage: q(`INSERT INTO messages (id, sender_id, recipient_id, message_date, title, objects, created_at)
-                   VALUES (:id, :sender_id, :recipient_id, :message_date, :title, :objects, :created_at)`),
+    addMessage: q(`INSERT INTO messages (id, sender_id, recipient_id, message_date, title, objects, audience, created_at)
+                   VALUES (:id, :sender_id, :recipient_id, :message_date, :title, :objects, :audience, :created_at)`),
     messageById: q('SELECT * FROM messages WHERE id = ?'),
     updateMessage: q('UPDATE messages SET message_date = :message_date, title = :title, objects = :objects WHERE id = :id'),
     removeMessage: q('DELETE FROM messages WHERE id = ?'),
@@ -98,8 +99,8 @@ function accounts(db) {
                        FROM messages m LEFT JOIN users s ON s.id = m.sender_id
                        WHERE m.recipient_id = ? AND m.read_at IS NULL
                        ORDER BY m.message_date DESC, m.created_at DESC`),
-    allMessages: q(`SELECT m.*, s.email AS sender_email, s.name AS sender_name
-                    FROM messages m LEFT JOIN users s ON s.id = m.sender_id
+    allMessages: q(`SELECT m.*, s.email AS sender_email, s.name AS sender_name, r.email AS recipient_email, r.name AS recipient_name
+                    FROM messages m LEFT JOIN users s ON s.id = m.sender_id LEFT JOIN users r ON r.id = m.recipient_id
                     WHERE m.recipient_id = ?
                     ORDER BY m.message_date DESC, m.created_at DESC`),
     markMessagesRead: q('UPDATE messages SET read_at = ? WHERE recipient_id = ? AND read_at IS NULL'),
@@ -135,7 +136,7 @@ function accounts(db) {
     setName: (id, name) => s.setName.run(name, id),
     touchLogin: id => s.loggedIn.run(now(), id),
     markVerified: id => s.verified.run(now(), id),
-    addMessage: ({ id, senderId, recipientId, date, title, objects, createdAt = now() }) => s.addMessage.run({ id, sender_id: senderId, recipient_id: recipientId, message_date: date, title, objects, created_at: createdAt }),
+    addMessage: ({ id, senderId, recipientId, audience = '', date, title, objects, createdAt = now() }) => s.addMessage.run({ id, sender_id: senderId, recipient_id: recipientId, message_date: date, title, objects, audience, created_at: createdAt }),
     messageById: id => s.messageById.get(id) ?? null,
     updateMessage: ({ id, date, title, objects }) => s.updateMessage.run({ id, message_date: date, title, objects }),
     removeMessage: id => s.removeMessage.run(id),

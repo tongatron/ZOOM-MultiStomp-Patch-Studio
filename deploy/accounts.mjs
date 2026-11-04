@@ -266,7 +266,7 @@ export function createAccounts({ dataDir }) {
       if (recipient !== 'all' && !/^[a-f0-9]{32}$/.test(recipient)) return fail('Choose a valid recipient.');
       const targets = recipient === 'all' ? store.db.prepare('SELECT * FROM users ORDER BY email').all() : [store.userById(recipient)].filter(Boolean);
       if (!targets.length) return fail('That account does not exist (any more).');
-      for (const target of targets) store.addMessage({ id: newUserId(), senderId: me.id, recipientId: target.id, date, title, objects });
+      for (const target of targets) store.addMessage({ id: newUserId(), senderId: me.id, recipientId: target.id, audience: recipient === 'all' ? 'all' : target.id, date, title, objects });
       const action = recipient === 'all' ? `message to all users (${targets.length}): ${title}` : `message: ${title}`;
       logAdmin(me, action, recipient === 'all' ? null : targets[0]);
       showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.`, keepInboxUnread: true });
@@ -501,6 +501,7 @@ export function createAccounts({ dataDir }) {
           id: message.id,
           source: 'message',
           type: 'Message',
+          recipient: message.audience === 'all' ? 'all' : (message.recipient_email || session.user.email),
           date: message.message_date,
           title: message.title,
           objects: message.objects,

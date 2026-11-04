@@ -188,7 +188,7 @@ ${inboxSection}
     <button class="btn btn-primary" type="submit">Send message</button>
   </form>
 </section>
-<section class="auth-card admin-message"><h2>Add to change log</h2>
+<section id="add-changelog" class="auth-card admin-message"><h2>Add a log entry</h2>
   <p>Add a public timeline row without sending a message to users. Use Type to label it as a feature, fix, notice or another kind of update.</p>
   ${changelog.error ? `<div class="auth-error" role="alert">${esc(changelog.error)}</div>` : ''}
   <form method="post" action="/admin/changelog">
@@ -200,7 +200,7 @@ ${inboxSection}
     <input id="changelog-title" name="title" type="text" maxlength="160" value="${esc(changelog.title || '')}" required>
     <label for="changelog-objects">Objects</label>
     <textarea id="changelog-objects" name="objects" maxlength="10000" required>${esc(changelog.objects || '')}</textarea>
-    <button class="btn btn-primary" type="submit">Add change-log entry</button>
+    <button class="btn btn-primary" type="submit">Add log entry</button>
   </form>
 </section></main>`);
 }

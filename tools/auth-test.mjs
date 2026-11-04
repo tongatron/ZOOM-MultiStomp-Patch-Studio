@@ -277,6 +277,7 @@ try {
     assert.match(page, /name="objects"/, 'the message form has objects');
     assert.match(page, /href="\/change-log"[^>]*>Change log<\/a>/, 'admin can open the change log');
     assert.match(page, /action="\/admin\/changelog"/, 'admin can add a change-log entry');
+    assert.match(page, /id="add-changelog"/);
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');
     assert.match(page, /<!--email_off-->[\s\S]*new3@example\.com[\s\S]*<!--\/email_off-->/, 'the emails are marked so that Cloudflare does not hide them');
@@ -305,7 +306,11 @@ try {
     const adminChangeLogPage = await (await get('/change-log', { cookie: admin })).text();
     assert.match(adminChangeLogPage, /action="\/admin\/message\/update"/, 'admins can edit messages from the change log');
     assert.match(adminChangeLogPage, /action="\/admin\/message\/delete"/, 'admins can delete messages from the change log');
+    assert.match(adminChangeLogPage, /To[\s\S]*admin@example\.com/, 'messages show their recipient');
+    assert.doesNotMatch(adminChangeLogPage, />Admin<\/a>/, 'the change log does not show an Admin button');
+    assert.match(adminChangeLogPage, /Add log entry/, 'admins have a direct add-log button');
     const adminMessageId = store.db.prepare('SELECT id FROM messages WHERE title = ?').get('Admin test').id;
+    assert.equal(store.db.prepare('SELECT audience FROM messages WHERE id = ?').get(adminMessageId).audience, idOf('admin@example.com'));
     const messageUpdate = await post('/admin/message/update', { id: adminMessageId, date: '2026-11-03', title: 'Admin test updated', objects: 'Updated message.' }, { cookie: admin });
     assert.equal(messageUpdate.status, 200);
     assert.match(await messageUpdate.text(), /Message updated: Admin test updated/);
@@ -320,6 +325,7 @@ try {
     assert.equal(broadcast.status, 200);
     assert.match(await broadcast.text(), new RegExp(`Message saved for ${usersBeforeBroadcast} accounts`));
     assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM messages WHERE title = ?').get('Broadcast test').n, usersBeforeBroadcast, 'the broadcast stores one message per account');
+    assert.equal(store.db.prepare('SELECT audience FROM messages WHERE title = ? LIMIT 1').get('Broadcast test').audience, 'all', 'broadcast messages are marked for all recipients');
     const new3Messages = await me(new3Session);
     assert.equal(new3Messages.messages.length, 1, 'the next account access receives the in-app message');
     assert.deepEqual(new3Messages.messages[0], {
@@ -339,6 +345,7 @@ try {
     assert.match(changelogPage, /Studio release/);
     assert.match(changelogPage, /Release/);
     assert.match(changelogPage, /Broadcast test/, 'the change log includes all messages sent to the account');
+    assert.match(changelogPage, /To[\s\S]*all/, 'broadcast messages show all as the recipient');
     const changelogId = store.db.prepare('SELECT id FROM changelog WHERE title = ?').get('Studio release').id;
     const changelogUpdate = await post('/admin/changelog/update', { id: changelogId, date: '2026-11-03', kind: 'Fix', title: 'Studio release updated', objects: 'The updated change log entry.' }, { cookie: admin });
     assert.equal(changelogUpdate.status, 200);
