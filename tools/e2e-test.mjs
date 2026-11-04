@@ -216,6 +216,7 @@ try {
     await page.click('text=Create an account');
     await page.fill('#email', 'e2e@example.com');
     await page.fill('#password', PASSWORD);
+    await page.fill('#password-confirm', PASSWORD); // the sign-up form asks for the password twice (b07476a)
     await page.click('button[type="submit"]');
     await page.waitForURL(/builder\.html/);
     await page.locator('.account-button').waitFor();

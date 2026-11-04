@@ -231,41 +231,45 @@ try {
       for (const size of SIZES) {
         await open(file, size);
         const labels = await page.locator('.fs-status > *').evaluateAll(els => els.map(el => el.textContent.trim().replace(/\s+/g, ' ')));
-        assert.equal(labels.length, file === 'privacy.html' ? 5 : 6, `${file}: ${labels.join(' | ')}`);
+        // The status bar had a "Download .zptc" link for a while (d6ac8fc); it was removed on purpose in a3054ca.
+        assert.equal(labels.length, 5, `${file}: ${labels.join(' | ')}`);
         assert.deepEqual(labels.slice(0, 4), ['tongatron.org', 'Source on GitHub', 'Privacy', 'Report a problem'], file);
-        if (file !== 'privacy.html') assert.equal(labels[4], 'Download .zptc', file);
-        assert.match(labels[file === 'privacy.html' ? 4 : 5], /^Last update /, file);
+        assert.match(labels[4], /^Last update /, file);
         assert.equal(await page.locator('.fs-status').getByText('ZOOM CORPORATION').count(), 0, `${file}: the data note is not in the status bar`);
         const edges = await page.evaluate(() => [...document.querySelectorAll('.fs-status > *')].map(el => { const r = el.getBoundingClientRect(); return [r.left, r.right]; }));
         edges.forEach(([left], i) => { if (i) assert.ok(left >= edges[i - 1][1] - 1, `${file} ${size.join(' × ')}: item ${i} overlaps the previous one`); });
-        assert.ok(edges[file === 'privacy.html' ? 4 : 5][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
+        assert.ok(edges[4][1] >= size[0] - 20, `${file}: the update time is at the right edge`);
         assert.ok(edges[0][0] <= 16, `${file}: the tongatron.org button is all the way to the left`);
       }
       assert.equal(await page.locator('.fs-status a[href="resources.html"]').count(), 0, `${file}: no Resources in the status bar`);
       assert.equal(await page.locator('.fs-status').getByText('Classic view').count(), 0, `${file}: no Classic view in the status bar`);
-      assert.equal(await page.locator('.fs-download').count(), file === 'privacy.html' ? 0 : 1, `${file}: .zptc download action`);
+      assert.equal(await page.locator('.fs-download').count(), 0, `${file}: no .zptc download link in the status bar`);
     }
   });
 
-  await test('signed in, the header has the account menu (the initial, then the name and Sign out, no Account entry), and the top bar fits at 800 px', async () => {
+  await test('signed in, the header has the account menu (the initial, then the name, Change log and Sign out, no Account entry), and the top bar fits at 800 px', async () => {
     const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: 'Header Tester', password: 'header password 1', passwordConfirm: 'header password 1' }, maxRedirects: 0 });
     assert.equal(made.status(), 303);
-    for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html', 'ms-70cdr/builder.html']) {
-      for (const size of [[1280, 680], [800, 700]]) {
-        await open(file, size);
-        const button = page.locator('.account-slot .account-button');
-        await button.waitFor();
-        assert.equal((await button.innerText()).trim(), 'H', `${file}: the initial of the name`);
-        assert.deepEqual(await page.evaluate(barIssues), [], `${file} ${size.join(' × ')}: the top bar fits with the account button`);
+    try {
+      for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html', 'ms-70cdr/builder.html']) {
+        for (const size of [[1280, 680], [800, 700]]) {
+          await open(file, size);
+          const button = page.locator('.account-slot .account-button');
+          await button.waitFor();
+          assert.equal((await button.innerText()).trim(), 'H', `${file}: the initial of the name`);
+          assert.deepEqual(await page.evaluate(barIssues), [], `${file} ${size.join(' × ')}: the top bar fits with the account button`);
+        }
       }
+      await open('builder.html', SIZES[1]);
+      await page.locator('.account-slot .account-button').click();
+      const items = await page.locator('.account-dropdown .account-item').allInnerTexts();
+      assert.deepEqual(items.map(t => t.trim()), ['Change log', 'Sign out'], 'a normal user has the change log and Sign out, not Users');
+      assert.match(await page.locator('.account-dropdown .account-who').innerText(), /Header Tester[\s\S]*header@example\.com/);
+    } finally {
+      // Sign out even when a check fails, so the next tests run as a visitor without an account
+      await page.context().clearCookies();
+      await page.evaluate(() => { try { sessionStorage.clear(); } catch {} });
     }
-    await open('builder.html', SIZES[1]);
-    await page.locator('.account-slot .account-button').click();
-    const items = await page.locator('.account-dropdown .account-item').allInnerTexts();
-    assert.deepEqual(items.map(t => t.trim()), ['Sign out'], 'a normal user has only Sign out');
-    assert.match(await page.locator('.account-dropdown .account-who').innerText(), /Header Tester[\s\S]*header@example\.com/);
-    await page.context().clearCookies();
-    await page.evaluate(() => { try { sessionStorage.clear(); } catch {} });
   });
 
   await test('Report a problem: the form opens, asks for a message, sends it to the Telegram bot and confirms', async () => {
