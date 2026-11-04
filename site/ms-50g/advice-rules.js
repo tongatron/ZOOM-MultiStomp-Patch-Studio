@@ -34,26 +34,15 @@
   });
 
   // ---- helpers ----------------------------------------------------------------------------------------
-  const { clone, moveBefore, moveAfter, setValue } = ADVICE.edit;
-  const removeSlot = (patch, slot) => { const next = clone(patch); next.effects.splice(slot, 1); return next; };
+  const { setValue, remove: removeSlot } = ADVICE.edit;
+  const { names, order, before, after, comesAfter, comesBefore } = ADVICE.kit;
   // Highest gain-like control of a drive or amp model (amps with two channels have GAIN1 and GAIN2)
   const gainOf = s => {
     const values = ['GAIN', 'GAIN1', 'GAIN2', 'IN1', 'IN2', 'SUSTN', 'BOOST'].map(p => s.num(p)).filter(n => n !== null);
     return values.length ? Math.max(...values) : null;
   };
-  const names = list => list.map(s => s.fx.name).join(', ');
   // Effects the Effects List describes as operated with the foot switch
   const footswitchFx = new Set(EFFECTS_DATA.filter(([, , , description]) => /foot ?switch/i.test(description)).map(([name]) => name));
-  // Order rule: each active `subject` effect for which when(s, reference) holds → one finding with a fix.
-  const order = ({ subject, reference, when, message, fix }) => ctx => {
-    const ref = reference(ctx);
-    if (!ref) return [];
-    return ctx.of(subject).filter(s => s.i !== ref.i && when(s, ref)).map(s => ({ slots: [s.i, ref.i], message: message(s, ref), fix: fix(s, ref) }));
-  };
-  const before = (s, ref) => ({ label: `Move before ${ref.fx.name}`, apply: p => moveBefore(p, s.i, ref.i) });
-  const after = (s, ref) => ({ label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) });
-  const comesAfter = (s, ref) => `${s.fx.name} comes after ${ref.fx.name}.`;
-  const comesBefore = (s, ref) => `${s.fx.name} comes before ${ref.fx.name}.`;
 
   ADVICE.addRules([
     // ---- objective problems ----
@@ -90,39 +79,7 @@
         return list.slice(1).map(s => ({ slots: [list[0].i, s.i], message: `${s.label} is a second LINE SELECTOR.`, fix: { label: 'Remove it', apply: p => removeSlot(p, s.i) } }));
       }
     },
-    {
-      id: 'level.muted', severity: 'error', topic: 'levels', title: 'Effect volume at zero',
-      why: 'VOL sets the output level of the effect. At 0 the effect is switched on but nothing comes out of it, so the whole patch goes silent.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => s.has('VOL') && s.num('VOL') === 0).map(s => ({
-        slots: [s.i], message: `${s.label} has VOL at 0.`,
-        fix: { label: 'Set VOL to 80', apply: p => setValue(p, s.i, 'VOL', 80) }
-      }))
-    },
-    {
-      id: 'chain.all-off', severity: 'warning', topic: 'chain', title: 'Every effect is off',
-      why: 'With all effects bypassed the patch only passes the dry signal.',
-      sources: [],
-      check: ctx => ctx.slots.length && !ctx.active.length ? [{ message: 'Switch on at least one effect.' }] : []
-    },
-    {
-      id: 'mix.silent-effect', severity: 'warning', topic: 'levels', title: 'Effect mixed out completely',
-      why: 'MIX (or WET) sets how much of the effect is blended with the original sound. At 0 the effect uses processing power but is inaudible.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => ['MIX', 'WET'].some(p => s.has(p) && s.num(p) === 0)).map(s => {
-        const param = ['MIX', 'WET'].find(p => s.has(p) && s.num(p) === 0);
-        return { slots: [s.i], message: `${s.label} has ${param} at 0, so it cannot be heard.`, fix: { label: `Set ${param} to 30`, apply: p => setValue(p, s.i, param, 30) } };
-      })
-    },
-    {
-      id: 'linesel.last', severity: 'warning', topic: 'routing', title: 'Line Selector at the end does nothing',
-      why: 'LINE SELECTOR sends the signal either to the next effect or straight to the outputs. As the last effect both routes end at the outputs.',
-      sources: ['zoomFxList'],
-      check: ctx => {
-        const last = ctx.active.at(-1);
-        return last && last.role === 'linesel' && ctx.active.length > 1 ? [{ slots: [last.i], message: 'Move LINE SELECTOR in front of the effects you want to be able to skip.' }] : [];
-      }
-    },
+    ...ADVICE.sharedRules('level.muted', 'chain.all-off', 'mix.silent-effect', 'linesel.last'),
 
     // ---- order ----
     {
@@ -279,14 +236,7 @@
         slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
       }))
     },
-    {
-      id: 'usage.tempo-sync', severity: 'tip', topic: 'usage', title: 'Delay synced to the tempo',
-      why: 'When the delay MODE is set to the metronome symbol, the delay time follows the tempo, so the result depends on the tempo of the patch.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => s.has('MODE') && String(s.v('MODE')).includes('♩')).map(s => ({
-        slots: [s.i], message: `${s.fx.name}: the delay time follows the tempo. Set the tempo of this patch on the pedal.`
-      }))
-    }
+    ...ADVICE.sharedRules('usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------
