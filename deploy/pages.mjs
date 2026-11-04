@@ -24,12 +24,14 @@ const messageCards = messages => messages.map(m => `<article class="account-mess
   <div class="account-message-body">${messageHtml(m.objects)}</div>
 </article>`).join('');
 const timelineCards = timeline => timeline.map(entry => `<article class="account-message account-timeline-row">
-  <div class="account-message-head"><span class="account-timeline-type">${esc(entry.type)}</span><time datetime="${esc(entry.date)}">${esc(messageDate(entry.date))}</time></div>
-  <h3>${esc(entry.title)}</h3>
-  <div class="account-message-body">${messageHtml(entry.objects)}</div>
+  <div class="account-timeline-grid">
+    <div class="account-timeline-field"><span class="account-timeline-label">Date</span><time datetime="${esc(entry.date)}">${esc(messageDate(entry.date))}</time></div>
+    <div class="account-timeline-field"><span class="account-timeline-label">Title</span><h3>${esc(entry.title)}</h3><span class="account-timeline-type">${esc(entry.type)}</span></div>
+    <div class="account-timeline-field"><span class="account-timeline-label">Object</span><div class="account-message-body">${messageHtml(entry.objects)}</div></div>
+  </div>
 </article>`).join('');
 // Release timestamp from the latest commit pushed to GitHub, not the page request time.
-const footerNow = new Date('2026-11-04T01:26:00Z');
+const footerNow = new Date('2026-11-04T01:35:00Z');
 const footerDateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
   day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome', timeZoneName: 'short'
 }).formatToParts(footerNow).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
@@ -88,12 +90,17 @@ export function page(title, body) {
   .account-message-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 8px; }
   .account-message-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
   .account-message-head time { flex: none; color: var(--fg-muted); font-size: 12px; }
+  .account-timeline-grid { display: grid; grid-template-columns: minmax(120px, 16%) minmax(180px, 25%) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .account-timeline-field { min-width: 0; }
+  .account-timeline-label { display: block; margin-bottom: 5px; color: var(--fg-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .account-timeline-field h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
   .account-timeline-type { color: var(--fg-muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .account-timeline-row > h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
   .account-message-body { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
   .account-danger { border-color: rgba(248, 81, 73, .4); }
   .btn-danger { color: #f85149; }
   .btn-danger:hover { color: #fff; background: #da3633; border-color: #f85149; }
+  @media (max-width: 700px) { .account-timeline-grid { grid-template-columns: 1fr 1fr; gap: 12px; } .account-timeline-field:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 420px) { .account-timeline-grid { grid-template-columns: 1fr; } .account-timeline-field:last-child { grid-column: auto; } }
 </style>
 </head>
 <body>
@@ -216,4 +223,4 @@ export const changeLogPage = ({ timeline = [] } = {}) => page('Change log', `
 <div class="auth-card change-log-intro"><p>Messages sent to your account and studio updates, in one timeline.</p>
   <a class="btn" href="/ms-60b/">Open the studio</a>
 </div>
-<section class="auth-card account-section account-messages"><h2>Change log</h2>${timeline.length ? timelineCards(timeline) : '<p class="hint">No change-log entries or messages yet.</p>'}</section>`);
+<section class="auth-card account-section account-messages account-change-log"><h2>Change log</h2>${timeline.length ? timelineCards(timeline) : '<p class="hint">No change-log entries or messages yet.</p>'}</section>`);

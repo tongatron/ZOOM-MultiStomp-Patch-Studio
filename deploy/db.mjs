@@ -54,7 +54,8 @@ const MIGRATIONS = [
      objects TEXT NOT NULL,
      created_at TEXT NOT NULL
    );
-   CREATE INDEX changelog_date ON changelog (entry_date, created_at);`
+   CREATE INDEX changelog_date ON changelog (entry_date, created_at);`,
+  `ALTER TABLE changelog ADD COLUMN kind TEXT NOT NULL DEFAULT 'Change log';`
 ];
 
 export function openDb(file) {
@@ -99,8 +100,11 @@ function accounts(db) {
                     WHERE m.recipient_id = ?
                     ORDER BY m.message_date DESC, m.created_at DESC`),
     markMessagesRead: q('UPDATE messages SET read_at = ? WHERE recipient_id = ? AND read_at IS NULL'),
-    addChangelog: q(`INSERT INTO changelog (id, created_by, entry_date, title, objects, created_at)
-                     VALUES (:id, :created_by, :entry_date, :title, :objects, :created_at)`),
+    addChangelog: q(`INSERT INTO changelog (id, created_by, entry_date, title, objects, kind, created_at)
+                     VALUES (:id, :created_by, :entry_date, :title, :objects, :kind, :created_at)`),
+    changelogById: q('SELECT * FROM changelog WHERE id = ?'),
+    updateChangelog: q(`UPDATE changelog SET entry_date = :entry_date, title = :title, objects = :objects, kind = :kind WHERE id = :id`),
+    removeChangelog: q('DELETE FROM changelog WHERE id = ?'),
     allChangelog: q(`SELECT c.*, u.email AS creator_email, u.name AS creator_name
                      FROM changelog c LEFT JOIN users u ON u.id = c.created_by
                      ORDER BY c.entry_date DESC, c.created_at DESC`),
@@ -132,7 +136,10 @@ function accounts(db) {
     unreadMessages: userId => s.unreadMessages.all(userId),
     allMessages: userId => s.allMessages.all(userId),
     markMessagesRead: userId => s.markMessagesRead.run(now(), userId),
-    addChangelog: ({ id, createdBy, date, title, objects, createdAt = now() }) => s.addChangelog.run({ id, created_by: createdBy, entry_date: date, title, objects, created_at: createdAt }),
+    addChangelog: ({ id, createdBy, date, title, objects, kind = 'Change log', createdAt = now() }) => s.addChangelog.run({ id, created_by: createdBy, entry_date: date, title, objects, created_at: createdAt, kind }),
+    changelogById: id => s.changelogById.get(id) ?? null,
+    updateChangelog: ({ id, date, title, objects, kind }) => s.updateChangelog.run({ id, entry_date: date, title, objects, kind }),
+    removeChangelog: id => s.removeChangelog.run(id),
     allChangelog: () => s.allChangelog.all(),
     addToken: (hash, userId, purpose, ttlSeconds, at = Date.now()) => s.addToken.run(hash, userId, purpose, at + ttlSeconds * 1000),
     // The token's user, or null if the token is unknown, used or expired. `consume` marks it used.

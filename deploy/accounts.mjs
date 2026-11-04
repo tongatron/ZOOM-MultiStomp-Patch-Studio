@@ -24,6 +24,7 @@ const MAX_REPORT_FORM = 48_000; // a report of 3000 characters can grow to 9 byt
 const MAX_MESSAGE_FORM = 64_000;
 const MAX_MESSAGE_TITLE = 160;
 const MAX_MESSAGE_OBJECTS = 10_000;
+const MAX_CHANGELOG_KIND = 40;
 // Per 15 minutes: failed sign-ins per address and per email, sign-ups, reset requests, token links, problem reports
 const LIMITS = { login: 10, loginEmail: 5, register: 5, forgot: 5, forgotEmail: 3, token: 20, report: 5 };
 const PAGE_HEADERS = {
@@ -183,7 +184,8 @@ export function createAccounts({ dataDir }) {
     const inbox = keepInboxUnread ? peekMessages(me.id) : takeMessages(me.id);
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, ...rest }));
+    const changelogEntries = store.allChangelog();
+    html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, changelogEntries, ...rest }));
   }
 
   const cleanMessageText = (value, max) => String(value || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim().slice(0, max);
@@ -273,18 +275,54 @@ export function createAccounts({ dataDir }) {
       const me = adminOnly(request, response);
       if (!me) return;
       const date = String(form.date || '');
+      const rawKind = String(form.kind || '');
       const rawTitle = String(form.title || '');
       const rawObjects = String(form.objects || '');
+      const kind = cleanMessageText(rawKind, MAX_CHANGELOG_KIND) || 'Change log';
       const title = cleanMessageText(rawTitle, MAX_MESSAGE_TITLE);
       const objects = cleanMessageText(rawObjects, MAX_MESSAGE_OBJECTS);
-      const changelog = { date, title, objects };
+      const changelog = { date, kind, title, objects };
       const fail = error => showAdmin(response, me, { status: 400, changelog: { ...changelog, error } });
       if (!validMessageDate(date)) return fail('Choose a valid date.');
+      if (rawKind.length > MAX_CHANGELOG_KIND) return fail(`Type is too long (maximum ${MAX_CHANGELOG_KIND} characters).`);
       if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
       if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
-      store.addChangelog({ id: newUserId(), createdBy: me.id, date, title, objects });
-      logAdmin(me, `change log: ${title}`, null);
+      store.addChangelog({ id: newUserId(), createdBy: me.id, date, kind, title, objects });
+      logAdmin(me, `change log: ${kind}: ${title}`, null);
       showAdmin(response, me, { note: `Change-log entry saved: ${title}. It was not sent as a message.` });
+    },
+    'POST /admin/changelog/update': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const id = String(form.id || '');
+      const date = String(form.date || '');
+      const rawKind = String(form.kind || '');
+      const rawTitle = String(form.title || '');
+      const rawObjects = String(form.objects || '');
+      const kind = cleanMessageText(rawKind, MAX_CHANGELOG_KIND) || 'Change log';
+      const title = cleanMessageText(rawTitle, MAX_MESSAGE_TITLE);
+      const objects = cleanMessageText(rawObjects, MAX_MESSAGE_OBJECTS);
+      const changelog = { id, date, kind, title, objects };
+      const fail = error => showAdmin(response, me, { status: 400, changelog: { ...changelog, error } });
+      const entry = /^[a-f0-9]{32}$/.test(id) ? store.changelogById(id) : null;
+      if (!entry) return fail('That change-log entry does not exist (any more).');
+      if (!validMessageDate(date)) return fail('Choose a valid date.');
+      if (rawKind.length > MAX_CHANGELOG_KIND) return fail(`Type is too long (maximum ${MAX_CHANGELOG_KIND} characters).`);
+      if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
+      if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
+      store.updateChangelog({ id, date, kind, title, objects });
+      logAdmin(me, `edit change log: ${title}`, null);
+      showAdmin(response, me, { note: `Change-log entry updated: ${title}.` });
+    },
+    'POST /admin/changelog/delete': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const id = String(form.id || '');
+      const entry = /^[a-f0-9]{32}$/.test(id) ? store.changelogById(id) : null;
+      if (!entry) return showAdmin(response, me, { status: 404, error: 'That change-log entry does not exist (any more).' });
+      store.removeChangelog(id);
+      logAdmin(me, `delete change log: ${entry.title}`, null);
+      showAdmin(response, me, { note: `Change-log entry deleted: ${entry.title}.` });
     },
     'POST /admin/signout': (request, response, form) => {
       const me = adminOnly(request, response);
@@ -436,7 +474,7 @@ export function createAccounts({ dataDir }) {
         })),
         ...store.allChangelog().map(entry => ({
           id: entry.id,
-          type: 'Change log',
+          type: entry.kind || 'Change log',
           date: entry.entry_date,
           title: entry.title,
           objects: entry.objects,
@@ -542,7 +580,7 @@ export function createAccounts({ dataDir }) {
       else html(response, 403, messagePage('Request refused', 'This request came from another site and was refused.'));
       return true;
     }
-    const formLimit = path === '/api/report' ? MAX_REPORT_FORM : path === '/admin/message' ? MAX_MESSAGE_FORM : MAX_FORM;
+    const formLimit = path === '/api/report' ? MAX_REPORT_FORM : (path === '/admin/message' || path.startsWith('/admin/changelog')) ? MAX_MESSAGE_FORM : MAX_FORM;
     await route(request, response, await readForm(request, formLimit), ip);
     return true;
   }

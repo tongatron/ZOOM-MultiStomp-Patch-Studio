@@ -54,6 +54,17 @@ const STYLE = `<style>
   .admin-delete-popover p { margin: 0 0 16px; line-height: 1.5; }
   .admin-delete-popover .acts { display: flex; flex-wrap: wrap; gap: 8px; }
   .admin-delete-popover .acts form { margin: 0; }
+  .admin-changelog-table .entry-object { margin-top: 4px; color: var(--fg-muted); font-size: 12px; line-height: 1.45; }
+  .admin-changelog-table .entry-object a { color: var(--accent); }
+  .admin-changelog-table .tag { display: inline-block; }
+  .admin-edit { display: inline-block; }
+  .admin-edit summary { list-style: none; cursor: pointer; }
+  .admin-edit summary::-webkit-details-marker { display: none; }
+  .admin-edit[open] { min-width: min(460px, 70vw); }
+  .admin-edit-form { margin-top: 10px; padding: 12px; background: var(--bg-inset); border: 1px solid var(--border-muted); border-radius: var(--radius); }
+  .admin-edit-form input, .admin-edit-form textarea { display: block; width: 100%; margin: 0 0 10px; padding: 7px 10px; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 13px; }
+  .admin-edit-form textarea { min-height: 90px; resize: vertical; }
+  .admin-edit-form label { display: block; margin: 0 0 5px; color: var(--fg-muted); font-size: 12px; }
   @media (max-width: 900px) {
     .admin-accounts-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     .admin-accounts-table tbody { display: grid; gap: 12px; }
@@ -93,7 +104,7 @@ const confirmDelete = user => {
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
-export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {}, changelog = {} }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {}, changelog = {}, changelogEntries = [] }) {
   const sizeParam = pageSize === 0 ? 'all' : String(pageSize);
   const navigationParams = (targetPage, extra = {}) => new URLSearchParams({ ...(query ? { q: query } : {}), sort, dir, size: sizeParam, page: String(targetPage), ...extra });
   const sortLink = key => {
@@ -117,6 +128,7 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
       ${confirmDelete(u)}</div>`}</td></tr>`).join('');
   const messageDate = message.date || new Date().toISOString().slice(0, 10);
   const changelogDate = changelog.date || messageDate;
+  const changelogKind = changelog.kind || 'Change log';
   const recipientOptions = recipients.map(u => `<option value="${esc(u.id)}"${message.recipient === u.id ? ' selected' : ''}>${esc(u.email)}${u.name ? ` — ${esc(u.name)}` : ''}${u.role === 'admin' ? ' (admin)' : ''}</option>`).join('');
   const inboxSection = inbox.length ? `<section class="auth-card admin-inbox"><h2>New messages</h2>${inbox.map(m => `<article class="account-message">
     <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(date(m.message_date))}</time></div>
@@ -140,6 +152,23 @@ ${inboxSection}
 <section class="auth-card"><h2>Admin log</h2>
   ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}
 </section>
+<section class="auth-card"><h2>Change log rows</h2>
+  ${changelogEntries.length ? `<div class="admin-table admin-changelog-table"><table><thead><tr><th>Date</th><th>Type</th><th>Title and object</th><th>Actions</th></tr></thead><tbody>${changelogEntries.map(entry => {
+    const popoverId = `delete-changelog-${entry.id}`;
+    return `<tr><td>${date(entry.entry_date)}</td><td><span class="tag">${esc(entry.kind || 'Change log')}</span></td><td><b>${esc(entry.title)}</b><div class="entry-object">${messageHtml(entry.objects)}</div></td><td><div class="acts">
+      <details class="admin-edit"><summary class="btn btn-sm">Edit</summary><form class="admin-edit-form" method="post" action="/admin/changelog/update">
+        <input type="hidden" name="id" value="${esc(entry.id)}">
+        <label>Type<input name="kind" maxlength="40" value="${esc(entry.kind || 'Change log')}" required></label>
+        <label>Date<input name="date" type="date" value="${esc(entry.entry_date)}" required></label>
+        <label>Title<input name="title" maxlength="160" value="${esc(entry.title)}" required></label>
+        <label>Objects<textarea name="objects" maxlength="10000" required>${esc(entry.objects)}</textarea></label>
+        <button class="btn btn-primary btn-sm" type="submit">Save changes</button>
+      </form></details>
+      <button class="btn btn-sm btn-danger" type="button" popovertarget="${esc(popoverId)}">Delete</button>
+      <div id="${esc(popoverId)}" class="admin-delete-popover" popover="auto"><p>Delete the change-log row <b>${esc(entry.title)}</b>? This can't be undone.</p><div class="acts"><button class="btn" type="button" popovertarget="${esc(popoverId)}" popovertargetaction="hide">Cancel</button><form method="post" action="/admin/changelog/delete"><input type="hidden" name="id" value="${esc(entry.id)}"><button class="btn btn-danger" type="submit">Delete the row</button></form></div></div>
+    </div></td></tr>`;
+  }).join('')}</tbody></table></div>` : '<p class="muted">No manually created rows yet.</p>'}
+</section>
 <section class="auth-card admin-message"><h2>Send a message</h2>
   <p>Create an in-app message for one account or every account. Administrator accounts are included, and you can select yourself for an admin-to-admin test. Full <code>http(s)</code> links in Objects become clickable links.</p>
   ${message.error ? `<div class="auth-error" role="alert">${esc(message.error)}</div>` : ''}
@@ -160,9 +189,11 @@ ${inboxSection}
   </form>
 </section>
 <section class="auth-card admin-message"><h2>Add to change log</h2>
-  <p>Add a public studio change-log entry without sending a message to users.</p>
+  <p>Add a public timeline row without sending a message to users. Use Type to label it as a feature, fix, notice or another kind of update.</p>
   ${changelog.error ? `<div class="auth-error" role="alert">${esc(changelog.error)}</div>` : ''}
   <form method="post" action="/admin/changelog">
+    <label for="changelog-kind">Type</label>
+    <input id="changelog-kind" name="kind" type="text" maxlength="40" value="${esc(changelogKind)}" required>
     <label for="changelog-date">Date</label>
     <input id="changelog-date" name="date" type="date" value="${esc(changelogDate)}" required>
     <label for="changelog-title">Title</label>
