@@ -346,11 +346,16 @@ try {
     const updatedChangelogPage = await (await get('/change-log', { cookie: new3Session })).text();
     assert.match(updatedChangelogPage, /Studio release updated/);
     assert.match(updatedChangelogPage, /Fix/);
+    const publicChangelog = await get('/change-log');
+    assert.equal(publicChangelog.status, 200, 'the change log is public');
+    const publicChangelogPage = await publicChangelog.text();
+    assert.match(publicChangelogPage, /Studio release updated/);
+    assert.doesNotMatch(publicChangelogPage, /Broadcast test/, 'private messages are not exposed publicly');
     const changelogDelete = await post('/admin/changelog/delete', { id: changelogId }, { cookie: admin });
     assert.equal(changelogDelete.status, 200);
     assert.match(await changelogDelete.text(), /Change-log entry deleted: Studio release updated/);
     assert.doesNotMatch(await (await get('/change-log', { cookie: new3Session })).text(), /Studio release updated/);
-    assert.equal((await get('/change-log')).headers.get('location'), '/login?next=/change-log');
+    assert.doesNotMatch(await (await get('/change-log')).text(), /Studio release updated/);
     await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
     assert.match(await (await post('/admin/reset', { id: idOf('new1@example.com') }, { cookie: admin })).text(), /A new-password link was sent to new1@example\.com/);

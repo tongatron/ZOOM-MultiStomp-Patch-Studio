@@ -41,7 +41,7 @@ const timelineCards = (timeline, isAdmin = false) => timeline.map(entry => `<art
   <div id="timeline-delete-${esc(entry.id)}" class="account-delete-popover" popover="auto"><p>Delete <b>${esc(entry.title)}</b>? This can't be undone.</p><div class="account-timeline-actions"><button class="btn btn-sm" type="button" popovertarget="timeline-delete-${esc(entry.id)}" popovertargetaction="hide">Cancel</button><form method="post" action="/admin/${entry.source === 'message' ? 'message' : 'changelog'}/delete"><input type="hidden" name="id" value="${esc(entry.id)}"><input type="hidden" name="returnTo" value="/change-log"><button class="btn btn-sm btn-danger" type="submit">Delete</button></form></div></div></div>` : ''}
 </article>`).join('');
 // Release timestamp from the latest commit pushed to GitHub, not the page request time.
-const footerNow = new Date('2026-11-04T01:40:00Z');
+const footerNow = new Date('2026-11-04T01:48:00Z');
 const footerDateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
   day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome', timeZoneName: 'short'
 }).formatToParts(footerNow).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
@@ -105,7 +105,8 @@ export function page(title, body) {
   .account-timeline-label { display: block; margin-bottom: 5px; color: var(--fg-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   .account-timeline-field h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
   .account-timeline-type { color: var(--fg-muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .account-timeline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .account-timeline-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-top: 12px; }
+  .account-timeline-actions .btn { width: auto; min-width: 0; }
   .account-timeline-actions form { margin: 0; }
   .account-timeline-edit { display: inline-block; }
   .account-timeline-edit summary { list-style: none; cursor: pointer; }
@@ -241,9 +242,10 @@ ${messages.length ? `<section class="auth-card account-section account-messages"
 </form>
 <div class="auth-alt"><a href="/">Back to the site</a> · <a href="/privacy.html">Privacy</a></div>`);
 
-export const changeLogPage = ({ timeline = [], isAdmin = false } = {}) => page('Change log', `
-<div class="auth-card change-log-intro"><p>Messages sent to your account and studio updates, in one timeline.</p>
+export const changeLogPage = ({ timeline = [], isAdmin = false, isPublic = false } = {}) => page('Change log', `
+<div class="auth-card change-log-intro"><p>${isPublic ? 'Public studio updates.' : 'Messages sent to your account and studio updates, in one timeline.'}</p>
   <a class="btn" href="/ms-60b/">Open the studio</a>
   ${isAdmin ? '<a class="btn" href="/admin">Admin</a>' : ''}
+  ${isPublic ? '<a class="btn" href="/login?next=/change-log">Sign in</a>' : ''}
 </div>
-<section class="auth-card account-section account-messages account-change-log"><h2>Change log</h2>${timeline.length ? timelineCards(timeline, isAdmin) : '<p class="hint">No change-log entries or messages yet.</p>'}</section>`);
+<section class="auth-card account-section account-messages account-change-log"><h2>Change log</h2>${timeline.length ? timelineCards(timeline, isAdmin) : `<p class="hint">${isPublic ? 'No public log entries yet.' : 'No change-log entries or messages yet.'}</p>`}</section>`);

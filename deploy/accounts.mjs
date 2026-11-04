@@ -496,9 +496,8 @@ export function createAccounts({ dataDir }) {
     },
     'GET /change-log': (request, response) => {
       const session = current(request);
-      if (!session) return redirect(response, '/login?next=/change-log');
       const timeline = [
-        ...store.allMessages(session.user.id).map(message => ({
+        ...(session ? store.allMessages(session.user.id) : []).map(message => ({
           id: message.id,
           source: 'message',
           type: 'Message',
@@ -517,7 +516,7 @@ export function createAccounts({ dataDir }) {
           created_at: entry.created_at
         }))
       ].sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
-      html(response, 200, changeLogPage({ timeline, isAdmin: session.user.role === 'admin' }));
+      html(response, 200, changeLogPage({ timeline, isAdmin: session?.user.role === 'admin', isPublic: !session }));
     },
     'POST /account/password': async (request, response, form) => {
       const session = current(request);
