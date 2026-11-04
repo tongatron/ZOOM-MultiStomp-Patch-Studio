@@ -169,7 +169,7 @@ export function createAccounts({ dataDir }) {
     return session.user;
   }
 
-  function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, ...rest } = {}) {
+  function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, keepInboxUnread = false, ...rest } = {}) {
     if (!SORTS[sort]) sort = 'created';
     dir = dir === 'asc' ? 'asc' : 'desc';
     pageSize = pageSizeOf(pageSize);
@@ -180,7 +180,7 @@ export function createAccounts({ dataDir }) {
     pageNumber = Math.min(pageNumber, pageCount);
     const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT :limit OFFSET :offset`).all({ q: like, limit: pageSize || -1, offset: pageSize ? (pageNumber - 1) * pageSize : 0 });
     const recipients = store.db.prepare('SELECT id, email, name, role FROM users ORDER BY email LIMIT 1000').all();
-    const inbox = takeMessages(me.id);
+    const inbox = keepInboxUnread ? peekMessages(me.id) : takeMessages(me.id);
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
     html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, ...rest }));
@@ -267,7 +267,7 @@ export function createAccounts({ dataDir }) {
       for (const target of targets) store.addMessage({ id: newUserId(), senderId: me.id, recipientId: target.id, date, title, objects });
       const action = recipient === 'all' ? `message to all users (${targets.length}): ${title}` : `message: ${title}`;
       logAdmin(me, action, recipient === 'all' ? null : targets[0]);
-      showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.` });
+      showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.`, keepInboxUnread: true });
     },
     'POST /admin/signout': (request, response, form) => {
       const me = adminOnly(request, response);

@@ -298,6 +298,7 @@ try {
     const adminMessagePage = await adminMessage.text();
     assert.match(adminMessagePage, /Message saved for 1 account/);
     assert.match(adminMessagePage, /<h3>Admin test<\/h3>/, 'an admin can message another admin, including themselves');
+    assert.equal(store.db.prepare('SELECT read_at FROM messages WHERE title = ?').get('Admin test').read_at, null, 'a message sent from admin stays unread until the recipient interface displays it');
     assert.match(adminMessagePage, /href="https:\/\/example\.com\/test\?ok=1&amp;ready=2"/, 'message URLs are clickable in the admin interface');
     const usersBeforeBroadcast = store.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
     const broadcast = await post('/admin/message', {
