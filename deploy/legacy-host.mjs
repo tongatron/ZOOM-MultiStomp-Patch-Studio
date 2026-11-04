@@ -8,6 +8,8 @@
 // never overwrites what the new address already holds: patches are merged with the same rules as the sync.
 // The tunnel has to pass on the Host header it received (cloudflared does by default): that is how the old address is told apart.
 
+import { PEDAL_IDS } from './pedals.mjs';
+
 const NO_STORE = { 'Cache-Control': 'no-store' };
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -80,7 +82,7 @@ function receiverPage(origins) {
 <script>
 (() => {
   const FROM = ${JSON.stringify(origins)};
-  const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
+  const PEDALS = ${JSON.stringify(PEDAL_IDS)};
   const DOCS = ['advice', 'view', 'builder', 'rulepacks', 'usb-backups', 'usb-last-read', 'pedal-edit'];
   const from = (() => { try { return new URL(document.referrer).origin; } catch { return ''; } })();
   if (!FROM.includes(from)) return;

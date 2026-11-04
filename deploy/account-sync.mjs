@@ -1,10 +1,9 @@
 // Account sync: POST /api/account/sync/<pedal> with { patches, deleted, docs } merges the browser's data with the
 // copy kept in the signed-in user's account and returns the merged state (site/account.js stores it back).
-// Patches use the same merge rules as the anonymous sync (site/library-merge.js); docs are the other stored data.
+// Patches and docs (the other stored data) use the merge rules of site/library-merge.js.
 
 // The browser keys `${pedal}-${kind}` kept in an account, with their maximum size in characters
 export const DOC_LIMITS = { advice: 4_000, view: 100, builder: 20_000, rulepacks: 200_000, 'usb-backups': 200_000 };
-export const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
 const isoDate = value => typeof value === 'string' && value.length <= 40 && Number.isFinite(Date.parse(value));
 
 export function cleanDocs(docs) {

@@ -1,5 +1,6 @@
 // Pages of the user console (/admin), for administrators only. Rendered by the server like the sign-in pages.
 import { esc, messageHtml, page } from './pages.mjs';
+import { PEDALS } from './pedals.mjs';
 
 const date = value => (value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const dateTime = value => (value ? new Date(value).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
@@ -95,14 +96,14 @@ const confirmDelete = user => {
   const popoverId = `delete-confirm-${user.id}`;
   return `<button class="btn btn-sm btn-danger" type="button" popovertarget="${esc(popoverId)}">Delete</button>
     <div id="${esc(popoverId)}" class="admin-delete-popover" popover="auto">
-      <p>Delete the account of <b>${esc(user.email)}</b> and everything kept in it (${user.ms60b + user.ms50g + user.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
+      <p>Delete the account of <b>${esc(user.email)}</b> and everything kept in it (${PEDALS.reduce((sum, { id }) => sum + user[id], 0)} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
       <div class="acts"><button class="btn" type="button" popovertarget="${esc(popoverId)}" popovertargetaction="hide">Cancel</button>
         <form method="post" action="/admin/delete"><input type="hidden" name="id" value="${esc(user.id)}"><button class="btn btn-danger" type="submit">Delete the account</button></form>
       </div>
     </div>`;
 };
 
-const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
+const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ...PEDALS.map(({ id, name }) => [id, name]), ['change', 'Last change']];
 
 export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {}, changelog = {}, changelogEntries = [] }) {
   const sizeParam = pageSize === 0 ? 'all' : String(pageSize);
@@ -122,7 +123,7 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
   const rows = users.map(u => `<tr>
     <td data-label="Email"><a href="/admin/user/${esc(u.id)}">${esc(u.email)}</a> ${u.role === 'admin' ? '<span class="tag admin-role">admin</span>' : ''} ${u.email_verified_at ? '' : '<span class="tag" title="Email not confirmed">unconfirmed</span>'}</td>
     <td data-label="Name">${esc(u.name) || '<span class="muted">—</span>'}</td><td data-label="Signed up">${date(u.created_at)}</td>
-    <td data-label="MS-60B+">${u.ms60b}</td><td data-label="MS-50G+">${u.ms50g}</td><td data-label="MS-70CDR+">${u.ms70cdr}</td><td data-label="Last change">${dateTime(u.last_change)}</td>
+    ${PEDALS.map(({ id, name }) => `<td data-label="${name}">${u[id]}</td>`).join('')}<td data-label="Last change">${dateTime(u.last_change)}</td>
     <td data-label="Actions">${u.id === me.id ? '<span class="muted">you</span>' : `<div class="acts">
       ${act('reset', u.id, 'Send reset link')}
       ${confirmDelete(u)}</div>`}</td></tr>`).join('');
@@ -206,8 +207,7 @@ ${inboxSection}
 }
 
 export function adminUserPage({ user, pedals }) {
-  const names = { ms60b: 'MS-60B+', ms50g: 'MS-50G+', ms70cdr: 'MS-70CDR+' };
-  const sections = Object.entries(names).map(([pedal, label]) => {
+  const sections = PEDALS.map(({ id: pedal, name: label }) => {
     const list = pedals[pedal] || [];
     return `<section class="auth-card"><h2>${label} patches (${list.length})</h2>${list.length ? `<div class="admin-table"><table><thead><tr><th>Name</th><th>Effects</th><th>Last change</th></tr></thead><tbody>
       ${list.map(p => `<tr><td>${esc(p.name) || '<span class="muted">(no name)</span>'}</td><td>${p.effects?.length ?? 0}</td><td>${dateTime(p.updatedAt)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">None.</p>'}</section>`;

@@ -1,6 +1,8 @@
 // Sign-in pages, rendered by the server: plain HTML forms (they work with password managers and without scripts),
 // styled with the site's own styles.css and theme.css.
 
+import { PEDALS } from './pedals.mjs';
+
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const nextQuery = next => (next && next !== '/' ? `?next=${encodeURIComponent(next)}` : '');
 const MESSAGE_URL_RE = /https?:\/\/[^\s<>"']+/gi;
@@ -218,7 +220,7 @@ export const accountPage = ({ user, counts = {}, messages = [], done = '', error
 <div class="auth-card">
   <p><b>${esc(user.email)}</b>${user.name ? `<br>${esc(user.name)}` : ''}<br>
   <span class="hint">Member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
-  <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}, ${counts.ms70cdr || 0} MS-70CDR+ ${counts.ms70cdr === 1 ? 'patch' : 'patches'}.</p>
+  <p>Saved in your account: ${PEDALS.map(({ id, name }) => `${counts[id] || 0} ${name} ${counts[id] === 1 ? 'patch' : 'patches'}`).join(', ')}.</p>
 </div>
 ${messages.length ? `<section class="auth-card account-section account-messages"><h2>Messages</h2>${messageCards(messages)}</section>` : ''}
 <form class="auth-card account-section" method="post" action="/account/password">

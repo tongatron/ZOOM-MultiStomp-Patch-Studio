@@ -13,9 +13,10 @@ import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAccounts } from './accounts.mjs';
-import { PEDALS, cleanDocs, createAccountSync } from './account-sync.mjs';
+import { cleanDocs, createAccountSync } from './account-sync.mjs';
 import { crossSite } from './auth.mjs';
 import { createLegacyHost } from './legacy-host.mjs';
+import { PEDAL_IDS } from './pedals.mjs';
 import { LEGACY_ORIGINS, SITE_URL } from './site-url.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -134,7 +135,7 @@ const server = createServer(async (request, response) => {
     if (await accounts.handle(request, response, url)) return;
     const accountRoute = pathname.match(/^\/api\/account\/sync\/([a-z0-9]{1,12})$/);
     if (accountRoute) {
-      if (!PEDALS.includes(accountRoute[1])) return sendJson(response, 404, { error: 'not found' });
+      if (!PEDAL_IDS.includes(accountRoute[1])) return sendJson(response, 404, { error: 'not found' });
       if (request.method !== 'POST') return sendJson(response, 405, { error: 'use POST' });
       if (crossSite(request.headers)) return sendJson(response, 403, { error: 'request from another site' });
       if (!String(request.headers['content-type'] || '').startsWith('application/json')) return sendJson(response, 415, { error: 'use JSON' });

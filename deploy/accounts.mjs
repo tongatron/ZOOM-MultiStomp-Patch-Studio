@@ -13,6 +13,7 @@ import {
 } from './auth.mjs';
 import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
+import { PEDALS } from './pedals.mjs';
 import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
 import { SITE_URL } from './site-url.mjs';
 import { accountPage, changeLogPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
@@ -112,19 +113,19 @@ export function createAccounts({ dataDir }) {
   }
 
   // ---- user console (admins only) --------------------------------------------------------------
-  const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', ms70cdr: 'ms70cdr', change: 'last_change' };
+  const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ...Object.fromEntries(PEDALS.map(({ id }) => [id, id])), change: 'last_change' };
   const PAGE_SIZES = [25, 50, 100];
   const pageSizeOf = value => value === 'all' ? 0 : PAGE_SIZES.includes(Number(value)) ? Number(value) : 25;
   const pageOf = value => Math.max(1, Math.floor(Number(value)) || 1);
   const countOf = pedal => `(SELECT COUNT(*) FROM patches p WHERE p.user_id = u.id AND p.pedal = '${pedal}' AND p.deleted_at IS NULL)`;
-  const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g, ${countOf('ms70cdr')} AS ms70cdr,
+  const USERS_SQL = `SELECT u.*, ${PEDALS.map(({ id }) => `${countOf(id)} AS ${id}`).join(', ')},
     MAX(COALESCE((SELECT MAX(updated_at) FROM patches WHERE user_id = u.id), ''), COALESCE((SELECT MAX(updated_at) FROM docs WHERE user_id = u.id), '')) AS last_change
     FROM users u WHERE (u.email LIKE :q ESCAPE '\\' OR u.name LIKE :q ESCAPE '\\')`;
   const xml = value => String(value ?? '').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]);
   const usersXlsx = users => {
     const rows = [
-      ['Email', 'Name', 'Role', 'Email confirmed', 'Signed up', 'Last sign-in', 'MS-60B+', 'MS-50G+', 'MS-70CDR+', 'Last change'],
-      ...users.map(u => [u.email, u.name || '', u.role, u.email_verified_at ? 'Yes' : 'No', u.created_at || '', u.last_login || '', u.ms60b, u.ms50g, u.ms70cdr, u.last_change || ''])
+      ['Email', 'Name', 'Role', 'Email confirmed', 'Signed up', 'Last sign-in', ...PEDALS.map(({ name }) => name), 'Last change'],
+      ...users.map(u => [u.email, u.name || '', u.role, u.email_verified_at ? 'Yes' : 'No', u.created_at || '', u.last_login || '', ...PEDALS.map(({ id }) => u[id]), u.last_change || ''])
     ];
     const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((row, i) => `<row r="${i + 1}">${row.map((value, j) => `<c r="${String.fromCharCode(65 + j)}${i + 1}" t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`).join('')}</row>`).join('')}</sheetData></worksheet>`;
     const files = [
