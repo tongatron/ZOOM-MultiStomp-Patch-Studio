@@ -126,8 +126,9 @@ const ACCOUNT = (() => {
       messageDialog.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title">New messages</h2></div>
         <div class="Overlay-body">
           ${messages.map(message => `<article class="account-message-card">
-            <div class="account-message-card-head"><h3>${esc(message.title)}</h3><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
-            <div class="account-message-card-body">${messageBody(message.objects)}</div>
+            <div class="account-message-card-date"><span class="account-message-card-label">Date</span><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
+            <div class="account-message-card-title"><span class="account-message-card-label">Title</span><h3>${esc(message.title)}</h3></div>
+            <div class="account-message-card-object"><span class="account-message-card-label">Object</span><div class="account-message-card-body">${messageBody(message.objects)}</div></div>
           </article>`).join('')}
           <div class="account-actions"><button class="btn btn-primary" type="button">Close</button></div>
         </div>`;
