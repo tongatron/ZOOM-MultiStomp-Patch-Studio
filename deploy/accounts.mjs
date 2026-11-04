@@ -15,7 +15,7 @@ import { adminPage, adminUserPage } from './admin-pages.mjs';
 import { openDb } from './db.mjs';
 import { mailConfig, mailHtml, sendMail, sendTelegram } from './mail.mjs';
 import { SITE_URL } from './site-url.mjs';
-import { accountPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
+import { accountPage, changeLogPage, forgotPage, loginPage, logoutPage, messagePage, registerPage, resetPage } from './pages.mjs';
 
 const RESET_TTL = 3600; // seconds
 const VERIFY_TTL = 24 * 3600;
@@ -269,6 +269,23 @@ export function createAccounts({ dataDir }) {
       logAdmin(me, action, recipient === 'all' ? null : targets[0]);
       showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.`, keepInboxUnread: true });
     },
+    'POST /admin/changelog': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const date = String(form.date || '');
+      const rawTitle = String(form.title || '');
+      const rawObjects = String(form.objects || '');
+      const title = cleanMessageText(rawTitle, MAX_MESSAGE_TITLE);
+      const objects = cleanMessageText(rawObjects, MAX_MESSAGE_OBJECTS);
+      const changelog = { date, title, objects };
+      const fail = error => showAdmin(response, me, { status: 400, changelog: { ...changelog, error } });
+      if (!validMessageDate(date)) return fail('Choose a valid date.');
+      if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
+      if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
+      store.addChangelog({ id: newUserId(), createdBy: me.id, date, title, objects });
+      logAdmin(me, `change log: ${title}`, null);
+      showAdmin(response, me, { note: `Change-log entry saved: ${title}. It was not sent as a message.` });
+    },
     'POST /admin/signout': (request, response, form) => {
       const me = adminOnly(request, response);
       const target = me && adminTarget(response, me, form.id);
@@ -404,6 +421,29 @@ export function createAccounts({ dataDir }) {
       const session = current(request);
       if (!session) return redirect(response, '/login?next=/account');
       html(response, 200, accountPage({ user: session.user, counts: patchCounts(session.user.id), messages: takeMessages(session.user.id), done: url.searchParams.get('done') || '', minPassword: MIN_PASSWORD }));
+    },
+    'GET /change-log': (request, response) => {
+      const session = current(request);
+      if (!session) return redirect(response, '/login?next=/change-log');
+      const timeline = [
+        ...store.allMessages(session.user.id).map(message => ({
+          id: message.id,
+          type: 'Message',
+          date: message.message_date,
+          title: message.title,
+          objects: message.objects,
+          created_at: message.created_at
+        })),
+        ...store.allChangelog().map(entry => ({
+          id: entry.id,
+          type: 'Change log',
+          date: entry.entry_date,
+          title: entry.title,
+          objects: entry.objects,
+          created_at: entry.created_at
+        }))
+      ].sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
+      html(response, 200, changeLogPage({ timeline }));
     },
     'POST /account/password': async (request, response, form) => {
       const session = current(request);

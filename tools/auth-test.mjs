@@ -275,6 +275,8 @@ try {
     assert.match(page, /name="date" type="date"/, 'the message form has a date');
     assert.match(page, /name="title" type="text"/, 'the message form has a title');
     assert.match(page, /name="objects"/, 'the message form has objects');
+    assert.match(page, /href="\/change-log"[^>]*>Change log<\/a>/, 'admin can open the change log');
+    assert.match(page, /action="\/admin\/changelog"/, 'admin can add a change-log entry');
     assert.doesNotMatch(page, /<h2>Service<\/h2>|test email/i, 'the Service section is gone');
     assert.equal((await post('/admin/test-mail', {}, { cookie: admin })).status, 405, 'and so is its test email route');
     assert.match(page, /<!--email_off-->[\s\S]*new3@example\.com[\s\S]*<!--\/email_off-->/, 'the emails are marked so that Cloudflare does not hide them');
@@ -315,6 +317,14 @@ try {
     assert.deepEqual(await readMessages(new3Session), { ok: true }, 'the client acknowledges after showing the message');
     assert.deepEqual((await me(new3Session)).messages, [], 'the message is marked read after delivery');
     assert.equal((await post('/admin/message', { recipient: idOf('new3@example.com'), date: 'bad', title: 'x', objects: 'y' }, { cookie: admin })).status, 400);
+    const changelogSave = await post('/admin/changelog', { date: '2026-11-04', title: 'Studio release', objects: 'The new studio change log is available.' }, { cookie: admin });
+    assert.equal(changelogSave.status, 200);
+    assert.match(await changelogSave.text(), /Change-log entry saved: Studio release/);
+    const changelogPage = await (await get('/change-log', { cookie: new3Session })).text();
+    assert.match(changelogPage, /<title>Change log/);
+    assert.match(changelogPage, /Studio release/);
+    assert.match(changelogPage, /Broadcast test/, 'the change log includes all messages sent to the account');
+    assert.equal((await get('/change-log')).headers.get('location'), '/login?next=/change-log');
     await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
     assert.match(await (await post('/admin/reset', { id: idOf('new1@example.com') }, { cookie: admin })).text(), /A new-password link was sent to new1@example\.com/);

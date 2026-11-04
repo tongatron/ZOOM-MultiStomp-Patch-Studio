@@ -78,7 +78,7 @@ const STYLE = `<style>
   }
 </style>`;
 
-const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a></nav>`;
+const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a><a class="btn btn-sm" href="/change-log">Change log</a></nav>`;
 const act = (action, id, label, extra = '') => `<form method="post" action="/admin/${action}"><input type="hidden" name="id" value="${esc(id)}">${extra}<button class="btn btn-sm" type="submit">${esc(label)}</button></form>`;
 const confirmDelete = user => {
   const popoverId = `delete-confirm-${user.id}`;
@@ -93,7 +93,7 @@ const confirmDelete = user => {
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
-export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {} }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {}, changelog = {} }) {
   const sizeParam = pageSize === 0 ? 'all' : String(pageSize);
   const navigationParams = (targetPage, extra = {}) => new URLSearchParams({ ...(query ? { q: query } : {}), sort, dir, size: sizeParam, page: String(targetPage), ...extra });
   const sortLink = key => {
@@ -116,6 +116,7 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
       ${act('reset', u.id, 'Send reset link')}
       ${confirmDelete(u)}</div>`}</td></tr>`).join('');
   const messageDate = message.date || new Date().toISOString().slice(0, 10);
+  const changelogDate = changelog.date || messageDate;
   const recipientOptions = recipients.map(u => `<option value="${esc(u.id)}"${message.recipient === u.id ? ' selected' : ''}>${esc(u.email)}${u.name ? ` — ${esc(u.name)}` : ''}${u.role === 'admin' ? ' (admin)' : ''}</option>`).join('');
   const inboxSection = inbox.length ? `<section class="auth-card admin-inbox"><h2>New messages</h2>${inbox.map(m => `<article class="account-message">
     <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(date(m.message_date))}</time></div>
@@ -156,6 +157,19 @@ ${inboxSection}
     <textarea id="message-objects" name="objects" maxlength="10000" required>${esc(message.objects || '')}</textarea>
     <span class="hint">The message appears in the recipient's interface on the next access. Paste complete http:// or https:// links to make them clickable.</span>
     <button class="btn btn-primary" type="submit">Send message</button>
+  </form>
+</section>
+<section class="auth-card admin-message"><h2>Add to change log</h2>
+  <p>Add a public studio change-log entry without sending a message to users.</p>
+  ${changelog.error ? `<div class="auth-error" role="alert">${esc(changelog.error)}</div>` : ''}
+  <form method="post" action="/admin/changelog">
+    <label for="changelog-date">Date</label>
+    <input id="changelog-date" name="date" type="date" value="${esc(changelogDate)}" required>
+    <label for="changelog-title">Title</label>
+    <input id="changelog-title" name="title" type="text" maxlength="160" value="${esc(changelog.title || '')}" required>
+    <label for="changelog-objects">Objects</label>
+    <textarea id="changelog-objects" name="objects" maxlength="10000" required>${esc(changelog.objects || '')}</textarea>
+    <button class="btn btn-primary" type="submit">Add change-log entry</button>
   </form>
 </section></main>`);
 }

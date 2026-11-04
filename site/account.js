@@ -122,16 +122,17 @@ const ACCOUNT = (() => {
     const messageDate = value => value ? new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
     function showMessages(messages) {
       if (!messages.length || messageDialog) return;
+      const latest = messages[0];
       messageDialog = document.createElement('dialog');
       messageDialog.className = 'Overlay account-dialog account-message-dialog';
       messageDialog.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title">New messages</h2></div>
         <div class="Overlay-body">
-          ${messages.map(message => `<article class="account-message-card">
+          ${[latest].map(message => `<article class="account-message-card">
             <div class="account-message-card-date"><span class="account-message-card-label">Date</span><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
             <div class="account-message-card-title"><span class="account-message-card-label">Title</span><h3>${esc(message.title)}</h3></div>
             <div class="account-message-card-object"><span class="account-message-card-label">Object</span><div class="account-message-card-body">${messageBody(message.objects)}</div></div>
           </article>`).join('')}
-          <div class="account-actions"><button class="btn btn-primary" type="button">Close</button></div>
+          <div class="account-actions"><a class="btn" href="/change-log">Change log</a><button class="btn btn-primary" type="button">Close</button></div>
         </div>`;
       messageDialog.addEventListener('click', event => { if (event.target.closest('button')) messageDialog.close(); });
       messageDialog.addEventListener('close', () => { messageDialog.remove(); messageDialog = null; });
@@ -325,6 +326,7 @@ const ACCOUNT = (() => {
             <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
             <div class="account-state" role="status">${esc(state)}</div>
             ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
+            <a class="account-item" href="/change-log">Change log</a>
             ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
             <button class="account-item" type="button" data-action="signout">Sign out</button>
           </div>`

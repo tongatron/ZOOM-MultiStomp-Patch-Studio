@@ -45,7 +45,16 @@ const MIGRATIONS = [
      created_at TEXT NOT NULL,
      read_at TEXT
    );
-   CREATE INDEX messages_recipient ON messages (recipient_id, read_at, created_at);`
+   CREATE INDEX messages_recipient ON messages (recipient_id, read_at, created_at);`,
+  `CREATE TABLE changelog (
+     id TEXT PRIMARY KEY,
+     created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+     entry_date TEXT NOT NULL,
+     title TEXT NOT NULL,
+     objects TEXT NOT NULL,
+     created_at TEXT NOT NULL
+   );
+   CREATE INDEX changelog_date ON changelog (entry_date, created_at);`
 ];
 
 export function openDb(file) {
@@ -85,7 +94,16 @@ function accounts(db) {
                        FROM messages m LEFT JOIN users s ON s.id = m.sender_id
                        WHERE m.recipient_id = ? AND m.read_at IS NULL
                        ORDER BY m.message_date DESC, m.created_at DESC`),
+    allMessages: q(`SELECT m.*, s.email AS sender_email, s.name AS sender_name
+                    FROM messages m LEFT JOIN users s ON s.id = m.sender_id
+                    WHERE m.recipient_id = ?
+                    ORDER BY m.message_date DESC, m.created_at DESC`),
     markMessagesRead: q('UPDATE messages SET read_at = ? WHERE recipient_id = ? AND read_at IS NULL'),
+    addChangelog: q(`INSERT INTO changelog (id, created_by, entry_date, title, objects, created_at)
+                     VALUES (:id, :created_by, :entry_date, :title, :objects, :created_at)`),
+    allChangelog: q(`SELECT c.*, u.email AS creator_email, u.name AS creator_name
+                     FROM changelog c LEFT JOIN users u ON u.id = c.created_by
+                     ORDER BY c.entry_date DESC, c.created_at DESC`),
     addToken: q('INSERT INTO tokens (hash, user_id, purpose, expires_at) VALUES (?, ?, ?, ?)'),
     findToken: q('SELECT * FROM tokens WHERE hash = ? AND purpose = ? AND used_at IS NULL AND expires_at > ?'),
     useToken: q('UPDATE tokens SET used_at = ? WHERE hash = ?'),
@@ -112,7 +130,10 @@ function accounts(db) {
     markVerified: id => s.verified.run(now(), id),
     addMessage: ({ id, senderId, recipientId, date, title, objects, createdAt = now() }) => s.addMessage.run({ id, sender_id: senderId, recipient_id: recipientId, message_date: date, title, objects, created_at: createdAt }),
     unreadMessages: userId => s.unreadMessages.all(userId),
+    allMessages: userId => s.allMessages.all(userId),
     markMessagesRead: userId => s.markMessagesRead.run(now(), userId),
+    addChangelog: ({ id, createdBy, date, title, objects, createdAt = now() }) => s.addChangelog.run({ id, created_by: createdBy, entry_date: date, title, objects, created_at: createdAt }),
+    allChangelog: () => s.allChangelog.all(),
     addToken: (hash, userId, purpose, ttlSeconds, at = Date.now()) => s.addToken.run(hash, userId, purpose, at + ttlSeconds * 1000),
     // The token's user, or null if the token is unknown, used or expired. `consume` marks it used.
     tokenUser: (hash, purpose, consume = false) => {
