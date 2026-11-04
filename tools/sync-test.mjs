@@ -98,7 +98,7 @@ try {
   };
   const signUp = async email => {
     const response = await fetch(`${base}/register`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'CF-Connecting-IP': email },
-      body: new URLSearchParams({ email, password: 'long enough password' }) });
+      body: new URLSearchParams({ email, password: 'long enough password', passwordConfirm: 'long enough password' }) });
     return response.headers.get('set-cookie').split(';')[0];
   };
   // A browser of a signed-in user: its own storage, requests sent with the session cookie

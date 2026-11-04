@@ -71,14 +71,12 @@ export function createAccounts({ dataDir }) {
     return Object.fromEntries(new URLSearchParams(Buffer.concat(chunks).toString('utf8')));
   }
 
-  function welcome(user, token) {
-    const url = `${siteUrl}/verify?token=${token}`;
+  function welcome(user) {
     const hello = user.name ? `Hi ${user.name}, welcome` : 'Welcome';
     sendMail(user.email, 'Welcome to ZOOM MultiStomp Studio',
-      `${hello} to ZOOM MultiStomp Studio!\n\nYour account is ready: your patches are now kept in your account.\n\n` +
-      `Confirm your email address (optional, link valid for 24 hours):\n${url}\n\nSite: ${siteUrl}/\n`,
-      mailHtml({ title: `${hello}!`, intro: 'Your account is ready: your patches are now kept in your account. Please confirm your email address, so you can always reset your password.',
-        button: 'Confirm your email', url, outro: "If you didn't create this account, ignore this email." }));
+      `${hello} to ZOOM MultiStomp Studio!\n\nYour account is ready and your patches can be kept on every device.\n\nOpen the studio: ${siteUrl}/\n`,
+      mailHtml({ title: `${hello}!`, intro: 'Your account is ready: open the studio to build patches and keep them in your account.',
+        button: 'Open the studio', url: `${siteUrl}/`, outro: "If you didn't create this account, ignore this email." }));
   }
 
   function resetMail(user, token) {
@@ -114,10 +112,53 @@ export function createAccounts({ dataDir }) {
 
   // ---- user console (admins only) --------------------------------------------------------------
   const SORTS = { email: 'u.email', name: 'u.name', created: 'u.created_at', login: 'u.last_login', ms60b: 'ms60b', ms50g: 'ms50g', ms70cdr: 'ms70cdr', change: 'last_change' };
+  const PAGE_SIZES = [25, 50, 100];
+  const pageSizeOf = value => value === 'all' ? 0 : PAGE_SIZES.includes(Number(value)) ? Number(value) : 25;
+  const pageOf = value => Math.max(1, Math.floor(Number(value)) || 1);
   const countOf = pedal => `(SELECT COUNT(*) FROM patches p WHERE p.user_id = u.id AND p.pedal = '${pedal}' AND p.deleted_at IS NULL)`;
   const USERS_SQL = `SELECT u.*, ${countOf('ms60b')} AS ms60b, ${countOf('ms50g')} AS ms50g, ${countOf('ms70cdr')} AS ms70cdr,
     MAX(COALESCE((SELECT MAX(updated_at) FROM patches WHERE user_id = u.id), ''), COALESCE((SELECT MAX(updated_at) FROM docs WHERE user_id = u.id), '')) AS last_change
     FROM users u WHERE (u.email LIKE :q ESCAPE '\\' OR u.name LIKE :q ESCAPE '\\')`;
+  const xml = value => String(value ?? '').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]);
+  const usersXlsx = users => {
+    const rows = [
+      ['Email', 'Name', 'Role', 'Email confirmed', 'Signed up', 'Last sign-in', 'MS-60B+', 'MS-50G+', 'MS-70CDR+', 'Last change'],
+      ...users.map(u => [u.email, u.name || '', u.role, u.email_verified_at ? 'Yes' : 'No', u.created_at || '', u.last_login || '', u.ms60b, u.ms50g, u.ms70cdr, u.last_change || ''])
+    ];
+    const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((row, i) => `<row r="${i + 1}">${row.map((value, j) => `<c r="${String.fromCharCode(65 + j)}${i + 1}" t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`).join('')}</row>`).join('')}</sheetData></worksheet>`;
+    const files = [
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Users" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],
+      ['xl/worksheets/sheet1.xml', sheet]
+    ];
+    const table = Uint32Array.from({ length: 256 }, (_, n) => { let c = n; for (let i = 0; i < 8; i++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+    const crc32 = data => { let crc = 0xffffffff; for (const byte of data) crc = table[(crc ^ byte) & 255] ^ (crc >>> 8); return (crc ^ 0xffffffff) >>> 0; };
+    const local = [], central = [];
+    let offset = 0;
+    for (const [name, text] of files) {
+      const filename = Buffer.from(name);
+      const data = Buffer.from(text);
+      const crc = crc32(data);
+      const header = Buffer.alloc(30 + filename.length);
+      header.writeUInt32LE(0x04034b50, 0); header.writeUInt16LE(20, 4); header.writeUInt16LE(0, 6); header.writeUInt16LE(0, 8);
+      header.writeUInt16LE(0, 10); header.writeUInt16LE(0, 12); header.writeUInt32LE(crc, 14); header.writeUInt32LE(data.length, 18); header.writeUInt32LE(data.length, 22);
+      header.writeUInt16LE(filename.length, 26); header.writeUInt16LE(0, 28); filename.copy(header, 30);
+      local.push(header, data);
+      const directory = Buffer.alloc(46 + filename.length);
+      directory.writeUInt32LE(0x02014b50, 0); directory.writeUInt16LE(20, 4); directory.writeUInt16LE(20, 6); directory.writeUInt16LE(0, 8); directory.writeUInt16LE(0, 10);
+      directory.writeUInt16LE(0, 12); directory.writeUInt16LE(0, 14); directory.writeUInt32LE(crc, 16); directory.writeUInt32LE(data.length, 20); directory.writeUInt32LE(data.length, 24);
+      directory.writeUInt16LE(filename.length, 28); directory.writeUInt16LE(0, 30); directory.writeUInt16LE(0, 32); directory.writeUInt16LE(0, 34); directory.writeUInt16LE(0, 36); directory.writeUInt32LE(0, 38); directory.writeUInt32LE(offset, 42); filename.copy(directory, 46);
+      central.push(directory);
+      offset += header.length + data.length;
+    }
+    const centralData = Buffer.concat(central);
+    const end = Buffer.alloc(22);
+    end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(0, 4); end.writeUInt16LE(0, 6); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
+    end.writeUInt32LE(centralData.length, 12); end.writeUInt32LE(offset, 16); end.writeUInt16LE(0, 20);
+    return Buffer.concat([...local, centralData, end]);
+  };
   const logAdmin = (admin, action, target) => store.db.prepare('INSERT INTO admin_log (at, admin_id, action, target_id) VALUES (?, ?, ?, ?)')
     .run(new Date().toISOString(), admin.id, action, target?.id ?? null);
 
@@ -128,16 +169,21 @@ export function createAccounts({ dataDir }) {
     return session.user;
   }
 
-  function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', ...rest } = {}) {
+  function showAdmin(response, me, { status = 200, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, ...rest } = {}) {
     if (!SORTS[sort]) sort = 'created';
     dir = dir === 'asc' ? 'asc' : 'desc';
+    pageSize = pageSizeOf(pageSize);
+    pageNumber = pageOf(pageNumber);
     const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
-    const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT 500`).all({ q: like });
+    const totalUsers = store.db.prepare(`SELECT COUNT(*) AS n FROM (${USERS_SQL}) AS filtered`).get({ q: like }).n;
+    const pageCount = pageSize ? Math.max(1, Math.ceil(totalUsers / pageSize)) : 1;
+    pageNumber = Math.min(pageNumber, pageCount);
+    const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email LIMIT :limit OFFSET :offset`).all({ q: like, limit: pageSize || -1, offset: pageSize ? (pageNumber - 1) * pageSize : 0 });
     const recipients = store.db.prepare('SELECT id, email, name, role FROM users ORDER BY email LIMIT 1000').all();
     const inbox = takeMessages(me.id);
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
-    html(response, status, adminPage({ me, users, recipients, query, sort, dir, log, inbox, ...rest }));
+    html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, ...rest }));
   }
 
   const cleanMessageText = (value, max) => String(value || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim().slice(0, max);
@@ -162,7 +208,20 @@ export function createAccounts({ dataDir }) {
       const p = url.searchParams;
       const confirmId = p.get('delete');
       const confirm = confirmId && confirmId !== me.id ? store.db.prepare(`${USERS_SQL} AND u.id = :id`).get({ q: '%', id: confirmId }) : null;
-      showAdmin(response, me, { query: (p.get('q') || '').slice(0, 100), sort: p.get('sort') || 'created', dir: p.get('dir') || 'desc', confirm });
+      showAdmin(response, me, { query: (p.get('q') || '').slice(0, 100), sort: p.get('sort') || 'created', dir: p.get('dir') || 'desc', pageNumber: p.get('page') || 1, pageSize: p.get('size') || 25, confirm });
+    },
+    'GET /admin/users.xlsx': (request, response, url) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const p = url.searchParams;
+      const query = (p.get('q') || '').slice(0, 100);
+      const sort = SORTS[p.get('sort')] ? p.get('sort') : 'created';
+      const dir = p.get('dir') === 'asc' ? 'asc' : 'desc';
+      const like = `%${query.replace(/[\\%_]/g, c => `\\${c}`)}%`;
+      const users = store.db.prepare(`${USERS_SQL} ORDER BY ${SORTS[sort]} ${dir}, u.email`).all({ q: like });
+      logAdmin(me, 'download users xlsx', null);
+      response.writeHead(200, { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'attachment; filename="zoom-multistomp-users.xlsx"' });
+      response.end(usersXlsx(users));
     },
     'GET /admin/user': (request, response, url) => {
       const me = adminOnly(request, response, url.pathname);
@@ -274,20 +333,20 @@ export function createAccounts({ dataDir }) {
       const name = cleanName(form.name);
       const next = safeNext(form.next);
       const password = String(form.password || '');
+      const passwordConfirm = String(form.passwordConfirm || '');
       const again = (status, error) => html(response, status, registerPage({ error, email, name, next, minPassword: MIN_PASSWORD }));
       if (limits.tooMany('register', ip)) return again(429, 'Too many sign-ups from this network. Try again in a few minutes.');
       if (!EMAIL_RE.test(email)) return again(400, 'Enter a valid email address.');
       const problem = passwordProblem(password);
       if (problem) return again(400, problem);
+      if (password !== passwordConfirm) return again(400, 'The passwords do not match.');
       const taken = 'An account with this email address already exists: sign in, or reset your password if you forgot it.';
       if (store.userByEmail(email)) return again(409, taken);
       let user;
       try { user = store.createUser({ id: newUserId(), email, name, hashed: await hashPassword(password) }); }
       catch (error) { if (String(error.message).includes('UNIQUE')) return again(409, taken); throw error; }
       limits.note('register', ip);
-      const { token, hash } = newToken();
-      store.addToken(hash, user.id, 'verify', VERIFY_TTL);
-      welcome(user, token);
+      welcome(user);
       sendTelegram(`New user signed up on ZOOM MultiStomp Studio\nEmail: ${user.email}${user.name ? `\nName: ${user.name}` : ''}\nDate: ${user.created_at}`);
       redirect(response, next, { 'Set-Cookie': signIn(request, user) });
     },
@@ -360,18 +419,6 @@ export function createAccounts({ dataDir }) {
       if (problem) return again(400, problem);
       store.setPassword(user.id, await hashPassword(String(form.password)));
       redirect(response, '/account?done=password', { 'Set-Cookie': signIn(request, store.userById(user.id)) });
-    },
-    'POST /account/verify': (request, response) => {
-      const session = current(request);
-      if (!session) return redirect(response, '/login?next=/account');
-      const key = session.user.email.toLowerCase();
-      if (limits.tooMany('forgotEmail', key)) return tooManyPage(response);
-      limits.note('forgotEmail', key);
-      store.dropTokens(session.user.id, 'verify');
-      const { token, hash } = newToken();
-      store.addToken(hash, session.user.id, 'verify', VERIFY_TTL);
-      welcome(session.user, token);
-      redirect(response, '/account?done=verify');
     },
     'POST /account/signout-everywhere': (request, response) => {
       const session = current(request);

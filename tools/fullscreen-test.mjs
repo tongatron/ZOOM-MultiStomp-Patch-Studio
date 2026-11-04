@@ -248,7 +248,7 @@ try {
   });
 
   await test('signed in, the header has the account menu (the initial, then the name and Sign out, no Account entry), and the top bar fits at 800 px', async () => {
-    const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: 'Header Tester', password: 'header password 1' }, maxRedirects: 0 });
+    const made = await page.request.post(`${base}/register`, { form: { email: 'header@example.com', name: 'Header Tester', password: 'header password 1', passwordConfirm: 'header password 1' }, maxRedirects: 0 });
     assert.equal(made.status(), 303);
     for (const file of ['index.html', 'builder.html', 'pedal-manager.html', 'ms-50g/builder.html', 'ms-70cdr/builder.html']) {
       for (const size of [[1280, 680], [800, 700]]) {

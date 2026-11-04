@@ -118,6 +118,8 @@ export const registerPage = ({ error = '', email = '', name = '', next = '/', mi
   <input id="name" name="name" autocomplete="nickname" maxlength="60" value="${esc(name)}">
   <label for="password">Password <span class="hint">(at least ${minPassword} characters)</span></label>
   <input id="password" name="password" type="password" autocomplete="new-password" minlength="${minPassword}" required>
+  <label for="password-confirm">Confirm password</label>
+  <input id="password-confirm" name="passwordConfirm" type="password" autocomplete="new-password" minlength="${minPassword}" required>
   <input type="hidden" name="next" value="${esc(next)}">
   <button class="btn btn-primary" type="submit">Create account</button>
 </form>
@@ -159,16 +161,14 @@ export const logoutPage = (next = '/') => page('Sign out', `<form class="auth-ca
 </form>`);
 
 const ACCOUNT_DONE = {
-  password: 'Your password has been changed. Your other devices are signed out.',
-  verify: 'We sent you a new confirmation link (valid for 24 hours).'
+  password: 'Your password has been changed. Your other devices are signed out.'
 };
 
 export const accountPage = ({ user, counts = {}, messages = [], done = '', error = '', minPassword = 10 }) => page('Your account', `${errorBox(error)}${okBox(ACCOUNT_DONE[done] || '')}
 <div class="auth-card">
   <p><b>${esc(user.email)}</b>${user.name ? `<br>${esc(user.name)}` : ''}<br>
-  <span class="hint">${user.email_verified_at ? 'Email confirmed' : 'Email not confirmed yet'} · member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
+  <span class="hint">Member since ${esc(new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}</span></p>
   <p>Saved in your account: ${counts.ms60b || 0} MS-60B+ ${counts.ms60b === 1 ? 'patch' : 'patches'}, ${counts.ms50g || 0} MS-50G+ ${counts.ms50g === 1 ? 'patch' : 'patches'}, ${counts.ms70cdr || 0} MS-70CDR+ ${counts.ms70cdr === 1 ? 'patch' : 'patches'}.</p>
-  ${user.email_verified_at ? '' : `<form method="post" action="/account/verify"><button class="btn" type="submit">Send the confirmation email again</button></form>`}
 </div>
 ${messages.length ? `<section class="auth-card account-section account-messages"><h2>Messages</h2>${messageCards(messages)}</section>` : ''}
 <form class="auth-card account-section" method="post" action="/account/password">

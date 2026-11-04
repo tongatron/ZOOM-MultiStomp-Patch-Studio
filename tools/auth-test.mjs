@@ -131,15 +131,18 @@ try {
     assert.equal((await fetch(`${base}/login`, { method: 'PUT' })).status, 405);
   });
 
-  await test('sign-up checks the email and the password', async () => {
+  await test('sign-up checks the email and both password fields', async () => {
     assert.equal((await post('/register', { email: 'not-an-email', password: PASSWORD })).status, 400);
     const short = await post('/register', { email: EMAIL, password: 'short' });
     assert.equal(short.status, 400);
     assert.match(await short.text(), /at least 10 characters/);
+    const mismatch = await post('/register', { email: EMAIL, password: PASSWORD, passwordConfirm: 'different password' });
+    assert.equal(mismatch.status, 400);
+    assert.match(await mismatch.text(), /passwords do not match/i);
   });
 
-  await test('sign-up opens a session, sends a welcome email without the password and a Telegram notice', async () => {
-    const response = await post('/register', { email: EMAIL, name: 'Ron', password: PASSWORD, next: '/builder.html' });
+  await test('sign-up opens a session, sends a welcome link without the password and sends a Telegram notice', async () => {
+    const response = await post('/register', { email: EMAIL, name: 'Ron', password: PASSWORD, passwordConfirm: PASSWORD, next: '/builder.html' });
     assert.equal(response.status, 303);
     assert.equal(response.headers.get('location'), '/builder.html');
     assert.match(response.headers.get('set-cookie'), /^zms_session=v2\.[a-f0-9]{32}\.1\.\d+\.[a-f0-9]{64}; Path=\/; HttpOnly; SameSite=Lax; Max-Age=2592000$/);
@@ -148,21 +151,15 @@ try {
     const { raw, text } = await mailNumber(1);
     assert.match(raw, /^To: <Player@Example\.com>/m);
     assert.ok(!text.includes(PASSWORD), 'the password is never emailed');
-    assert.ok(linkToken(text, '/verify'));
+    assert.match(text, /Open the studio: http:\/\/127\.0\.0\.1:\d+\//);
+    assert.doesNotMatch(text, /confirm your email|confirmation link/i);
     const notices = await readdir(telegramDir);
     assert.equal(notices.length, 1);
     assert.match(await readFile(join(telegramDir, notices[0]), 'utf8'), /New user signed up on ZOOM MultiStomp Studio\nEmail: Player@Example\.com\nName: Ron/);
   });
 
   await test('the same email cannot sign up twice, whatever its case', async () => {
-    assert.equal((await post('/register', { email: 'player@example.COM', password: PASSWORD })).status, 409);
-  });
-
-  await test('the confirmation link marks the email as confirmed, once', async () => {
-    const token = linkToken((await mailNumber(1)).text, '/verify');
-    assert.equal((await get(`/verify?token=${token}`)).status, 200);
-    assert.equal((await me(cookie)).verified, true);
-    assert.equal((await get(`/verify?token=${token}`)).status, 400);
+    assert.equal((await post('/register', { email: 'player@example.COM', password: PASSWORD, passwordConfirm: PASSWORD })).status, 409);
   });
 
   await test('sign-in accepts the right password only and never redirects to another site', async () => {
@@ -226,15 +223,15 @@ try {
   });
 
   await test('rate limits: 5 wrong passwords per email, 10 per address, 5 sign-ups per address', async () => {
-    assert.equal((await post('/register', { email: 'locked@example.com', password: PASSWORD })).status, 303);
+    assert.equal((await post('/register', { email: 'locked@example.com', password: PASSWORD, passwordConfirm: PASSWORD })).status, 303);
     for (let i = 0; i < 5; i++) assert.equal((await post('/login', { email: 'locked@example.com', password: `wrong ${i}` })).status, 401);
     assert.equal((await post('/login', { email: 'LOCKED@example.com', password: PASSWORD })).status, 429, 'locked even with the right password');
     const ip = freshIp();
     for (let i = 0; i < 10; i++) assert.equal((await post('/login', { email: `x${i}@example.com`, password: 'wrong' }, { ip })).status, 401);
     assert.equal((await post('/login', { email: 'y@example.com', password: 'wrong' }, { ip })).status, 429);
     const signUpIp = freshIp();
-    for (let i = 0; i < 5; i++) assert.equal((await post('/register', { email: `new${i}@example.com`, password: PASSWORD }, { ip: signUpIp })).status, 303);
-    assert.equal((await post('/register', { email: 'new5@example.com', password: PASSWORD }, { ip: signUpIp })).status, 429);
+    for (let i = 0; i < 5; i++) assert.equal((await post('/register', { email: `new${i}@example.com`, password: PASSWORD, passwordConfirm: PASSWORD }, { ip: signUpIp })).status, 303);
+    assert.equal((await post('/register', { email: 'new5@example.com', password: PASSWORD, passwordConfirm: PASSWORD }, { ip: signUpIp })).status, 429);
   });
 
   await test('add-user.mjs creates an admin from the terminal', async () => {
@@ -270,6 +267,10 @@ try {
     assert.doesNotMatch(page, /Sign out everywhere|Download data|Make admin/, 'the account table exposes only the necessary actions');
     assert.match(page, /new3@example\.com/);
     assert.match(page, /All users \(including admins\)/, 'the message form includes admins in the broadcast');
+    assert.match(page, /name="size"/, 'the users table has a page-size selector');
+    for (const size of ['25 users', '50 users', '100 users', 'All users']) assert.match(page, new RegExp(size), `page size ${size}`);
+    for (const sort of ['email', 'name', 'created', 'ms60b', 'ms50g', 'ms70cdr', 'change']) assert.match(page, new RegExp(`sort=${sort}`), `column ${sort} is sortable`);
+    assert.match(page, /Download users \(\.xlsx\)/, 'the users table has an xlsx export');
     assert.match(page, /name="date" type="date"/, 'the message form has a date');
     assert.match(page, /name="title" type="text"/, 'the message form has a title');
     assert.match(page, /name="objects"/, 'the message form has objects');
@@ -280,6 +281,11 @@ try {
     assert.match(found, /Player@Example\.com/);
     assert.doesNotMatch(found, /<td data-label="Email"><a href="\/admin\/user\/[a-f0-9]{32}">new3@example\.com/);
     assert.match(await (await get('/admin?q=%25', { cookie: admin })).text(), /No accounts match this search/, '% is searched literally');
+    const usersXlsx = await get('/admin/users.xlsx?sort=email&dir=asc', { cookie: admin });
+    assert.equal(usersXlsx.status, 200);
+    assert.equal(usersXlsx.headers.get('content-type'), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    assert.match(usersXlsx.headers.get('content-disposition'), /zoom-multistomp-users\.xlsx/);
+    assert.equal((await usersXlsx.arrayBuffer()).byteLength > 100, true, 'the xlsx export has content');
 
     assert.match(await (await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: admin })).text(), /is now an administrator/);
     assert.equal(store.userByEmail('new2@example.com').role, 'admin');
@@ -331,7 +337,7 @@ try {
   await test('the account page: password change, export, sign out everywhere, delete', async () => {
     assert.equal((await get('/account')).headers.get('location'), '/login?next=/account', 'signed out: sign in first');
     const email = 'page@example.com';
-    let session = sessionOf(await post('/register', { email, password: PASSWORD }));
+    let session = sessionOf(await post('/register', { email, password: PASSWORD, passwordConfirm: PASSWORD }));
     const other = sessionOf(await post('/login', { email, password: PASSWORD }));
     const page = await (await get('/account', { cookie: session })).text();
     assert.match(page, /page@example\.com/);
@@ -409,7 +415,7 @@ try {
     assert.equal(await delivered({ name: ' Bass\nPlayer ', email: 'bass@example.com', message: 'The  chain\r\nlost an effect\x07', page: '/builder.html?x=1', info: 'Zoom MS-60B+ · window 1280×800' }),
       'Problem report from ZOOM MultiStomp Studio\nFrom: Bass Player <bass@example.com> (not signed in)\nPage: /builder.html?x=1\n\nThe  chain\nlost an effect\n\n---\nZoom MS-60B+ · window 1280×800');
 
-    const session = sessionOf(await post('/register', { email: 'reporter@example.com', password: PASSWORD }));
+  const session = sessionOf(await post('/register', { email: 'reporter@example.com', password: PASSWORD, passwordConfirm: PASSWORD }));
     await waitFor(text => /^New user signed up[\s\S]*reporter@example\.com/.test(text)); // the sign-up notice of this account
     assert.equal(await delivered({ message: 'Hello' }, { cookie: session }), 'Problem report from ZOOM MultiStomp Studio\nFrom: (no name) (account reporter@example.com)\n\nHello');
 
