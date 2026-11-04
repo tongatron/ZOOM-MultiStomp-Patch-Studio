@@ -6,7 +6,7 @@ const FEATURES = {
 };
 const FW_SOURCE_URL = PEDAL.fwSourceUrl;
 const KNOBS = 4;
-const SLOTS = 6;
+const SLOTS = PEDAL.maxEffects; // effects in one patch
 
 const slugify = text => text.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => {

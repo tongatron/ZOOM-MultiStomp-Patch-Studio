@@ -1176,7 +1176,7 @@ function askWhereToAdd(fx) {
     <div class="choice-list">
       <button class="choice" data-choice="current" ${full ? 'disabled' : ''}>
         <strong>Add to “${escapeHtml(name)}”</strong>
-        <span>${full ? 'This patch already has 6 effects.' : `Appended as effect ${state.effects.length + 1}. DSP ${pct(totalDsp())} → ${pct(totalDsp() + fx.dsp)}${over ? ' — over the limit' : ''}.`}</span>
+        <span>${full ? `This patch already has ${ZPTC.MAX_EFFECTS} effects.` : `Appended as effect ${state.effects.length + 1}. DSP ${pct(totalDsp())} → ${pct(totalDsp() + fx.dsp)}${over ? ' — over the limit' : ''}.`}</span>
       </button>
       ${dirty && canSave ? `<button class="choice" data-choice="save-new">
         <strong>Save “${escapeHtml(name)}” and start a new patch</strong>

@@ -1,4 +1,4 @@
-// MS-70CDR+ settings for the shared scripts in site/ (see site/pedal.js).
+// MS-70CDR+ settings for the shared scripts in site/ (see site/ms-60b/pedal.js).
 const PEDAL = {
   id: 'ms70cdr',
   name: 'Zoom MS-70CDR+',
