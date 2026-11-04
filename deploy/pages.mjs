@@ -23,15 +23,25 @@ const messageCards = messages => messages.map(m => `<article class="account-mess
   <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(messageDate(m.message_date))}</time></div>
   <div class="account-message-body">${messageHtml(m.objects)}</div>
 </article>`).join('');
-const timelineCards = timeline => timeline.map(entry => `<article class="account-message account-timeline-row">
+const timelineCards = (timeline, isAdmin = false) => timeline.map(entry => `<article class="account-message account-timeline-row">
   <div class="account-timeline-grid">
     <div class="account-timeline-field"><span class="account-timeline-label">Date</span><time datetime="${esc(entry.date)}">${esc(messageDate(entry.date))}</time></div>
     <div class="account-timeline-field"><span class="account-timeline-label">Title</span><h3>${esc(entry.title)}</h3><span class="account-timeline-type">${esc(entry.type)}</span></div>
     <div class="account-timeline-field"><span class="account-timeline-label">Object</span><div class="account-message-body">${messageHtml(entry.objects)}</div></div>
   </div>
+  ${isAdmin ? `<div class="account-timeline-actions"><details class="account-timeline-edit"><summary class="btn btn-sm">Edit</summary><form class="account-timeline-edit-form" method="post" action="/admin/${entry.source === 'message' ? 'message' : 'changelog'}/update">
+    <input type="hidden" name="id" value="${esc(entry.id)}"><input type="hidden" name="returnTo" value="/change-log">
+    ${entry.source === 'message' ? '' : `<label>Type<input name="kind" maxlength="40" value="${esc(entry.type)}" required></label>`}
+    <label>Date<input name="date" type="date" value="${esc(entry.date)}" required></label>
+    <label>Title<input name="title" maxlength="160" value="${esc(entry.title)}" required></label>
+    <label>Object<textarea name="objects" maxlength="10000" required>${esc(entry.objects)}</textarea></label>
+    <button class="btn btn-primary btn-sm" type="submit">Save changes</button>
+  </form></details>
+  <button class="btn btn-sm btn-danger" type="button" popovertarget="timeline-delete-${esc(entry.id)}">Delete</button>
+  <div id="timeline-delete-${esc(entry.id)}" class="account-delete-popover" popover="auto"><p>Delete <b>${esc(entry.title)}</b>? This can't be undone.</p><div class="account-timeline-actions"><button class="btn btn-sm" type="button" popovertarget="timeline-delete-${esc(entry.id)}" popovertargetaction="hide">Cancel</button><form method="post" action="/admin/${entry.source === 'message' ? 'message' : 'changelog'}/delete"><input type="hidden" name="id" value="${esc(entry.id)}"><input type="hidden" name="returnTo" value="/change-log"><button class="btn btn-sm btn-danger" type="submit">Delete</button></form></div></div></div>` : ''}
 </article>`).join('');
 // Release timestamp from the latest commit pushed to GitHub, not the page request time.
-const footerNow = new Date('2026-11-04T01:35:00Z');
+const footerNow = new Date('2026-11-04T01:40:00Z');
 const footerDateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
   day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome', timeZoneName: 'short'
 }).formatToParts(footerNow).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
@@ -95,6 +105,18 @@ export function page(title, body) {
   .account-timeline-label { display: block; margin-bottom: 5px; color: var(--fg-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   .account-timeline-field h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
   .account-timeline-type { color: var(--fg-muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .account-timeline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .account-timeline-actions form { margin: 0; }
+  .account-timeline-edit { display: inline-block; }
+  .account-timeline-edit summary { list-style: none; cursor: pointer; }
+  .account-timeline-edit summary::-webkit-details-marker { display: none; }
+  .account-timeline-edit-form { display: grid; gap: 8px; width: min(520px, calc(100vw - 64px)); margin-top: 8px; padding: 12px; background: var(--bg-inset); border: 1px solid var(--border-muted); border-radius: var(--radius); }
+  .account-timeline-edit-form label { display: grid; gap: 4px; color: var(--fg-muted); font-size: 12px; }
+  .account-timeline-edit-form input, .account-timeline-edit-form textarea { width: 100%; padding: 7px 10px; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); font: inherit; font-size: 13px; }
+  .account-timeline-edit-form textarea { min-height: 90px; resize: vertical; }
+  .account-delete-popover { max-width: min(460px, calc(100vw - 32px)); padding: 16px; color: var(--fg); background: var(--bg-subtle); border: 1px solid var(--border-muted); border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
+  .account-delete-popover::backdrop { background: rgba(0, 0, 0, .55); }
+  .account-delete-popover p { margin: 0 0 16px; line-height: 1.5; }
   .account-message-body { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
   .account-danger { border-color: rgba(248, 81, 73, .4); }
   .btn-danger { color: #f85149; }
@@ -219,8 +241,9 @@ ${messages.length ? `<section class="auth-card account-section account-messages"
 </form>
 <div class="auth-alt"><a href="/">Back to the site</a> · <a href="/privacy.html">Privacy</a></div>`);
 
-export const changeLogPage = ({ timeline = [] } = {}) => page('Change log', `
+export const changeLogPage = ({ timeline = [], isAdmin = false } = {}) => page('Change log', `
 <div class="auth-card change-log-intro"><p>Messages sent to your account and studio updates, in one timeline.</p>
   <a class="btn" href="/ms-60b/">Open the studio</a>
+  ${isAdmin ? '<a class="btn" href="/admin">Admin</a>' : ''}
 </div>
-<section class="auth-card account-section account-messages account-change-log"><h2>Change log</h2>${timeline.length ? timelineCards(timeline) : '<p class="hint">No change-log entries or messages yet.</p>'}</section>`);
+<section class="auth-card account-section account-messages account-change-log"><h2>Change log</h2>${timeline.length ? timelineCards(timeline, isAdmin) : '<p class="hint">No change-log entries or messages yet.</p>'}</section>`);

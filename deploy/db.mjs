@@ -91,6 +91,9 @@ function accounts(db) {
     verified: q('UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?'),
     addMessage: q(`INSERT INTO messages (id, sender_id, recipient_id, message_date, title, objects, created_at)
                    VALUES (:id, :sender_id, :recipient_id, :message_date, :title, :objects, :created_at)`),
+    messageById: q('SELECT * FROM messages WHERE id = ?'),
+    updateMessage: q('UPDATE messages SET message_date = :message_date, title = :title, objects = :objects WHERE id = :id'),
+    removeMessage: q('DELETE FROM messages WHERE id = ?'),
     unreadMessages: q(`SELECT m.*, s.email AS sender_email, s.name AS sender_name
                        FROM messages m LEFT JOIN users s ON s.id = m.sender_id
                        WHERE m.recipient_id = ? AND m.read_at IS NULL
@@ -133,6 +136,9 @@ function accounts(db) {
     touchLogin: id => s.loggedIn.run(now(), id),
     markVerified: id => s.verified.run(now(), id),
     addMessage: ({ id, senderId, recipientId, date, title, objects, createdAt = now() }) => s.addMessage.run({ id, sender_id: senderId, recipient_id: recipientId, message_date: date, title, objects, created_at: createdAt }),
+    messageById: id => s.messageById.get(id) ?? null,
+    updateMessage: ({ id, date, title, objects }) => s.updateMessage.run({ id, message_date: date, title, objects }),
+    removeMessage: id => s.removeMessage.run(id),
     unreadMessages: userId => s.unreadMessages.all(userId),
     allMessages: userId => s.allMessages.all(userId),
     markMessagesRead: userId => s.markMessagesRead.run(now(), userId),

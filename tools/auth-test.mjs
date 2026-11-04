@@ -302,6 +302,17 @@ try {
     assert.match(adminMessagePage, /<h3>Admin test<\/h3>/, 'an admin can message another admin, including themselves');
     assert.equal(store.db.prepare('SELECT read_at FROM messages WHERE title = ?').get('Admin test').read_at, null, 'a message sent from admin stays unread until the recipient interface displays it');
     assert.match(adminMessagePage, /href="https:\/\/example\.com\/test\?ok=1&amp;ready=2"/, 'message URLs are clickable in the admin interface');
+    const adminChangeLogPage = await (await get('/change-log', { cookie: admin })).text();
+    assert.match(adminChangeLogPage, /action="\/admin\/message\/update"/, 'admins can edit messages from the change log');
+    assert.match(adminChangeLogPage, /action="\/admin\/message\/delete"/, 'admins can delete messages from the change log');
+    const adminMessageId = store.db.prepare('SELECT id FROM messages WHERE title = ?').get('Admin test').id;
+    const messageUpdate = await post('/admin/message/update', { id: adminMessageId, date: '2026-11-03', title: 'Admin test updated', objects: 'Updated message.' }, { cookie: admin });
+    assert.equal(messageUpdate.status, 200);
+    assert.match(await messageUpdate.text(), /Message updated: Admin test updated/);
+    const messageDelete = await post('/admin/message/delete', { id: adminMessageId }, { cookie: admin });
+    assert.equal(messageDelete.status, 200);
+    assert.match(await messageDelete.text(), /Message deleted: Admin test updated/);
+    assert.doesNotMatch(await (await get('/change-log', { cookie: admin })).text(), /Admin test updated/);
     const usersBeforeBroadcast = store.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
     const broadcast = await post('/admin/message', {
       recipient: 'all', date: '2026-11-04', title: 'Broadcast test', objects: 'This reaches users and admins.'

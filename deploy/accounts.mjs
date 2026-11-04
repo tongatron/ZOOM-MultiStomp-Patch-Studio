@@ -271,6 +271,38 @@ export function createAccounts({ dataDir }) {
       logAdmin(me, action, recipient === 'all' ? null : targets[0]);
       showAdmin(response, me, { note: `Message saved for ${targets.length} account${targets.length === 1 ? '' : 's'}. It will appear on their next access.`, keepInboxUnread: true });
     },
+    'POST /admin/message/update': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const id = String(form.id || '');
+      const date = String(form.date || '');
+      const rawTitle = String(form.title || '');
+      const rawObjects = String(form.objects || '');
+      const title = cleanMessageText(rawTitle, MAX_MESSAGE_TITLE);
+      const objects = cleanMessageText(rawObjects, MAX_MESSAGE_OBJECTS);
+      const message = { id, date, title, objects };
+      const fail = error => showAdmin(response, me, { status: 400, message: { ...message, error } });
+      const entry = /^[a-f0-9]{32}$/.test(id) ? store.messageById(id) : null;
+      if (!entry) return fail('That message does not exist (any more).');
+      if (!validMessageDate(date)) return fail('Choose a valid date.');
+      if (!title || rawTitle.length > MAX_MESSAGE_TITLE) return fail(`Title is required and must be at most ${MAX_MESSAGE_TITLE} characters.`);
+      if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
+      store.updateMessage({ id, date, title, objects });
+      logAdmin(me, `edit message: ${title}`, store.userById(entry.recipient_id));
+      if (form.returnTo === '/change-log') return redirect(response, '/change-log');
+      showAdmin(response, me, { note: `Message updated: ${title}.`, keepInboxUnread: true });
+    },
+    'POST /admin/message/delete': (request, response, form) => {
+      const me = adminOnly(request, response);
+      if (!me) return;
+      const id = String(form.id || '');
+      const entry = /^[a-f0-9]{32}$/.test(id) ? store.messageById(id) : null;
+      if (!entry) return showAdmin(response, me, { status: 404, error: 'That message does not exist (any more).' });
+      store.removeMessage(id);
+      logAdmin(me, `delete message: ${entry.title}`, store.userById(entry.recipient_id));
+      if (form.returnTo === '/change-log') return redirect(response, '/change-log');
+      showAdmin(response, me, { note: `Message deleted: ${entry.title}.`, keepInboxUnread: true });
+    },
     'POST /admin/changelog': (request, response, form) => {
       const me = adminOnly(request, response);
       if (!me) return;
@@ -312,6 +344,7 @@ export function createAccounts({ dataDir }) {
       if (!objects || rawObjects.length > MAX_MESSAGE_OBJECTS) return fail(`Objects are required and must be at most ${MAX_MESSAGE_OBJECTS} characters.`);
       store.updateChangelog({ id, date, kind, title, objects });
       logAdmin(me, `edit change log: ${title}`, null);
+      if (form.returnTo === '/change-log') return redirect(response, '/change-log');
       showAdmin(response, me, { note: `Change-log entry updated: ${title}.` });
     },
     'POST /admin/changelog/delete': (request, response, form) => {
@@ -322,6 +355,7 @@ export function createAccounts({ dataDir }) {
       if (!entry) return showAdmin(response, me, { status: 404, error: 'That change-log entry does not exist (any more).' });
       store.removeChangelog(id);
       logAdmin(me, `delete change log: ${entry.title}`, null);
+      if (form.returnTo === '/change-log') return redirect(response, '/change-log');
       showAdmin(response, me, { note: `Change-log entry deleted: ${entry.title}.` });
     },
     'POST /admin/signout': (request, response, form) => {
@@ -466,6 +500,7 @@ export function createAccounts({ dataDir }) {
       const timeline = [
         ...store.allMessages(session.user.id).map(message => ({
           id: message.id,
+          source: 'message',
           type: 'Message',
           date: message.message_date,
           title: message.title,
@@ -474,6 +509,7 @@ export function createAccounts({ dataDir }) {
         })),
         ...store.allChangelog().map(entry => ({
           id: entry.id,
+          source: 'changelog',
           type: entry.kind || 'Change log',
           date: entry.entry_date,
           title: entry.title,
@@ -481,7 +517,7 @@ export function createAccounts({ dataDir }) {
           created_at: entry.created_at
         }))
       ].sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at));
-      html(response, 200, changeLogPage({ timeline }));
+      html(response, 200, changeLogPage({ timeline, isAdmin: session.user.role === 'admin' }));
     },
     'POST /account/password': async (request, response, form) => {
       const session = current(request);
@@ -580,7 +616,7 @@ export function createAccounts({ dataDir }) {
       else html(response, 403, messagePage('Request refused', 'This request came from another site and was refused.'));
       return true;
     }
-    const formLimit = path === '/api/report' ? MAX_REPORT_FORM : (path === '/admin/message' || path.startsWith('/admin/changelog')) ? MAX_MESSAGE_FORM : MAX_FORM;
+    const formLimit = path === '/api/report' ? MAX_REPORT_FORM : (path.startsWith('/admin/message') || path.startsWith('/admin/changelog')) ? MAX_MESSAGE_FORM : MAX_FORM;
     await route(request, response, await readForm(request, formLimit), ip);
     return true;
   }
