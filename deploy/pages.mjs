@@ -23,6 +23,11 @@ const messageCards = messages => messages.map(m => `<article class="account-mess
   <div class="account-message-head"><h3>${esc(m.title)}</h3><time datetime="${esc(m.message_date)}">${esc(messageDate(m.message_date))}</time></div>
   <div class="account-message-body">${messageHtml(m.objects)}</div>
 </article>`).join('');
+const footerNow = new Date();
+const footerDateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome', timeZoneName: 'short'
+}).formatToParts(footerNow).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+const footerUpdated = `${footerDateParts.day} ${footerDateParts.month} ${footerDateParts.year} ${footerDateParts.hour}:${footerDateParts.minute} ${footerDateParts.timeZoneName}`;
 const SITE_FOOTER = `<footer class="gh-footer container">
   <div class="gh-footer-left">
     <a class="site-badge A2" href="https://tongatron.org" target="_blank" rel="noreferrer" style="--accent:#ffcc00; font-family:system-ui; font-size:14px;"><span class="mark mark-dot"></span><span>tongatron.org</span></a>
@@ -32,7 +37,7 @@ const SITE_FOOTER = `<footer class="gh-footer container">
     <span class="gh-data">Data: ZOOM MS-60B+ and MS-50G+ Effects Lists © 2024 ZOOM CORPORATION. Not affiliated with ZOOM. Manufacturer names are used only to describe sonic character.</span>
     <div class="gh-footer-meta">
       <a class="gh-privacy" href="/privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-03T17:53Z">Last update 3 November 2026 18:53 CET</time>
+      <time class="gh-updated" datetime="${footerNow.toISOString()}">Last update ${footerUpdated}</time>
     </div>
   </div>
 </footer>`;
