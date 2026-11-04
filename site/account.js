@@ -91,6 +91,7 @@ const ACCOUNT = (() => {
       return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
     };
     const sync = createSync({ storage: localStorage, request: requestWithTimeout, merge: LIBMERGE });
+    const showMessagesHere = /^\/ms-(?:60b|50g|70cdr)(?:\/|$)/.test(location.pathname);
     const seen = {}; // fingerprint of each pedal after its last sync
     let running = null;
     let again = false;
@@ -151,7 +152,7 @@ const ACCOUNT = (() => {
         try { account.me = JSON.parse(sessionStorage.getItem('account-me')) || { signedIn: false }; } catch { account.me = { signedIn: false }; }
       }
       render();
-      if (account.me?.signedIn && Array.isArray(account.me.messages)) showMessages(account.me.messages);
+      if (showMessagesHere && account.me?.signedIn && Array.isArray(account.me.messages)) showMessages(account.me.messages);
       emit('account-change', account.me);
       return account.me;
     }
