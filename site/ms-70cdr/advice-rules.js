@@ -35,8 +35,6 @@
   // ---- helpers ----------------------------------------------------------------------------------------
   const { setValue, remove: removeSlot } = ADVICE.edit;
   const { names, order, before, after, comesAfter, comesBefore } = ADVICE.kit;
-  // Effects the Effects List describes as operated with the foot switch
-  const footswitchFx = new Set(EFFECTS_DATA.filter(([, , , description]) => /foot ?switch/i.test(description)).map(([name]) => name));
   const MONO_TRACKERS = ['OCTAVER', 'BASS OCTAVER', 'BASS ANALOG OCTAVER', 'MONO SYNTH'];
 
   ADVICE.addRules([
@@ -169,15 +167,7 @@
       sources: ['zoomFxList', 'andertonsPitch'],
       check: ctx => ctx.active.filter(s => s.fx.name === 'HARMONY PITCH SHIFTER').map(s => ({ slots: [s.i], message: `KEY is ${s.v('KEY') ?? 'not set'}: match it to the song.` }))
     },
-    {
-      id: 'usage.footswitch', severity: 'tip', topic: 'usage', title: 'Footswitch-controlled effect',
-      why: 'This effect is operated with the footswitch (see its description in the Effects List), so its sound depends on how you press it. Try it on the pedal before relying on it.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => footswitchFx.has(s.fx.name)).map(s => ({
-        slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
-      }))
-    },
-    ...ADVICE.sharedRules('usage.tempo-sync')
+    ...ADVICE.sharedRules('usage.footswitch', 'usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------

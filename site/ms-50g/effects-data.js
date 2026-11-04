@@ -3,7 +3,7 @@
 // Order = Effects List order; the index matches assets/effects/fx-NNN.png.
 // Format: [name, category, reference model, description, tags, parameters]
 // Parameters: [display name, description, range]
-// Tags: fs = footswitch controlled, st = stereo output, sync = tempo sync (metronome), dry = dry signal blend
+// Tags: fs = footswitch controlled (the Effects List mentions the foot switch), st = stereo output, sync = tempo sync (metronome), dry = dry signal blend
 // Reference model and tags are derived from the description (not part of the Effects List text).
 
 const CATEGORIES = {
@@ -753,7 +753,7 @@ const EFFECTS_DATA = [
     ['BUZZ', 'Adjust the buzzing tone.', '0 – 100'],
     ['+1OCT', 'Adjust the volume of one octave up.', '0 – 100'],
     ['VOL', 'Adjusts the volume.', '0 – 100']]],
-  ['BOMBER', 'SFX', null, 'This effect generates explosive sounds.', [], [
+  ['BOMBER', 'SFX', null, 'This effect generates explosive sounds.', ['fs'], [
     ['DECAY', 'Adjusts the length of the explosive sound.', '1 – 100'],
     ['TONE', 'Adjusts the tone.', '0 – 10'],
     ['MIX', 'Adjusts the amount of effected sound that is mixed with the original sound.', '0 – 100'],

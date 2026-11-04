@@ -338,15 +338,7 @@
       }
     },
 
-    {
-      id: 'usage.footswitch', severity: 'tip', topic: 'usage', title: 'Footswitch-controlled effect',
-      why: 'This effect is operated with the footswitch (see its description in the Effects List), so its sound depends on how you press it. Try it on the pedal before relying on it.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => ['HOLD DELAY', 'LOOP ROLL', 'KICK FLANGER', 'BOMBER'].includes(s.fx.name)).map(s => ({
-        slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
-      }))
-    },
-    ...ADVICE.sharedRules('usage.tempo-sync')
+    ...ADVICE.sharedRules('usage.footswitch', 'usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------

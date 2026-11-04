@@ -2,7 +2,7 @@
 // Order = Effects List order; the index matches assets/effects/fx-NNN.png.
 // Format: [name, category, reference model, description, tags, parameters]
 // Parameters: [display name, description, range]
-// Tags: fs = footswitch controlled, st = stereo output, sync = tempo sync (metronome), dry = dry signal blend
+// Tags: fs = footswitch controlled (the Effects List mentions the foot switch), st = stereo output, sync = tempo sync (metronome), dry = dry signal blend
 
 // Categories: label and color used by the catalog and the patch builder.
 const CATEGORIES = {
@@ -234,7 +234,7 @@ const EFFECTS_DATA = [
     SENSE('0 – 30'), ['COLOR', 'Adjusts the harmonics contents of the sound. Higher setting values result in stronger effect character.', '1 – 10'], TONE('1 – 50'), VOL]],
   ['BOMBER', 'SFX', null, 'This effect generates explosive sounds.', ['fs'], [
     ['DECAY', 'Adjusts the length of the explosive sound.', '1 – 100'], TONE('0 – 10'), MIX, ['ON/OFF', 'Sets the foot switch function.', 'LATCH, TRIGGER']]],
-  ['LINE SELECTOR', 'SFX', null, 'The LINE SELECTOR sets whether the input signal is sent to the next effect or the OUTPUT jacks. (ON = NEXT EFFECT, OFF = OUTPUT)', ['fs'], [
+  ['LINE SELECTOR', 'SFX', null, 'The LINE SELECTOR sets whether the input signal is sent to the next effect or the OUTPUT jacks. (ON = NEXT EFFECT, OFF = OUTPUT)', [], [
     ['EFX LVL', 'This adjusts the level sent to the next effect when set to NEXT EFFECT.', '0 – 150'], ['OUT LVL', 'This adjusts the level sent to the output jacks when set to OUTPUT.', '0 – 150']]],
 
   // BASS AMP

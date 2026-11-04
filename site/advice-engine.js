@@ -143,6 +143,14 @@ const ADVICE = (() => {
         return last && last.role === 'linesel' && ctx.active.length > 1 ? [{ slots: [last.i], message: 'Move LINE SELECTOR in front of the effects you want to be able to skip.' }] : [];
       }
     },
+    'usage.footswitch': {
+      severity: 'tip', topic: 'usage', title: 'Footswitch-controlled effect',
+      why: 'This effect is operated with the footswitch (see the Effects List), so its sound depends on how you press it. Try it on the pedal before relying on it.',
+      sources: ['zoomFxList'],
+      check: ctx => ctx.active.filter(s => s.fx.tags.includes('fs')).map(s => ({
+        slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
+      }))
+    },
     'usage.tempo-sync': {
       severity: 'tip', topic: 'usage', title: 'Delay synced to the tempo',
       why: 'When the delay MODE is set to the metronome symbol, the delay time follows the tempo, so the result depends on the tempo of the patch.',

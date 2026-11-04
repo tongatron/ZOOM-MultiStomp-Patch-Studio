@@ -557,4 +557,19 @@ vm.runInContext(`${cfiles.map(f => readFileSync(new URL(f, SITE), 'utf8')).join(
   });
 }
 
+// ---- all pedals -----------------------------------------------------------------------------------------
+test('the fs tag marks exactly the effects whose Effects List text names the foot switch, and they get the usage tip', () => {
+  for (const [pedal, context] of [['MS-60B+', ctx], ['MS-50G+', gctx], ['MS-70CDR+', cctx]]) {
+    const data = vm.runInContext('EFFECTS_DATA', context);
+    const advice = vm.runInContext('ADVICE', context);
+    data.forEach(([name, , , description, tags, params], index) => {
+      const named = [description, ...params.flatMap(([, text, range]) => [text, range])].some(text => /foot ?sw/i.test(text));
+      assert.equal(tags.includes('fs'), named, `${pedal} ${name}: fs tag ${tags.includes('fs') ? 'without' : 'missing, but'} a foot switch in the Effects List`);
+      if (!named) return;
+      const findings = advice.analyze({ name: 'T', effects: [{ index, on: true, values: {} }] });
+      assert.ok(findings.some(f => f.ruleId === 'usage.footswitch'), `${pedal} ${name}: no footswitch tip`);
+    });
+  }
+});
+
 console.log(`\n${passed} passed${process.exitCode ? ', some failed' : ''}`);
