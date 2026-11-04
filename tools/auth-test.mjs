@@ -263,7 +263,8 @@ try {
     assert.match(page, /overflow: visible/);
     assert.doesNotMatch(page, /Last sign-in/, 'the users table does not show last sign-in');
     assert.match(page, /\.admin \.acts \{ display: flex; flex-wrap: nowrap;/, 'account actions stay on one row');
-    assert.match(page, /<form method="get" action="\/admin"><input type="hidden" name="delete" value="[a-f0-9]{32}"><button class="btn btn-sm btn-danger" type="submit">Delete<\/button><\/form>/, 'delete is a button');
+    assert.match(page, /popovertarget="delete-confirm-[a-f0-9]{32}"/, 'delete opens a confirmation popup');
+    assert.match(page, /<form method="post" action="\/admin\/delete"><input type="hidden" name="id" value="[a-f0-9]{32}"><button class="btn btn-danger" type="submit">Delete the account<\/button><\/form>/, 'popup confirms by POST');
     assert.doesNotMatch(page, /Sign out everywhere|Download data|Make admin/, 'the account table exposes only the necessary actions');
     assert.match(page, /new3@example\.com/);
     assert.match(page, /All users \(including admins\)/, 'the message form includes admins in the broadcast');
@@ -326,7 +327,8 @@ try {
     assert.match(await (await get(`/admin/user/${target}`, { cookie: admin })).text(), /MS-60B\+ patches \(0\)/);
     assert.equal((await (await get(`/admin/user/${target}/export`, { cookie: admin })).json()).account.email, 'new3@example.com');
     assert.equal((await get(`/admin/user/${target}`, { cookie: userSession })).headers.get('location'), `/login?next=%2Fadmin%2Fuser%2F${target}`);
-    assert.match(await (await get(`/admin?delete=${target}`, { cookie: admin })).text(), /Delete the account of <b>new3@example\.com<\/b>/);
+    const noConfirmPage = await (await get(`/admin?delete=${target}`, { cookie: admin })).text();
+    assert.doesNotMatch(noConfirmPage, /class="auth-card" method="post" action="\/admin\/delete"/, 'delete query no longer opens a page confirmation');
     assert.match(await (await post('/admin/delete', { id: target }, { cookie: admin })).text(), /The account of new3@example\.com has been deleted/);
     assert.equal(store.userById(target), null);
     const log = await (await get('/admin', { cookie: admin })).text();

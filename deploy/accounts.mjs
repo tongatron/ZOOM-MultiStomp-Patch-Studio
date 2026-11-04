@@ -206,9 +206,7 @@ export function createAccounts({ dataDir }) {
       const me = adminOnly(request, response);
       if (!me) return;
       const p = url.searchParams;
-      const confirmId = p.get('delete');
-      const confirm = confirmId && confirmId !== me.id ? store.db.prepare(`${USERS_SQL} AND u.id = :id`).get({ q: '%', id: confirmId }) : null;
-      showAdmin(response, me, { query: (p.get('q') || '').slice(0, 100), sort: p.get('sort') || 'created', dir: p.get('dir') || 'desc', pageNumber: p.get('page') || 1, pageSize: p.get('size') || 25, confirm });
+      showAdmin(response, me, { query: (p.get('q') || '').slice(0, 100), sort: p.get('sort') || 'created', dir: p.get('dir') || 'desc', pageNumber: p.get('page') || 1, pageSize: p.get('size') || 25 });
     },
     'GET /admin/users.xlsx': (request, response, url) => {
       const me = adminOnly(request, response);

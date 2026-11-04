@@ -49,6 +49,11 @@ const STYLE = `<style>
   .admin-pagination .current { color: var(--fg); border-color: var(--accent); background: var(--bg-inset); }
   .admin-pagination .disabled { opacity: .45; pointer-events: none; }
   .admin-results { margin: 8px 0 0; color: var(--fg-muted); font-size: 12px; }
+  .admin-delete-popover { max-width: min(560px, calc(100vw - 32px)); padding: 16px; color: var(--fg); background: var(--bg-subtle); border: 1px solid var(--border-muted); border-radius: var(--radius); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
+  .admin-delete-popover::backdrop { background: rgba(0, 0, 0, .55); }
+  .admin-delete-popover p { margin: 0 0 16px; line-height: 1.5; }
+  .admin-delete-popover .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .admin-delete-popover .acts form { margin: 0; }
   @media (max-width: 900px) {
     .admin-accounts-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     .admin-accounts-table tbody { display: grid; gap: 12px; }
@@ -75,11 +80,20 @@ const STYLE = `<style>
 
 const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a><a class="btn btn-sm" href="/admin">Users</a><a class="btn btn-sm" href="/account">Your account</a></nav>`;
 const act = (action, id, label, extra = '') => `<form method="post" action="/admin/${action}"><input type="hidden" name="id" value="${esc(id)}">${extra}<button class="btn btn-sm" type="submit">${esc(label)}</button></form>`;
-const confirmDelete = id => `<form method="get" action="/admin"><input type="hidden" name="delete" value="${esc(id)}"><button class="btn btn-sm btn-danger" type="submit">Delete</button></form>`;
+const confirmDelete = user => {
+  const popoverId = `delete-confirm-${user.id}`;
+  return `<button class="btn btn-sm btn-danger" type="button" popovertarget="${esc(popoverId)}">Delete</button>
+    <div id="${esc(popoverId)}" class="admin-delete-popover" popover="auto">
+      <p>Delete the account of <b>${esc(user.email)}</b> and everything kept in it (${user.ms60b + user.ms50g + user.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
+      <div class="acts"><button class="btn" type="button" popovertarget="${esc(popoverId)}" popovertargetaction="hide">Cancel</button>
+        <form method="post" action="/admin/delete"><input type="hidden" name="id" value="${esc(user.id)}"><button class="btn btn-danger" type="submit">Delete the account</button></form>
+      </div>
+    </div>`;
+};
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ['ms60b', 'MS-60B+'], ['ms50g', 'MS-50G+'], ['ms70cdr', 'MS-70CDR+'], ['change', 'Last change']];
 
-export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', confirm = null, log, inbox = [], message = {} }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {} }) {
   const sizeParam = pageSize === 0 ? 'all' : String(pageSize);
   const navigationParams = (targetPage, extra = {}) => new URLSearchParams({ ...(query ? { q: query } : {}), sort, dir, size: sizeParam, page: String(targetPage), ...extra });
   const sortLink = key => {
@@ -100,7 +114,7 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
     <td data-label="MS-60B+">${u.ms60b}</td><td data-label="MS-50G+">${u.ms50g}</td><td data-label="MS-70CDR+">${u.ms70cdr}</td><td data-label="Last change">${dateTime(u.last_change)}</td>
     <td data-label="Actions">${u.id === me.id ? '<span class="muted">you</span>' : `<div class="acts">
       ${act('reset', u.id, 'Send reset link')}
-      ${confirmDelete(u.id)}</div>`}</td></tr>`).join('');
+      ${confirmDelete(u)}</div>`}</td></tr>`).join('');
   const messageDate = message.date || new Date().toISOString().slice(0, 10);
   const recipientOptions = recipients.map(u => `<option value="${esc(u.id)}"${message.recipient === u.id ? ' selected' : ''}>${esc(u.email)}${u.name ? ` — ${esc(u.name)}` : ''}${u.role === 'admin' ? ' (admin)' : ''}</option>`).join('');
   const inboxSection = inbox.length ? `<section class="auth-card admin-inbox"><h2>New messages</h2>${inbox.map(m => `<article class="account-message">
@@ -109,8 +123,6 @@ export function adminPage({ me, users, recipients = users, query = '', sort = 'c
   </article>`).join('')}</section>` : '';
   return page('Users', `${STYLE}<main class="admin">${bar}
 ${error ? `<div class="auth-error" role="alert">${esc(error)}</div>` : ''}${note ? `<div class="auth-ok" role="status">${esc(note)}${link ? `<br><code>${esc(link)}</code>` : ''}</div>` : ''}
-${confirm ? `<form class="auth-card" method="post" action="/admin/delete"><p>Delete the account of <b>${esc(confirm.email)}</b> and everything kept in it (${confirm.ms60b + confirm.ms50g + confirm.ms70cdr} patches)? Patches stored in their browsers stay there. This can't be undone.</p>
-  <input type="hidden" name="id" value="${esc(confirm.id)}"><div class="acts"><a class="btn" href="/admin">Cancel</a><button class="btn btn-danger" type="submit">Delete the account</button></div></form>` : ''}
 ${inboxSection}
 <section class="auth-card"><h2>Accounts</h2>
   <div class="admin-table-tools">
