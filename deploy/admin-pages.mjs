@@ -78,7 +78,7 @@ const STYLE = `<style>
   }
 </style>`;
 
-const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a><a class="btn btn-sm" href="/account">Your account</a></nav>`;
+const bar = `<nav class="admin-bar"><a class="btn btn-sm" href="/">&larr; Back to the site</a></nav>`;
 const act = (action, id, label, extra = '') => `<form method="post" action="/admin/${action}"><input type="hidden" name="id" value="${esc(id)}">${extra}<button class="btn btn-sm" type="submit">${esc(label)}</button></form>`;
 const confirmDelete = user => {
   const popoverId = `delete-confirm-${user.id}`;
