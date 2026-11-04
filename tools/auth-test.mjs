@@ -96,6 +96,7 @@ const post = (path, fields, { cookie = '', ip = freshIp(), headers = {} } = {}) 
 const get = (path, { cookie = '', ip = freshIp() } = {}) => fetch(base + path, { redirect: 'manual', headers: { 'CF-Connecting-IP': ip, ...(cookie ? { Cookie: cookie } : {}) } });
 const sessionOf = response => (response.headers.get('set-cookie') || '').split(';')[0];
 const me = async cookie => (await get('/api/me', { cookie })).json();
+const readMessages = async cookie => (await post('/api/messages/read', {}, { cookie })).json();
 
 // The text part of email number `count` in the outbox (written in the background, so wait a little)
 async function mailNumber(count) {
@@ -303,6 +304,7 @@ try {
     assert.deepEqual(new3Messages.messages[0], {
       id: new3Messages.messages[0].id, message_date: '2026-11-04', title: 'Broadcast test', objects: 'This reaches users and admins.', sender_name: 'Giovanni', sender_email: 'admin@example.com', created_at: new3Messages.messages[0].created_at
     });
+    assert.deepEqual(await readMessages(new3Session), { ok: true }, 'the client acknowledges after showing the message');
     assert.deepEqual((await me(new3Session)).messages, [], 'the message is marked read after delivery');
     assert.equal((await post('/admin/message', { recipient: idOf('new3@example.com'), date: 'bad', title: 'x', objects: 'y' }, { cookie: admin })).status, 400);
     await post('/admin/role', { id: idOf('new2@example.com'), role: 'user' }, { cookie: admin });

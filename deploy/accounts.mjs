@@ -96,6 +96,8 @@ export function createAccounts({ dataDir }) {
     if (messages.length) store.markMessagesRead(userId);
     return messages;
   };
+  // JSON account checks only peek. The browser acknowledges after the dialog is on screen.
+  const peekMessages = userId => store.unreadMessages(userId);
   const publicMessages = messages => messages.map(m => ({ id: m.id, message_date: m.message_date, title: m.title, objects: m.objects,
     sender_name: m.sender_name || '', sender_email: m.sender_email || '', created_at: m.created_at }));
   function exportData(user) {
@@ -420,10 +422,16 @@ export function createAccounts({ dataDir }) {
       const session = current(request);
       if (!session) return json(response, 200, { signedIn: false });
       const { user, expires } = session;
-      const messages = takeMessages(user.id);
+      const messages = peekMessages(user.id);
       // A session used in its last week is renewed for another 30 days
       const renew = expires - Date.now() < 7 * 864e5 ? { 'Set-Cookie': signIn(request, user) } : {};
       json(response, 200, { signedIn: true, email: user.email, name: user.name, verified: !!user.email_verified_at, admin: user.role === 'admin', messages: publicMessages(messages) }, renew);
+    },
+    'POST /api/messages/read': (request, response) => {
+      const session = current(request);
+      if (!session) return json(response, 401, { error: 'sign in first' });
+      store.markMessagesRead(session.user.id);
+      json(response, 200, { ok: true });
     }
   };
 

@@ -102,6 +102,43 @@ const ACCOUNT = (() => {
     for (const pedal of PEDALS) localStorage.removeItem(`${pedal}-sync`); // the old anonymous sync codes
 
     let answered = false; // the last /api/me request was answered by the server (not the offline fallback below)
+    let messageDialog = null;
+    const MESSAGE_URL_RE = /https?:\/\/[^\s<>"']+/gi;
+    const trimMessageUrl = url => url.replace(/[.,!?;:]+$/, '');
+    const messageLine = line => {
+      let html = '';
+      let last = 0;
+      for (const match of line.matchAll(MESSAGE_URL_RE)) {
+        const raw = match[0];
+        const link = trimMessageUrl(raw);
+        html += esc(line.slice(last, match.index));
+        html += `<a href="${esc(link)}" target="_blank" rel="noreferrer">${esc(link)}</a>${esc(raw.slice(link.length))}`;
+        last = match.index + raw.length;
+      }
+      return html + esc(line.slice(last));
+    };
+    const messageBody = value => String(value ?? '').replace(/\r\n?/g, '\n').split('\n').map(messageLine).join('<br>\n');
+    const messageDate = value => value ? new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
+    function showMessages(messages) {
+      if (!messages.length || messageDialog) return;
+      messageDialog = document.createElement('dialog');
+      messageDialog.className = 'Overlay account-dialog account-message-dialog';
+      messageDialog.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title">New messages</h2></div>
+        <div class="Overlay-body">
+          ${messages.map(message => `<article class="account-message-card">
+            <div class="account-message-card-head"><h3>${esc(message.title)}</h3><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
+            <div class="account-message-card-body">${messageBody(message.objects)}</div>
+          </article>`).join('')}
+          <div class="account-actions"><button class="btn btn-primary" type="button">Close</button></div>
+        </div>`;
+      messageDialog.addEventListener('click', event => { if (event.target.closest('button')) messageDialog.close(); });
+      messageDialog.addEventListener('close', () => { messageDialog.remove(); messageDialog = null; });
+      document.body.append(messageDialog);
+      messageDialog.showModal();
+      messageDialog.querySelector('.btn-primary').focus();
+      // Acknowledge only after the messages are visible, not when /api/me is queried.
+      requestWithTimeout('/api/messages/read', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+    }
     async function refreshMe() {
       try {
         const response = await requestWithTimeout('/api/me', { credentials: 'same-origin', cache: 'no-store' });
@@ -113,6 +150,7 @@ const ACCOUNT = (() => {
         try { account.me = JSON.parse(sessionStorage.getItem('account-me')) || { signedIn: false }; } catch { account.me = { signedIn: false }; }
       }
       render();
+      if (account.me?.signedIn && Array.isArray(account.me.messages)) showMessages(account.me.messages);
       emit('account-change', account.me);
       return account.me;
     }

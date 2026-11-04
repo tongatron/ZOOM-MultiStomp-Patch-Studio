@@ -136,6 +136,8 @@ const ACCOUNT = (() => {
       document.body.append(messageDialog);
       messageDialog.showModal();
       messageDialog.querySelector('.btn-primary').focus();
+      // Acknowledge only after the messages are visible, not when /api/me is queried.
+      requestWithTimeout('/api/messages/read', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     }
     async function refreshMe() {
       try {

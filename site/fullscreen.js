@@ -84,24 +84,3 @@ const FS = {
     update();
   }
 };
-
-// Give every pedal page a visible route to the .zptc export. On the builder page the same action
-// invokes the real download button; on the other pages it opens the builder where a patch can be built.
-{
-  const status = document.querySelector('.fs-status');
-  const time = status?.querySelector('time');
-  if (status && time && typeof PEDAL !== 'undefined' && !/\/privacy\.html$/.test(location.pathname)) {
-    const link = document.createElement('a');
-    const onBuilder = /\/builder\.html$/.test(location.pathname);
-    link.className = 'fs-download';
-    link.href = onBuilder ? '#download' : 'builder.html#download';
-    link.textContent = 'Download .zptc';
-    link.title = onBuilder ? 'Download the current patch as a .zptc file' : 'Open the Patch builder to download a .zptc file';
-    link.addEventListener('click', event => {
-      if (!onBuilder) return;
-      const button = document.querySelector('#download');
-      if (button && !button.disabled) { event.preventDefault(); button.click(); }
-    });
-    status.insertBefore(link, time);
-  }
-}
