@@ -43,13 +43,13 @@ const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, in
 
 // Live mode talks to the pedal's current edit buffer. It deliberately does not write a stored memory:
 // parameter and ON/OFF changes are sent as editor commands, while structural changes still use Send.
-const LIVE_ADMIN_EMAIL = 'giovanni.bindi@gmail.com';
 const live = { allowed: false, enabled: false, connected: false, current: null, queue: new Map(), sending: false, flushTimer: 0 };
+const betaEnabled = feature => window.ACCOUNT?.betaEnabled?.(feature) === true;
 function setLiveAccess(me) {
-  live.allowed = !!me?.signedIn && me.admin === true && String(me.email).toLowerCase() === LIVE_ADMIN_EMAIL;
+  live.allowed = !!me?.signedIn && betaEnabled('live');
   const panel = $('#live-mode');
   if (panel) panel.hidden = !live.allowed;
-  window.PEDALAUDITION?.setAccess(live.allowed);
+  window.PEDALAUDITION?.setAccess(!!me?.signedIn && betaEnabled('audition'));
   if (!live.allowed) {
     live.enabled = false;
     live.queue.clear();
@@ -184,6 +184,7 @@ async function connectLive() {
 }
 
 window.addEventListener('account-change', event => setLiveAccess(event.detail));
+window.addEventListener('beta-change', () => setLiveAccess(window.ACCOUNT?.me));
 $('#live-connect')?.addEventListener('click', () => { if (!live.allowed) return; const toggle = $('#live-toggle'); if (toggle) toggle.checked = true; connectLive(); });
 $('#live-disconnect')?.addEventListener('click', disconnectLive);
 $('#live-toggle')?.addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });

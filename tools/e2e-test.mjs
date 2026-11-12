@@ -224,6 +224,27 @@ try {
     assert.equal(await page.locator('.account-local').isVisible(), false);
   });
 
+  await test('beta features are under the account, off by default, and independently persistent', async () => {
+    await page.click('.account-button');
+    assert.equal(await page.locator('.account-version').innerText(), 'v. 1.0');
+    assert.equal(await page.locator('[data-beta="audition"]').isChecked(), false);
+    assert.equal(await page.locator('[data-beta="live"]').isChecked(), false);
+    assert.equal(await page.locator('#audition-mode').isHidden(), true);
+    assert.equal(await page.locator('#live-mode').isHidden(), true);
+    await page.locator('[data-beta="audition"]').check();
+    await page.waitForFunction(() => document.querySelector('#audition-mode')?.hidden === false);
+    assert.equal(await page.locator('#live-mode').isHidden(), true, 'Live mode stays off when audition is enabled');
+    await page.click('.account-button');
+    await page.locator('.account-button').click();
+    await page.locator('[data-beta="live"]').check();
+    await page.waitForFunction(() => document.querySelector('#live-mode')?.hidden === false);
+    await page.reload();
+    await page.locator('.account-button').waitFor();
+    await page.click('.account-button');
+    assert.equal(await page.locator('[data-beta="audition"]').isChecked(), true);
+    assert.equal(await page.locator('[data-beta="live"]').isChecked(), true);
+  });
+
   await test('another device signs in and gets the same patches', async () => {
     const laptop = await device();
     await signIn(laptop.page, 'e2e@example.com');

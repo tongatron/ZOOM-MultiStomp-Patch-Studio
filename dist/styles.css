@@ -214,6 +214,7 @@ select.btn {
   background: none; border: 0; color: inherit; text-align: left; cursor: pointer;
 }
 .fx-link, .fx-link:hover { text-decoration: none; }
+.fx-link:focus-visible { outline: 2px solid var(--accent-fg); outline-offset: -2px; }
 .fx-link:hover { background: var(--bg-hover); }
 .fx-row:last-child .fx-link { border-radius: 0 0 var(--radius) var(--radius); }
 .fx-thumb {
@@ -227,6 +228,9 @@ select.btn {
 .fx-link:hover .fx-name { text-decoration: underline; }
 .fx-model { margin-top: 2px; font-size: 12px; color: var(--fg-muted); }
 .fx-model b { font-weight: 500; color: var(--fg); }
+.model-search { display: inline-flex; margin-left: 6px; color: var(--accent-fg); vertical-align: -2px; }
+.model-search:hover { color: var(--fg); text-decoration: none; }
+.model-search:focus-visible { outline: 2px solid var(--accent-fg); outline-offset: 2px; border-radius: 2px; }
 .fx-desc { margin: 4px 0 8px; color: var(--fg-muted); }
 .fx-params { display: flex; flex-wrap: wrap; gap: 4px; }
 .param-chip {
@@ -850,8 +854,10 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-rename input { width: 220px; }
 .usb-chain-line { display: block; margin: 2px 0 0; color: var(--fg-muted); font-size: 12px; }
 .usb-local { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; }
+.usb-local.is-linked { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
 .usb-local-main { min-width: 0; }
 .usb-local-main small { margin-left: 8px; color: var(--fg-subtle); font-size: 12px; }
+.usb-local-linked { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--accent-fg); font-size: 11px; font-weight: 500; vertical-align: middle; }
 .usb-local .btn { flex: none; }
 .usb-sync-option { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-muted); color: var(--fg-muted); font-size: 13px; }
 .usb-sync-option input { margin: 0; }
@@ -908,15 +914,29 @@ body.is-dropping .drop-overlay { display: grid; }
 .account-dropdown { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 240px; padding: 4px 0; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(1, 4, 9, .8); }
 .account-who { display: flex; flex-direction: column; gap: 2px; padding: 8px 16px; font-size: 13px; overflow-wrap: anywhere; }
 .account-who span, .account-state { color: var(--fg-muted); font-size: 12px; }
+.account-version { color: var(--fg-muted); font: 11px var(--mono); }
 .account-state { padding: 0 16px 8px; border-bottom: 1px solid var(--border-muted); margin-bottom: 4px; }
 .account-item { display: block; width: 100%; padding: 6px 16px; color: var(--fg); background: none; border: 0; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .account-item:hover { background: var(--accent); color: #fff; text-decoration: none; }
+.account-beta { margin: 4px 0; padding: 8px 16px; border-top: 1px solid var(--border-muted); border-bottom: 1px solid var(--border-muted); }
+.account-beta-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 13px; }
+.account-beta-title small, .account-beta-option small { color: var(--fg-muted); font-size: 11px; line-height: 1.35; }
+.account-beta-option { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; cursor: pointer; }
+.account-beta-option input { flex: none; margin: 2px 0 0; accent-color: var(--accent); }
+.account-beta-option span { display: grid; gap: 1px; }
 .account-notice { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px; background: rgba(187, 128, 9, .15); border-bottom: 1px solid rgba(187, 128, 9, .4); font-size: 13px; }
 @media (min-width: 768px) { .account-notice { padding: 10px 24px; } }
 .account-notice p { flex: 1; margin: 0; line-height: 1.5; }
 .account-dialog .Overlay-body p { margin: 0 0 12px; }
+.account-message-dialog { width: min(680px, calc(100vw - 32px)); }
 .account-note { color: var(--fg-muted); font-size: 13px; }
 .account-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.account-message-card + .account-message-card { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
+.account-message-card { display: grid; gap: 14px; }
+.account-message-card-label { display: block; margin-bottom: 5px; color: var(--fg-muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.account-message-card-date time { color: var(--fg); font-size: 14px; }
+.account-message-card-title h3 { margin: 0; font-size: 18px; font-weight: 600; }
+.account-message-card-body { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .account-perks { display: grid; gap: 6px; margin: 0 0 4px; padding-left: 20px; }
 .account-later { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin-top: 8px; }
 .account-welcome .account-note { margin: 8px 0 0; }

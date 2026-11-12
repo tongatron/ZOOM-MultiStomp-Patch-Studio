@@ -4,6 +4,27 @@
 // differs from the one sent last time counts as a change made here (with the time it was noticed).
 // Events on window: 'account-change' (detail: /api/me answer), 'account-synced' (detail: { pedal, changed: [keys] }).
 
+const BETA_KEY = 'site-beta-features';
+const BETA_FEATURES = Object.freeze({
+  audition: { label: 'Pedal audition', hint: 'Play a clean reference loop through the pedal.' },
+  live: { label: 'Live mode', hint: 'Send supported edits to the pedal edit buffer.' }
+});
+const readBetaSettings = () => {
+  try {
+    const value = JSON.parse(localStorage.getItem(BETA_KEY) || '{}');
+    return Object.fromEntries(Object.keys(BETA_FEATURES).map(name => [name, value?.[name] === true]));
+  } catch {
+    return Object.fromEntries(Object.keys(BETA_FEATURES).map(name => [name, false]));
+  }
+};
+const setBetaSetting = (name, enabled) => {
+  if (!Object.hasOwn(BETA_FEATURES, name)) return readBetaSettings();
+  const settings = { ...readBetaSettings(), [name]: !!enabled };
+  try { localStorage.setItem(BETA_KEY, JSON.stringify(settings)); } catch {}
+  return settings;
+};
+const siteVersion = () => typeof window !== 'undefined' && window.SITE_UPDATES?.version ? window.SITE_UPDATES.version : '1.0';
+
 const ACCOUNT = (() => {
   const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
   const KINDS = ['advice', 'view', 'builder', 'rulepacks', 'usb-backups']; // stored as `${pedal}-${kind}`
@@ -71,7 +92,14 @@ const ACCOUNT = (() => {
     return { syncPedal, snapshot, fingerprint };
   }
 
-  const account = { PEDALS, KINDS, createSync, me: null, status: { syncing: false, lastSync: 0, error: '' }, changed: () => {} };
+  const account = {
+    PEDALS, KINDS, createSync, me: null,
+    status: { syncing: false, lastSync: 0, error: '' },
+    betaSettings: readBetaSettings,
+    betaEnabled: name => readBetaSettings()[name] === true,
+    setBetaFeature: setBetaSetting,
+    changed: () => {}
+  };
 
   // ---- in the page ------------------------------------------------------------------------------
   // Header entry ("Sign in" or the account menu), the signed-out notice (pages with <body data-account-notice>), the
@@ -91,6 +119,7 @@ const ACCOUNT = (() => {
       return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
     };
     const sync = createSync({ storage: localStorage, request: requestWithTimeout, merge: LIBMERGE });
+    const showMessagesHere = /^\/ms-(?:60b|50g|70cdr)(?:\/|$)/.test(location.pathname);
     const seen = {}; // fingerprint of each pedal after its last sync
     let running = null;
     let again = false;
@@ -121,15 +150,17 @@ const ACCOUNT = (() => {
     const messageDate = value => value ? new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '';
     function showMessages(messages) {
       if (!messages.length || messageDialog) return;
+      const latest = messages[0];
       messageDialog = document.createElement('dialog');
       messageDialog.className = 'Overlay account-dialog account-message-dialog';
       messageDialog.innerHTML = `<div class="Overlay-header"><h2 class="Overlay-title">New messages</h2></div>
         <div class="Overlay-body">
-          ${messages.map(message => `<article class="account-message-card">
-            <div class="account-message-card-head"><h3>${esc(message.title)}</h3><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
-            <div class="account-message-card-body">${messageBody(message.objects)}</div>
+          ${[latest].map(message => `<article class="account-message-card">
+            <div class="account-message-card-date"><span class="account-message-card-label">Date</span><time datetime="${esc(message.message_date)}">${esc(messageDate(message.message_date))}</time></div>
+            <div class="account-message-card-title"><span class="account-message-card-label">Title</span><h3>${esc(message.title)}</h3></div>
+            <div class="account-message-card-object"><span class="account-message-card-label">Object</span><div class="account-message-card-body">${messageBody(message.objects)}</div></div>
           </article>`).join('')}
-          <div class="account-actions"><button class="btn btn-primary" type="button">Close</button></div>
+          <div class="account-actions"><a class="btn" href="/change-log">Change log</a><button class="btn btn-primary" type="button">Close</button></div>
         </div>`;
       messageDialog.addEventListener('click', event => { if (event.target.closest('button')) messageDialog.close(); });
       messageDialog.addEventListener('close', () => { messageDialog.remove(); messageDialog = null; });
@@ -150,7 +181,7 @@ const ACCOUNT = (() => {
         try { account.me = JSON.parse(sessionStorage.getItem('account-me')) || { signedIn: false }; } catch { account.me = { signedIn: false }; }
       }
       render();
-      if (account.me?.signedIn && Array.isArray(account.me.messages)) showMessages(account.me.messages);
+      if (showMessagesHere && account.me?.signedIn && Array.isArray(account.me.messages)) showMessages(account.me.messages);
       emit('account-change', account.me);
       return account.me;
     }
@@ -317,12 +348,19 @@ const ACCOUNT = (() => {
         const s = account.status;
         const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet');
         const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
+        const beta = readBetaSettings();
+        const betaCount = Object.values(beta).filter(Boolean).length;
         paint(
           `<summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>`,
           `<div class="account-dropdown" role="menu">
-            <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}</div>
+            <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}<small class="account-version">v. ${esc(siteVersion())}</small></div>
             <div class="account-state" role="status">${esc(state)}</div>
             ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
+            <div class="account-beta" role="group" aria-labelledby="account-beta-title">
+              <div class="account-beta-title" id="account-beta-title"><b>Beta features</b><small>${betaCount ? `${betaCount} enabled` : 'Off by default'}</small></div>
+              ${Object.entries(BETA_FEATURES).map(([name, feature]) => `<label class="account-beta-option"><input type="checkbox" data-beta="${name}"${beta[name] ? ' checked' : ''}><span><b>${feature.label}</b><small>${feature.hint}</small></span></label>`).join('')}
+            </div>
+            <a class="account-item" href="/change-log">Change log</a>
             ${me.admin ? '<a class="account-item" href="/admin">Users</a>' : ''}
             <button class="account-item" type="button" data-action="signout">Sign out</button>
           </div>`
@@ -334,6 +372,13 @@ const ACCOUNT = (() => {
       const action = event.target.closest('[data-action]')?.dataset.action;
       if (action === 'signout') { slot.querySelector('details').open = false; signOut(); }
       if (action === 'aside') addAside();
+    });
+    slot.addEventListener('change', event => {
+      const input = event.target.closest('input[data-beta]');
+      if (!input || !account.me?.signedIn) return;
+      const settings = account.setBetaFeature(input.dataset.beta, input.checked);
+      render();
+      emit('beta-change', { feature: input.dataset.beta, enabled: settings[input.dataset.beta], settings });
     });
     document.addEventListener('click', event => { const menu = slot.querySelector('details[open]'); if (menu && !menu.contains(event.target)) menu.open = false; });
 
@@ -465,7 +510,19 @@ const ACCOUNT = (() => {
     });
   }
 
-  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof LIBMERGE !== 'undefined') start();
+  function loadUpdates() {
+    if (typeof window === 'undefined' || window.SITE_UPDATES || typeof document === 'undefined') return Promise.resolve();
+    return new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = '/updates.js?v=1.0';
+      script.onload = resolve;
+      script.onerror = resolve; // the account remains usable if an offline cache has no manifest yet
+      (document.head || document.documentElement).append(script);
+    });
+  }
+
+  if (typeof window !== 'undefined') window.ACCOUNT = account;
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof LIBMERGE !== 'undefined') loadUpdates().finally(start);
   return account;
 })();
 
