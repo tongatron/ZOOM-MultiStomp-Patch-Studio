@@ -44,9 +44,12 @@ const ICON_X = '<path fill="currentColor" d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.
 const ICON_CHECK = '<path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_SLIDERS = '<path fill="currentColor" d="M5.75 7.5a.75.75 0 0 1 .75.75v1.5h1a.75.75 0 0 1 0 1.5h-1v3a.75.75 0 0 1-1.5 0v-3h-1a.75.75 0 0 1 0-1.5h1v-1.5a.75.75 0 0 1 .75-.75Zm4.5-6a.75.75 0 0 1 .75.75v3h1a.75.75 0 0 1 0 1.5h-1v7.5a.75.75 0 0 1-1.5 0v-7.5h-1a.75.75 0 0 1 0-1.5h1v-3a.75.75 0 0 1 .75-.75Z"/>';
 const ICON_SEARCH = '<path fill="currentColor" d="M10.68 11.74a6 6 0 0 1-7.92-8.98 6 6 0 0 1 8.98 7.92l3.04 3.04a.75.75 0 0 1-1.06 1.06ZM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0Z"/>';
+const ICON_EXTERNAL = '<path fill="currentColor" d="M9.25 2a.75.75 0 0 1 0-1.5h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V3.06L7.28 9.78a.75.75 0 0 1-1.06-1.06L12.94 2H9.25ZM2.75 3h3a.75.75 0 0 1 0 1.5h-3a1.25 1.25 0 0 0-1.25 1.25v7.5a1.25 1.25 0 0 0 1.25 1.25h7.5a1.25 1.25 0 0 0 1.25-1.25v-3a.75.75 0 0 1 1.5 0v3A2.75 2.75 0 0 1 10.25 16h-7.5A2.75 2.75 0 0 1 0 13.25v-7.5A2.75 2.75 0 0 1 2.75 3Z"/>';
 const ICON_STAR = '<path fill="currentColor" d="M8 .25a.75.75 0 0 1 .67.42l1.88 3.8 4.2.61a.75.75 0 0 1 .42 1.28l-3.04 2.96.72 4.18a.75.75 0 0 1-1.09.79L8 12.32l-3.76 1.97a.75.75 0 0 1-1.09-.79l.72-4.18L.83 6.36a.75.75 0 0 1 .42-1.28l4.2-.61L7.33.67A.75.75 0 0 1 8 .25Z"/>';
 const favButton = (effect, label = false) => `<button type="button" class="${label ? 'btn btn-sm fav-btn' : 'fav-star'}" data-fav="${effect.slug}" aria-pressed="${favorites.has(effect.slug)}" title="Favorite effect">${icon(ICON_STAR, label ? 14 : 16)}${label ? '<span>Favorite</span>' : '<span class="sr-only">Favorite</span>'}</button>`;
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
+
+const modelSearchLink = model => `<a class="model-search" data-model-search href="https://www.google.com/search?q=${encodeURIComponent(model)}" target="_blank" rel="noopener noreferrer" aria-label="Search Google for ${escapeHtml(model)}" title="Search Google for this reference model">${icon(ICON_EXTERNAL, 13)}</a>`;
 
 function highlight(text) {
   const safe = escapeHtml(text);
@@ -105,11 +108,11 @@ function renderList() {
   }
   list.innerHTML = state.visible.map(effect => {
     const paramChips = effect.params.map(([name]) => `<span class="param-chip${state.query && name.toLowerCase().includes(state.query) ? ' hit' : ''}">${escapeHtml(name)}</span>`).join('');
-    return `<li class="fx-row">${favButton(effect)}<a class="fx-link" href="#${effect.slug}" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
+    return `<li class="fx-row">${favButton(effect)}<div class="fx-link" role="link" tabindex="0" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
         <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
-        ${effect.model ? `<div class="fx-model">Model: <b>${highlight(effect.model)}</b></div>` : ''}
+        ${effect.model ? `<div class="fx-model">Model: <b>${highlight(effect.model)}</b>${modelSearchLink(effect.model)}</div>` : ''}
         <p class="fx-desc" lang="en">${highlight(effect.description)}</p>
         <div class="fx-params" aria-label="Parameters">${paramChips}</div>
       </div>
@@ -119,7 +122,7 @@ function renderList() {
         <span class="fx-pcount">${effect.params.length} parameters</span>
         <span class="fx-tags">${effect.tags.map(featureLabel).join('')}</span>
       </div>
-    </a></li>`;
+    </div></li>`;
   }).join('');
   markCurrent();
 }
@@ -158,7 +161,7 @@ function openEffect(effect) {
         <h2 id="dialog-title">${escapeHtml(effect.name)}</h2>
         <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
         <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
-        ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b></p>` : ''}
+        ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b>${modelSearchLink(effect.model)}</p>` : ''}
         <div class="detail-add">${addToPatch} ${favButton(effect, true)}</div>
       </div>
     </div>
@@ -226,6 +229,7 @@ function setFavorite(slug) {
 document.addEventListener('click', event => {
   const fav = event.target.closest('[data-fav]');
   if (fav) { setFavorite(fav.dataset.fav); return; }
+  if (event.target.closest('[data-model-search]')) return;
   if (event.target.closest('[data-favorites]')) { state.favOnly = !state.favOnly; render(); return; }
   const link = event.target.closest('.fx-link');
   if (link) {
@@ -271,6 +275,12 @@ document.querySelectorAll('button[data-view]').forEach(button => button.addEvent
 
 document.addEventListener('keydown', event => {
   const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+  const card = event.target.closest('.fx-link');
+  if (card && !event.target.closest('[data-model-search]') && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    openEffect(effects.find(effect => effect.slug === card.dataset.slug));
+    return;
+  }
   // The arrows belong to the field being typed in; elsewhere they move to the previous or next effect
   if (dialog.open && !typing) {
     if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
