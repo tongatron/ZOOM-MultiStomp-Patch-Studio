@@ -253,6 +253,7 @@ try {
     await page.locator('.account-button').click();
     await page.locator('[data-beta="live"]').check();
     await page.waitForFunction(() => document.querySelector('#live-mode')?.hidden === false);
+    assert.equal(await page.locator('#live-toggle').count(), 0, 'Live mode is controlled by the account beta setting');
     await page.reload();
     await page.locator('.account-button').waitFor();
     await page.click('.account-button');

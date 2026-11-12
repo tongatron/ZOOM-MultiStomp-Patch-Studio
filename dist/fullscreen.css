@@ -129,10 +129,11 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-builder { grid-template-columns: 300px minmax(0, 1fr) minmax(320px, 30%); }
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
 .fs-builder .side-box { padding: 0; gap: 0; }
-.fs-builder .patch-box { flex: 1 1 0; min-height: 0; }
+.fs-builder .builder-mid { min-height: 0; overflow: hidden; }
+.fs-builder .patch-box { flex: 1 1 0; min-height: 0; overflow: hidden; }
 .fs-builder .patch-box.is-collapsed { flex: none; }
 .fs-builder .side-box-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
-.fs-builder .patch-box .side-box-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.fs-builder .patch-box .side-box-body { flex: 1 1 0; min-height: 0; height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .fs-builder .fs-pane-body[hidden] { display: none; }
 /* Advice takes the rest of the column under the patch, and scrolls inside */
 .fs-builder .advice { flex: 1 1 0; margin: 0; }

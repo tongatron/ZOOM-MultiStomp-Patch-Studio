@@ -110,11 +110,6 @@ function updateLiveCompatibility() {
   return matches;
 }
 function renderLiveControls() {
-  const toggle = $('#live-toggle');
-  if (toggle) {
-    toggle.checked = live.enabled;
-    toggle.closest('label')?.querySelector('b')?.replaceChildren(document.createTextNode(live.enabled ? 'ON' : 'OFF'));
-  }
   $('#live-connect')?.toggleAttribute('hidden', live.connected);
   $('#live-disconnect')?.toggleAttribute('hidden', !live.connected);
   if (!live.connected) $('#live-load')?.setAttribute('hidden', '');
@@ -194,10 +189,8 @@ async function disconnectLive() {
 }
 async function connectLive() {
   if (!live.allowed) return;
-  const toggle = $('#live-toggle');
   const connect = $('#live-connect');
   if (connect) connect.disabled = true;
-  if (toggle) toggle.disabled = true;
   setLiveStatus('Connecting…');
   try {
     const ports = await PEDALMIDI.ports();
@@ -216,19 +209,16 @@ async function connectLive() {
     updateLiveCompatibility();
   } catch (error) {
     await disconnectLive();
-    if (toggle) toggle.checked = false;
     setLiveStatus(error.message, 'danger');
   } finally {
     if (connect) connect.disabled = false;
-    if (toggle) toggle.disabled = false;
   }
 }
 
 window.addEventListener('account-change', event => setLiveAccess(event.detail));
 window.addEventListener('beta-change', () => setLiveAccess(window.ACCOUNT?.me));
-$('#live-connect')?.addEventListener('click', () => { if (!live.allowed) return; const toggle = $('#live-toggle'); if (toggle) toggle.checked = true; connectLive(); });
+$('#live-connect')?.addEventListener('click', () => { if (live.allowed) connectLive(); });
 $('#live-disconnect')?.addEventListener('click', disconnectLive);
-$('#live-toggle')?.addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });
 $('#live-load')?.addEventListener('click', () => {
   if (!live.allowed || !live.current) return;
   try {
