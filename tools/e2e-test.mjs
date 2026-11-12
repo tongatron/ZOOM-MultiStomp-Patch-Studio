@@ -258,6 +258,13 @@ try {
     await page.click('.account-button');
     assert.equal(await page.locator('[data-beta="audition"]').isChecked(), true);
     assert.equal(await page.locator('[data-beta="live"]').isChecked(), true);
+    await page.click('.account-button');
+    await page.evaluate(() => { const entry = readLibrary()[0]; loadPatch(entry, entry.id); });
+    await page.fill('#patch-name', 'E2E LIVE SAVE');
+    await page.locator('#live-save').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#live-save').innerText(), 'Save changes to My patches');
+    await page.click('#live-save');
+    await page.waitForFunction(() => document.querySelector('#save-patch')?.disabled === true);
   });
 
   await test('another device signs in and gets the same patches', async () => {

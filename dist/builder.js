@@ -119,6 +119,17 @@ function renderLiveControls() {
   $('#live-disconnect')?.toggleAttribute('hidden', !live.connected);
   if (!live.connected) $('#live-load')?.setAttribute('hidden', '');
 }
+function renderLiveSave() {
+  const button = $('#live-save');
+  if (!button) return;
+  const valid = state.effects.length > 0 && state.name.trim() && ZPTC.NAME_CHARS.test(state.name);
+  const entry = state.currentId ? findEntry(state.currentId) : null;
+  const dirty = isDirty();
+  button.hidden = !dirty;
+  button.disabled = !valid;
+  button.textContent = entry ? 'Save changes to My patches' : 'Save to My patches';
+  button.title = entry ? 'Save the live-edited patch to My patches' : 'Save the live-edited patch as a new My patch';
+}
 function decodedToBuilderPatch(decoded) {
   const effects = decoded.effects.map(effect => {
     const index = EFFECTS_DATA.findIndex(([name]) => name === effect.effect);
@@ -220,7 +231,14 @@ $('#live-disconnect')?.addEventListener('click', disconnectLive);
 $('#live-toggle')?.addEventListener('change', event => { if (!live.allowed) { event.target.checked = false; return; } event.target.checked ? connectLive() : disconnectLive(); });
 $('#live-load')?.addEventListener('click', () => {
   if (!live.allowed || !live.current) return;
-  try { loadPatch(decodedToBuilderPatch(live.current.decoded)); updateLiveCompatibility(); }
+  try {
+    // Loading the pedal's current edit buffer is an explicit choice for the
+    // patch already selected in My patches. Keep that identity so a later
+    // Save changes updates the selected local patch instead of creating an
+    // unrelated copy.
+    loadPatch(decodedToBuilderPatch(live.current.decoded), state.currentId);
+    updateLiveCompatibility();
+  }
   catch (error) { setLiveStatus(error.message, 'danger'); }
 });
 window.addEventListener('pagehide', () => { if (live.connected) { PEDALMIDI.editorOff().catch(() => {}); PEDALMIDI.disconnect(); } });
@@ -531,6 +549,7 @@ function renderSaveState() {
     : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Unsaved changes' : `Modified ${formatDate(entry.updatedAt)}`}</span>`
     : state.effects.length ? '<span class="status status--attention">Patch not saved yet</span>' : '';
   $('#save-info').hidden = !entry && !$('#save-status').innerHTML; // nothing to show: no empty row between the buttons and Advice
+  renderLiveSave();
 }
 
 function renderLibrary() {
@@ -822,6 +841,7 @@ function saveCurrent(asNew = false) {
 }
 $('#save-patch').addEventListener('click', () => saveCurrent());
 $('#save-as-new').addEventListener('click', () => saveCurrent(true));
+$('#live-save')?.addEventListener('click', () => saveCurrent());
 $('#undo').addEventListener('click', undo);
 $('#redo').addEventListener('click', redo);
 document.addEventListener('keydown', event => {

@@ -129,8 +129,10 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-builder { grid-template-columns: 300px minmax(0, 1fr) minmax(320px, 30%); }
 .fs-builder .builder-chain > .Box-header .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
 .fs-builder .side-box { padding: 0; gap: 0; }
-.fs-builder .patch-box { flex: none; }
+.fs-builder .patch-box { flex: 1 1 0; min-height: 0; }
+.fs-builder .patch-box.is-collapsed { flex: none; }
 .fs-builder .side-box-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
+.fs-builder .patch-box .side-box-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .fs-builder .fs-pane-body[hidden] { display: none; }
 /* Advice takes the rest of the column under the patch, and scrolls inside */
 .fs-builder .advice { flex: 1 1 0; margin: 0; }
@@ -147,7 +149,7 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 /* My patches is the right column; its list scrolls and never grows past the screen with many patches */
 .fs-builder .library { padding: 12px 16px 0; gap: 8px; }
 .fs-builder .library-actions { gap: 4px; }
-.fs-builder .library-list { flex: 1; min-height: 48px; max-height: none; }
+.fs-builder .library-list { flex: 1; min-height: 48px; max-height: none; overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; overscroll-behavior: contain; }
 @media (max-width: 1199px) {
   .fs-builder { grid-template-columns: minmax(0, 1fr) 320px; grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
   .fs-builder .builder-chain { grid-column: 1; grid-row: 1; }
