@@ -329,7 +329,7 @@
       </div>` : ''}
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
         ${m.crcOk ? '' : `<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly.</p><div class="usb-row"><button class="btn btn-sm btn-warning usb-read-again" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button></div>`}
-        ${linked?.error ? `<p class="usb-warn">This linked patch cannot be updated: ${escapeHtml(linked.error)}</p>` : linked ? `<p class="usb-warn">This memory changed since it was last linked to <b>${escapeHtml(linked.entry.name)}</b>.</p><div class="usb-row"><button class="btn btn-sm btn-primary" data-act="sync">Review changes</button></div>` : ''}
+        ${linked?.error ? `<p class="usb-warn">This linked patch cannot be synchronized: ${escapeHtml(linked.error)}</p>` : linked ? `<p class="usb-warn">${linked.direction === 'local-to-pedal' ? `My patch changed since it was last linked to memory ${n}.` : `This memory changed since it was last linked to <b>${escapeHtml(linked.entry.name)}</b>.`}</p><div class="usb-row"><button class="btn btn-sm btn-primary" data-act="sync">${linked.direction === 'local-to-pedal' ? 'Update pedal memory' : 'Review changes'}</button></div>` : ''}
         ${chainCards(d)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
           <label>New name <input class="form-control form-control--sm" name="name" maxlength="28" value="${escapeHtml(d.name)}" required spellcheck="false" autocomplete="off" /></label>
@@ -537,12 +537,15 @@
     let pedalPatch;
     try { pedalPatch = toPatch(memory.decoded, { strict: true }); }
     catch (error) { return { error: error.message, link, entry }; }
-    if (canonicalPatch(pedalPatch) === link.pedalBaseline) return null;
     const libraryPatch = patchForEntry(entry);
+    const pedalChanged = canonicalPatch(pedalPatch) !== link.pedalBaseline;
+    const localChanged = link.libraryBaseline && canonicalPatch(libraryPatch) !== link.libraryBaseline;
+    if (!pedalChanged && !localChanged) return null;
     return {
-      number, link, entry, pedalPatch, libraryPatch,
-      changes: patchDiff(libraryPatch, pedalPatch),
-      conflict: link.libraryBaseline && canonicalPatch(libraryPatch) !== link.libraryBaseline
+      number, link, entry, memory, pedalPatch, libraryPatch, pedalChanged, localChanged,
+      direction: pedalChanged && localChanged ? 'conflict' : localChanged ? 'local-to-pedal' : 'pedal-to-local',
+      changes: patchDiff(localChanged && !pedalChanged ? pedalPatch : libraryPatch, localChanged && !pedalChanged ? libraryPatch : pedalPatch),
+      conflict: pedalChanged && localChanged
     };
   }
   function linkMemory(number, patchId, patch, libraryPatch = patch) {
@@ -574,7 +577,7 @@
     if (!entry) { status('The selected My patch is no longer available.', 'danger'); return; }
     const baseline = canonicalPatch(patchForEntry(entry));
     const sync = readPedalSync();
-    sync.links[number] = { patchId: entry.id, pedalBaseline: baseline, libraryBaseline: baseline, updatedAt: new Date().toISOString() };
+    sync.links[number] = { patchId: entry.id, pedalBaseline: canonicalPatch(pedalPatch), libraryBaseline: baseline, updatedAt: new Date().toISOString() };
     if (!writePedalSync(sync)) return;
     renderMemories();
     status(`Memory ${number} linked to “${entry.name}”`, 'ok');
@@ -1182,16 +1185,21 @@
     const dialog = $('#usb-confirm');
     const changes = info.changes.changes.slice(0, 10).map(change => `<li>${escapeHtml(change)}</li>`).join('');
     const more = info.changes.count > 10 ? `<li>and ${info.changes.count - 10} more changes</li>` : '';
-    $('#usb-confirm-title').textContent = 'Update My patch';
-    $('#usb-confirm-body').innerHTML = `<p>Memory ${info.number} has changed on the pedal since it was linked to <b>${escapeHtml(info.entry.name)}</b>.</p>
-      ${info.conflict ? '<p class="usb-warn">The copy in My patches has also changed since the last link. Updating will replace that copy with the pedal version.</p>' : ''}
-      <ul>${changes || '<li>The patch content changed.</li>'}${more}</ul>
-      <p>Choose whether to replace the saved patch, keep it, or save the pedal version as a new patch.</p>`;
-    $('#usb-confirm-yes').textContent = 'Update My patch';
-    $('#usb-confirm-yes').classList.add('btn-danger');
-    $('#usb-confirm-yes').classList.remove('btn-primary');
-    $('#usb-confirm-keep').hidden = false;
-    $('#usb-confirm-new').hidden = false;
+    const localOnly = info.direction === 'local-to-pedal';
+    $('#usb-confirm-title').textContent = localOnly ? 'Update pedal memory' : 'Update My patch';
+    $('#usb-confirm-body').innerHTML = localOnly
+      ? `<p>My patch <b>${escapeHtml(info.entry.name)}</b> changed since it was linked to memory ${info.number}.</p>
+        <ul>${changes || '<li>The patch content changed.</li>'}${more}</ul>
+        <p>Update memory ${info.number} on the pedal from the saved My patch? A backup is made first and the memory is read back after writing.</p>`
+      : `<p>Memory ${info.number} has changed on the pedal since it was linked to <b>${escapeHtml(info.entry.name)}</b>.</p>
+        ${info.conflict ? '<p class="usb-warn">The copy in My patches has also changed since the last link. Updating will replace that copy with the pedal version.</p>' : ''}
+        <ul>${changes || '<li>The patch content changed.</li>'}${more}</ul>
+        <p>Choose whether to replace the saved patch, keep it, or save the pedal version as a new patch.</p>`;
+    $('#usb-confirm-yes').textContent = localOnly ? 'Update pedal memory' : 'Update My patch';
+    $('#usb-confirm-yes').classList.toggle('btn-danger', !localOnly);
+    $('#usb-confirm-yes').classList.toggle('btn-primary', localOnly);
+    $('#usb-confirm-keep').hidden = localOnly;
+    $('#usb-confirm-new').hidden = localOnly;
     dialog.showModal();
     return new Promise(resolve => {
       dialog.onclick = event => {
@@ -1222,6 +1230,13 @@
     if (found.error) { status(found.error, 'danger'); return; }
     const choice = await confirmSync(found);
     if (choice === 'no') { status('Nothing changed'); return; }
+    if (found.direction === 'local-to-pedal') {
+      let bytes;
+      try { bytes = toFile(found.libraryPatch, found.memory.data); }
+      catch (error) { status(`The local patch could not be prepared for the pedal: ${error.message}`, 'danger'); return; }
+      await send(number, bytes, false, `Updated memory ${number} from “${found.entry.name}”`, found.entry.id);
+      return;
+    }
     const beforeSync = cloneJson(readPedalSync());
     const before = cloneJson(found.entry);
     const list = readLibrary();
@@ -1269,10 +1284,12 @@
   }
 
   async function offerLinkedChanges(numbers) {
-    if (!pedalSyncEnabled()) return;
     for (const number of numbers) {
       const found = syncInfo(number);
-      if (found && !found.error) await syncMemory(number, found);
+      // Local edits are always offered when the pedal is read: this is the safe,
+      // explicit path the user asked for. Importing changes made on the pedal
+      // remains opt-in through the checkbox below.
+      if (found && !found.error && (found.localChanged || pedalSyncEnabled())) await syncMemory(number, found);
     }
   }
 
