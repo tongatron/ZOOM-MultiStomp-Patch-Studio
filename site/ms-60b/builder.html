@@ -130,7 +130,7 @@
               <button class="btn btn-sm btn-invisible" id="save-as-new">Save as new</button>
             </div>
             <section class="live-mode" id="live-mode" aria-labelledby="live-mode-title" hidden>
-              <div class="field-label field-label--row"><span id="live-mode-title">Live mode <span class="Label Label--attention">beta</span></span></div>
+              <div class="field-label field-label--row"><span id="live-mode-title">Live mode <span class="Label Label--success" title="Tested live on a real MS-60B+">tested</span> <span class="Label Label--attention">beta</span></span></div>
               <p class="field-hint">When enabled, parameter and ON/OFF changes are sent immediately to the patch currently loaded in the pedal's edit buffer, not to a stored memory. Effect order, replacements and the patch name still use the normal Send action.</p>
               <div class="save-row live-mode-actions">
                 <button class="btn btn-sm btn-primary" id="live-connect" type="button">Connect pedal</button>
@@ -141,7 +141,7 @@
               </div>
             </section>
             <section class="audition-mode" id="audition-mode" aria-labelledby="audition-title" hidden>
-              <div class="field-label field-label--row"><span id="audition-title">Test pedal <span class="Label Label--attention">beta</span></span><span class="audition-state" id="audition-state" role="status">Stopped</span></div>
+              <div class="field-label field-label--row"><span id="audition-title">Pedal audition <span class="Label Label--attention">beta</span></span><span class="audition-state" id="audition-state" role="status">Stopped</span></div>
               <p class="field-hint">Play a clean bass loop from the computer into the pedal. The browser cannot hear the pedal output: listen from the pedal output or your headphone amp.</p>
               <div class="audition-routing" aria-label="Audio connections">
                 <div><span class="audition-routing-num">1</span><span><b>Computer OUT</b><small>to pedal INPUT</small></span></div>
@@ -162,6 +162,7 @@
                 <span class="field-hint" id="audition-file-name">Built-in reference loop</span>
               </div>
               <p class="audition-warning">Start with the computer and pedal output volumes low. A computer headphone output can be hotter than a bass signal.</p>
+              <p class="audition-feedback"><span><b>It works for me.</b> I hear a hum in my setup, probably from my cables. If you test it, please send feedback.</span><button class="btn btn-sm" type="button" data-report="feedback" data-intro="Tell us how Pedal audition worked for you. Your message goes straight to Telegram." data-message="I tested Pedal audition. It works for me; I hear a hum that seems to come from my cables.">Send feedback</button></p>
             </section>
           </div>
         </div>
@@ -201,7 +202,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-12T23:05Z">Last update 13 November 2026 00:05 CET</time>
+      <time class="gh-updated" datetime="2026-11-12T23:47Z">Last update 13 November 2026 00:47 CET</time>
     </footer>
 
     <dialog class="Overlay" id="picker" aria-labelledby="picker-title">
@@ -274,9 +275,9 @@
     <script src="../rule-pack-editor.js?v=zoom24-20261026"></script>
     <script src="../dialogs.js?v=dialogs2-20261104"></script>
     <script src="../builder.js?v=zoom68-20261113"></script>
-    <script src="../audition.js?v=audition1-20261112"></script>
+    <script src="../audition.js?v=audition2-20261113"></script>
     <script src="../account.js?v=zoom57-20261112"></script>
-    <script src="../report.js?v=report6-20261029"></script>
+    <script src="../report.js?v=report7-20261113"></script>
     <script src="../pwa.js?v=zoom27-20261112"></script>
   </body>
 </html>

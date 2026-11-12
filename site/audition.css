@@ -20,8 +20,12 @@
 .audition-file-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .audition-file-row .field-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .audition-warning { margin: 12px 0 0; color: #d29922; font-size: 11px; line-height: 1.45; }
+.audition-feedback { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 0; color: var(--fg-muted); font-size: 11px; line-height: 1.45; }
+.audition-feedback b { color: var(--fg); }
+.audition-feedback .btn { flex: none; }
 @media (max-width: 640px) {
   .audition-controls { grid-template-columns: 1fr 1fr; }
   .audition-loop-field { grid-column: 1 / -1; }
   .audition-volume-field { grid-column: 1 / -1; }
+  .audition-feedback { align-items: flex-start; flex-direction: column; }
 }

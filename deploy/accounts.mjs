@@ -556,7 +556,7 @@ export function createAccounts({ dataDir }) {
       html(response, 200, messagePage('Account deleted', 'Your account and everything kept in it have been deleted. Patches stored in your browsers stay there.'),
         { 'Set-Cookie': sessionCookie('', 0, isHttps(request.headers)) });
     },
-    // "Report a problem" and "Contact us" (kind=contact: the MS-50G+ help page, a reply address is needed): open to everyone,
+    // "Report a problem", "Contact us" and beta feedback (kind=contact: the MS-50G+ help page, a reply address is needed): open to everyone,
     // answered in JSON. The message goes to the Telegram bot (nothing is stored here).
     'POST /api/report': async (request, response, form, ip) => {
       if (limits.tooMany('report', ip)) return json(response, 429, { error: 'Too many reports from this network. Try again in a few minutes.' });
@@ -567,12 +567,13 @@ export function createAccounts({ dataDir }) {
       const page = line('page', 300);
       const info = line('info', 600);
       const contact = form.kind === 'contact';
+      const feedback = form.kind === 'feedback';
       if (!message) return json(response, 400, { error: 'Write your message.' });
       if (contact && !email) return json(response, 400, { error: 'Add your email address, so we can answer you.' });
       if (email && !EMAIL_RE.test(email)) return json(response, 400, { error: 'The email address does not look valid.' });
       limits.note('report', ip);
       const session = current(request);
-      const text = [contact ? 'Message from ZOOM MultiStomp Studio (Contact us)' : 'Problem report from ZOOM MultiStomp Studio',
+      const text = [feedback ? 'Beta feedback from ZOOM MultiStomp Studio' : contact ? 'Message from ZOOM MultiStomp Studio (Contact us)' : 'Problem report from ZOOM MultiStomp Studio',
         `From: ${[name || '(no name)', email && `<${email}>`].filter(Boolean).join(' ')} (${session ? `account ${session.user.email}` : 'not signed in'})`,
         ...(page ? [`Page: ${page}`] : []), '', message, ...(info ? ['', '---', info] : [])].join('\n');
       if (await sendTelegram(text)) return json(response, 200, { ok: true });

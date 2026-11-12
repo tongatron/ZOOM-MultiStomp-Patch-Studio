@@ -459,7 +459,7 @@ try {
       }
       throw new Error('the notice did not arrive');
     };
-    const isReport = text => /^(Problem report|Message from) /.test(text);
+    const isReport = text => /^(Problem report|Message from|Beta feedback) /.test(text);
     const report = (fields, options) => post('/api/report', fields, options);
     const delivered = async (fields, options) => { const response = await report(fields, options); assert.equal(response.status, 200); return waitFor(isReport); };
 
@@ -490,12 +490,14 @@ try {
     assert.equal((await report({ kind: 'contact', message: 'Two hours', email: 'nope' })).status, 400);
     assert.equal(await delivered({ kind: 'contact', name: 'Ann', email: 'ann@example.com', message: 'Two hours', page: '/ms-50g/help.html' }),
       'Message from ZOOM MultiStomp Studio (Contact us)\nFrom: Ann <ann@example.com> (not signed in)\nPage: /ms-50g/help.html\n\nTwo hours');
+    assert.equal(await delivered({ kind: 'feedback', message: 'Pedal audition works for me.' }),
+      'Beta feedback from ZOOM MultiStomp Studio\nFrom: (no name) (not signed in)\n\nPedal audition works for me.');
     assert.match(await delivered({ kind: 'anything else', message: 'Hi' }), /^Problem report from ZOOM MultiStomp Studio/, 'an unknown kind is a problem report');
 
     // Nothing that was refused reached Telegram: every report notice that exists was one of the deliveries above
     const reports = [];
     for (const name of await names()) { const text = await readFile(join(telegramDir, name), 'utf8'); if (isReport(text)) reports.push(text); }
-    assert.equal(reports.length, 6, 'bass, Hello, q, €, Ann and the unknown kind, and nothing else');
+    assert.equal(reports.length, 7, 'bass, Hello, q, €, Ann, beta feedback, the unknown kind, and nothing else');
 
     const ip = freshIp();
     for (let i = 0; i < 5; i++) assert.equal((await report({ message: `Flood ${i}` }, { ip })).status, 200);

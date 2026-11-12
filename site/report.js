@@ -1,5 +1,5 @@
 // "Report a problem" and "Contact us": the form opens from the button in the status bar, or from any element with
-// data-report="report" | "contact"; the message goes to the site administrator through POST /api/report (a Telegram bot,
+// data-report="report" | "contact" | "feedback"; the message goes to the site administrator through POST /api/report (a Telegram bot,
 // see deploy/accounts.mjs). Open to everyone, signed in or not.
 // A trigger can bring its own sentence above the form: data-intro. "Contact us" sends only what the visitor writes
 // (name, email, message); "Report a problem" can also send the technical details (a ticked box).
@@ -17,6 +17,10 @@
     contact: {
       kind: 'contact', title: 'Contact us', intro: 'Write to the person who makes this site.',
       emailHint: '(needed, so we can answer you)', needEmail: true, placeholder: 'Your message', technical: false
+    },
+    feedback: {
+      kind: 'feedback', title: 'Send audition feedback', intro: 'Tell us how Pedal audition worked for you. Your message goes straight to Telegram.',
+      emailHint: '(optional, so we can reply)', needEmail: false, placeholder: 'What worked, what you heard, what you connected', technical: true
     }
   };
 
@@ -33,6 +37,7 @@
   let dialog = null;
   let resetLabel = 0;
   let current = null; // the mode of the form as it is now
+  let triggerButton = null;
   const drafts = {}; // what was typed in each mode and not sent yet
   const field = name => dialog.querySelector(`[name="${name}"]`);
   const part = selector => dialog.querySelector(selector);
@@ -95,6 +100,11 @@
           clearTimeout(resetLabel);
           resetLabel = setTimeout(() => { button.textContent = 'Report a problem'; }, 8000);
         }
+        if (triggerButton && current.name === 'feedback') {
+          triggerButton.textContent = '✓ Feedback sent';
+          clearTimeout(resetLabel);
+          resetLabel = setTimeout(() => { triggerButton.textContent = 'Send feedback'; }, 8000);
+        }
       } catch (problem) {
         fail(problem instanceof TypeError ? 'Cannot reach the server. Check your connection and try again.' : problem.message);
       } finally {
@@ -106,7 +116,10 @@
   function open(name, trigger) {
     if (!dialog) { build(); document.body.append(dialog); }
     const next = { name, ...MODES[name], intro: trigger?.dataset.intro || MODES[name].intro };
-    if (current && current.name !== name) { drafts[current.name] = field('message').value; field('message').value = drafts[name] ?? ''; }
+    const changed = !current || current.name !== name;
+    if (current && changed) drafts[current.name] = field('message').value;
+    if (changed) field('message').value = drafts[name] ?? trigger?.dataset.message ?? '';
+    triggerButton = trigger;
     current = next;
     part('#report-title').textContent = next.title;
     part('[data-intro]').textContent = next.intro;
