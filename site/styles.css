@@ -854,8 +854,10 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-rename input { width: 220px; }
 .usb-chain-line { display: block; margin: 2px 0 0; color: var(--fg-muted); font-size: 12px; }
 .usb-local { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; }
+.usb-local.is-linked { background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
 .usb-local-main { min-width: 0; }
 .usb-local-main small { margin-left: 8px; color: var(--fg-subtle); font-size: 12px; }
+.usb-local-linked { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--accent-fg); font-size: 11px; font-weight: 500; vertical-align: middle; }
 .usb-local .btn { flex: none; }
 .usb-sync-option { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-muted); color: var(--fg-muted); font-size: 13px; }
 .usb-sync-option input { margin: 0; }

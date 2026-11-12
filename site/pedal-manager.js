@@ -95,9 +95,11 @@
     const date = new Date(iso);
     return Number.isNaN(date.getTime()) ? 'unknown date' : date.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
+  const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
+  const newPatchId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const fileName = text => text.replace(/[^A-Za-z0-9 ._-]/g, '').trim() || 'PATCH';
-  const download = (bytes, name) => {
-    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const download = (bytes, name, type = 'application/octet-stream') => {
+    const url = URL.createObjectURL(new Blob([bytes], { type }));
     Object.assign(document.createElement('a'), { href: url, download: name }).click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
@@ -495,7 +497,7 @@
     return { enabled: saved?.enabled === true, links };
   }
   function writePedalSync(sync) {
-    try { localStorage.setItem(PEDAL_SYNC_KEY, JSON.stringify(sync)); return true; }
+    try { localStorage.setItem(PEDAL_SYNC_KEY, JSON.stringify(sync)); renderLocals(); return true; }
     catch { status('This browser does not allow pedal sync settings to be saved.', 'danger'); return false; }
   }
   const pedalSyncEnabled = () => readPedalSync().enabled;
@@ -653,15 +655,21 @@
   // [{ key, name, label, chain, bytes | error }]: the builder's open patch, a chosen .zptc file, then My patches
   function localItems() {
     const items = [];
+    const linkedMemories = patchId => Object.entries(readPedalSync().links)
+      .filter(([, link]) => link?.patchId === patchId)
+      .map(([memory]) => Number(memory))
+      .filter(Number.isInteger)
+      .sort((a, b) => a - b);
     const make = (key, label, getPatch) => {
       try {
         const patch = getPatch();
         const chain = patch.effects.filter(e => EFFECTS_DATA[e.index]).map(e => EFFECTS_DATA[e.index][0]);
         const edit = key === 'draft' ? activeEdit() : null;
+        const patchId = key.startsWith('lib:') ? key.slice('lib:'.length) : null;
         // The builder already holds its own patch (draft); the others open in it through a patch link
         const href = key === 'draft' ? 'builder.html' : PATCHLINK.url(patch);
-        try { items.push({ key, label, href, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null, patchId: key.startsWith('lib:') ? key.slice('lib:'.length) : null }); }
-        catch (error) { items.push({ key, label, href, name: patch.name || '(no name)', chain, error: error.message }); }
+        try { items.push({ key, label, href, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null, patchId, linkedMemories: patchId ? linkedMemories(patchId) : [] }); }
+        catch (error) { items.push({ key, label, href, name: patch.name || '(no name)', chain, error: error.message, patchId, linkedMemories: patchId ? linkedMemories(patchId) : [] }); }
       } catch {}
     };
     if (fileItem) {
@@ -671,7 +679,7 @@
     const draft = readJson(DRAFT_KEY, null);
     const edit = activeEdit();
     if (draft?.effects?.length) make('draft', edit?.memory ? `Open in the builder · editing memory ${edit.memory}` : 'Open in the builder', () => draft);
-    readJson(LIBRARY_KEY, []).forEach(entry => make(`lib:${entry.id}`, entry.updatedAt ? `Saved ${when(entry.updatedAt)}` : '', () => entry));
+    readJson(LIBRARY_KEY, []).forEach(entry => make(`lib:${entry.id}`, entry.updatedAt ? `Modified ${when(entry.updatedAt)}` : '', () => entry));
     return items;
   }
   function renderLocals() {
@@ -679,9 +687,10 @@
     renderUndo(); // busy and connected change the same moments as this list
     const items = localItems();
     $('#usb-local-count').textContent = items.filter(i => i.key.startsWith('lib:')).length;
+    $('#usb-library-export').disabled = !readLibrary().length;
     const target = selected && memories.get(selected)?.state !== 'loading' ? selected : null;
-    $('#usb-locals').innerHTML = items.length ? items.map(item => `<li class="usb-local" data-key="${escapeHtml(item.key)}">
-        <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}</span><small>${escapeHtml(item.label)}</small>
+    $('#usb-locals').innerHTML = items.length ? items.map(item => `<li class="usb-local${item.linkedMemories?.length ? ' is-linked' : ''}" data-key="${escapeHtml(item.key)}">
+        <div class="usb-local-main"><span class="usb-name">${escapeHtml(item.name)}${item.linkedMemories?.length ? `<span class="usb-local-linked" title="Linked to pedal ${item.linkedMemories.length === 1 ? 'memory' : 'memories'} ${item.linkedMemories.join(', ')}"><span aria-hidden="true">↔</span> Memory ${item.linkedMemories.join(', ')}</span>` : ''}</span><small>${escapeHtml(item.label)}</small>
           <span class="usb-chain-line">${escapeHtml(item.error || chainText(item.chain))}</span></div>
         <span class="usb-local-actions">
           <button class="btn btn-sm btn-icon btn-invisible btn-danger usb-delete"${item.key === 'draft' || item.key.startsWith('lib:') ? ' data-act="delete"' : ' disabled'} aria-label="${item.key === 'draft' ? `Delete ${escapeHtml(item.name)} draft` : `Delete ${escapeHtml(item.name)} from My patches`}" title="${item.key === 'draft' ? 'Delete builder draft' : item.key.startsWith('lib:') ? 'Delete from My patches' : 'Only saved patches can be deleted'}">${ICON_TRASH}</button>
@@ -718,6 +727,60 @@
     fileItem = { fileName: file.name, bytes: new Uint8Array(await file.arrayBuffer()) };
     renderLocals();
     status(selected ? `“${file.name}” ready: press its send button to write it to memory ${selected}` : `“${file.name}” ready: select a memory on the right, then press its send button`);
+  });
+  function normalizeImportedPatch(entry) {
+    if (!entry || typeof entry !== 'object' || typeof entry.name !== 'string' || !Array.isArray(entry.effects)) return null;
+    const effects = entry.effects.filter(effect => effect && Number.isInteger(effect.index) && EFFECTS_DATA[effect.index]).slice(0, ZPTC.MAX_EFFECTS).map(effect => ({
+      index: effect.index,
+      on: effect.on !== false,
+      values: effect.values && typeof effect.values === 'object' && !Array.isArray(effect.values) ? { ...effect.values } : {}
+    }));
+    return {
+      id: typeof entry.id === 'string' && PATCH_ID.test(entry.id) ? entry.id : null,
+      name: entry.name.slice(0, 28),
+      output: entry.output === 'amp' || entry.output === 'mixer' ? entry.output : null,
+      effects,
+      updatedAt: validDate(entry.updatedAt) ? entry.updatedAt : new Date().toISOString()
+    };
+  }
+  async function importLibraryJson(file) {
+    try {
+      const data = JSON.parse(await file.text());
+      if (data?.format && data.format !== `${PEDAL.id}-patch-library`) throw new Error('This backup belongs to another pedal.');
+      const source = Array.isArray(data) ? data : data?.patches;
+      if (!Array.isArray(source)) throw new Error('The file is not a patch library backup.');
+      const list = readLibrary();
+      let added = 0, updated = 0;
+      for (const raw of source) {
+        const patch = normalizeImportedPatch(raw);
+        if (!patch || !patch.effects.length) continue;
+        const existing = patch.id && list.find(entry => entry.id === patch.id);
+        if (existing) {
+          Object.assign(existing, patch, { id: existing.id });
+          updated++;
+        } else {
+          const entry = { ...patch, id: patch.id && !list.some(item => item.id === patch.id) ? patch.id : newPatchId() };
+          entry.name = freeName(entry.name, [...list]);
+          list.unshift(entry);
+          added++;
+        }
+      }
+      if (!added && !updated) throw new Error('No usable patches were found in the file.');
+      if (!storeLibrary(list)) return;
+      renderLocals();
+      status(`Imported ${added + updated} patch${added + updated === 1 ? '' : 'es'}${updated ? ` (${updated} updated)` : ''}`, 'ok');
+    } catch (error) { status(`Could not import the patch library: ${error.message}`, 'danger'); }
+  }
+  $('#usb-library-export').addEventListener('click', () => {
+    const list = readLibrary();
+    if (!list.length) return;
+    const backup = { format: `${PEDAL.id}-patch-library`, version: 1, exportedAt: new Date().toISOString(), patches: list };
+    download(JSON.stringify(backup, null, 2), `${PEDAL.id}-patch-${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+  });
+  $('#usb-library-import').addEventListener('change', event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (file) importLibraryJson(file);
   });
   window.addEventListener('storage', event => { if (event.key === LIBRARY_KEY || event.key === DRAFT_KEY) renderLocals(); });
   window.addEventListener('focus', renderLocals);
