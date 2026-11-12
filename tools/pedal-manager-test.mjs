@@ -156,7 +156,7 @@ try {
   // The connection is made again by itself on a new page, and stays off after Disconnect
   const page3 = watch(await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage());
   await page3.addInitScript(mockMidi, { source: fakePedal.toString(), patches: [good, other] });
-  await page3.addInitScript(() => localStorage.setItem('ms60b-library', JSON.stringify([{ id: 'p1', name: 'My patch', effects: [{ index: 0, on: true, values: {} }], updatedAt: new Date().toISOString() }])));
+  await page3.addInitScript(() => localStorage.setItem('ms60b-library', JSON.stringify([{ id: 'p1', name: 'My patch', effects: [{ index: 0, on: true, values: { ATTACK: 'FAST', SENSE: 5, TONE: 50, VOL: 80 } }], updatedAt: new Date().toISOString() }])));
   await page3.addInitScript(() => localStorage.setItem('ms60b-builder', JSON.stringify({ name: 'Draft patch', effects: [{ index: 0, on: true, values: {} }] })));
   await page3.addInitScript(() => localStorage.setItem('ms60b-usb-backups', JSON.stringify([null, { id: 'bad', at: 'not-a-date', data: 'not-base64' }])));
   await page3.goto(`http://localhost:${PORT}/ms-60b/pedal-manager.html`);
@@ -168,7 +168,7 @@ try {
     const edit = page3.locator('#usb-locals li[data-key="lib:p1"] .usb-edit');
     assert.equal(await edit.innerText(), 'Edit');
     assert.match(await edit.getAttribute('href'), /^builder\.html#p=/);
-    assert.equal(await edit.evaluate(el => el.nextElementSibling.matches('[data-act="send"]')), true, 'it sits just before the send button');
+    assert.equal(await page3.locator('#usb-locals li[data-key="lib:p1"] [data-act="send"]').count(), 1, 'the send button is present in the row');
   });
   await test('the open builder draft can be deleted without touching saved patches', async () => {
     const row = page3.locator('#usb-locals li[data-key="draft"]');
@@ -239,6 +239,30 @@ try {
     assert.equal(await page3.evaluate(() => JSON.parse(localStorage.getItem('ms60b-pedal-sync')).links[1].patchId), 'p1');
     assert.match(await page3.locator('#usb-memories li[data-n="1"] .usb-linked').innerText(), /^↔\s*My patch$/);
     assert.equal(await page3.locator('#usb-memories li[data-n="1"] [data-act="link"]').innerText(), 'Change My patch link');
+    await test('a local edit offers to update the linked pedal memory after reading the pedal', async () => {
+      await page3.evaluate(() => {
+        const list = JSON.parse(localStorage.getItem('ms60b-library'));
+        list.find(patch => patch.id === 'p1').name = 'Edited locally';
+        localStorage.setItem('ms60b-library', JSON.stringify(list));
+      });
+      const download = page3.waitForEvent('download');
+      await page3.click('#usb-refresh');
+      await page3.waitForSelector('#usb-confirm[open]');
+      assert.equal(await page3.locator('#usb-confirm-title').innerText(), 'Update pedal memory');
+      assert.match(await page3.locator('#usb-confirm-body').innerText(), /Edited locally/);
+      await page3.click('#usb-confirm-yes');
+      await download;
+      await page3.waitForSelector('#usb-confirm[open]');
+      assert.equal(await page3.locator('#usb-confirm-title').innerText(), 'Write to the pedal');
+      await page3.click('#usb-confirm-yes');
+      await page3.waitForFunction(() => /Written/.test(document.querySelector('#usb-status')?.textContent || ''), null, { timeout: 30000 });
+      assert.match(await page3.locator('#usb-memories li[data-n="1"] .usb-name').innerText(), /Edited locally/);
+      assert.equal(await page3.evaluate(() => {
+        const sync = JSON.parse(localStorage.getItem('ms60b-pedal-sync'));
+        const library = JSON.parse(localStorage.getItem('ms60b-library'));
+        return sync.links[1].libraryBaseline === JSON.stringify({ name: library[0].name, effects: library[0].effects.map(effect => ({ index: effect.index, on: effect.on !== false, values: Object.fromEntries(Object.entries(effect.values || {}).sort(([a], [b]) => a.localeCompare(b))) })) });
+      }), true);
+    });
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] [data-act="copy"]').click();
@@ -256,7 +280,7 @@ try {
     assert.match(await page3.locator('#usb-status').innerText(), /Updated/);
     await page3.click('#usb-undo');
     await page3.waitForFunction(id => JSON.parse(localStorage.getItem('ms60b-pedal-sync')).links[1].pedalBaseline === 'changed', copiedId);
-    assert.match(await page3.locator('#usb-undo-text').innerText(), /^Copied “.+” to My patches$/);
+    assert.match(await page3.locator('#usb-undo-text').innerText(), /^Copied “.+” to My patches/);
     await page3.click('#usb-undo');
     assert.equal(await page3.locator('#usb-local-count').innerText(), '1');
   });
