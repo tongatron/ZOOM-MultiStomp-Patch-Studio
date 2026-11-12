@@ -1,0 +1,27 @@
+/* The beta pedal audition panel lives next to Live mode in the MS-60B+ builder. */
+.audition-mode { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-muted); }
+.audition-mode[hidden] { display: none; }
+.audition-mode .field-label--row { margin-bottom: 6px; }
+.audition-mode .field-hint { margin: 0; }
+.audition-state { margin-left: auto; color: var(--fg-muted); font-size: 12px; }
+.audition-state[data-kind="playing"] { color: #3fb950; }
+.audition-state[data-kind="error"] { color: #f85149; }
+.audition-routing { display: grid; gap: 6px; margin: 12px 0; }
+.audition-routing > div { display: flex; align-items: center; gap: 8px; color: var(--fg-muted); font-size: 12px; }
+.audition-routing-num { display: inline-grid; place-items: center; flex: 0 0 auto; width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 50%; color: var(--accent-fg); font: 11px var(--mono); }
+.audition-routing b { color: var(--fg); font-weight: 600; }
+.audition-routing small { margin-left: 5px; color: var(--fg-subtle); font-size: 11px; }
+.audition-controls { display: grid; grid-template-columns: minmax(0, 1.35fr) auto minmax(150px, .9fr); align-items: end; gap: 10px; margin-top: 12px; }
+.audition-controls .field { min-width: 0; margin: 0; }
+.audition-loop-field select { width: 100%; }
+.audition-buttons { display: flex; gap: 6px; }
+.audition-volume-field output { float: right; color: var(--accent-fg); font: 12px var(--mono); }
+.audition-volume-field input { display: block; width: 100%; margin-top: 9px; accent-color: var(--accent); }
+.audition-file-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.audition-file-row .field-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.audition-warning { margin: 12px 0 0; color: #d29922; font-size: 11px; line-height: 1.45; }
+@media (max-width: 640px) {
+  .audition-controls { grid-template-columns: 1fr 1fr; }
+  .audition-loop-field { grid-column: 1 / -1; }
+  .audition-volume-field { grid-column: 1 / -1; }
+}

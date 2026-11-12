@@ -49,9 +49,11 @@ function setLiveAccess(me) {
   live.allowed = !!me?.signedIn && me.admin === true && String(me.email).toLowerCase() === LIVE_ADMIN_EMAIL;
   const panel = $('#live-mode');
   if (panel) panel.hidden = !live.allowed;
+  window.PEDALAUDITION?.setAccess(live.allowed);
   if (!live.allowed) {
     live.enabled = false;
     live.queue.clear();
+    window.PEDALAUDITION?.stop();
     if (live.connected) disconnectLive();
   }
 }

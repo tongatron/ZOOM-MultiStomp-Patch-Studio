@@ -49,9 +49,11 @@ function setLiveAccess(me) {
   live.allowed = !!me?.signedIn && me.admin === true && String(me.email).toLowerCase() === LIVE_ADMIN_EMAIL;
   const panel = $('#live-mode');
   if (panel) panel.hidden = !live.allowed;
+  window.PEDALAUDITION?.setAccess(live.allowed);
   if (!live.allowed) {
     live.enabled = false;
     live.queue.clear();
+    window.PEDALAUDITION?.stop();
     if (live.connected) disconnectLive();
   }
 }
@@ -495,7 +497,7 @@ function renderSaveState() {
   $('#save-as-new').hidden = !entry;
   $('#save-label').textContent = entry ? (dirty ? 'Save changes' : 'Saved') : 'Save';
   $('#save-status').innerHTML = !storageOk ? '<span class="status status--danger">Saving is not available in this browser</span>'
-    : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Unsaved changes' : `Saved ${formatDate(entry.updatedAt)}`}</span>`
+    : entry ? `<span class="status ${dirty ? 'status--attention' : 'status--ok'}">${dirty ? 'Unsaved changes' : `Modified ${formatDate(entry.updatedAt)}`}</span>`
     : state.effects.length ? '<span class="status status--attention">Patch not saved yet</span>' : '';
   $('#save-info').hidden = !entry && !$('#save-status').innerHTML; // nothing to show: no empty row between the buttons and Advice
 }
@@ -511,9 +513,10 @@ function renderLibrary() {
       <button class="library-open" data-lib="open" title="Open in the builder">
         <span class="library-name">${escapeHtml(entry.name)}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
-        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? PEDAL.amp.toLowerCase() : 'mixer'}` : ''} · ${formatDate(entry.updatedAt)}</span>
+        <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? PEDAL.amp.toLowerCase() : 'mixer'}` : ''} · Modified ${formatDate(entry.updatedAt)}</span>
       </button>
       <div class="library-tools">
+        <button class="btn btn-sm library-text" data-lib="text" title="Export readable .txt" aria-label="Export ${escapeHtml(entry.name)} as readable text">TXT</button>
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Download .zptc" aria-label="Download ${escapeHtml(entry.name)} as .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="duplicate" title="Duplicate" aria-label="Duplicate ${escapeHtml(entry.name)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
         <button class="btn btn-sm btn-icon btn-invisible btn-danger" data-lib="delete" title="Delete" aria-label="Delete ${escapeHtml(entry.name)}">${icon(ICON_TRASH)}</button>
@@ -818,6 +821,9 @@ function downloadPatch(source) {
   try { downloadBytes(ZPTC.encode(buildSpec(source)).file, fileName(source.name)); }
   catch (error) { notify('danger', error.message); }
 }
+function downloadTextPatch(source) {
+  downloadBytes(PATCHTEXT.format(source), PATCHTEXT.fileName(source.name), 'text/plain;charset=utf-8');
+}
 $('#download').addEventListener('click', () => downloadPatch(state));
 
 $('#library-list').addEventListener('click', async event => {
@@ -836,6 +842,9 @@ $('#library-list').addEventListener('click', async event => {
       break;
     case 'download':
       downloadPatch({ name: entry.name, effects: hydrate(entry) });
+      break;
+    case 'text':
+      downloadTextPatch(entry);
       break;
     case 'duplicate': {
       const copy = addToLibrary({ ...entry, name: `${entry.name.slice(0, 24)} COPY` }, list);
@@ -1176,7 +1185,7 @@ function askWhereToAdd(fx) {
     <div class="choice-list">
       <button class="choice" data-choice="current" ${full ? 'disabled' : ''}>
         <strong>Add to “${escapeHtml(name)}”</strong>
-        <span>${full ? 'This patch already has 6 effects.' : `Appended as effect ${state.effects.length + 1}. DSP ${pct(totalDsp())} → ${pct(totalDsp() + fx.dsp)}${over ? ' — over the limit' : ''}.`}</span>
+        <span>${full ? `This patch already has ${ZPTC.MAX_EFFECTS} effects.` : `Appended as effect ${state.effects.length + 1}. DSP ${pct(totalDsp())} → ${pct(totalDsp() + fx.dsp)}${over ? ' — over the limit' : ''}.`}</span>
       </button>
       ${dirty && canSave ? `<button class="choice" data-choice="save-new">
         <strong>Save “${escapeHtml(name)}” and start a new patch</strong>
