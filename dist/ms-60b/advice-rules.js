@@ -49,7 +49,8 @@
   });
 
   // ---- helpers ----------------------------------------------------------------------------------------
-  const { moveBefore, moveAfter, setValue } = ADVICE.edit;
+  const { moveAfter, setValue } = ADVICE.edit;
+  const { names, order, before, after, comesAfter, comesBefore } = ADVICE.kit;
   const gainOf = s => ['GAIN', 'SUSTAIN', 'BOOST', 'DIST', 'INPUT'].map(p => s.num(p)).find(n => n !== null) ?? null;
   const blendParam = s => ['BLEND', 'BALANCE'].find(p => s.has(p));
   // Parameters with a symmetric dB range (EQ bands, amp tone stacks): [{ name, value, max }]
@@ -58,13 +59,6 @@
     .filter(({ m }) => m && m[1] === m[2])
     .map(({ p, m }) => ({ name: p.name, value: s.num(p.name), max: Number(m[2]) }))
     .filter(x => x.value !== null);
-  const names = list => list.map(s => s.fx.name).join(', ');
-  // Order rule factory: `subject` effects should come before (or after) the reference effect.
-  const orderRule = ({ subject, reference, when }) => ctx => {
-    const ref = reference(ctx);
-    if (!ref) return [];
-    return ctx.of(subject).filter(s => when(s, ref)).map(s => ({ s, ref }));
-  };
 
   ADVICE.addRules([
     // ---- objective problems ----
@@ -80,15 +74,7 @@
       sources: ['zoomManual'],
       check: ctx => ctx.dsp > 95 && ctx.dsp <= 100 ? [{ message: `Estimated load is ${ctx.dsp.toFixed(1)}%. Leave a little headroom if the pedal reports PROCESS OVERFLOW.` }] : []
     },
-    {
-      id: 'level.muted', severity: 'error', topic: 'levels', title: 'Effect volume at zero',
-      why: 'VOL sets the output level of the effect. At 0 the effect is switched on but nothing comes out of it, so the whole patch goes silent.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => s.has('VOL') && s.num('VOL') === 0).map(s => ({
-        slots: [s.i], message: `${s.label} has VOL at 0.`,
-        fix: { label: 'Set VOL to 80', apply: p => setValue(p, s.i, 'VOL', 80) }
-      }))
-    },
+    ...ADVICE.sharedRules('level.muted'),
     {
       id: 'level.stacked-boosts', severity: 'tip', topic: 'levels', title: 'Several loud gain stages in a row',
       why: 'Each drive or preamp has its own level control. Stacking several set high can make the patch much louder than the others, or clip the next stage. Match the level with the effect on and off, starting from unity.',
@@ -98,67 +84,32 @@
         return loud.length >= 2 ? [{ slots: loud.map(s => s.i), message: `${names(loud)} all have a high level. Lower one so the patch stays at a similar volume to the others.` }] : [];
       }
     },
-    {
-      id: 'chain.all-off', severity: 'warning', topic: 'chain', title: 'Every effect is off',
-      why: 'With all effects bypassed the patch only passes the dry signal.',
-      sources: [],
-      check: ctx => ctx.slots.length && !ctx.active.length ? [{ message: 'Switch on at least one effect.' }] : []
-    },
-    {
-      id: 'mix.silent-effect', severity: 'warning', topic: 'levels', title: 'Effect mixed out completely',
-      why: 'MIX (or WET) sets how much of the effect is blended with the original sound. At 0 the effect uses processing power but is inaudible.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => (s.has('MIX') && s.num('MIX') === 0) || (s.has('WET') && s.num('WET') === 0)).map(s => {
-        const param = s.has('MIX') ? 'MIX' : 'WET';
-        return { slots: [s.i], message: `${s.label} has ${param} at 0, so it cannot be heard.`, fix: { label: `Set ${param} to 30`, apply: p => setValue(p, s.i, param, 30) } };
-      })
-    },
-    {
-      id: 'linesel.last', severity: 'warning', topic: 'routing', title: 'Line Selector at the end does nothing',
-      why: 'LINE SELECTOR sends the signal either to the next effect or straight to the outputs. As the last effect both routes end at the outputs.',
-      sources: ['zoomFxList'],
-      check: ctx => {
-        const last = ctx.active.at(-1);
-        return last && last.role === 'linesel' && ctx.active.length > 1 ? [{ slots: [last.i], message: 'Move LINE SELECTOR in front of the effects you want to be able to skip.' }] : [];
-      }
-    },
+    ...ADVICE.sharedRules('chain.all-off', 'mix.silent-effect', 'linesel.last'),
 
     // ---- order ----
     {
       id: 'order.tracking-after-gain', severity: 'warning', topic: 'order', title: 'Pitch-tracking effect after a drive or amp',
       why: 'Octavers, synths and pitch shifters follow the pitch of your note. Distortion adds harmonics that confuse the tracking and squashes the low octave, so these effects usually go first.',
       sources: ['alderete', 'ebs', 'boss'],
-      check: ctx => orderRule({ subject: 'tracking', reference: c => c.first('gain'), when: (s, ref) => s.i > ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes after ${ref.fx.name}.`,
-        fix: { label: `Move before ${ref.fx.name}`, apply: p => moveBefore(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'tracking', reference: c => c.first('gain'), when: (s, ref) => s.i > ref.i, message: comesAfter, fix: before })
     },
     {
       id: 'order.time-before-gain', severity: 'warning', topic: 'order', title: 'Delay or reverb before a drive or amp',
       why: 'Time-based effects are normally last. Distorting delay repeats or reverb tails turns them into mud.',
       sources: ['boss', 'yamaha'],
-      check: ctx => orderRule({ subject: 'time', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes before ${ref.fx.name}.`,
-        fix: { label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'time', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i, message: comesBefore, fix: after })
     },
     {
       id: 'order.gate-after-time', severity: 'warning', topic: 'order', title: 'Noise reduction after delay or reverb',
       why: 'A gate at the end cuts off delay repeats and reverb tails. Placed before them, the tails hide any early cut.',
       sources: ['sos', 'gearnews'],
-      check: ctx => orderRule({ subject: 'gate', reference: c => c.first('time'), when: (s, ref) => s.i > ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes after ${ref.fx.name}.`,
-        fix: { label: `Move before ${ref.fx.name}`, apply: p => moveBefore(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'gate', reference: c => c.first('time'), when: (s, ref) => s.i > ref.i, message: comesAfter, fix: before })
     },
     {
       id: 'order.gate-before-gain', severity: 'tip', topic: 'order', title: 'Noise reduction before the drive',
       why: 'Drives raise the noise floor. A gate placed right after the distortion catches the noise it creates.',
       sources: ['sos'],
-      check: ctx => orderRule({ subject: 'gate', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes before ${ref.fx.name}.`,
-        fix: { label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'gate', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i, message: comesBefore, fix: after })
     },
     {
       id: 'order.amp-before-drive', severity: 'tip', topic: 'order', title: 'Drive or preamp after the amp',
@@ -167,8 +118,8 @@
       check: ctx => {
         const stages = ctx.active.filter(s => s.role === 'drive' || s.role === 'preamp');
         return ctx.of('amp').flatMap(amp => {
-          const after = stages.filter(s => s.i > amp.i).at(-1);
-          return after ? [{ slots: [amp.i, after.i], message: `${amp.fx.name} comes before ${after.fx.name}.`, fix: { label: `Move ${amp.fx.name} after ${after.fx.name}`, apply: p => moveAfter(p, amp.i, after.i) } }] : [];
+          const stage = stages.filter(s => s.i > amp.i).at(-1);
+          return stage ? [{ slots: [amp.i, stage.i], message: `${amp.fx.name} comes before ${stage.fx.name}.`, fix: { label: `Move ${amp.fx.name} after ${stage.fx.name}`, apply: p => moveAfter(p, amp.i, stage.i) } }] : [];
         });
       }
     },
@@ -176,37 +127,25 @@
       id: 'order.envfilter-after-drive', severity: 'tip', topic: 'order', title: 'Envelope filter after a drive',
       why: 'Envelope filters react to how hard you play. After a drive they see a compressed signal and sweep less. Fuzz into a filter is also a classic sound, so try both.',
       sources: ['yamaha', 'talkbassEnv'],
-      check: ctx => orderRule({ subject: 'envfilter', reference: c => c.first('drive'), when: (s, ref) => s.i > ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes after ${ref.fx.name}.`,
-        fix: { label: `Move before ${ref.fx.name}`, apply: p => moveBefore(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'envfilter', reference: c => c.first('drive'), when: (s, ref) => s.i > ref.i, message: comesAfter, fix: before })
     },
     {
       id: 'order.comp-before-envfilter', severity: 'tip', topic: 'order', title: 'Compressor before an envelope filter',
       why: 'Heavy compression evens out your dynamics, which is exactly what an envelope filter reacts to. Many players put the filter first, others keep a light compressor in front: it depends on the sound you want.',
       sources: ['talkbassEnv', 'boss'],
-      check: ctx => orderRule({ subject: 'comp', reference: c => c.first('envfilter'), when: (s, ref) => s.i < ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} squeezes the dynamics before ${ref.fx.name}.`,
-        fix: { label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'comp', reference: c => c.first('envfilter'), when: (s, ref) => s.i < ref.i, message: (s, ref) => `${s.fx.name} squeezes the dynamics before ${ref.fx.name}.`, fix: after })
     },
     {
       id: 'order.mod-before-gain', severity: 'tip', topic: 'order', title: 'Modulation before a drive or amp',
       why: 'Chorus, flanger and phaser are usually placed after drives and amps so they add shimmer to the finished tone instead of being distorted.',
       sources: ['yamaha', 'boss'],
-      check: ctx => orderRule({ subject: 'mod', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes before ${ref.fx.name}.`,
-        fix: { label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'mod', reference: c => c.last('gain'), when: (s, ref) => s.i < ref.i, message: comesBefore, fix: after })
     },
     {
       id: 'order.reverb-before-delay', severity: 'tip', topic: 'order', title: 'Reverb before delay',
       why: 'Most players put delay before reverb so the repeats sit inside the space. Reverb first gives washier repeats; try both.',
       sources: ['yamaha'],
-      check: ctx => orderRule({ subject: 'reverb', reference: c => c.last('delay'), when: (s, ref) => s.i < ref.i })(ctx).map(({ s, ref }) => ({
-        slots: [s.i, ref.i], message: `${s.fx.name} comes before ${ref.fx.name}.`,
-        fix: { label: `Move after ${ref.fx.name}`, apply: p => moveAfter(p, s.i, ref.i) }
-      }))
+      check: order({ subject: 'reverb', reference: c => c.last('delay'), when: (s, ref) => s.i < ref.i, message: comesBefore, fix: after })
     },
 
     // ---- gain staging and low end ----
@@ -399,22 +338,7 @@
       }
     },
 
-    {
-      id: 'usage.footswitch', severity: 'tip', topic: 'usage', title: 'Footswitch-controlled effect',
-      why: 'This effect is operated with the footswitch (see its description in the Effects List), so its sound depends on how you press it. Try it on the pedal before relying on it.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => ['HOLD DELAY', 'LOOP ROLL', 'KICK FLANGER', 'BOMBER'].includes(s.fx.name)).map(s => ({
-        slots: [s.i], message: `${s.fx.name} is controlled with the footswitch: practise the footwork before a gig.`
-      }))
-    },
-    {
-      id: 'usage.tempo-sync', severity: 'tip', topic: 'usage', title: 'Delay synced to the tempo',
-      why: 'When the delay MODE is set to the metronome symbol, the delay time follows the tempo, so the result depends on the tempo of the patch.',
-      sources: ['zoomFxList'],
-      check: ctx => ctx.active.filter(s => s.has('MODE') && String(s.v('MODE')).includes('♩')).map(s => ({
-        slots: [s.i], message: `${s.fx.name}: the delay time follows the tempo. Set the tempo of this patch on the pedal.`
-      }))
-    }
+    ...ADVICE.sharedRules('usage.tempo-sync')
   ]);
 
   // ---- personal preferences: a pinned choice hides the rules that would argue with it ------------------

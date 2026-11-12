@@ -1,4 +1,4 @@
-// MS-50G+ (guitar) settings for the shared scripts in site/ (see site/pedal.js).
+// MS-50G+ (guitar) settings for the shared scripts in site/ (see site/ms-60b/pedal.js).
 const PEDAL = {
   id: 'ms50g',
   name: 'Zoom MS-50G+',

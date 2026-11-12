@@ -178,6 +178,21 @@ try {
     await fresh.context.close();
   });
 
+  await test('Patch and Advice containers can be collapsed and stay collapsed after reload', async () => {
+    const fresh = await device();
+    const p = fresh.page;
+    await p.locator('[data-collapse="patch"]').click();
+    assert.equal(await p.locator('#patch-panel-body').isHidden(), true);
+    assert.equal(await p.locator('[data-collapse="patch"]').getAttribute('aria-label'), 'Expand Patch');
+    await p.locator('[data-collapse="advice"]').click();
+    assert.equal(await p.locator('#advice-panel-body').isHidden(), true);
+    assert.equal(await p.locator('[data-collapse="advice"]').getAttribute('aria-label'), 'Expand Advice');
+    await p.reload();
+    assert.equal(await p.locator('#patch-panel-body').isHidden(), true);
+    assert.equal(await p.locator('#advice-panel-body').isHidden(), true);
+    await fresh.context.close();
+  });
+
   const PASSWORD = 'e2e password 123';
   const signIn = async (target, email) => {
     await target.goto(`${base}/login?next=/ms-60b/builder.html`);

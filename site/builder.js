@@ -41,6 +41,36 @@ const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
 
+// Patch and Advice are panes rather than separate pages: keep their collapsed state per pedal so a compact layout
+// survives a reload without hiding the current patch or changing the editor state.
+const BUILDER_PANELS_KEY = `${PEDAL.id}-builder-panels`;
+function setupCollapsiblePanels() {
+  let collapsed = {};
+  try { collapsed = JSON.parse(localStorage.getItem(BUILDER_PANELS_KEY) || '{}') || {}; } catch {}
+  for (const toggle of document.querySelectorAll('[data-collapse]')) {
+    const name = toggle.dataset.collapse;
+    const body = document.getElementById(toggle.getAttribute('aria-controls'));
+    const panel = toggle.closest('[data-collapsible-panel]');
+    if (!name || !body || !panel) continue;
+    const label = name === 'patch' ? 'Patch' : 'Advice';
+    const apply = expanded => {
+      body.hidden = !expanded;
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${label}`);
+      toggle.title = `${expanded ? 'Collapse' : 'Expand'} ${label}`;
+      panel.classList.toggle('is-collapsed', !expanded);
+    };
+    apply(collapsed[name] !== true);
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      apply(!expanded);
+      collapsed = { ...collapsed, [name]: expanded };
+      try { localStorage.setItem(BUILDER_PANELS_KEY, JSON.stringify(collapsed)); } catch {}
+    });
+  }
+}
+setupCollapsiblePanels();
+
 // Live mode talks to the pedal's current edit buffer. It deliberately does not write a stored memory:
 // parameter and ON/OFF changes are sent as editor commands, while structural changes still use Send.
 const live = { allowed: false, enabled: false, connected: false, current: null, queue: new Map(), sending: false, flushTimer: 0 };

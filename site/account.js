@@ -514,7 +514,7 @@ const ACCOUNT = (() => {
     if (typeof window === 'undefined' || window.SITE_UPDATES || typeof document === 'undefined') return Promise.resolve();
     return new Promise(resolve => {
       const script = document.createElement('script');
-      script.src = '/updates.js?v=1.0';
+      script.src = '/updates.js?v=updates2-20261112';
       script.onload = resolve;
       script.onerror = resolve; // the account remains usable if an offline cache has no manifest yet
       (document.head || document.documentElement).append(script);

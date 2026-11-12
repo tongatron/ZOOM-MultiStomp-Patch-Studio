@@ -545,6 +545,11 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .save-info[hidden], .save-info [hidden] { display: none; }
 .save-info .btn { margin-right: -10px; color: var(--fg-muted); } /* the text lines up with the right edge of the buttons above */
 .save-info .btn:hover { color: var(--fg); }
+.box-collapse { flex: none; width: 32px; height: 32px; color: var(--fg-muted); }
+.box-collapse svg { transition: transform .15s ease; }
+.box-collapse[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.fs-pane-body[hidden] { display: none; }
+.fs-builder .advice.is-collapsed { flex: none; }
 .live-mode { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-muted); }
 .live-mode[hidden] { display: none; }
 .live-mode .field-label--row { margin-bottom: 6px; }
