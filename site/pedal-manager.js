@@ -695,6 +695,7 @@
         <span class="usb-local-actions">
           <button class="btn btn-sm btn-icon btn-invisible btn-danger usb-delete"${item.key === 'draft' || item.key.startsWith('lib:') ? ' data-act="delete"' : ' disabled'} aria-label="${item.key === 'draft' ? `Delete ${escapeHtml(item.name)} draft` : `Delete ${escapeHtml(item.name)} from My patches`}" title="${item.key === 'draft' ? 'Delete builder draft' : item.key.startsWith('lib:') ? 'Delete from My patches' : 'Only saved patches can be deleted'}">${ICON_TRASH}</button>
           ${item.href ? `<a class="btn btn-sm usb-edit" href="${escapeHtml(item.href)}" data-act="edit-local" title="Open this patch in the patch builder">Edit</a>` : '<button class="btn btn-sm usb-edit" disabled title="This file cannot be opened in the patch builder">Edit</button>'}
+          ${item.patchId ? '<button class="btn btn-sm usb-text" data-act="text" title="Export readable .txt">TXT</button>' : ''}
           <button class="btn btn-sm btn-icon usb-send${target ? ' btn-primary' : ''}" data-act="send" ${!connected || !target || item.error || busy ? 'disabled' : ''}
             aria-label="${target ? `Send to memory ${target}` : 'Send to a memory'}"
             title="${!connected ? 'Connect the pedal first' : busy ? 'Wait until the pedal has been read' : !target ? 'Select a memory on the right first' : `Send to memory ${target}`}">${ICON_SEND}</button>
@@ -710,6 +711,13 @@
       return;
     }
     const button = event.target.closest('[data-act="send"]');
+    const textButton = event.target.closest('[data-act="text"]');
+    if (textButton) {
+      const id = textButton.closest('[data-key]').dataset.key.replace(/^lib:/, '');
+      const entry = readLibrary().find(item => item.id === id);
+      if (entry) download(PATCHTEXT.format(entry), PATCHTEXT.fileName(entry.name), 'text/plain;charset=utf-8');
+      return;
+    }
     if (!button || !selected) return;
     const item = localItems().find(i => i.key === button.closest('[data-key]').dataset.key);
     if (item?.bytes) send(selected, item.bytes, false, '', item.patchId || null);
