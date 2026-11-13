@@ -139,10 +139,8 @@ body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; 
 .fs-builder .advice { flex: 1 1 0; margin: 0; }
 /* A thin DSP load bar */
 .fs-builder .dsp-stack { height: 6px; border-radius: 3px; }
-/* Save and Download are small buttons right under the name and the DSP load */
+/* Save and Download stay directly after the patch name and DSP load, before the beta panels */
 .fs-builder .save-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.fs-builder .save-row, .fs-builder .save-info { order: 1; }
-.fs-builder .sr-status { order: 2; }
 /* The patch alerts ("Check on the pedal: …", missing name, raw values) are the first thing in the Advice pane */
 .fs-builder .advice .notices { padding: 12px 16px 0; }
 /* Each chain item shows its own DSP load: the per-effect legend would push the Advice pane off the screen */
