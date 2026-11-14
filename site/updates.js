@@ -23,8 +23,8 @@
   ];
 
   window.SITE_UPDATES = Object.freeze({
-    version: '1.0',
-    released: '2026-11-12',
+    version: '1.1',
+    released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]
   });
