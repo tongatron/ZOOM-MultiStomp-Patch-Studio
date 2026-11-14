@@ -20,6 +20,38 @@ We've added useful tools to audition, manage, and sync your sounds:
 
 **See all the details** in the complete changelog.
 
+## Ready-to-send user message
+
+**Subject:** 🎉 Version 1.1 is here — new tools for your sounds
+
+```text
+🎉 Version 1.1 is here!
+
+We've added new tools to help you audition, manage, and sync your sounds.
+
+✨ Now available
+
+• 🧭 ZOOM pedal model navigation
+  Reach each supported pedal model and its related tools more easily from the studio navigation.
+
+• 🔄 Patch synchronization
+  Keep the pedal version and the locally saved copy linked, compare both versions, and review changes before saving or sending them. Actions that may replace a patch require confirmation.
+
+🧪 Beta features
+
+• 🎧 Pedal audition
+  Play clean bass reference loops through your computer's audio output.
+
+• ⚡ Live mode
+  Send supported changes directly to the pedal's edit buffer while you work.
+
+Beta features are available from the account menu and are disabled by default. They may evolve in future versions.
+
+💾 We recommend keeping a backup of your patch before sending changes to the pedal.
+
+Thanks for using ZOOM MultiStomp Studio! 🎸
+```
+
 ### Actions
 
 - `See what's new` → opens `NEWS.md` or the equivalent web page.
@@ -39,22 +71,16 @@ Proposed content:
 
 Version 1.1 introduces new tools for auditioning sounds, reaching pedal models more quickly, and keeping patches in sync.
 
-### Pedal audition and Live mode
+### Published features
 
-- Bass reference loops can be played through the computer's audio output.
-- Live mode lets you send supported changes to the pedal's edit buffer.
+- 🧭 ZOOM pedal model navigation.
+- 🔄 Patch synchronization with comparison and confirmation before replacement.
+
+### Beta features
+
+- 🎧 Pedal audition: bass reference loops through the computer's audio output.
+- ⚡ Live mode: supported changes sent to the pedal's edit buffer.
 - Beta features are available from the account menu and remain disabled by default.
-
-### ZOOM model navigation
-
-- Links to the pedal models are grouped in the studio navigation.
-- Each supported model keeps its tools and resources easy to reach.
-
-### Patch synchronization
-
-- The relationship between a patch read from the pedal and its locally saved copy is preserved during account synchronization.
-- You can compare both versions before saving or sending a change.
-- Actions that may replace a patch ask for confirmation.
 
 ### Notes
 
