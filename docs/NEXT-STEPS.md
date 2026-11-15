@@ -41,7 +41,7 @@ Firmware emulation remains out of scope: it would not replace the remote hardwar
 
 What the MS-60B+ tests taught and the page already uses ([`controlli-pedale.md`](controlli-pedale.md)):
 - PARAMETRIC EQ has the same ranges on both pedals. On the MS-60B+ Q is 0.5 + raw × 0.1 (raw 0, 1, 2, 27 = 0.5, 0.6, 0.7, 3.2) and FREQ is not linear (raw 4 = 50 Hz, raw 16 = 300 Hz): test 4 asks for six (FREQ, Q) pairs, enough to confirm it. Not decoded in the codec yet on either pedal, so the MS-50G+ stays "raw".
-- The MS-60B+ holds six entries: a six-effect file written with the BLANK slot first (seven entries) lost its sixth effect on the pedal over USB. Test 3 asks whether the MS-50G+ keeps all six when the patch comes through the app; if not, write six-effect files without BLANK for the MS-50G+ too (`ZPTC.forPedal`).
+- The MS-60B+ holds six entries: a six-effect file written with the BLANK slot first (seven entries) lost its sixth effect on the pedal over USB. Test 3 asks whether the MS-50G+ keeps all six when the patch comes through the app; if not, write six-effect files without BLANK for the MS-50G+ too (`ZPTC.forPedal`). Since 2026-11-15 the Pedal manager writes every patch without the BLANK (an MS-70CDR+ showed it as an empty effect unit); the builder's Download .zptc still writes it, for Handy Guitar Lab.
 - With the editor mode on, the pedal rewrites a memory by itself when its slots are browsed, and saves what is touched: testers are told to use free memories, make a backup first and leave the knobs alone while the app is connected.
 - A value read on the display is only useful with its raw value next to it, and a frequency scale needs five or more points: the tests ask for the lowest, the highest and some in between.
 

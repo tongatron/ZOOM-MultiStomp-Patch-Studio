@@ -275,14 +275,16 @@ const ZPTC = (() => {
     return equal(file, bytes);
   }
 
-  // The bytes to write to a pedal memory. The pedal holds at most MAX_EFFECTS entries per patch, but a file with the
-  // BLANK slot in front (ours, Handy Guitar Lab's) and a full chain has one more: the pedal accepts it and reads it
-  // back unchanged, then drops the last effect when the patch is loaded and saved (found 2026-10-28, 6-effect
-  // patch). That case is re-encoded without the BLANK; everything else is returned as it came.
+  // The bytes to write to a pedal memory, in the layout the pedal stores itself: no BLANK slot in front. Files from
+  // the builder and Handy Guitar Lab start with a BLANK (ID 0), but patches saved on the pedal never have one (factory
+  // memory 10, memory 53, a LINE SELECTOR patch saved on an MS-70CDR+). Written as it is, the BLANK costs one of the
+  // 6 entries a memory holds (a full chain then lost its last effect, MS-60B+ 2026-10-28) and the MS-70CDR+ shows it
+  // as an empty effect unit next to the others (tester report, 2026-11-15). So every patch with at least one effect is
+  // re-encoded without it (amp bits and cursor move one entry down); an empty patch keeps its BLANK, the only entry.
   function forPedal(input) {
     const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
     const spec = decode(bytes);
-    if (spec._noBlank || spec.effects.length < MAX_EFFECTS) return bytes;
+    if (spec._noBlank || !spec.effects.length) return bytes;
     const selected = Math.min(Math.max(parseInt(spec._prm2.slice(20, 22), 16) >> 5, 1), spec.effects.length); // BLANK layout: entry = position
     return encode({ ...spec, _noBlank: true, _prm2Refresh: true, selected, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }

@@ -241,7 +241,7 @@ try {
 
   await test('beta features are under the account, off by default, and independently persistent', async () => {
     await page.click('.account-button');
-    assert.equal(await page.locator('.account-version').innerText(), 'v. 1.0');
+    assert.equal(await page.locator('.account-version').innerText(), 'v. 1.1');
     assert.equal(await page.locator('[data-beta="audition"]').isChecked(), false);
     assert.equal(await page.locator('[data-beta="live"]').isChecked(), false);
     assert.equal(await page.locator('#audition-mode').isHidden(), true);

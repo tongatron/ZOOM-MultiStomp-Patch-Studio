@@ -1323,10 +1323,8 @@
       return;
     }
     if (d.effects.length > ZPTC.MAX_EFFECTS) { status(`A patch holds at most ${ZPTC.MAX_EFFECTS} effects; this one has ${d.effects.length}.`, 'danger'); return; }
-    // A full chain goes without the BLANK slot that starts a file: the pedal holds at most 6 entries and would drop the last effect
-    const sendable = ZPTC.forPedal(bytes);
-    const noBlank = sendable !== bytes;
-    bytes = sendable;
+    // Without the BLANK slot that starts a file: the pedal stores no BLANK, shows it as an empty unit and holds at most 6 entries
+    bytes = ZPTC.forPedal(bytes);
     if (bytes.length > info.size) { status(`The patch has ${bytes.length} bytes; a memory holds ${info.size}.`, 'danger'); return; }
     // 1. Backup of the memory about to be replaced (read fresh, not from the list)
     await step(`Backing up memory ${number}`, () => readOne(number));
@@ -1343,8 +1341,7 @@
     status('Waiting for your confirmation');
     const yes = await confirmWrite(`<p>${clearing ? `Clear <b>memory ${number}</b>: it is saved as an empty patch, with no effects, named <input class="form-control form-control--sm" id="usb-clear-name" maxlength="28" value="${escapeHtml(d.name)}" spellcheck="false" autocomplete="off" aria-label="Name of the empty patch" />.` : `Write <b>${escapeHtml(d.name)}</b> (${d.effects.length} effects, DSP ${d.dspTotal.toFixed(1)}%) to <b>memory ${number}</b>?`}</p>
       <p>It replaces <b>${escapeHtml(oldName)}</b>. A backup of it ${stored ? 'is in Backups on this page and ' : ''}was downloaded as a <code>.zptc</code> file.</p>
-      ${noBlank ? `<p>The file starts with a BLANK slot, and ${ZPTC.MAX_EFFECTS} effects fill every slot of the pedal: the BLANK is left out.</p>` : ''}
-      ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, clearing ? `Clear memory ${number}` : `Write to memory ${number}`);
+            ${d.dspTotal > 100 ? '<p class="usb-warn">The estimated DSP load is over 100%: the pedal will show PROCESS OVERFLOW.</p>' : ''}`, clearing ? `Clear memory ${number}` : `Write to memory ${number}`);
     if (!yes) { status('Nothing written'); return; }
     if (clearing) { // the name proposed is Empty; the user may have changed it
       const name = ($('#usb-clear-name')?.value || '').trim() || CLEARED_NAME;

@@ -149,16 +149,29 @@ await test('a full 6-effect chain is written without the BLANK slot: the pedal h
   assert.equal(Buffer.from(back.data).equals(Buffer.from(out)), true);
   assert.equal(ZPTC.decode(back.data).effects.length, 6);
 });
-await test('forPedal leaves the other patches as they are: up to 5 effects, no BLANK, exports and pedal patches', () => {
+await test('forPedal writes every patch without the BLANK slot, as the pedal stores it (the MS-70CDR+ shows a BLANK as an empty unit)', () => {
   // Same bytes, compared by content: the codec runs in its own vm context, so a Uint8Array made here is another class to it
   const same = file => assert.equal(Buffer.from(ZPTC.forPedal(file)).equals(Buffer.from(file)), true);
-  const five = ZPTC.encode({ name: 'FIVE FX', effects: SIX.slice(0, 5) }).file;
-  assert.equal(slotCount(five), 6);
-  same(five);
-  assert.equal(ZPTC.forPedal(five), five, 'and the very same array, which is how the manager tells nothing changed');
+  const one = ZPTC.encode({ name: 'LS', selected: 1, effects: SIX.slice(0, 1) }).file;
+  assert.equal(slotCount(one), 2, 'BLANK + 1 effect');
+  const out = ZPTC.forPedal(one);
+  assert.equal(slotCount(out), 1);
+  const [a, b] = [ZPTC.decode(one), ZPTC.decode(out)];
+  assert.equal(b._noBlank, true);
+  assert.equal(JSON.stringify(b.effects), JSON.stringify(a.effects), 'same effects and values');
+  assert.equal(prm2Bytes(b)[10] >> 5, 0, 'cursor on the only entry');
+  assert.equal(out.length, one.length - 28, 'one entry less: 4 bytes of ID and 24 of EDTB');
+  const five = ZPTC.encode({ name: 'FIVE FX', selected: 3, effects: SIX.slice(0, 5) }).file;
+  const f = ZPTC.decode(ZPTC.forPedal(five));
+  assert.equal(f.effects.length, 5);
+  assert.equal(prm2Bytes(f)[10] >> 5, 2, 'the third effect stays selected');
+  assert.equal(prm2Bytes(f)[20], 1 << 3, 'AMPG SVT: entry 2, bit 3');
+  // Left as they are: patches already without BLANK (pedal memories, forPedal output) and an empty patch, whose BLANK is its only entry
   same(ZPTC.encode({ name: 'SIX FX', _noBlank: true, effects: SIX }).file);
-  patches.forEach(same);
-  same(ZPTC.encode({ name: 'Empty', empty: true, effects: [] }).file);
+  same(out);
+  const empty = ZPTC.encode({ name: 'Empty', empty: true, effects: [] }).file;
+  assert.equal(ZPTC.forPedal(empty), empty, 'the very same array');
+  patches.forEach(file => { const d = ZPTC.decode(ZPTC.forPedal(file)); assert.ok(d._noBlank || !d.effects.length); assert.equal(d.effects.length, ZPTC.decode(file).effects.length); });
 });
 await test('the edit cursor of a patch without BLANK starts on its first entry and an edit keeps it', () => {
   const { file } = ZPTC.encode({ name: 'TWO FX', _noBlank: true, effects: SIX.slice(0, 2) });
