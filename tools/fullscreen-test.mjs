@@ -438,7 +438,7 @@ try {
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Not tested']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Testing']);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0, 'the firmware tag is not in the menu any more');
     assert.equal(await page.locator('.fs-menu-list a[aria-current]').evaluate(a => a.firstChild.textContent.trim()), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
@@ -749,7 +749,7 @@ try {
     assert.equal(await page.locator('.flash').count(), 0, 'no notice about the official manual');
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Not tested']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Testing']);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0);
     assert.equal(await page.locator('.fs-fw').count(), 0, 'the firmware tag of the MS-60B+ is not on the MS-50G+ pages');
     await page.keyboard.press('Escape');

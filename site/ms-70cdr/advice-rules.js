@@ -1,4 +1,4 @@
-// Advice rules and placement tips for the Zoom MS-70CDR+ (chorus, delay and reverb; not tested on the pedal yet).
+// Advice rules and placement tips for the Zoom MS-70CDR+ (chorus, delay and reverb; being tested on the pedal).
 // The order advice comes from guitar and effects sources, not from the bass advice of the MS-60B+. Effect order is
 // convention, not law: order rules are 'warning' or 'tip', never 'error'. 'error' is reserved for objective problems.
 // Shapes: see advice-engine.js. After changing this file run `node tools/advice-test.mjs`.
