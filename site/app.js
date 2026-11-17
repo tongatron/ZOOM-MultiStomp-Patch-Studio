@@ -25,7 +25,10 @@ const effects = EFFECTS_DATA.map(([name, category, model, description, tags, par
 const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => !effect.lcd || effect.lcd.replace(/\s/g, '').toLowerCase() === effect.name.replace(/\s/g, '').toLowerCase() ? '' : `<code class="fx-lcd" title="Name on the pedal display">${text}</code>`;
 const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
 const dspText = dsp => `${dsp.toFixed(1)}%`;
-const EXTRA_LABEL = '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
+// PEDAL.idsPending: a pedal whose effect IDs and DSP loads are not known yet (MS-200D+): no effect is an add-on, all wait for their IDs
+const EXTRA_LABEL = PEDAL.idsPending
+  ? '<span class="Label" title="The effect ID and DSP load of this pedal\'s effects are not known yet">DSP not known yet</span>'
+  : '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
 const dspMeter = (dsp, wide = false) => dsp === null ? EXTRA_LABEL : `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
 const state = { query: '', category: null, features: new Set(), favOnly: false, sort: 'zoom', view: 'list', visible: [] };
@@ -165,7 +168,10 @@ function openEffect(effect) {
         <div class="detail-add">${addToPatch} ${favButton(effect, true)}</div>
       </div>
     </div>
-    ${effect.extra ? `<section class="detail-section">
+    ${effect.extra && PEDAL.idsPending ? `<section class="detail-section">
+      <h3>DSP load</h3>
+      <p>The effect IDs and DSP loads of the ${escapeHtml(PEDAL.name.replace(/^Zoom /, ''))} are not known yet, so this page cannot estimate the load and patches cannot be built for this pedal yet.</p>
+    </section>` : effect.extra ? `<section class="detail-section">
       <h3>Handy Guitar Lab add-on</h3>
       <p>This effect is downloaded to the pedal with Handy Guitar Lab (★ in the Effects List). Its effect ID and DSP load are not known yet, so the Patch builder cannot add it.</p>
     </section>` : `<section class="detail-section">

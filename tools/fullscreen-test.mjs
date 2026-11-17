@@ -12,6 +12,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+// The pedal menu lists every pedal of site/pedals.js, with its label (written by tools/pedals.mjs). JSON copies the list
+// out of the vm context, whose arrays deepStrictEqual does not accept.
+const MENU_ITEMS = JSON.parse((await import('node:vm')).runInNewContext(
+  `${(await import('node:fs')).readFileSync(new URL('../site/pedals.js', import.meta.url), 'utf8')}\n;JSON.stringify(PEDAL_LIST.map(p => p.name + ' ' + p.kind + (p.status ? ' ' + p.status : '')))`, {}));
 
 const port = 18198;
 const base = `http://127.0.0.1:${port}`;
@@ -426,7 +430,7 @@ try {
     assert.equal(await page.getByText('How to load it on the pedal').count(), 0);
   });
 
-  await test('the Pedal menu comes first, lists the three Zoom pedals and closes', async () => {
+  await test('the Pedal menu comes first, lists the Zoom pedals of site/pedals.js and closes', async () => {
     await open('builder.html', SIZES[1]);
     assert.equal((await page.locator('.fs-nav > *').first().getAttribute('class')), 'fs-menu', 'the menu is the first item of the bar');
     // the button shows the selected pedal and an arrow, not a generic word
@@ -438,7 +442,7 @@ try {
     await page.locator('.fs-menu-button').click();
     assert.equal(await page.locator('.fs-menu-button').getAttribute('aria-expanded'), 'true');
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Testing']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), MENU_ITEMS);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0, 'the firmware tag is not in the menu any more');
     assert.equal(await page.locator('.fs-menu-list a[aria-current]').evaluate(a => a.firstChild.textContent.trim()), await page.locator('.fs-menu-current').textContent(), 'the menu marks the pedal the button shows');
     assert.equal(await page.locator('.fs-menu-list a[href="../ms-50g/builder.html"]').count(), 1, 'the other pedal opens on the same page');
@@ -749,7 +753,7 @@ try {
     assert.equal(await page.locator('.flash').count(), 0, 'no notice about the official manual');
     await page.locator('.fs-menu-button').click();
     const items = await page.locator('.fs-menu-list a').allTextContents();
-    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), ['MS-60B+ bass', 'MS-50G+ guitar Not tested', 'MS-70CDR+ spatial Testing']);
+    assert.deepEqual(items.map(t => t.replace(/\s+/g, ' ').trim()), MENU_ITEMS);
     assert.equal(await page.locator('.fs-menu-list .Label--success').count(), 0);
     assert.equal(await page.locator('.fs-fw').count(), 0, 'the firmware tag of the MS-60B+ is not on the MS-50G+ pages');
     await page.keyboard.press('Escape');

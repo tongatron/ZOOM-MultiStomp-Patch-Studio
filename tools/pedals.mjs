@@ -55,9 +55,9 @@ for (const { file, page, current, atRoot } of targets) {
   else { writeFileSync(file, html); written++; }
 }
 
-// The other lists of pedals must name the same pedals
+// The other lists of pedals must name the same pedals (deploy and account: only the pedals that sync)
 if (SITE === join(ROOT, 'site')) {
-  const ids = PEDALS.map(p => p.id).join(',');
+  const ids = PEDALS.filter(p => p.sync !== false).map(p => p.id).join(','); // pedals with patches to sync
   const server = await import(join(ROOT, 'deploy/pedals.mjs'));
   if (server.PEDALS.map(p => p.id).join(',') !== ids) problems.push('deploy/pedals.mjs: PEDALS ids differ from site/pedals.js');
   for (const p of server.PEDALS) {

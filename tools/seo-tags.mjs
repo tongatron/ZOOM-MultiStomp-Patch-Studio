@@ -55,6 +55,12 @@ const PAGES = [
     'Official ZOOM MS-70CDR+ documents: the manual in English and Italian and the Effects List PDF.', IMG70, 0.4],
   ['ms-70cdr/help.html', '/ms-70cdr/help.html', 'Help test the ZOOM MS-70CDR+: what we would need from owners',
     'Own a ZOOM MS-70CDR+? These short tests would show whether the patches made in the studio work on a real pedal. Pick the ones that fit your time.', IMG70, 0.4],
+  ['ms-200d/index.html', '/ms-200d/', 'ZOOM MS-200D+ effects list: 217 drive effects and their parameters',
+    'Explore all 217 effects of the ZOOM MS-200D+ drive pedal (boosters, overdrives, distortions, fuzzes, preamps) with the original Effects List text and every parameter and range. Beta.', IMG70, 0.8],
+  ['ms-200d/guide.html', '/ms-200d/guide.html', 'ZOOM MS-200D+ guide: find a drive effect',
+    'How to use the studio with the ZOOM MS-200D+ (beta): search the 217 effects, filter them by category and keep your favorites.', IMG70, 0.4],
+  ['ms-200d/resources.html', '/ms-200d/resources.html', 'ZOOM MS-200D+ manual, Effects List and Patch Memory List (PDF)',
+    'Official ZOOM MS-200D+ documents: the manual in English and Italian, the Effects List, the Patch Memory List and the version 1.20 supplement.', IMG70, 0.3],
   ['privacy.html', '/privacy.html', 'Privacy — what the studio stores and where',
     'What ZOOM MultiStomp Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
 ];
