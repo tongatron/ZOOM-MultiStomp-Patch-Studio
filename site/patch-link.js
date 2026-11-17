@@ -9,14 +9,20 @@ const PATCHLINK = (() => {
   const toBase64Url = text => btoa(String.fromCharCode(...new TextEncoder().encode(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const fromBase64Url = code => new TextDecoder().decode(Uint8Array.from(atob(code.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
 
-  // patch: { name, effects: [{ index, on, values }] }
-  const encode = patch => toBase64Url(JSON.stringify([String(patch.name || '').trim(), patch.effects.map(e => [e.index, e.on === false ? 0 : 1, paramNames(e.index).map(n => e.values?.[n] ?? null)])]));
+  // patch: { name, effects: [{ index, on, values }], _prm2?, rightPositionRaw? }
+  const encode = patch => toBase64Url(JSON.stringify([
+    String(patch.name || '').trim(),
+    patch.effects.map(e => [e.index, e.on === false ? 0 : 1, paramNames(e.index).map(n => e.values?.[n] ?? null)]),
+    (patch._prm2 || Number.isInteger(patch.rightPositionRaw)) ? { _prm2: patch._prm2 || null, rightPositionRaw: patch.rightPositionRaw ?? null } : null
+  ]));
 
   function decode(code, maxEffects = 6) {
-    const [name, effects] = JSON.parse(fromBase64Url(code));
+    const [name, effects, metadata] = JSON.parse(fromBase64Url(code));
     if (typeof name !== 'string' || !Array.isArray(effects)) throw new Error('not a patch');
     return {
       name: name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').slice(0, 28),
+      ...(typeof metadata?._prm2 === 'string' && /^[0-9a-f]{64}$/i.test(metadata._prm2) ? { _prm2: metadata._prm2.toLowerCase() } : {}),
+      ...(Number.isInteger(metadata?.rightPositionRaw) && metadata.rightPositionRaw >= 0 && metadata.rightPositionRaw <= 15 ? { rightPositionRaw: metadata.rightPositionRaw } : {}),
       effects: effects.filter(e => Array.isArray(e) && Number.isInteger(e[0]) && EFFECTS_DATA[e[0]]).slice(0, maxEffects).map(([index, on, values]) => ({
         index, on: on !== 0,
         values: Object.fromEntries(paramNames(index).map((n, i) => [n, Array.isArray(values) ? values[i] : null]).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && v.length <= 40)))

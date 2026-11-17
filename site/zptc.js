@@ -30,6 +30,10 @@ const ZPTC = (() => {
   const DEFAULT_HEADER = '00000000000000000000';
   // PRM2 of an exported patch with a single effect and no amp (patches/01base.zptc).
   const PRM2_TEMPLATE = '000000000000000000802c000000000000000000000000000000000000008007';
+  // The source layout names bits 105–108 of PRM2 `rightPosition`. The source does not document the
+  // pedal's user-facing position mapping, so the codec exposes this as a raw value and preserves it.
+  const PRM2_RIGHT_POSITION_START = 105;
+  const PRM2_RIGHT_POSITION_WIDTH = 4;
   // Hidden parameters (beyond the documented ones) seen in exports.
   const HIDDEN_DEFAULTS = { 'BASS AMP': { 8: 2 } };
   // Decimal ranges whose encoding was confirmed by importing generated patches into Handy Guitar Lab.
@@ -126,6 +130,22 @@ const ZPTC = (() => {
     return out;
   }
 
+  function readBits(bytes, start, width) {
+    let value = 0n;
+    for (let i = bytes.length - 1; i >= 0; i--) value = (value << 8n) | BigInt(bytes[i]);
+    return Number((value >> BigInt(start)) & ((1n << BigInt(width)) - 1n));
+  }
+  function writeBits(bytes, start, width, value) {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 0 || n >= 2 ** width) throw new Error(`PRM2 raw field must be an integer from 0 to ${2 ** width - 1}`);
+    let packed = 0n;
+    for (let i = bytes.length - 1; i >= 0; i--) packed = (packed << 8n) | BigInt(bytes[i]);
+    const shift = BigInt(start);
+    const mask = ((1n << BigInt(width)) - 1n) << shift;
+    packed = (packed & ~mask) | (BigInt(n) << shift);
+    for (let i = 0; i < bytes.length; i++) { bytes[i] = Number(packed & 0xffn); packed >>= 8n; }
+  }
+
   // ---- byte helpers -------------------------------------------------------------------------------
   const latin1 = (bytes, from, to) => String.fromCharCode(...bytes.subarray(from, to));
   const text = (str, len) => Uint8Array.from(String(str).padEnd(len, ' ').slice(0, len), c => c.charCodeAt(0) & 0xff);
@@ -200,12 +220,12 @@ const ZPTC = (() => {
       ...(toHex(header) === toHex(defaultHeader()) ? {} : { _header: toHex(header) }),
       ...(chunks.TXJ1?.length ? { _txj1: toHex(chunks.TXJ1) } : {}),
       ...(bytes.length > size ? { _trailing: toHex(bytes.slice(size)) } : {}),
-      ...(chunks.PRM2 ? { _prm2: toHex(chunks.PRM2) } : {})
+      ...(chunks.PRM2 ? { _prm2: toHex(chunks.PRM2), rightPositionRaw: readBits(chunks.PRM2, PRM2_RIGHT_POSITION_START, PRM2_RIGHT_POSITION_WIDTH) } : {})
     };
   }
 
   // ---- encode -------------------------------------------------------------------------------------
-  // spec: { name, selected?, effects: [{ effect | id, on?, params?: { NAME: value | { raw } }, raw?: [12] }] }
+  // spec: { name, selected?, rightPositionRaw?, effects: [{ effect | id, on?, params?: { NAME: value | { raw } }, raw?: [12] }] }
   function encode(spec) {
     const name = String(spec.name ?? '').trim();
     if (!name) throw new Error('The patch needs a name');
@@ -249,6 +269,7 @@ const ZPTC = (() => {
       if (!(selected >= 1 && selected <= list.length)) throw new Error(`"selected" must be between 1 and ${list.length}`);
       prm2[10] = (prm2[10] & 0x1f) | ((first + selected - 1) << 5);
     }
+    if (spec.rightPositionRaw !== undefined && spec.rightPositionRaw !== null) writeBits(prm2, PRM2_RIGHT_POSITION_START, PRM2_RIGHT_POSITION_WIDTH, spec.rightPositionRaw);
 
     const description = spec.description ? text(spec.description, (spec.description.length + 4) & ~3) : new Uint8Array(0);
     const file = concat([

@@ -133,8 +133,15 @@ It is not fully deciphered. Two fields were identified by comparison:
 
 - **byte 10, bits 5–7**: the entry selected for editing, counted from 0 and counting the BLANK as an entry (so in a patch with the BLANK it equals the position in the chain). In `06FLIP` it is `0x4c` instead of `0x2c` because FLIPTOP (position 2) was selected. Patches stored by the pedal that nobody edited have 0; after browsing to the last slot of a 6-entry patch the pedal itself saved 5 (`0xac`, 2026-10-28, effects and values untouched). Inferred from those cases, not tested slot by slot.
 - **byte 20**: one bit for every slot that contains an amp. In `06FLIP` it is `0x08` (bit 3 = slot 2 + 1); in "Big Black" it is `0x40` (AMPG SVT in slot 5).
+- **bits 105–108, LSB-first**: a four-bit field named `rightPosition` by the reverse-engineered source. The site exposes it as `rightPositionRaw` and preserves it through `.zptc` import, My patches, patch links and export, but its user-facing R OUT POSITION mapping is not yet verified.
 
 The rest is copied from `01base` (template). Some fields of "Big Black" are still unexplained: byte 0 and bytes 11–12.
+
+To compare two otherwise identical pedal reads after changing only R OUT POSITION, run:
+
+`node tools/zptc.mjs compare-r-out first.zptc second.zptc`
+
+The command reports both raw values and every changed PRM2 byte. Do not infer the UI position from the raw number until the two files contain the same effects and parameters and the expected single setting change.
 
 ### Hidden parameters
 

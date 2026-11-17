@@ -5,6 +5,7 @@
 //   node tools/zptc.mjs decode <file.zptc>            → readable JSON on stdout
 //   node tools/zptc.mjs encode <spec.json> <out.zptc> → generates a patch
 //   node tools/zptc.mjs roundtrip <file.zptc>...      → decode + encode, checks byte for byte
+//   node tools/zptc.mjs compare-r-out <a.zptc> <b.zptc> → compares the R OUT PRM2 field and its changed bytes
 //   ZPTC_PEDAL=ms-50g node tools/zptc.mjs …            → uses the MS-50G+ effects (site/ms-50g/), not tested yet
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -38,7 +39,23 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       console.log(`${ok ? '✓' : '✗'} ${path}`);
     }
     process.exitCode = failed ? 1 : 0;
+  } else if (cmd === 'compare-r-out') {
+    if (args.length !== 2) throw new Error('Usage: zptc.mjs compare-r-out <first.zptc> <second.zptc>');
+    const firstBytes = readFileSync(args[0]);
+    const secondBytes = readFileSync(args[1]);
+    const first = decode(firstBytes);
+    const second = decode(secondBytes);
+    const a = Buffer.from(first._prm2, 'hex');
+    const b = Buffer.from(second._prm2, 'hex');
+    const changedBytes = [];
+    for (let i = 0; i < Math.max(a.length, b.length); i++) if (a[i] !== b[i]) changedBytes.push({ byte: i, first: a[i], second: b[i] });
+    console.log(JSON.stringify({
+      first: { file: args[0], name: first.name, rightPositionRaw: first.rightPositionRaw },
+      second: { file: args[1], name: second.name, rightPositionRaw: second.rightPositionRaw },
+      sameEffects: JSON.stringify(first.effects) === JSON.stringify(second.effects),
+      changedPrm2Bytes: changedBytes
+    }, null, 2));
   } else {
-    console.log('Usage: zptc.mjs decode <file> | encode <spec.json> <out.zptc> | roundtrip <file>...');
+    console.log('Usage: zptc.mjs decode <file> | encode <spec.json> <out.zptc> | roundtrip <file>... | compare-r-out <a> <b>');
   }
 }

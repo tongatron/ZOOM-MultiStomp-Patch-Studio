@@ -42,7 +42,7 @@ const PEDAL_SYNC_KEY = `${PEDAL.id}-pedal-sync`; // links: { memory: { patchId, 
 const PEDAL_LAST_READ_KEY = `${PEDAL.id}-usb-last-read`; // last pedal memories, saved by the Pedal manager
 const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 let uid = 0;
-const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
+const state = { name: '', effects: [], currentId: null, _prm2: null, rightPositionRaw: null }; // effects: [{ uid, index, on, values, open }]
 let libraryQuery = '';
 
 // Patch and Advice are panes rather than separate pages: keep their collapsed state per pedal so a compact layout
@@ -139,7 +139,12 @@ function decodedToBuilderPatch(decoded) {
       values: Object.fromEntries(Object.entries(effect.params).map(([name, value]) => [name, value && typeof value === 'object' ? value.raw : value]))
     };
   });
-  return { name: decoded.name, effects };
+  return {
+    name: decoded.name,
+    effects,
+    ...(typeof decoded._prm2 === 'string' ? { _prm2: decoded._prm2 } : {}),
+    ...(Number.isInteger(decoded.rightPositionRaw) ? { rightPositionRaw: decoded.rightPositionRaw } : {})
+  };
 }
 function liveEffectSlot(effectIndex) {
   return state.effects.slice(0, effectIndex).reduce((slot, effect) => slot + (catalog[effect.index].params.length > 4 ? 2 : 1), 0);
@@ -243,7 +248,14 @@ function slotFor(index, values = null) {
   return { uid: ++uid, index, on: true, values: { ...defaults, ...normalizeValues(index, values) }, open: true };
 }
 // Serializable patch shape: { name, effects: [{ index, on, values }] }
-const serialize = source => ({ name: source.name, effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })) });
+const validPrm2 = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
+const validRightPositionRaw = value => Number.isInteger(value) && value >= 0 && value <= 15 ? value : null;
+const serialize = source => ({
+  name: source.name,
+  effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })),
+  ...(validPrm2(source._prm2) ? { _prm2: validPrm2(source._prm2) } : {}),
+  ...(validRightPositionRaw(source.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(source.rightPositionRaw) } : {})
+});
 // Values of a replaced effect that the new effect can take over (same parameter name, valid in the new range)
 function carriedValues(slot, index) {
   const old = catalog[slot.index];
@@ -307,6 +319,8 @@ function restoreSnapshot(snap) {
   state.name = patch.name;
   state.effects = hydrate(patch);
   state.currentId = snap.id;
+  state._prm2 = patch._prm2 || null;
+  state.rightPositionRaw = Number.isInteger(patch.rightPositionRaw) ? patch.rightPositionRaw : null;
   $('#patch-name').value = state.name;
   render();
   patchHistory.restoring = false;
@@ -335,6 +349,8 @@ function load() {
     state.name = typeof saved.name === 'string' ? saved.name : '';
     state.effects = hydrate(saved);
     state.currentId = saved.currentId ?? null;
+    state._prm2 = typeof saved._prm2 === 'string' ? saved._prm2 : null;
+    state.rightPositionRaw = Number.isInteger(saved.rightPositionRaw) ? saved.rightPositionRaw : null;
   } catch {}
 }
 
@@ -405,7 +421,11 @@ function normalizeLibraryEntry(entry) {
   const updatedAt = typeof entry.updatedAt === 'string' && Number.isFinite(Date.parse(entry.updatedAt))
     ? entry.updatedAt
     : new Date(0).toISOString();
-  return { id: entry.id, name: entry.name.slice(0, 28), favorite: entry.favorite === true, output: validOutput(entry.output), effects, updatedAt };
+  return {
+    id: entry.id, name: entry.name.slice(0, 28), favorite: entry.favorite === true, output: validOutput(entry.output), effects, updatedAt,
+    ...(validPrm2(entry._prm2) ? { _prm2: validPrm2(entry._prm2) } : {}),
+    ...(validRightPositionRaw(entry.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(entry.rightPositionRaw) } : {})
+  };
 }
 function normalizeValues(index, values) {
   const source = values && typeof values === 'object' && !Array.isArray(values) ? values : {};
@@ -501,6 +521,8 @@ function renderChain() {
 function buildSpec(source = state) {
   return {
     name: source.name,
+    ...(validPrm2(source._prm2) ? { _prm2: validPrm2(source._prm2), _prm2Refresh: true } : {}),
+    ...(validRightPositionRaw(source.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(source.rightPositionRaw) } : {}),
     effects: source.effects.map(slot => {
       const fx = catalog[slot.index];
       const params = Object.fromEntries(fx.params.map(p => [p.name, p.codec ? slot.values[p.name] : { raw: Number(slot.values[p.name]) || 0 }]));
@@ -521,6 +543,13 @@ function renderSummary() {
   const totalEl = $('#dsp-total');
   totalEl.textContent = pct(total);
   totalEl.dataset.level = total > 100 ? 'over' : total > 95 ? 'near' : 'ok';
+  const rOutField = $('#r-out-field');
+  const rOutValue = $('#r-out-position');
+  if (rOutField && rOutValue) {
+    const raw = validRightPositionRaw(state.rightPositionRaw);
+    rOutField.hidden = raw === null;
+    rOutValue.textContent = raw === null ? '' : `raw ${raw}`;
+  }
   $('#dsp-stack').innerHTML = state.effects.map(slot => {
     const fx = catalog[slot.index];
     return `<span style="--c:${color(fx)};width:${fx.dsp / scale * 100}%" title="${escapeHtml(fx.name)} ${pct(fx.dsp)}"></span>`;
@@ -698,6 +727,8 @@ function loadPatch(patch, currentId = null) {
   state.name = patch.name;
   state.effects = hydrate(patch);
   state.currentId = currentId;
+  state._prm2 = typeof patch._prm2 === 'string' ? patch._prm2 : null;
+  state.rightPositionRaw = Number.isInteger(patch.rightPositionRaw) ? patch.rightPositionRaw : null;
   $('#patch-name').value = patch.name;
   render();
 }
@@ -1018,7 +1049,15 @@ function patchFromZptc(bytes) {
     return [{ index: fx.index, on: e.on, values }];
   });
   const name = decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim() || 'IMPORT';
-  return { patch: { name, effects }, skipped };
+  return {
+    patch: {
+      name,
+      effects,
+      ...(validPrm2(decoded._prm2) ? { _prm2: validPrm2(decoded._prm2) } : {}),
+      ...(validRightPositionRaw(decoded.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(decoded.rightPositionRaw) } : {})
+    },
+    skipped
+  };
 }
 function patchesFromBackup(text) {
   const data = JSON.parse(text);
@@ -1033,6 +1072,8 @@ function patchesFromBackup(text) {
       name: p.name.slice(0, 28),
       favorite: p.favorite === true,
       output: validOutput(p.output),
+      ...(validPrm2(p._prm2) ? { _prm2: validPrm2(p._prm2) } : {}),
+      ...(validRightPositionRaw(p.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(p.rightPositionRaw) } : {}),
       effects: p.effects.filter(e => e && catalog[e?.index]?.usable).slice(0, ZPTC.MAX_EFFECTS).map(e => ({
         index: e.index,
         on: e.on !== false,

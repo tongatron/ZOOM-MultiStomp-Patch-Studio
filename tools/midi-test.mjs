@@ -96,6 +96,18 @@ await test('renaming a patch changes only its names (the manager re-encodes it f
   assert.equal(JSON.stringify(back.effects), JSON.stringify(spec.effects));
   assert.equal(back._noBlank, true);
 });
+await test('PRM2 right-position raw field round-trips and changes only its four bits', () => {
+  const base = ZPTC.encode({ name: 'R OUT TEST', _noBlank: true, effects: [{ effect: 'DYNAMIC COMPRESSOR' }] }).file;
+  const original = ZPTC.decode(base);
+  assert.equal(Number.isInteger(original.rightPositionRaw), true);
+  const changed = ZPTC.decode(ZPTC.encode({ ...original, rightPositionRaw: 9, _prm2Refresh: true,
+    effects: original.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file);
+  assert.equal(changed.rightPositionRaw, 9);
+  const before = original._prm2.match(/../g).map(x => parseInt(x, 16));
+  const after = changed._prm2.match(/../g).map(x => parseInt(x, 16));
+  before.forEach((value, i) => assert.equal((value ^ after[i]) & (i === 13 ? 0xe1 : 0xff), 0, `PRM2 byte ${i} changed outside rightPosition`));
+  assert.equal(ZPTC.roundtrip(ZPTC.encode({ ...changed, effects: changed.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file), true);
+});
 await test('an edited pedal patch keeps its patch data and recomputes the amp bits', () => {
   const base = patches[2]; // "Big Black": AMPG SVT in slot 5 → PRM2 byte 20 = 0x40
   const spec = ZPTC.decode(base);

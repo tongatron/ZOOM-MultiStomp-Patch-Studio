@@ -7,7 +7,7 @@
   const $ = selector => document.querySelector(selector);
   const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const NO_MIDI = 'This browser has no Web MIDI. Use Chrome or Edge on a computer.';
-  const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, updatedAt }]
+  const LIBRARY_KEY = `${PEDAL.id}-library`; // shared with the builder: [{ id, name, effects: [{ index, on, values }], output, rightPositionRaw, updatedAt }]
   const DELETED_KEY = `${PEDAL.id}-deleted`; // { patchId: ISO time }: deletions waiting to reach other devices, kept by the builder too
   const DRAFT_KEY = `${PEDAL.id}-builder`;
   const EDIT_KEY = `${PEDAL.id}-pedal-edit`; // { memory, name, base: base64 PTCF, at } while a memory is edited in the builder
@@ -114,7 +114,7 @@
     </li>`;
   }).join('')}</ol>` : '<p class="usb-chain-line">No effects.</p>';
 
-  // Decoded PTCF → builder patch: { name, effects: [{ index, on, values }] }
+  // Decoded PTCF → builder patch: { name, effects: [{ index, on, values }], rightPositionRaw, _prm2 }
   function toPatch(decoded, { strict = false } = {}) {
     const effects = decoded.effects.flatMap(e => {
       const index = EFFECTS_DATA.findIndex(fx => fx[0] === e.effect);
@@ -125,7 +125,12 @@
       const values = Object.fromEntries(Object.entries(e.params).map(([n, v]) => [n, v && typeof v === 'object' ? v.raw : v]));
       return [{ index, on: e.on, values }];
     });
-    return { name: decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim().slice(0, 28) || 'PEDAL', effects };
+    return {
+      name: decoded.name.replace(/[^!%&'+,\-.=_ A-Za-z0-9]/g, '').trim().slice(0, 28) || 'PEDAL',
+      effects,
+      ...(typeof decoded._prm2 === 'string' ? { _prm2: decoded._prm2 } : {}),
+      ...(Number.isInteger(decoded.rightPositionRaw) ? { rightPositionRaw: decoded.rightPositionRaw } : {})
+    };
   }
   // Builder patch → PTCF bytes, encoded like the builder's Download .zptc. With base (the PTCF of the pedal
   // memory it was opened from), the data the builder does not edit is kept: description, header, slot layout and
@@ -137,7 +142,11 @@
     if (base) {
       const b = ZPTC.decode(base);
       kept = { _version: b._version, _header: b._header, _txj1: b._txj1, _trailing: b._trailing, _slot0: b._slot0, _noBlank: b._noBlank, _prm2: b._prm2, _prm2Refresh: true,
+        rightPositionRaw: patch.rightPositionRaw ?? b.rightPositionRaw,
         description: b.description, shortName: patch.name.trim() === b.name ? b.shortName : undefined };
+      Object.keys(kept).forEach(k => kept[k] === undefined && delete kept[k]);
+    } else if (typeof patch._prm2 === 'string') {
+      kept = { _prm2: patch._prm2, _prm2Refresh: true, rightPositionRaw: patch.rightPositionRaw };
       Object.keys(kept).forEach(k => kept[k] === undefined && delete kept[k]);
     }
     return ZPTC.encode({
@@ -273,6 +282,7 @@
     renderLocals();
     const failed = [...memories.values()].filter(m => m.state === 'error').length;
     status(failed ? `Connected: ${failed} of ${info.count} memories with errors (see the MIDI log)` : 'Connected', failed ? 'danger' : 'ok');
+    await offerDeletedLinkedPatches(Array.from({ length: info.count }, (_, i) => i + 1));
     await offerLinkedChanges(Array.from({ length: info.count }, (_, i) => i + 1));
     if (pendingSend) sendPending();
   }
@@ -314,7 +324,8 @@
     const linkLabel = linkedPatch ? 'Change My patch link' : 'Link to My patch';
     const isSelected = n === selected;
     const name = m.state === 'ok' ? d.name || '(no name)' : m.state === 'loading' ? 'Reading…' : m.state === 'empty' ? '(empty)' : `Unreadable: ${m.error}`;
-    const meta = m.state === 'ok' ? `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%${linked && !linked.error ? ' · changed' : ''}` : '';
+    const rOutMeta = m.state === 'ok' && Number.isInteger(d.rightPositionRaw) ? ` · R OUT raw ${d.rightPositionRaw}` : '';
+    const meta = m.state === 'ok' ? `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%${rOutMeta}${linked && !linked.error ? ' · changed' : ''}` : '';
     const drag = canArrange() && renaming !== n;
     return `<li class="usb-mem${isSelected ? ' is-selected' : ''}${drag ? ' is-draggable' : ''}" data-n="${n}" data-state="${m.state}"${drag ? ' draggable="true"' : ''}>
       <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
@@ -329,6 +340,7 @@
       </div>` : ''}
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
         ${m.crcOk ? '' : `<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly.</p><div class="usb-row"><button class="btn btn-sm btn-warning usb-read-again" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button></div>`}
+        ${Number.isInteger(d.rightPositionRaw) ? `<p class="field-hint"><b>R OUT POSITION</b>: raw value ${d.rightPositionRaw}. The user-facing position mapping is being calibrated from paired pedal reads; the raw field will be preserved.</p>` : ''}
         ${linked?.error ? `<p class="usb-warn">This linked patch cannot be synchronized: ${escapeHtml(linked.error)}</p>` : linked ? `<p class="usb-warn">${linked.direction === 'local-to-pedal' ? `My patch changed since it was last linked to memory ${n}.` : `This memory changed since it was last linked to <b>${escapeHtml(linked.entry.name)}</b>.`}</p><div class="usb-row"><button class="btn btn-sm btn-primary" data-act="sync">${linked.direction === 'local-to-pedal' ? 'Update pedal memory' : 'Review changes'}</button></div>` : ''}
         ${chainCards(d)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
@@ -429,7 +441,9 @@
       case 'copy': {
         const patch = toPatch(m.decoded);
         const list = readLibrary();
-        const entry = { id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: freeName(patch.name, list), effects: patch.effects, output: null, updatedAt: new Date().toISOString() };
+        const entry = { id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name: freeName(patch.name, list), effects: patch.effects, output: null,
+          ...(patch._prm2 ? { _prm2: patch._prm2 } : {}), ...(Number.isInteger(patch.rightPositionRaw) ? { rightPositionRaw: patch.rightPositionRaw } : {}),
+          updatedAt: new Date().toISOString() };
         list.unshift(entry);
         if (!storeLibrary(list)) return;
         linkMemory(n, entry.id, patch);
@@ -501,10 +515,18 @@
     catch { status('This browser does not allow pedal sync settings to be saved.', 'danger'); return false; }
   }
   const pedalSyncEnabled = () => readPedalSync().enabled;
-  const patchForEntry = entry => ({ name: entry.name, effects: entry.effects || [] });
+  const validPrm2 = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
+  const validRightPositionRaw = value => Number.isInteger(value) && value >= 0 && value <= 15 ? value : null;
+  const patchForEntry = entry => ({
+    name: entry.name,
+    effects: entry.effects || [],
+    ...(validPrm2(entry._prm2) ? { _prm2: validPrm2(entry._prm2) } : {}),
+    ...(validRightPositionRaw(entry.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(entry.rightPositionRaw) } : {})
+  });
   function canonicalPatch(patch) {
     return JSON.stringify({
       name: String(patch.name || ''),
+      rightPositionRaw: validRightPositionRaw(patch.rightPositionRaw),
       effects: (patch.effects || []).map(effect => ({
         index: effect.index,
         on: effect.on !== false,
@@ -751,6 +773,8 @@
       name: entry.name.slice(0, 28),
       output: entry.output === 'amp' || entry.output === 'mixer' ? entry.output : null,
       effects,
+      ...(validPrm2(entry._prm2) ? { _prm2: validPrm2(entry._prm2) } : {}),
+      ...(validRightPositionRaw(entry.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(entry.rightPositionRaw) } : {}),
       updatedAt: validDate(entry.updatedAt) ? entry.updatedAt : new Date().toISOString()
     };
   }
@@ -1244,7 +1268,10 @@
     if (!entry) { status('The linked patch is no longer in My patches.', 'danger'); return; }
     if (choice === 'new') {
       const copy = { id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-        name: freeName(found.pedalPatch.name, list), effects: cloneJson(found.pedalPatch.effects), output: null, updatedAt: new Date().toISOString() };
+        name: freeName(found.pedalPatch.name, list), effects: cloneJson(found.pedalPatch.effects), output: null,
+        ...(found.pedalPatch._prm2 ? { _prm2: found.pedalPatch._prm2 } : {}),
+        ...(Number.isInteger(found.pedalPatch.rightPositionRaw) ? { rightPositionRaw: found.pedalPatch.rightPositionRaw } : {}),
+        updatedAt: new Date().toISOString() };
       list.unshift(copy);
       if (!storeLibrary(list)) return;
       linkMemory(number, copy.id, found.pedalPatch);
@@ -1281,6 +1308,78 @@
       const restored = restoreLibraryEntry(before, beforeSync);
       return { ok: restored, text: restored ? `“${before.name}” restored in My patches` : 'This browser does not allow this site to save the previous patch.' };
     }, { toast: true });
+  }
+
+  function deletedLinkedMemories(numbers) {
+    const libraryIds = new Set(readLibrary().map(entry => entry.id));
+    const stale = [];
+    for (const number of numbers) {
+      const link = readPedalSync().links[number];
+      if (!link?.patchId || libraryIds.has(link.patchId)) continue;
+      const memory = memories.get(number);
+      if (memory?.state === 'empty') { unlinkMemory(number); continue; }
+      if (memory?.state !== 'ok' || !memory.crcOk || !memory.decoded) continue;
+      if (!memory.decoded.effects.length && memory.decoded.name === CLEARED_NAME) { unlinkMemory(number); continue; }
+      stale.push({ number, link, memory });
+    }
+    return stale;
+  }
+
+  async function clearDeletedLinkedMemory(item) {
+    const link = readPedalSync().links[item.number];
+    if (!link?.patchId || readLibrary().some(entry => entry.id === link.patchId)) return { ok: true, skipped: true };
+    status(`Preparing memory ${item.number} for clearing…`);
+    await readOne(item.number);
+    renderMemory(item.number);
+    const old = memories.get(item.number);
+    if (old?.state !== 'ok' || !old.crcOk || !old.memory) return { ok: false, text: `Memory ${item.number} could not be read safely, so it was not cleared.` };
+    const oldName = old.decoded?.name || '(no name)';
+    const stored = writeBackups([{ id: `${Date.now()}-deleted-link-${item.number}`, memory: item.number, name: oldName, at: new Date().toISOString(), data: toBase64(old.memory) }, ...readBackups()]);
+    download(old.data || old.memory, `backup ${String(item.number).padStart(3, '0')} ${fileName(oldName)}.zptc`);
+    renderBackups();
+    const empty = ZPTC.encode({ name: CLEARED_NAME, shortName: CLEARED_NAME, empty: true, effects: [] }).file;
+    const written = await writeAndCheck(item.number, empty);
+    if (!written.ok) return written;
+    unlinkMemory(item.number);
+    renderMemory(item.number);
+    if (stored) pushUndo(`Cleared deleted My patch from memory ${item.number}`,
+      () => undoWrites([{ number: item.number, before: old.memory, name: oldName, wrote: ptcfOf(empty) }]), { needsPedal: true });
+    return { ok: true, text: written.text };
+  }
+
+  async function offerDeletedLinkedPatches(numbers) {
+    const stale = deletedLinkedMemories(numbers);
+    if (!stale.length) return;
+    const shown = stale.slice(0, 12).map(({ number, link, memory }) => `<li>Memory ${number}: <b>${escapeHtml(memory.decoded.name)}</b>${link.pedalName ? ` · linked to deleted “${escapeHtml(link.pedalName)}”` : ''}</li>`).join('');
+    const more = stale.length > 12 ? `<li>and ${stale.length - 12} more</li>` : '';
+    const yes = await confirmWrite(`<p>Some patches linked to My patches were deleted. Clear the corresponding memories on the pedal too?</p>
+      <ul>${shown}${more}</ul>
+      <p>Each selected memory will be backed up first, then written as an empty patch named <b>${CLEARED_NAME}</b>. Nothing else on the pedal changes.</p>`, stale.length === 1 ? `Clear memory ${stale[0].number}` : `Clear ${stale.length} memories`, 'Deleted patches on the pedal');
+    if (!yes) { status('Deleted My patches were left on the pedal'); return; }
+    busy = true;
+    renderMemories();
+    renderLocals();
+    let cleared = 0;
+    const failures = [];
+    try {
+      for (const item of stale) {
+        const outcome = await clearDeletedLinkedMemory(item);
+        if (outcome.skipped) continue;
+        if (outcome.ok) cleared++;
+        else failures.push(outcome.text);
+      }
+    } finally {
+      busy = false;
+      renderMemories();
+      renderLocals();
+    }
+    if (failures.length) {
+      result(false, `${cleared} ${cleared === 1 ? 'memory was' : 'memories were'} cleared; ${failures.length} could not be cleared. ${failures[0]}`);
+      status('Some deleted patches remain on the pedal', 'danger');
+    } else if (cleared) {
+      result(true, `${cleared} ${cleared === 1 ? 'memory was' : 'memories were'} cleared as “${CLEARED_NAME}”.`);
+      status('Deleted patches cleared from the pedal', 'ok');
+    }
   }
 
   async function offerLinkedChanges(numbers) {
