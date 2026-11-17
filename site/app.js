@@ -26,8 +26,9 @@ const lcdBadge = (effect, text = escapeHtml(effect.lcd)) => !effect.lcd || effec
 const dspLevel = dsp => dsp < 10 ? 'low' : dsp < 20 ? 'mid' : dsp < 40 ? 'high' : 'max';
 const dspText = dsp => `${dsp.toFixed(1)}%`;
 // PEDAL.idsPending: a pedal whose effect IDs and DSP loads are not known yet (MS-200D+): no effect is an add-on, all wait for their IDs
-const EXTRA_LABEL = PEDAL.idsPending
-  ? '<span class="Label" title="The effect ID and DSP load of this pedal\'s effects are not known yet">DSP not known yet</span>'
+// PEDAL.noBuilder: a pedal without Patch builder (MS-80IR+): no "Add to patch"; an effect without an ID only lacks its DSP load
+const EXTRA_LABEL = PEDAL.idsPending || PEDAL.noBuilder
+  ? '<span class="Label" title="The effect ID and DSP load of this effect are not known yet">DSP not known yet</span>'
   : '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
 const dspMeter = (dsp, wide = false) => dsp === null ? EXTRA_LABEL : `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
@@ -156,7 +157,7 @@ let current = null;
 function openEffect(effect) {
   current = effect;
   const pages = Math.ceil(effect.params.length / KNOBS);
-  const addToPatch = effect.extra ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`;
+  const addToPatch = effect.extra || PEDAL.noBuilder ? '' : `<a class="btn btn-sm btn-primary" href="builder.html?add=${effect.slug}">${icon(ICON_PLUS)} Add to patch</a>`;
   $('#dialog-body').innerHTML = `
     <div class="detail-head">
       <img class="fx-thumb" src="${effect.image}" alt="${escapeHtml(effect.name)} icon on the pedal display" width="96" height="120" />
@@ -168,9 +169,9 @@ function openEffect(effect) {
         <div class="detail-add">${addToPatch} ${favButton(effect, true)}</div>
       </div>
     </div>
-    ${effect.extra && PEDAL.idsPending ? `<section class="detail-section">
+    ${effect.extra && (PEDAL.idsPending || PEDAL.noBuilder) ? `<section class="detail-section">
       <h3>DSP load</h3>
-      <p>The effect IDs and DSP loads of the ${escapeHtml(PEDAL.name.replace(/^Zoom /, ''))} are not known yet, so this page cannot estimate the load and patches cannot be built for this pedal yet.</p>
+      <p>${PEDAL.idsPending ? `The effect IDs and DSP loads of the ${escapeHtml(PEDAL.name.replace(/^Zoom /, ''))} are not known yet, so this page cannot estimate the load and patches cannot be built for this pedal yet.` : 'The DSP load of this effect is not known yet, so this page cannot estimate it.'}</p>
     </section>` : effect.extra ? `<section class="detail-section">
       <h3>Handy Guitar Lab add-on</h3>
       <p>This effect is downloaded to the pedal with Handy Guitar Lab (★ in the Effects List). Its effect ID and DSP load are not known yet, so the Patch builder cannot add it.</p>

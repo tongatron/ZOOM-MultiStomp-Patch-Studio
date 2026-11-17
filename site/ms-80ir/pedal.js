@@ -4,8 +4,9 @@ const PEDAL = {
   name: 'Zoom MS-80IR+',
   amp: 'Amp and IR',
   tested: false,
-  // The effect IDs and DSP loads are not known yet (site/ms-80ir/firmware-data.js is empty): no Patch builder yet
-  idsPending: true,
+  // The IDs and DSP loads of 40 of the 41 effects come from zoom-zt2 (site/ms-80ir/firmware-data.js; the IR effect has none).
+  // No Patch builder or Pedal manager yet: the patch format of this pedal has not been checked on hardware
+  noBuilder: true,
   maxEffects: 3, // the product page: one amp, one studio ambience and one other effect at the same time
   memories: 80,
   fxListUrl: 'https://zoomcorp.com/media/documents/E_MS-80IRplus_FX-list.pdf',
