@@ -21,9 +21,11 @@
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-70cdr/resources.html</loc><priority>0.4</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-70cdr/help.html</loc><priority>0.4</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-200d/</loc><priority>0.8</priority></url>
+  <url><loc>https://zoommultistompstudio.tongatron.org/ms-200d/pedal-manager.html</loc><priority>0.5</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-200d/guide.html</loc><priority>0.4</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-200d/resources.html</loc><priority>0.3</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-80ir/</loc><priority>0.8</priority></url>
+  <url><loc>https://zoommultistompstudio.tongatron.org/ms-80ir/pedal-manager.html</loc><priority>0.5</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-80ir/guide.html</loc><priority>0.4</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-80ir/resources.html</loc><priority>0.3</priority></url>
   <url><loc>https://zoommultistompstudio.tongatron.org/ms-90lp/</loc><priority>0.7</priority></url>

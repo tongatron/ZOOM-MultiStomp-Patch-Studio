@@ -127,3 +127,9 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - **MS-80IR+**: la lista di zoom-zt2 (`MS80IRPLUS.txt`) copre 40 effetti su 41 (manca solo IR) con ID e DSP %; la corrispondenza con la Effects List segue l'ordine dei gruppi (AMP 0x04…, TOOL 0x06…, DELAY 0x08…, STUDIO 0x0f…). Si possono riempire `site/ms-80ir/firmware-data.js` per quei 40; l'IR resta senza ID.
 - **MS-200D+**: zoom-zt2 elenca solo 73 effetti su 217 (drive 0x01–0x04: 28 voci, che combaciano per nome con la Effects List; poi 0x05, 0x06, 0x1d). Il firmware ufficiale contiene solo i moduli comuni `CMNDRV0–5.ZD2` e `BLANK.ZD2`: gli altri effetti sembrano varianti parametrizzate di quei moduli, quindi gli ID non si ricavano dai dati disponibili. Serve un'esportazione `.zptc` di Handy Guitar Lab da un MS-200D+ reale (o da un tester).
 - Il Patch builder richiede anche regole di formato per pedale (targetMask, slot: MS-200D+ 2 effetti, 250 memorie, bit di routing parallelo nel byte 32 di PRM2; MS-80IR+ 1 amp + 1 ambience + 1 altro, 80 memorie): non verificabili senza hardware. Issue di riferimento in zoom-zt2: #95, #82, #114.
+
+## 14. Pedal manager in sola lettura per i beta (2026-11-17)
+
+- `site/pedal-reader.js` e `pedal-reader.css`, pagine `ms-200d/pedal-manager.html` e `ms-80ir/pedal-manager.html`: connessione USB, lettura di tutte le memorie (nome dal PTCF, effetti per nome dove l'ID è noto, altrimenti `ID 0x…`), backup grezzi nel browser (ultimi 5, `<id>-usb-backups`), download `.zptc` e JSON. Nessuna scrittura, nessun My patches né Patch builder: il formato dei patch di questi pedali non è verificato su hardware. Test: `tools/pedal-reader-test.mjs` (pedale simulato, verifica anche che nessun comando di scrittura parta).
+- MS-80IR+: `firmware-data.js` ha 40 effetti su 41 (zoom-zt2); l'IR resta senza ID.
+- Per andare oltre (scrittura, My patches, builder) serve un export `.zptc` e una lettura da un pedale vero.

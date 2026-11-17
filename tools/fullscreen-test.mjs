@@ -61,7 +61,10 @@ const PAGES_70CDR = {
   'ms-70cdr/guide.html': PAGES['guide.html'],
   'ms-70cdr/help.html': PAGES['guide.html']
 };
-const ALL_PAGES = { ...PAGES, ...PAGES_50G, ...PAGES_70CDR };
+// The read-only Pedal manager of the beta pedals MS-200D+ and MS-80IR+ (pedal-reader.js)
+const READER = [['#rd-connect', 'Connect'], ['#rd-pedal-title', 'On the pedal'], ['#rd-backups-title', 'Backups'], ['#rd-list', 'memory list', 120]];
+const PAGES_BETA = { 'ms-200d/pedal-manager.html': READER, 'ms-80ir/pedal-manager.html': READER };
+const ALL_PAGES = { ...PAGES, ...PAGES_50G, ...PAGES_70CDR, ...PAGES_BETA };
 
 // Runs in the page: what is cut, off screen or too small
 function check(keys) {
