@@ -835,9 +835,8 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-memories, .usb-locals { max-height: 70vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
 .usb-mem, .usb-local { border-top: 1px solid var(--border-muted); }
 .usb-mem:first-child, .usb-local:first-child { border-top: 0; }
-.usb-mem-main { display: grid; grid-template-columns: 36px 1fr auto auto; align-items: baseline; gap: 10px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
+.usb-mem-main { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
 .usb-mem-main:hover:not(:disabled) { background: var(--bg-hover); }
-.usb-mem:not(.is-draggable) .usb-mem-main { grid-template-columns: 36px 1fr auto; }
 .usb-mem.is-draggable { cursor: grab; }
 .usb-mem.is-draggable .usb-mem-main { cursor: grab; }
 .usb-mem.is-dragging { opacity: .45; }
@@ -851,10 +850,11 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-mem[data-state="loading"] .usb-name, .usb-mem[data-state="empty"] .usb-name { color: var(--fg-subtle); }
 .usb-mem[data-state="error"] .usb-name { color: #f85149; }
 .usb-num { color: var(--fg-muted); font: 13px var(--mono); text-align: right; }
-.usb-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-mem-copy { min-width: 0; }
+.usb-name { display: block; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usb-linked { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--accent-fg); font-size: 11px; font-weight: 500; vertical-align: middle; }
 .usb-link-symbol { font-size: 14px; line-height: 1; }
-.usb-meta { color: var(--fg-muted); font: 12px var(--mono); }
+.usb-meta { display: block; margin-top: 2px; color: var(--fg-muted); font: 12px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usb-mem-detail { padding: 0 16px 10px 62px; }
 .usb-fx { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; list-style: none; counter-reset: fx; }
 .usb-fx li { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; }

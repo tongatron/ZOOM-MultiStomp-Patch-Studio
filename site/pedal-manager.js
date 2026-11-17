@@ -330,7 +330,7 @@
     const drag = canArrange() && renaming !== n;
     return `<li class="usb-mem${isSelected ? ' is-selected' : ''}${drag ? ' is-draggable' : ''}" data-n="${n}" data-state="${m.state}"${drag ? ' draggable="true"' : ''}>
       <button class="usb-mem-main" data-act="select" aria-pressed="${isSelected}" ${m.state === 'loading' ? 'disabled' : ''}>
-        <span class="usb-num">${n}</span><span class="usb-name">${escapeHtml(name)}${linkedLabel}</span><span class="usb-meta">${escapeHtml(meta)}</span>${drag ? '<span class="usb-grip" aria-hidden="true" title="Drag to another place">⠿</span>' : ''}
+        <span class="usb-num">${n}</span><span class="usb-mem-copy"><span class="usb-name">${escapeHtml(name)}${linkedLabel}</span><span class="usb-meta">${escapeHtml(meta)}</span></span>${drag ? '<span class="usb-grip" aria-hidden="true" title="Drag to another place">⠿</span>' : ''}
       </button>
       ${isSelected && m.state === 'error' ? `<div class="usb-mem-detail">
         <p class="usb-warn">${escapeHtml(m.error || 'This memory could not be read.')} It cannot be shown, renamed or moved${m.memory ? '' : '; nothing was received from the pedal, so it cannot be cleared either'}.</p>
@@ -368,7 +368,7 @@
     const open = r.n === staleOpen && !!r.decoded;
     return `<li class="usb-mem is-stale${open ? ' is-selected' : ''}" data-n="${r.n}" data-state="${r.state}">
       <button class="usb-mem-main" data-act="stale-open" aria-pressed="${open}" ${r.decoded ? '' : 'disabled'}>
-        <span class="usb-num">${r.n}</span><span class="usb-name">${escapeHtml(r.name)}</span><span class="usb-meta">${escapeHtml(r.meta)}</span>
+        <span class="usb-num">${r.n}</span><span class="usb-mem-copy"><span class="usb-name">${escapeHtml(r.name)}</span><span class="usb-meta">${escapeHtml(r.meta)}</span></span>
       </button>
       ${open ? `<div class="usb-mem-detail">
         ${chainCards(r.decoded)}
