@@ -318,9 +318,10 @@ try {
     const testers = page.locator('section[aria-labelledby="testers-title"]');
     assert.equal(await testers.locator('ol, li').count(), 0, 'no list of steps to follow');
     const help = testers.locator('a.btn');
-    assert.equal(await help.count(), 1, 'one button');
-    assert.equal(await help.textContent(), 'Help us test the MS-50G+');
-    assert.equal(await help.evaluate(a => new URL(a.href).pathname), '/ms-50g/help.html');
+    assert.equal(await help.count(), 2, 'two help pages: the pedals in test');
+    assert.deepEqual(await help.allTextContents(), ['Help us test the MS-50G+', 'Help us test the MS-70CDR+']);
+    assert.deepEqual(await help.evaluateAll(links => links.map(a => new URL(a.href).pathname)), ['/ms-50g/help.html', '/ms-70cdr/help.html']);
+    assert.deepEqual(await testers.locator('button[data-report="contact"]').allTextContents(), ['I own an MS-200D+', 'I own an MS-80IR+', 'I own an MS-90LP+'], 'one contact button for each beta pedal');
     // Contact us: the form of report.js, an email address is needed
     const outbox = join(dataDir, 'telegram');
     const lastNotice = async () => { const all = (await readdir(outbox)).sort(); return readFile(join(outbox, all[all.length - 1]), 'utf8'); };
@@ -341,7 +342,7 @@ try {
     assert.match(await lastNotice(), /^Message from ZOOM MultiStomp Studio \(Contact us\)\nFrom: Ann <ann@example\.com> \(not signed in\)\n\nCan I help with the tests\?$/, 'only what was written: no page, no details');
     assert.equal(await dialog.locator('form').isVisible(), false, 'the form gives way to the confirmation');
     await dialog.getByRole('button', { name: 'Close' }).click();
-    await help.click();
+    await help.first().click();
     await page.waitForURL(/\/ms-50g\/help\.html$/);
   });
 
@@ -740,11 +741,11 @@ try {
     await page.waitForURL(url => url.pathname === '/ms-60b/builder.html');
   });
 
-  await test('MS-50G+: the same layout with its own data, Pedal manager and the "Not tested" bar', async () => {
+  await test('MS-50G+: the same layout with its own data, Pedal manager and the beta bar', async () => {
     await open('ms-50g/index.html', SIZES[1]);
     assert.equal(await page.locator('.fs-menu-current').textContent(), 'MS-50G+ guitar');
     assert.deepEqual(await page.locator('.fs-nav > a').allTextContents(), ['Effects', 'Patch builder', 'Pedal manager']);
-    assert.match(await page.locator('.fs-note').textContent(), /^Not tested yet\./);
+    assert.match(await page.locator('.fs-note').textContent(), /^Beta — this pedal has not been tested/);
     assert.equal(await page.locator('#result-count').textContent(), '127 effects');
     assert.equal(await page.evaluate(() => PEDAL.id), 'ms50g');
     assert.equal(await page.locator('.fx-thumb').first().getAttribute('src'), 'assets/effects/fx-000.png');
@@ -788,29 +789,29 @@ try {
     assert.equal(await page.locator('.fs-status a[href="../privacy.html"]').count(), 1, 'the privacy page is the one of the site');
   });
 
-  await test('MS-50G+: the "Help us" button ends the "Not tested" bar and opens the help page, whose test patches open in the builder and which has Contact us (a form that writes to the Telegram bot) after its description', async () => {
+  await test('MS-50G+: the "Help us test" button in the beta bar opens the help page, whose test patches open in the builder and which has Contact us (a form that writes to the Telegram bot) after its description', async () => {
     for (const file of ['ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/guide.html', 'ms-50g/resources.html']) {
       for (const size of SIZES) {
         await open(file, size);
         const button = page.locator('.fs-note > a.btn');
-        assert.equal(await button.textContent(), 'Help us', `${file}: the button`);
+        assert.equal(await button.textContent(), 'Help us test', `${file}: the button`);
         assert.equal(await button.getAttribute('href'), 'help.html', file);
         const place = await page.evaluate(() => {
           const bar = document.querySelector('.fs-note').getBoundingClientRect();
           const b = document.querySelector('.fs-note > a.btn').getBoundingClientRect();
           const p = document.querySelector('.fs-note > p').getBoundingClientRect();
-          return { gapRight: Math.round(bar.right - b.right), afterText: b.left >= p.right - 1, inside: b.top >= bar.top && b.bottom <= bar.bottom };
+          return { afterText: b.left >= p.right - 1, inside: b.top >= bar.top && b.bottom <= bar.bottom };
         });
-        assert.ok(place.gapRight <= 17 && place.afterText && place.inside, `${file} ${size.join(' × ')}: the button sits at the right end of the bar, after the text ${JSON.stringify(place)}`);
+        assert.ok(place.afterText && place.inside, `${file} ${size.join(' × ')}: the button sits in the bar, after the text ${JSON.stringify(place)}`);
       }
     }
     await open('ms-50g/resources.html', SIZES[1]);
     await page.locator('.fs-note > a.btn').click();
     await page.waitForURL(/\/ms-50g\/help\.html$/);
 
-    // the help page: the Not tested bar, Contact us after the description, one section per test with its time, the two test patches
+    // the help page: the beta bar, Contact us after the description, one section per test with its time, the two test patches
     await open('ms-50g/help.html', SIZES[1]);
-    assert.equal(await page.locator('.fs-note').count(), 1, 'the page keeps the "Not tested" bar');
+    assert.equal(await page.locator('.fs-note').count(), 1, 'the page keeps the beta bar');
     assert.equal(await page.locator('#doc-title').textContent(), 'Help us test the MS-50G+');
     for (const id of ['at-a-glance', 'what-it-takes', ...[1, 2, 3, 4, 5, 6, 7, 8].map(n => `test-${n}`)]) assert.equal(await page.locator(`#toc a[href="#${id}"]`).count(), 1, `contents: ${id}`);
     for (let n = 1; n <= 8; n++) {

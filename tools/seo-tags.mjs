@@ -8,15 +8,15 @@ const SITE = join(dirname(fileURLToPath(import.meta.url)), '..', 'site');
 const ORIGIN = 'https://zoommultistompstudio.tongatron.org';
 const NAME = 'ZOOM MultiStomp Studio';
 // One preview image for every page (1200 × 675): the ZOOM MultiStomp Studio card
-const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor for the MS-60B+, MS-50G+ and MS-70CDR+.' };
+const IMG = { url: `${ORIGIN}/og-image.jpg`, alt: 'ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor for the MS-60B+, MS-50G+ and MS-70CDR+, and effects lists for the MS-200D+, MS-80IR+ and MS-90LP+.' };
 const IMG60 = IMG;
 const IMG50 = IMG;
 const IMG70 = IMG;
 
 // file, address, title, description, image, sitemap priority
 const PAGES = [
-  ['index.html', '/', 'ZOOM MS-60B+, MS-50G+ and MS-70CDR+ patch editor — MultiStomp Studio',
-    'Free online patch editor for the ZOOM MS-60B+ bass, MS-50G+ guitar and MS-70CDR+ spatial MultiStomp pedals: browse every effect, build patches with a live DSP meter and smart advice, export .zptc files for Handy Guitar Lab and manage the pedal over USB.', IMG60, 1],
+  ['index.html', '/', 'ZOOM MultiStomp patch editor and effects lists — MS-60B+, MS-50G+, MS-70CDR+, MS-200D+, MS-80IR+, MS-90LP+',
+    'Free online patch editor for the ZOOM MS-60B+ bass, MS-50G+ guitar and MS-70CDR+ spatial MultiStomp pedals, plus effects lists for the MS-200D+ drive, MS-80IR+ amp and IR and MS-90LP+ looper (beta): build patches with a live DSP meter and smart advice, export .zptc files for Handy Guitar Lab and manage the pedal over USB.', IMG60, 1],
   ['ms-60b/index.html', '/ms-60b/', 'ZOOM MS-60B+ effects list: 97 bass effects, parameters, DSP load',
     'Explore all 97 effects of the ZOOM MS-60B+ bass multi-effects pedal with the original Effects List text, every parameter and range, and the estimated DSP load. Then build a patch and export it for Handy Guitar Lab.', IMG60, 0.9],
   ['ms-60b/builder.html', '/ms-60b/builder.html', 'ZOOM MS-60B+ patch builder: design a bass patch and export .zptc',
@@ -84,12 +84,12 @@ const LD = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': [
     { '@type': 'WebSite', '@id': `${ORIGIN}/#website`, name: NAME, url: `${ORIGIN}/`, inLanguage: 'en',
-      description: 'Patch editor and effects library for the ZOOM MS-60B+ bass, MS-50G+ guitar and MS-70CDR+ spatial MultiStomp pedals.' },
+      description: 'Patch editor and effects library for the ZOOM MS-60B+ bass, MS-50G+ guitar and MS-70CDR+ spatial MultiStomp pedals, and effects lists for the MS-200D+ drive, MS-80IR+ amp and IR and MS-90LP+ looper (beta).' },
     { '@type': 'WebApplication', '@id': `${ORIGIN}/#app`, name: NAME, url: `${ORIGIN}/`, applicationCategory: 'MultimediaApplication',
       operatingSystem: 'Any (modern browser; USB manager needs Chrome or Edge)', browserRequirements: 'Window of at least 800 × 640 px',
       isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }, inLanguage: 'en',
-      description: 'Browse every effect of the ZOOM MS-60B+, MS-50G+ and MS-70CDR+, build patches with a live DSP meter and advice, export .zptc files for Handy Guitar Lab and manage all three pedals over USB.',
-      keywords: 'ZOOM MS-60B+, ZOOM MS-50G+, ZOOM MS-70CDR+, MultiStomp, patch editor, effects list, Handy Guitar Lab, zptc',
+      description: 'Browse every effect of six ZOOM MultiStomp pedals (MS-60B+, MS-50G+, MS-70CDR+, MS-200D+, MS-80IR+, MS-90LP+), build patches with a live DSP meter and advice, export .zptc files for Handy Guitar Lab and manage the MS-60B+, MS-50G+ and MS-70CDR+ over USB.',
+      keywords: 'ZOOM MS-60B+, ZOOM MS-50G+, ZOOM MS-70CDR+, ZOOM MS-200D+, ZOOM MS-80IR+, ZOOM MS-90LP+, MultiStomp, patch editor, effects list, Handy Guitar Lab, zptc',
       isPartOf: { '@id': `${ORIGIN}/#website` }, sameAs: ['https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio'] }
   ]
 });

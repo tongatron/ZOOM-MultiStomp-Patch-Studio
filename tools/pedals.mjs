@@ -35,7 +35,7 @@ function menu(indent, current, page, atRoot) {
   return `${indent}<ul class="fs-menu-list" id="pedal-menu" hidden>\n${items.map(item => `${indent}  ${item}`).join('\n')}\n${indent}</ul>`;
 }
 
-const betaBar = pedal => `<div class="fs-note fs-beta" role="note"><p><b>Beta</b> — this pedal has not been tested on real hardware yet. Own one? Tell us.</p><button class="btn btn-sm btn-primary" type="button" data-report="contact" data-intro="Tell us about your ${esc(pedal.name)}: what works, what does not, or how you could help test it.">Write to us</button></div>`;
+const betaBar = pedal => `<div class="fs-note fs-beta" role="note"><p><b>Beta</b> — this pedal has not been tested on real hardware yet. Own one? Tell us.</p>${pedal.help ? `<a class="btn btn-sm" href="${pedal.help}" title="Help us test the ${esc(pedal.name)}: a few short tests you can do at home">Help us test</a>` : ''}<button class="btn btn-sm btn-primary" type="button" data-report="contact" data-intro="Tell us about your ${esc(pedal.name)}: what works, what does not, or how you could help test it.">Write to us</button></div>`;
 
 const targets = [
   ...PEDALS.flatMap(pedal => htmlPages(pedal.folder).map(page => ({ file: join(SITE, pedal.folder, page), page, current: pedal, atRoot: false }))),

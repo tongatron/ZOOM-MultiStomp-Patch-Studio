@@ -7,11 +7,12 @@
 //   status  the label next to the name in the menu ('' for none)
 //   beta    true for the pedals added from 2026-11 (docs/piano-multistomp.md): their pages get the fixed beta bar
 //           with the Write to us button (the Contact us form of report.js)
+//   help    a page of tests for owners of the pedal (in its folder): the beta bar also gets a "Help us test" button to it
 //   sync    false for a pedal without patches yet (Effects page only): it stays out of the account sync, so it is not in
 //           deploy/pedals.mjs or PEDALS of site/account.js
 const PEDAL_LIST = [
   { id: 'ms60b', folder: 'ms-60b', name: 'MS-60B+', kind: 'bass', status: '', beta: false },
-  { id: 'ms50g', folder: 'ms-50g', name: 'MS-50G+', kind: 'guitar', status: 'Not tested', beta: false },
+  { id: 'ms50g', folder: 'ms-50g', name: 'MS-50G+', kind: 'guitar', status: 'Beta', beta: true, help: 'help.html' },
   { id: 'ms70cdr', folder: 'ms-70cdr', name: 'MS-70CDR+', kind: 'spatial', status: 'Testing', beta: false },
   { id: 'ms200d', folder: 'ms-200d', name: 'MS-200D+', kind: 'drive', status: 'Beta', beta: true, sync: false },
   { id: 'ms80ir', folder: 'ms-80ir', name: 'MS-80IR+', kind: 'amp', status: 'Beta', beta: true, sync: false },
