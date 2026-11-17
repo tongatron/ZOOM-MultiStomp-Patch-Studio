@@ -324,8 +324,9 @@
     const linkLabel = linkedPatch ? 'Change My patch link' : 'Link to My patch';
     const isSelected = n === selected;
     const name = m.state === 'ok' ? d.name || '(no name)' : m.state === 'loading' ? 'Reading…' : m.state === 'empty' ? '(empty)' : `Unreadable: ${m.error}`;
-    const rOutLabel = m.state === 'ok' && Number.isInteger(d.rightPositionRaw) ? ZPTC.rightPositionLabel(d.rightPositionRaw, d.effects.length) : null;
-    const rOutMeta = rOutLabel ? ` · R OUT ${rOutLabel}` : m.state === 'ok' && Number.isInteger(d.rightPositionRaw) ? ` · R OUT raw ${d.rightPositionRaw}` : '';
+    const hasRout = m.state === 'ok' && d.effects.length > 0 && Number.isInteger(d.rightPositionRaw);
+    const rOutLabel = hasRout ? ZPTC.rightPositionLabel(d.rightPositionRaw, d.effects.length) : null;
+    const rOutMeta = rOutLabel ? ` · R OUT ${rOutLabel}` : hasRout ? ` · R OUT raw ${d.rightPositionRaw}` : '';
     const meta = m.state === 'ok' ? `${d.effects.length} fx · ${d.dspTotal.toFixed(1)}%${rOutMeta}${linked && !linked.error ? ' · changed' : ''}` : '';
     const drag = canArrange() && renaming !== n;
     return `<li class="usb-mem${isSelected ? ' is-selected' : ''}${drag ? ' is-draggable' : ''}" data-n="${n}" data-state="${m.state}"${drag ? ' draggable="true"' : ''}>
@@ -341,7 +342,7 @@
       </div>` : ''}
       ${isSelected && m.state === 'ok' ? `<div class="usb-mem-detail">
         ${m.crcOk ? '' : `<p class="usb-warn">The pedal sent this memory with a checksum mismatch: it is shown, but it cannot be renamed, moved or replaced until it is read correctly.</p><div class="usb-row"><button class="btn btn-sm btn-warning usb-read-again" data-act="reread" ${connected && !busy ? '' : 'disabled'}>Read again</button></div>`}
-        ${Number.isInteger(d.rightPositionRaw) ? `<p class="field-hint"><b>R OUT POSITION</b>: ${escapeHtml(rOutLabel || `raw ${d.rightPositionRaw}`)} <span class="muted">(raw ${d.rightPositionRaw})</span>.</p>` : ''}
+        ${hasRout ? `<p class="field-hint"><b>R OUT POSITION</b>: ${escapeHtml(rOutLabel || `raw ${d.rightPositionRaw}`)} <span class="muted">(raw ${d.rightPositionRaw})</span>.</p>` : ''}
         ${linked?.error ? `<p class="usb-warn">This linked patch cannot be synchronized: ${escapeHtml(linked.error)}</p>` : linked ? `<p class="usb-warn">${linked.direction === 'local-to-pedal' ? `My patch changed since it was last linked to memory ${n}.` : `This memory changed since it was last linked to <b>${escapeHtml(linked.entry.name)}</b>.`}</p><div class="usb-row"><button class="btn btn-sm btn-primary" data-act="sync">${linked.direction === 'local-to-pedal' ? 'Update pedal memory' : 'Review changes'}</button></div>` : ''}
         ${chainCards(d)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">

@@ -546,7 +546,7 @@ function renderSummary() {
   const rOutField = $('#r-out-field');
   const rOutValue = $('#r-out-position');
   if (rOutField && rOutValue) {
-    const raw = validRightPositionRaw(state.rightPositionRaw);
+    const raw = state.effects.length ? validRightPositionRaw(state.rightPositionRaw) : null;
     rOutField.hidden = raw === null;
     const label = raw === null ? null : ZPTC.rightPositionLabel(raw, state.effects.length);
     rOutValue.textContent = raw === null ? '' : label ? `${label} · raw ${raw}` : `raw ${raw}`;
