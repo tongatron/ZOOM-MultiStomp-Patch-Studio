@@ -14,6 +14,7 @@ import sys
 import pdfplumber
 
 SYNC = '♪'
+KNOB_FONT = re.compile(r'HelveticaNeue|Hiragino')  # labels of the knob drawing in the MS-200D+ list
 
 
 def lines_of(words, tol=2.5):
@@ -113,8 +114,10 @@ def parse(path, image_dir=None):
 
 def parse_200d(path, image_dir=None):
     """MS-200D+ layout (--layout 200d): effect name 11 pt at x < 260, its CHARACTER line 6.8 pt under it, description
-    9.8 pt at x >= 255; parameter rows 7 pt: name x 265 – 305, description 305 – 470, range x >= 470. The knob labels
-    drawn next to the effect screen (x < 260) are not text of the list."""
+    9.8 pt; parameter rows 7 pt in Roboto: name in Medium, description in Light, range x >= 470. The columns move
+    (the TOOL pages have no knob drawing), so rows are told apart by font: the knob labels drawn next to the effect
+    screen use other fonts (KNOB_FONT) and are not text of the list; a parameter name is left of the description
+    column, which is where the second word of the rows starts."""
     effects, category = [], None
     pdf = pdfplumber.open(path)
     for pno, page in enumerate(pdf.pages):
@@ -125,7 +128,8 @@ def parse_200d(path, image_dir=None):
             category = join(titles)
         if pno < 2 or not titles:
             continue
-        names = [w for w in words if 10.5 < w['size'] < 11.5 and w['x0'] < 260]
+        # Names are 11 pt; a few effects (EAGLE, FIREBALL, KRAMPUS, …) have a 9.8 pt name, left of every description (x >= 198)
+        names = [w for w in words if w['text'] != '★' and ((10.5 < w['size'] < 11.5 and w['x0'] < 260) or (9.5 < w['size'] < 10.5 and w['x0'] < 190))]
         blocks = []
         for row in lines_of(names):
             top = row[0]['top']
@@ -135,13 +139,27 @@ def parse_200d(path, image_dir=None):
                 blocks.append({'name': list(row), 'top': top})
             blocks[-1]['bottom'] = max(w['bottom'] for w in row)
         imgs = sorted(page.images, key=lambda i: i['top'])
+        # A description is centred on its name, so a long one starts above it: each paragraph goes to the nearest name
+        paragraphs = []
+        for row in lines_of([w for w in words if 9.5 < w['size'] < 10.5 and w not in names and w['text'] != '★']):
+            if paragraphs and row[0]['top'] - paragraphs[-1][-1][0]['top'] < 14:
+                paragraphs[-1].append(row)
+            else:
+                paragraphs.append([row])
+        for para in paragraphs:
+            mid = (para[0][0]['top'] + para[-1][0]['bottom']) / 2
+            if blocks:
+                min(blocks, key=lambda b: abs((b['top'] + b['bottom']) / 2 - mid)).setdefault('desc', []).extend(w for r in para for w in r)
         for i, b in enumerate(blocks):
-            end = blocks[i + 1]['top'] if i + 1 < len(blocks) else 780
+            end = blocks[i + 1]['top'] if i + 1 < len(blocks) else 792  # the last row of a page can sit at 776 pt
             inside = [w for w in words if b['top'] - 6 <= w['top'] < end - 6]
-            desc = [w for w in inside if 9.5 < w['size'] < 10.5 and w['x0'] >= 255]
-            char = [w for w in inside if w['size'] < 6.95 and w['x0'] < 260]
-            rows = [w for w in inside if w['size'] < 8 and w['x0'] >= 265 and w['text'] != SYNC]
-            anchors = [w for w in rows if w['x0'] < 305 and w['fontname'].endswith('Medium')]
+            desc = b.get('desc', [])
+            char = [w for w in inside if w['size'] < 6.95 and 'Roboto' not in w['fontname']]
+            rows = [w for w in inside if 6.95 <= w['size'] < 8 and not KNOB_FONT.search(w['fontname']) and w['text'] != SYNC]
+            lines = [r for r in lines_of([w for w in rows if w['x0'] < 470])]
+            seconds = [r[1]['x0'] for r in lines if len(r) > 1]
+            col = min(seconds) - 2 if seconds else 470  # the description column of this effect
+            anchors = [w for r in lines for w in r if w['x0'] < col]
             params = [{'top': sum(w['top'] for w in r) / len(r), 'name': r, 'desc': [], 'range': []} for r in lines_of(anchors)]
             for w in rows:
                 if w in anchors or w['x0'] >= 470 or not params:
@@ -164,7 +182,7 @@ def parse_200d(path, image_dir=None):
             effects.append({
                 'name': join(b['name']), 'category': category, 'description': join(desc),
                 'character': re.sub(r'^CHARACTER\s*:\s*', '', join(char)),
-                'handyGuitarLab': False, 'sync': any(w['text'] == SYNC for w in inside),
+                'handyGuitarLab': any(w['text'] == '★' for w in inside), 'sync': any(w['text'] == SYNC for w in inside),
                 'params': [[join(p['name']), join(p['desc']), fix_range(join(p['range']))] for p in params],
                 'page': pno + 1, 'image': [img['x0'], img['top'], img['x1'], img['bottom']] if img else None,
             })
