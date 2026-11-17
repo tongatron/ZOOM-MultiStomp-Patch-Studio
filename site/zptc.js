@@ -136,6 +136,12 @@ const ZPTC = (() => {
     for (let i = bytes.length - 1; i >= 0; i--) value = (value << 8n) | BigInt(bytes[i]);
     return Number((value >> BigInt(start)) & ((1n << BigInt(width)) - 1n));
   }
+  function rightPositionRawFromPrm2(input) {
+    const bytes = input instanceof Uint8Array
+      ? input
+      : typeof input === 'string' && /^[0-9a-f]{64}$/i.test(input) ? hex(input) : null;
+    return bytes?.length === 32 ? readBits(bytes, PRM2_RIGHT_POSITION_START, PRM2_RIGHT_POSITION_WIDTH) : null;
+  }
   function writeBits(bytes, start, width, value) {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 0 || n >= 2 ** width) throw new Error(`PRM2 raw field must be an integer from 0 to ${2 ** width - 1}`);
@@ -319,5 +325,5 @@ const ZPTC = (() => {
     return encode({ ...spec, _noBlank: true, _prm2Refresh: true, selected, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }
 
-  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, rightPositionLabel, rightPositionOptionLabel, MAX_EFFECTS, NAME_CHARS };
+  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, rightPositionLabel, rightPositionOptionLabel, rightPositionRawFromPrm2, MAX_EFFECTS, NAME_CHARS };
 })();

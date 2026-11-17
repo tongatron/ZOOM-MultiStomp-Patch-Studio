@@ -857,6 +857,10 @@ body.is-dropping .drop-overlay { display: grid; }
 .usb-linked { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--accent-fg); font-size: 11px; font-weight: 500; vertical-align: middle; }
 .usb-link-symbol { font-size: 14px; line-height: 1; }
 .usb-meta { display: block; margin-top: 2px; color: var(--fg-muted); font: 12px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-meta--rout { margin-top: 0; color: var(--fg-muted); }
+.usb-effect-sync { margin: 12px 0; padding: 10px 12px; border: 1px solid var(--border-muted); border-radius: var(--radius); background: var(--bg-subtle); }
+.usb-effect-sync .field-hint { margin: 4px 0 8px; }
+.usb-effect-sync .usb-row { flex-wrap: wrap; }
 .usb-mem-detail { padding: 0 16px 10px 62px; }
 .usb-fx { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; list-style: none; counter-reset: fx; }
 .usb-fx li { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 10px; }

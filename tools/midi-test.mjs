@@ -100,6 +100,7 @@ await test('PRM2 right-position raw field round-trips and changes only its four 
   const base = ZPTC.encode({ name: 'R OUT TEST', _noBlank: true, effects: [{ effect: 'DYNAMIC COMPRESSOR' }] }).file;
   const original = ZPTC.decode(base);
   assert.equal(Number.isInteger(original.rightPositionRaw), true);
+  assert.equal(ZPTC.rightPositionRawFromPrm2(original._prm2), original.rightPositionRaw);
   const changed = ZPTC.decode(ZPTC.encode({ ...original, rightPositionRaw: 9, _prm2Refresh: true,
     effects: original.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file);
   assert.equal(changed.rightPositionRaw, 9);

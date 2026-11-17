@@ -250,6 +250,7 @@ function slotFor(index, values = null) {
 // Serializable patch shape: { name, effects: [{ index, on, values }] }
 const validPrm2 = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
 const validRightPositionRaw = value => Number.isInteger(value) && value >= 0 && value <= 15 ? value : null;
+const patchRightPositionRaw = patch => Number.isInteger(patch?.rightPositionRaw) ? validRightPositionRaw(patch.rightPositionRaw) : ZPTC.rightPositionRawFromPrm2(patch?._prm2);
 const serialize = source => ({
   name: source.name,
   effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })),
@@ -320,7 +321,7 @@ function restoreSnapshot(snap) {
   state.effects = hydrate(patch);
   state.currentId = snap.id;
   state._prm2 = patch._prm2 || null;
-  state.rightPositionRaw = Number.isInteger(patch.rightPositionRaw) ? patch.rightPositionRaw : null;
+  state.rightPositionRaw = patchRightPositionRaw(patch);
   $('#patch-name').value = state.name;
   render();
   patchHistory.restoring = false;
@@ -350,7 +351,7 @@ function load() {
     state.effects = hydrate(saved);
     state.currentId = saved.currentId ?? null;
     state._prm2 = typeof saved._prm2 === 'string' ? saved._prm2 : null;
-    state.rightPositionRaw = Number.isInteger(saved.rightPositionRaw) ? saved.rightPositionRaw : null;
+    state.rightPositionRaw = patchRightPositionRaw(saved);
   } catch {}
 }
 
@@ -424,7 +425,7 @@ function normalizeLibraryEntry(entry) {
   return {
     id: entry.id, name: entry.name.slice(0, 28), favorite: entry.favorite === true, output: validOutput(entry.output), effects, updatedAt,
     ...(validPrm2(entry._prm2) ? { _prm2: validPrm2(entry._prm2) } : {}),
-    ...(validRightPositionRaw(entry.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(entry.rightPositionRaw) } : {})
+    ...(patchRightPositionRaw(entry) !== null ? { rightPositionRaw: patchRightPositionRaw(entry) } : {})
   };
 }
 function normalizeValues(index, values) {
@@ -737,7 +738,7 @@ function loadPatch(patch, currentId = null) {
   state.effects = hydrate(patch);
   state.currentId = currentId;
   state._prm2 = typeof patch._prm2 === 'string' ? patch._prm2 : null;
-  state.rightPositionRaw = Number.isInteger(patch.rightPositionRaw) ? patch.rightPositionRaw : null;
+  state.rightPositionRaw = patchRightPositionRaw(patch);
   $('#patch-name').value = patch.name;
   render();
 }
