@@ -145,6 +145,12 @@ const ZPTC = (() => {
     packed = (packed & ~mask) | (BigInt(n) << shift);
     for (let i = 0; i < bytes.length; i++) { bytes[i] = Number(packed & 0xffn); packed >>= 8n; }
   }
+  function rightPositionLabel(raw, effectCount) {
+    if (!Number.isInteger(raw) || raw < 0 || raw > 15 || !Number.isInteger(effectCount) || effectCount < 1) return null;
+    const leftEffect = raw + 1;
+    if (leftEffect > effectCount) return null;
+    return leftEffect === effectCount ? `after effect ${leftEffect}` : `between effects ${leftEffect} and ${leftEffect + 1}`;
+  }
 
   // ---- byte helpers -------------------------------------------------------------------------------
   const latin1 = (bytes, from, to) => String.fromCharCode(...bytes.subarray(from, to));
@@ -310,5 +316,5 @@ const ZPTC = (() => {
     return encode({ ...spec, _noBlank: true, _prm2Refresh: true, selected, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }
 
-  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, MAX_EFFECTS, NAME_CHARS };
+  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, rightPositionLabel, MAX_EFFECTS, NAME_CHARS };
 })();

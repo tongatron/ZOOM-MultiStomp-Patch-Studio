@@ -108,6 +108,12 @@ await test('PRM2 right-position raw field round-trips and changes only its four 
   before.forEach((value, i) => assert.equal((value ^ after[i]) & (i === 13 ? 0xe1 : 0xff), 0, `PRM2 byte ${i} changed outside rightPosition`));
   assert.equal(ZPTC.roundtrip(ZPTC.encode({ ...changed, effects: changed.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file), true);
 });
+await test('right-position raw values are shown as positions between effects', () => {
+  assert.equal(ZPTC.rightPositionLabel(0, 5), 'between effects 1 and 2');
+  assert.equal(ZPTC.rightPositionLabel(1, 5), 'between effects 2 and 3');
+  assert.equal(ZPTC.rightPositionLabel(4, 5), 'after effect 5');
+  assert.equal(ZPTC.rightPositionLabel(5, 5), null);
+});
 await test('an edited pedal patch keeps its patch data and recomputes the amp bits', () => {
   const base = patches[2]; // "Big Black": AMPG SVT in slot 5 → PRM2 byte 20 = 0x40
   const spec = ZPTC.decode(base);

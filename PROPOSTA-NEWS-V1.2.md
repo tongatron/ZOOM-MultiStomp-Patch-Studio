@@ -53,15 +53,15 @@ Thanks for using ZOOM MultiStomp Studio! 🎸
 
 The official MS-60B+ manual confirms that R OUT POSITION is a per-patch setting. A patch read from the pedal therefore contains more than the effect list and parameter values: its patch metadata also needs to be preserved when it is imported into My patches.
 
-The connected pedal was read without loading or writing a patch. Memory 1, `Big Black2`, was downloaded and inspected. Its PTCF data contains the raw PRM2 block and a four-bit field identified by the reverse-engineering notes as `rightPosition`; the field currently reads `0`.
+The connected pedal was read without loading or writing a patch. Memory 1, `Big Black2`, was downloaded and inspected. Its PTCF data contains the raw PRM2 block and a four-bit field identified by the reverse-engineering notes as `rightPosition`; the field reads `0`, which is confirmed on the connected MS-60B+ as the R output between effects 1 and 2.
 
-This is useful evidence, but it is not yet enough to label `0` as “after effect 2”. The current `selected` value must not be confused with R OUT POSITION: it identifies the selected/editing slot, not necessarily the right-channel output point.
+The value is now translated in the interface as “between effects 1 and 2”. The current `selected` value must not be confused with R OUT POSITION: it identifies the selected/editing slot, not the right-channel output point. The remaining R OUT values still need paired reads before their labels are treated as confirmed.
 
 Before exposing a user-facing R OUT POSITION control in My patches, capture the same patch twice while changing only R OUT POSITION on the pedal. Comparing the two PRM2 blocks will establish the exact value-to-position mapping and prevent incompatible patches from being generated.
 
 ### Planned My patches support
 
-The first implementation step is complete: the raw field is read from the pedal, shown as diagnostic metadata, and preserved through My patches, patch links and `.zptc` export. The Patch Builder does not yet offer position labels or editing. Once that differential check is complete, My patches can display the verified R OUT POSITION value and the export can update only that field while retaining the remaining pedal metadata.
+The first implementation step is complete: the raw field is read from the pedal, translated for the confirmed `raw 0` case, shown as diagnostic metadata, and preserved through My patches, patch links and `.zptc` export. The Patch Builder does not yet offer position editing. Once the remaining differential checks are complete, My patches can expose a verified R OUT POSITION selector and the export can update only that field while retaining the remaining pedal metadata.
 
 The comparison command is:
 

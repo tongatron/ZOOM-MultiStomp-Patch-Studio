@@ -548,7 +548,8 @@ function renderSummary() {
   if (rOutField && rOutValue) {
     const raw = validRightPositionRaw(state.rightPositionRaw);
     rOutField.hidden = raw === null;
-    rOutValue.textContent = raw === null ? '' : `raw ${raw}`;
+    const label = raw === null ? null : ZPTC.rightPositionLabel(raw, state.effects.length);
+    rOutValue.textContent = raw === null ? '' : label ? `${label} · raw ${raw}` : `raw ${raw}`;
   }
   $('#dsp-stack').innerHTML = state.effects.map(slot => {
     const fx = catalog[slot.index];
