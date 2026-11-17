@@ -346,7 +346,7 @@
         ${hasRout ? `<p class="field-hint"><b>R OUT POSITION</b>: ${escapeHtml(rOutLabel || `raw ${d.rightPositionRaw}`)} <span class="muted">(raw ${d.rightPositionRaw})</span>.</p>` : ''}
         ${linked?.error ? `<p class="usb-warn">This linked patch cannot be synchronized: ${escapeHtml(linked.error)}</p>` : linked ? `<p class="usb-warn">${linked.direction === 'local-to-pedal' ? `My patch changed since it was last linked to memory ${n}.` : `This memory changed since it was last linked to <b>${escapeHtml(linked.entry.name)}</b>.`}</p><div class="usb-row"><button class="btn btn-sm btn-primary" data-act="sync">${linked.direction === 'local-to-pedal' ? 'Update pedal memory' : 'Review changes'}</button></div>` : ''}
         ${chainCards(d)}
-        ${effectSyncHtml(n, pair)}
+        ${patchSyncHtml(pair)}
         ${renaming === n ? `<form class="usb-row usb-rename" data-rename="${n}">
           <label>New name <input class="form-control form-control--sm" name="name" maxlength="28" value="${escapeHtml(d.name)}" required spellcheck="false" autocomplete="off" /></label>
           <button class="btn btn-sm btn-primary" type="submit">Rename on the pedal</button>
@@ -442,8 +442,8 @@
       case 'clear': send(n, ZPTC.encode({ name: CLEARED_NAME, empty: true, effects: [] }).file, true); break;
       case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
       case 'sync': await syncMemory(n); break;
-      case 'effect-pedal-to-local': await syncSingleEffect(n, 'pedal-to-local'); break;
-      case 'effect-local-to-pedal': await syncSingleEffect(n, 'local-to-pedal'); break;
+      case 'patch-pedal-to-local': await syncWholePatch(n, 'pedal-to-local'); break;
+      case 'patch-local-to-pedal': await syncWholePatch(n, 'local-to-pedal'); break;
       case 'copy': {
         const patch = toPatch(m.decoded);
         const list = readLibrary();
@@ -523,11 +523,12 @@
   const pedalSyncEnabled = () => readPedalSync().enabled;
   const validPrm2 = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
   const validRightPositionRaw = value => Number.isInteger(value) && value >= 0 && value <= 15 ? value : null;
+  const patchRightPositionRaw = patch => Number.isInteger(patch?.rightPositionRaw) ? validRightPositionRaw(patch.rightPositionRaw) : ZPTC.rightPositionRawFromPrm2(patch?._prm2);
   const patchForEntry = entry => ({
     name: entry.name,
     effects: entry.effects || [],
     ...(validPrm2(entry._prm2) ? { _prm2: validPrm2(entry._prm2) } : {}),
-    ...(validRightPositionRaw(entry.rightPositionRaw) !== null ? { rightPositionRaw: validRightPositionRaw(entry.rightPositionRaw) } : {})
+    ...(patchRightPositionRaw(entry) !== null ? { rightPositionRaw: patchRightPositionRaw(entry) } : {})
   });
   function canonicalPatch(patch) {
     return JSON.stringify({
@@ -582,74 +583,54 @@
       conflict: pedalChanged && localChanged
     };
   }
-  function effectChangeList(pedalEffect, localEffect) {
-    const changes = [];
-    if ((pedalEffect.on !== false) !== (localEffect.on !== false)) changes.push(localEffect.on === false ? 'turned off' : 'turned on');
-    const names = new Set([...Object.keys(pedalEffect.values || {}), ...Object.keys(localEffect.values || {})]);
-    for (const name of names) if (JSON.stringify(pedalEffect.values?.[name]) !== JSON.stringify(localEffect.values?.[name])) changes.push(`${name} changed`);
-    return changes;
-  }
-  function effectSyncHtml(number, pair) {
+  function patchSyncHtml(pair) {
     if (!pair || pair.error) return '';
-    const firstCommon = pair.pedalPatch.effects.findIndex((effect, index) => pair.libraryPatch.effects[index]?.index === effect.index);
-    const options = pair.pedalPatch.effects.map((pedalEffect, index) => {
-      const localEffect = pair.libraryPatch.effects[index];
-      const same = localEffect?.index === pedalEffect.index;
-      const name = EFFECTS_DATA[pedalEffect.index]?.[0] || `effect ${index + 1}`;
-      return `<option value="${index}" ${same ? '' : 'disabled'}${index === firstCommon ? ' selected' : ''}>${index + 1}. ${escapeHtml(name)}${same ? '' : ' — different effect'}</option>`;
-    }).join('');
-    const hasCommon = pair.pedalPatch.effects.some((effect, index) => pair.libraryPatch.effects[index]?.index === effect.index);
-    if (!hasCommon) return `<section class="usb-effect-sync"><b>Sync one effect</b><p class="field-hint">The linked patches have no effect in the same position, so a single-effect sync is not available.</p></section>`;
     return `<section class="usb-effect-sync">
-      <div class="field-label">Sync one effect</div>
-      <p class="field-hint">Only the selected effect and its ON/OFF state and parameters are synchronized.</p>
+      <div class="field-label">Sync full patch</div>
+      <p class="field-hint">All effects, their ON/OFF state and parameters, plus R OUT POSITION, are synchronized together.</p>
       <div class="usb-row">
-        <label>Effect <select class="form-control form-control--sm" data-effect-sync-slot>${options}</select></label>
-        <button class="btn btn-sm" data-act="effect-pedal-to-local">Pedal → My patch</button>
-        <button class="btn btn-sm btn-primary" data-act="effect-local-to-pedal">My patch → pedal</button>
+        <button class="btn btn-sm" data-act="patch-pedal-to-local">Pedal → My patch</button>
+        <button class="btn btn-sm btn-primary" data-act="patch-local-to-pedal">My patch → pedal</button>
       </div>
     </section>`;
   }
-  async function syncSingleEffect(number, direction) {
+  async function syncWholePatch(number, direction) {
     if (!connected || busy) return;
     const pair = linkedPair(number);
-    if (!pair) { status('Link this memory to a My patch before synchronizing one effect.', 'danger'); return; }
+    if (!pair) { status('Link this memory to a My patch before synchronizing the full patch.', 'danger'); return; }
     if (pair.error) { status(pair.error, 'danger'); return; }
-    const select = $(`#usb-memories [data-n="${number}"] [data-effect-sync-slot]`);
-    const index = Number(select?.value);
-    const pedalEffect = pair.pedalPatch.effects[index];
-    const localEffect = pair.libraryPatch.effects[index];
-    if (!Number.isInteger(index) || !pedalEffect || !localEffect || pedalEffect.index !== localEffect.index) {
-      status('Choose an effect that exists in the same position in both patches.', 'danger'); return;
-    }
-    const name = EFFECTS_DATA[pedalEffect.index]?.[0] || `effect ${index + 1}`;
-    const changes = effectChangeList(pedalEffect, localEffect);
-    if (!changes.length) { status(`${name} is already synchronized.`, 'ok'); return; }
+    const pedalChanged = canonicalPatch(pair.pedalPatch) !== pair.link.pedalBaseline;
+    const localChanged = pair.link.libraryBaseline && canonicalPatch(pair.libraryPatch) !== pair.link.libraryBaseline;
+    const changes = pedalChanged || localChanged ? patchDiff(
+      direction === 'pedal-to-local' ? pair.libraryPatch : pair.pedalPatch,
+      direction === 'pedal-to-local' ? pair.pedalPatch : pair.libraryPatch
+    ).changes : [];
+    if (!changes.length) { status('The full patch is already synchronized.', 'ok'); return; }
     if (direction === 'local-to-pedal') {
-      const next = cloneJson(pair.pedalPatch);
-      next.effects[index] = { ...cloneJson(pedalEffect), on: localEffect.on !== false, values: { ...cloneJson(pedalEffect.values || {}), ...cloneJson(localEffect.values || {}) } };
-      try { await send(number, toFile(next, pair.memory.data), false, `Synchronized ${name} to memory ${number}`, pair.entry.id); }
-      catch (error) { status(`The effect could not be prepared: ${error.message}`, 'danger'); }
+      try { await send(number, toFile(pair.libraryPatch, pair.memory.data), false, `Synchronized full patch to memory ${number}`, pair.entry.id); }
+      catch (error) { status(`The full patch could not be prepared: ${error.message}`, 'danger'); }
       return;
     }
-    const yes = await confirmWrite(`<p>Copy <b>${escapeHtml(name)}</b> from memory ${number} into <b>${escapeHtml(pair.entry.name)}</b>?</p><ul>${changes.map(change => `<li>${escapeHtml(change)}</li>`).join('')}</ul><p>Only this effect changes in My patches. Nothing is written to the pedal.</p>`, 'Update My patch', 'Sync one effect', false);
+    const yes = await confirmWrite(`<p>Copy the full patch from memory ${number} into <b>${escapeHtml(pair.entry.name)}</b>?</p><ul>${changes.slice(0, 20).map(change => `<li>${escapeHtml(change)}</li>`).join('')}${changes.length > 20 ? `<li>and ${changes.length - 20} more changes</li>` : ''}</ul><p>All effects and R OUT POSITION change in My patches. Nothing is written to the pedal.</p>`, 'Update My patch', 'Sync full patch', false);
     if (!yes) return;
     const before = cloneJson(pair.entry);
     const beforeSync = cloneJson(readPedalSync());
     const list = readLibrary();
     const entry = list.find(item => item.id === pair.entry.id);
     if (!entry) { status('The linked My patch is no longer available.', 'danger'); return; }
-    entry.effects[index] = cloneJson(pedalEffect);
+    entry.name = pair.pedalPatch.name;
+    entry.effects = cloneJson(pair.pedalPatch.effects);
+    if (Number.isInteger(pair.pedalPatch.rightPositionRaw)) entry.rightPositionRaw = pair.pedalPatch.rightPositionRaw;
     entry.updatedAt = new Date().toISOString();
     if (!storeLibrary(list)) return;
     const sync = readPedalSync();
     sync.links[number] = { ...sync.links[number], pedalName: pair.pedalPatch.name, pedalBaseline: canonicalPatch(pair.pedalPatch), libraryBaseline: canonicalPatch(patchForEntry(entry)), updatedAt: new Date().toISOString() };
     if (!writePedalSync(sync)) return;
     renderLocals(); renderMemory(number);
-    status(`${name} copied from memory ${number} to “${entry.name}”.`, 'ok');
-    pushUndo(`Copied ${name} from memory ${number}`, async () => {
+    status(`Full patch copied from memory ${number} to “${entry.name}”.`, 'ok');
+    pushUndo(`Copied full patch from memory ${number}`, async () => {
       if (!restoreLibraryEntry(before, beforeSync)) return { ok: false, text: 'The My patch could not be restored.' };
-      return { ok: true, text: `${name} restored in “${before.name}”.` };
+      return { ok: true, text: `Full patch restored in “${before.name}”.` };
     }, { toast: true });
   }
   function linkMemory(number, patchId, patch, libraryPatch = patch) {
