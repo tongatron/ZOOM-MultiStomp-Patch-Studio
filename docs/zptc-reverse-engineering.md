@@ -133,7 +133,7 @@ It is not fully deciphered. Two fields were identified by comparison:
 
 - **byte 10, bits 5–7**: the entry selected for editing, counted from 0 and counting the BLANK as an entry (so in a patch with the BLANK it equals the position in the chain). In `06FLIP` it is `0x4c` instead of `0x2c` because FLIPTOP (position 2) was selected. Patches stored by the pedal that nobody edited have 0; after browsing to the last slot of a 6-entry patch the pedal itself saved 5 (`0xac`, 2026-10-28, effects and values untouched). Inferred from those cases, not tested slot by slot.
 - **byte 20**: one bit for every slot that contains an amp. In `06FLIP` it is `0x08` (bit 3 = slot 2 + 1); in "Big Black" it is `0x40` (AMPG SVT in slot 5).
-- **bits 105–108, LSB-first**: a four-bit field named `rightPosition` by the reverse-engineered source. The site exposes it as `rightPositionRaw` and preserves it through `.zptc` import, My patches, patch links and export. On firmware 1.20, the connected `Big Black2` memory 1 provides the first calibration point: raw `0` is the R output between effects 1 and 2. The remaining values still need paired reads before they are considered confirmed.
+- **bits 105–108, LSB-first**: a four-bit field named `rightPosition` by the reverse-engineered source. The site exposes it as `rightPositionRaw` and preserves it through `.zptc` import, My patches, patch links and export. On firmware 1.20, the connected `Big Black2` memory 1 provides the first calibration point: raw `2` is the R output between effects 1 and 2. The remaining values still need paired reads before they are considered confirmed.
 
 The rest is copied from `01base` (template). Some fields of "Big Black" are still unexplained: byte 0 and bytes 11–12.
 
@@ -141,7 +141,7 @@ To compare two otherwise identical pedal reads after changing only R OUT POSITIO
 
 `node tools/zptc.mjs compare-r-out first.zptc second.zptc`
 
-The command reports both raw values and every changed PRM2 byte. The UI currently displays the calibrated zero-based boundary (`raw 0` → between effects 1 and 2) and keeps the raw value visible. Do not treat the other boundaries as confirmed until the two files contain the same effects and parameters and the expected single setting change.
+The command reports both raw values and every changed PRM2 byte. The UI displays the one calibrated mapping (`raw 2` → between effects 1 and 2) and exposes the complete four-bit field for editing as raw values. Do not label other boundaries until two files contain the same effects and parameters and the expected single setting change.
 
 ### Hidden parameters
 

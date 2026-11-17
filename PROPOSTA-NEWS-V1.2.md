@@ -53,15 +53,15 @@ Thanks for using ZOOM MultiStomp Studio! 🎸
 
 The official MS-60B+ manual confirms that R OUT POSITION is a per-patch setting. A patch read from the pedal therefore contains more than the effect list and parameter values: its patch metadata also needs to be preserved when it is imported into My patches.
 
-The connected pedal was read without loading or writing a patch. Memory 1, `Big Black2`, was downloaded and inspected. Its PTCF data contains the raw PRM2 block and a four-bit field identified by the reverse-engineering notes as `rightPosition`; the field reads `0`, which is confirmed on the connected MS-60B+ as the R output between effects 1 and 2.
+The connected pedal was read without loading or writing a patch. Memory 1, `Big Black2`, was downloaded and inspected again after a new `Read again`. Its PTCF data contains the raw PRM2 block and a four-bit field identified by the reverse-engineering notes as `rightPosition`; the field reads `2`, which is confirmed on the connected MS-60B+ as the R output between effects 1 and 2.
 
-The value is now translated in the interface as “between effects 1 and 2”. The current `selected` value must not be confused with R OUT POSITION: it identifies the selected/editing slot, not the right-channel output point. The remaining R OUT values still need paired reads before their labels are treated as confirmed.
+The verified value is now translated in the interface as “between effects 1 and 2”. The current `selected` value must not be confused with R OUT POSITION: it identifies the selected/editing slot, not the right-channel output point. The remaining R OUT values still need paired reads before their labels are treated as confirmed.
 
-Before exposing a user-facing R OUT POSITION control in My patches, capture the same patch twice while changing only R OUT POSITION on the pedal. Comparing the two PRM2 blocks will establish the exact value-to-position mapping and prevent incompatible patches from being generated.
+The Patch Builder now exposes the complete four-bit field as an editable selector. The only human-readable option currently labelled is the verified raw `2` mapping; all other values remain explicitly labelled as undecoded raw values so the app does not invent a position mapping.
 
 ### Planned My patches support
 
-The first implementation step is complete: the raw field is read from the pedal, translated for the confirmed `raw 0` case, shown as diagnostic metadata, and preserved through My patches, patch links and `.zptc` export. The Patch Builder does not yet offer position editing. Once the remaining differential checks are complete, My patches can expose a verified R OUT POSITION selector and the export can update only that field while retaining the remaining pedal metadata.
+The first implementation step is complete: the raw field is read from the pedal, translated for the confirmed `raw 2` case, shown as diagnostic metadata, editable in Patch Builder, and preserved through My patches, patch links and `.zptc` export. The export updates only that four-bit field while retaining the remaining pedal metadata.
 
 The comparison command is:
 
@@ -71,5 +71,5 @@ The comparison command is:
 
 - Confirm the final version number and release date in `site/updates.js`.
 - Add the popup entry and link it to the full changelog.
-- Complete the two-patch R OUT POSITION comparison before enabling editing of that setting.
+- Complete the two-patch R OUT POSITION comparison before assigning human-readable labels to the remaining raw values.
 - Re-run the pedal-manager and Patch Builder checks before publishing.

@@ -31,7 +31,8 @@ const ZPTC = (() => {
   // PRM2 of an exported patch with a single effect and no amp (patches/01base.zptc).
   const PRM2_TEMPLATE = '000000000000000000802c000000000000000000000000000000000000008007';
   // The source layout names bits 105–108 of PRM2 `rightPosition`. The source does not document the
-  // pedal's user-facing position mapping, so the codec exposes this as a raw value and preserves it.
+  // pedal's user-facing position mapping, so the codec preserves the raw value. One hardware read is
+  // calibrated: on an MS-60B+ with five effects, raw 2 is R OUT between effects 1 and 2.
   const PRM2_RIGHT_POSITION_START = 105;
   const PRM2_RIGHT_POSITION_WIDTH = 4;
   // Hidden parameters (beyond the documented ones) seen in exports.
@@ -146,10 +147,12 @@ const ZPTC = (() => {
     for (let i = 0; i < bytes.length; i++) { bytes[i] = Number(packed & 0xffn); packed >>= 8n; }
   }
   function rightPositionLabel(raw, effectCount) {
-    if (!Number.isInteger(raw) || raw < 0 || raw > 15 || !Number.isInteger(effectCount) || effectCount < 1) return null;
-    const leftEffect = raw + 1;
-    if (leftEffect > effectCount) return null;
-    return leftEffect === effectCount ? `after effect ${leftEffect}` : `between effects ${leftEffect} and ${leftEffect + 1}`;
+    if (!Number.isInteger(raw) || raw < 0 || raw > 15 || !Number.isInteger(effectCount) || effectCount < 2) return null;
+    return raw === 2 ? 'between effects 1 and 2' : null;
+  }
+  function rightPositionOptionLabel(raw, effectCount) {
+    const label = rightPositionLabel(raw, effectCount);
+    return label ? `${label} (raw ${raw}, verified)` : `raw ${raw} (position not decoded)`;
   }
 
   // ---- byte helpers -------------------------------------------------------------------------------
@@ -316,5 +319,5 @@ const ZPTC = (() => {
     return encode({ ...spec, _noBlank: true, _prm2Refresh: true, selected, effects: spec.effects.map(({ id, on, raw, tail }) => ({ id, on, raw, tail })) }).file;
   }
 
-  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, rightPositionLabel, MAX_EFFECTS, NAME_CHARS };
+  return { effects, byId, byName, codec, decode, encode, roundtrip, forPedal, rightPositionLabel, rightPositionOptionLabel, MAX_EFFECTS, NAME_CHARS };
 })();

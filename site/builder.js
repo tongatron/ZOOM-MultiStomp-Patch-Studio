@@ -548,8 +548,10 @@ function renderSummary() {
   if (rOutField && rOutValue) {
     const raw = state.effects.length ? validRightPositionRaw(state.rightPositionRaw) : null;
     rOutField.hidden = raw === null;
-    const label = raw === null ? null : ZPTC.rightPositionLabel(raw, state.effects.length);
-    rOutValue.textContent = raw === null ? '' : label ? `${label} · raw ${raw}` : `raw ${raw}`;
+    rOutValue.innerHTML = raw === null ? '' : Array.from({ length: 16 }, (_, value) =>
+      `<option value="${value}">${escapeHtml(ZPTC.rightPositionOptionLabel(value, state.effects.length))}</option>`
+    ).join('');
+    if (raw !== null) rOutValue.value = String(raw);
   }
   $('#dsp-stack').innerHTML = state.effects.map(slot => {
     const fx = catalog[slot.index];
@@ -721,6 +723,12 @@ $('#chain-list').addEventListener('input', event => {
 });
 
 $('#patch-name').addEventListener('input', event => { state.name = event.target.value; scheduleEditorUpdate(); });
+$('#r-out-position')?.addEventListener('change', event => {
+  state.rightPositionRaw = validRightPositionRaw(Number(event.target.value));
+  scheduleEditorUpdate();
+  const label = ZPTC.rightPositionLabel(state.rightPositionRaw, state.effects.length);
+  announce(label ? `R OUT set to ${label}` : `R OUT raw value set to ${state.rightPositionRaw}`);
+});
 const confirmDiscard = async () => !isDirty() || !state.effects.length
   || DIALOGS.confirm({ title: 'Unsaved changes', text: 'The current patch has unsaved changes. Continue and lose them?', ok: 'Lose the changes', cancel: 'Keep editing', danger: true });
 function loadPatch(patch, currentId = null) {
