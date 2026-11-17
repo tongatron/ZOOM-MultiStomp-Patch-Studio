@@ -532,6 +532,9 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 #picker[open] { height: min(80vh, 760px); }
 
 /* ---- Saving and patch library ---- */
+.patch-name-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+.patch-name-field { min-width: 0; max-width: 220px; }
+.patch-name-row #save-patch { min-width: 76px; justify-content: center; }
 .save-row { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
 .save-row .btn { justify-content: center; }
 .save-status:empty { display: none; }
@@ -561,6 +564,8 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .library-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .library-head .Counter { margin-left: 4px; }
 .library-actions { display: flex; gap: 6px; }
+.library-search { width: 100%; max-width: none; margin: 0; flex: none; }
+.library-search input { font-size: 12px; }
 .library-list { margin: 0 -16px; padding: 0; list-style: none; border-top: 1px solid var(--border-muted); border-bottom: 1px solid var(--border-muted); max-height: 420px; overflow: auto; }
 .library-item { position: relative; display: flex; align-items: center; gap: 4px; padding-right: 8px; border-top: 1px solid var(--border-muted); }
 .library-item:first-child { border-top: 0; }
@@ -570,10 +575,14 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .library-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px 4px 8px 16px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
 .library-name { font-weight: 600; color: var(--accent-fg); }
 .library-open:hover .library-name { text-decoration: underline; }
+.library-linked { display: inline-block; margin-left: 7px; color: var(--accent-fg); font-size: 15px; font-weight: 700; line-height: 1; cursor: help; }
 .library-chain { font: 11px var(--mono); color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .library-meta { font-size: 11px; color: var(--fg-subtle); }
 .library-tools { display: flex; flex: none; }
 .library-tools .btn-icon { width: 26px; height: 26px; }
+.library-favorite { color: var(--fg-subtle); }
+.library-favorite:hover, .library-favorite.is-favorite { color: #e3b341; }
+.library-favorite.is-favorite svg { filter: drop-shadow(0 0 2px rgba(227, 179, 65, .35)); }
 .library-empty { padding: 16px; font-size: 12px; color: var(--fg-muted); }
 .library-empty code, .library .field-hint code { font: 11px var(--mono); padding: 1px 4px; background: rgba(110, 118, 129, .2); border-radius: var(--radius); }
 

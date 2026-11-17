@@ -1,0 +1,74 @@
+{
+  "name": "Big Black2 Clean R",
+  "shortName": "BB2 Cln R",
+  "description": "Clean parallel bass EQ before compressor. R OUT POSITION: after effect 2. L OUT: full distorted chain.",
+  "selected": 2,
+  "effects": [
+    {
+      "effect": "BASS GRAPHIC EQ",
+      "params": {
+        "50Hz": 2,
+        "120Hz": 1,
+        "400Hz": 0,
+        "500Hz": 1,
+        "800Hz": -1,
+        "4.5kHz": -3,
+        "10kHz": -4,
+        "VOL": 80
+      }
+    },
+    {
+      "effect": "BLACK OPTICAL COMPRESSOR",
+      "params": {
+        "COMP": 84,
+        "LO": 57,
+        "HI": 66,
+        "VOL": 52
+      }
+    },
+    {
+      "effect": "BASS OVERDRIVE",
+      "params": {
+        "GAIN": 75,
+        "TONE": 70,
+        "BALANCE": 45,
+        "VOL": 77
+      }
+    },
+    {
+      "effect": "DARK PREAMP",
+      "params": {
+        "BASS": 67,
+        "LO-MID": 61,
+        "HI-MID": 63,
+        "TREBLE": 64,
+        "BLEND": 65,
+        "GAIN": 47,
+        "VOL": 70,
+        "BOOST": "OFF"
+      }
+    },
+    {
+      "effect": "AMPG SVT",
+      "params": {
+        "GAIN": 43,
+        "VOL": 60,
+        "CABINET": 47,
+        "ULTRA": "OFF",
+        "BASS": 4.5,
+        "MID-FREQ": 21,
+        "MID": 7,
+        "TREBLE": 7
+      }
+    },
+    {
+      "effect": "ZOOM NOISE REDUCTION",
+      "params": {
+        "DETECT": "GTRIN",
+        "DEPTH": 94,
+        "THRSHLD": 37,
+        "DECAY": 5
+      }
+    }
+  ]
+}

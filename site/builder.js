@@ -12,6 +12,7 @@ const ICON_TRASH = '<path fill="currentColor" d="M11 1.75V3h2.25a.75.75 0 0 1 0 
 const ICON_CHEVRON = '<path fill="currentColor" d="M12.78 5.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.28a.75.75 0 0 1 1.06-1.06L8 8.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/>';
 const ICON_SWAP = '<path fill="currentColor" d="M5.22 14.78a.75.75 0 0 0 1.06-1.06L4.56 12h8.69a.75.75 0 0 0 0-1.5H4.56l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3a.75.75 0 0 0 0 1.06l3 3Zm5.56-6.5a.75.75 0 1 1-1.06-1.06l1.72-1.72H2.75a.75.75 0 0 1 0-1.5h8.69L9.72 2.28a.75.75 0 0 1 1.06-1.06l3 3a.75.75 0 0 1 0 1.06l-3 3Z"/>';
 const ICON_PLUS = '<path fill="currentColor" d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/>';
+const ICON_STAR = '<path fill="currentColor" d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.751.751 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.751.751 0 0 1-1.088-.79l.72-4.194L.818 6.374a.751.751 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>';
 
 const ICON_INFO = '<path fill="currentColor" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>';
 // An "i" that shows the reason of a notice when pointed at or focused (the text sits in data-tip, drawn by CSS, so it stays out of the notice text)
@@ -37,9 +38,12 @@ const totalDsp = () => state.effects.reduce((s, slot) => s + catalog[slot.index]
 // Current draft (STORAGE_KEY) and saved patch library (LIBRARY_KEY), both in the browser's localStorage.
 const LIBRARY_KEY = `${PEDAL.id}-library`;
 const DELETED_KEY = `${PEDAL.id}-deleted`; // { patchId: ISO time } deletions waiting to reach other devices
+const PEDAL_SYNC_KEY = `${PEDAL.id}-pedal-sync`; // links: { memory: { patchId, pedalName, ... } }
+const PEDAL_LAST_READ_KEY = `${PEDAL.id}-usb-last-read`; // last pedal memories, saved by the Pedal manager
 const PATCH_ID = /^[a-zA-Z0-9_-]{1,64}$/;
 let uid = 0;
 const state = { name: '', effects: [], currentId: null }; // effects: [{ uid, index, on, values, open }]
+let libraryQuery = '';
 
 // Patch and Advice are panes rather than separate pages: keep their collapsed state per pedal so a compact layout
 // survives a reload without hiding the current patch or changing the editor state.
@@ -341,6 +345,27 @@ function readLibrary() {
   catch { storageOk = false; return []; }
 }
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+function pedalMemoryNames() {
+  const names = {};
+  const saved = readJson(PEDAL_LAST_READ_KEY, null);
+  for (const [memory, value] of Object.entries(saved?.memories || {})) {
+    if (!value) continue;
+    try {
+      const bytes = Uint8Array.from(atob(value), ch => ch.charCodeAt(0));
+      names[memory] = ZPTC.decode(bytes).name;
+    } catch {}
+  }
+  return names;
+}
+function linkedPedalMemories(patchId) {
+  const saved = readJson(PEDAL_SYNC_KEY, {});
+  const names = pedalMemoryNames();
+  return Object.entries(saved?.links && typeof saved.links === 'object' ? saved.links : {})
+    .filter(([, link]) => link?.patchId === patchId)
+    .map(([memory, link]) => ({ memory: Number(memory), name: link.pedalName || names[memory] || `Memory ${memory}` }))
+    .filter(item => Number.isInteger(item.memory))
+    .sort((a, b) => a.memory - b.memory);
+}
 const readDeleted = () => { const d = readJson(DELETED_KEY, {}); return d && typeof d === 'object' && !Array.isArray(d) ? d : {}; };
 function storeLibrary(list, deleted = readDeleted()) {
   try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(list)); localStorage.setItem(DELETED_KEY, JSON.stringify(deleted)); storageOk = true; return true; }
@@ -380,7 +405,7 @@ function normalizeLibraryEntry(entry) {
   const updatedAt = typeof entry.updatedAt === 'string' && Number.isFinite(Date.parse(entry.updatedAt))
     ? entry.updatedAt
     : new Date(0).toISOString();
-  return { id: entry.id, name: entry.name.slice(0, 28), output: validOutput(entry.output), effects, updatedAt };
+  return { id: entry.id, name: entry.name.slice(0, 28), favorite: entry.favorite === true, output: validOutput(entry.output), effects, updatedAt };
 }
 function normalizeValues(index, values) {
   const source = values && typeof values === 'object' && !Array.isArray(values) ? values : {};
@@ -400,7 +425,7 @@ function normalizeValues(index, values) {
   }));
 }
 function addToLibrary(patch, list = readLibrary()) {
-  const entry = { id: newId(), ...serialize(patch), output: validOutput(patch.output), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
+  const entry = { id: newId(), ...serialize(patch), favorite: patch.favorite === true, output: validOutput(patch.output), name: uniqueName(patch.name || 'PATCH', list), updatedAt: new Date().toISOString() };
   list.unshift(entry);
   return entry;
 }
@@ -487,6 +512,12 @@ function buildSpec(source = state) {
 function renderSummary() {
   const total = totalDsp();
   const scale = Math.max(100, total);
+  const patchTitle = $('#patch-title');
+  if (patchTitle) {
+    const title = state.name.trim() || 'Untitled patch';
+    patchTitle.textContent = title;
+    patchTitle.title = title;
+  }
   const totalEl = $('#dsp-total');
   totalEl.textContent = pct(total);
   totalEl.dataset.level = total > 100 ? 'over' : total > 95 ? 'near' : 'ok';
@@ -544,25 +575,39 @@ function renderSaveState() {
 
 function renderLibrary() {
   const list = readLibrary();
+  const query = libraryQuery.trim().toLocaleLowerCase();
+  const ordered = [...list].sort((a, b) => Number(b.favorite) - Number(a.favorite));
+  const visible = ordered.filter(entry => {
+    if (!query) return true;
+    const chain = entry.effects.map(effect => catalog[effect.index]?.name || catalog[effect.index]?.lcd || '').join(' ');
+    return `${entry.name} ${chain}`.toLocaleLowerCase().includes(query);
+  });
   $('#library-count').textContent = list.length;
-  $('#library-list').innerHTML = list.length ? list.map(entry => {
+  $('#library-list').innerHTML = visible.length ? visible.map(entry => {
     const effects = entry.effects.filter(e => catalog[e.index]);
     const dsp = effects.reduce((s, e) => s + catalog[e.index].dsp, 0);
     const chain = effects.map(e => catalog[e.index].lcd).join(' → ');
+    const linked = linkedPedalMemories(entry.id);
+    const linkTitle = linked.length
+      ? `Linked to ${linked.map(item => `pedal patch “${item.name}” in memory ${item.memory}`).join('; ')}`
+      : '';
     return `<li class="library-item${entry.id === state.currentId ? ' is-current' : ''}" data-id="${escapeHtml(entry.id)}">
       <button class="library-open" data-lib="open" title="Open in the builder">
-        <span class="library-name">${escapeHtml(entry.name)}</span>
+        <span class="library-name">${escapeHtml(entry.name)}${linked.length ? `<span class="library-linked" role="img" aria-label="${escapeHtml(linkTitle)}" title="${escapeHtml(linkTitle)}">↔</span>` : ''}</span>
         <span class="library-chain">${escapeHtml(chain || '—')}</span>
         <span class="library-meta">${effects.length} effects · DSP ${pct(dsp)}${entry.output ? ` · ${entry.output === 'amp' ? PEDAL.amp.toLowerCase() : 'mixer'}` : ''} · Modified ${formatDate(entry.updatedAt)}</span>
       </button>
       <div class="library-tools">
+        <button class="btn btn-sm btn-icon btn-invisible library-favorite${entry.favorite ? ' is-favorite' : ''}" data-lib="favorite" aria-pressed="${entry.favorite}" aria-label="${entry.favorite ? 'Remove' : 'Add'} ${escapeHtml(entry.name)} ${entry.favorite ? 'from' : 'to'} favourites" title="${entry.favorite ? 'Remove from favourites' : 'Add to favourites'}">${icon(ICON_STAR)}</button>
         <button class="btn btn-sm library-text" data-lib="text" title="Export readable .txt" aria-label="Export ${escapeHtml(entry.name)} as readable text">TXT</button>
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="download" title="Download .zptc" aria-label="Download ${escapeHtml(entry.name)} as .zptc" ${dsp > 100 || !effects.length ? 'disabled' : ''}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path fill="currentColor" d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 6.78a.75.75 0 1 1 1.06-1.06l1.97 1.969Z"/></svg></button>
         <button class="btn btn-sm btn-icon btn-invisible" data-lib="duplicate" title="Duplicate" aria-label="Duplicate ${escapeHtml(entry.name)}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></button>
         <button class="btn btn-sm btn-icon btn-invisible btn-danger" data-lib="delete" title="Delete" aria-label="Delete ${escapeHtml(entry.name)}">${icon(ICON_TRASH)}</button>
       </div>
     </li>`;
-  }).join('') : '<li class="library-empty">No saved patches yet. Build a chain and press <b>Save</b>, or import some <code>.zptc</code> files.</li>';
+  }).join('') : list.length && query
+    ? `<li class="library-empty">No patches match <b>${escapeHtml(libraryQuery.trim())}</b>.</li>`
+    : '<li class="library-empty">No saved patches yet. Build a chain and press <b>Save</b>, or import some <code>.zptc</code> files.</li>';
   $('#export-library').disabled = !list.length;
   $('#compare-open').disabled = list.length + (state.effects.length ? 1 : 0) < 2;
 }
@@ -867,6 +912,11 @@ function downloadTextPatch(source) {
 }
 $('#download').addEventListener('click', () => downloadPatch(state));
 
+$('#library-query')?.addEventListener('input', event => {
+  libraryQuery = event.target.value;
+  renderLibrary();
+});
+
 $('#library-list').addEventListener('click', async event => {
   const button = event.target.closest('[data-lib]');
   if (!button) return;
@@ -875,6 +925,21 @@ $('#library-list').addEventListener('click', async event => {
   const entry = list.find(e => e.id === id);
   if (!entry) return;
   switch (button.dataset.lib) {
+    case 'favorite': {
+      const before = readLibrary();
+      const index = before.findIndex(e => e.id === id);
+      if (index < 0) return;
+      const after = before.map(e => ({ ...e }));
+      after[index] = { ...after[index], favorite: !after[index].favorite, updatedAt: new Date().toISOString() };
+      if (!writeLibrary(after)) return;
+      renderLibrary();
+      const favorite = after[index].favorite;
+      recordLibraryStep(`${favorite ? 'Added' : 'Removed'} “${entry.name}” ${favorite ? 'to' : 'from'} favourites`,
+        () => { writeLibrary(before); render(); },
+        () => { writeLibrary(after); render(); });
+      $('#library-list').querySelector(`[data-id="${CSS.escape(id)}"] [data-lib="favorite"]`)?.focus();
+      break;
+    }
     case 'open':
       if (id === state.currentId || !await confirmDiscard()) return;
       loadPatch(entry, id);
@@ -888,7 +953,7 @@ $('#library-list').addEventListener('click', async event => {
       downloadTextPatch(entry);
       break;
     case 'duplicate': {
-      const copy = addToLibrary({ ...entry, name: `${entry.name.slice(0, 24)} COPY` }, list);
+      const copy = addToLibrary({ ...entry, favorite: false, name: `${entry.name.slice(0, 24)} COPY` }, list);
       if (!writeLibrary(list)) break;
       renderLibrary();
       notify('muted', `Created "${copy.name}".`);
@@ -966,6 +1031,7 @@ function patchesFromBackup(text) {
       id: typeof p.id === 'string' && PATCH_ID.test(p.id) ? p.id : null,
       updatedAt: typeof p.updatedAt === 'string' && Number.isFinite(Date.parse(p.updatedAt)) ? p.updatedAt : new Date().toISOString(),
       name: p.name.slice(0, 28),
+      favorite: p.favorite === true,
       output: validOutput(p.output),
       effects: p.effects.filter(e => e && catalog[e?.index]?.usable).slice(0, ZPTC.MAX_EFFECTS).map(e => ({
         index: e.index,
@@ -988,7 +1054,10 @@ async function importFiles(files) {
         for (const p of patchesFromBackup(await file.text())) {
           const existing = p.id && list.find(e => e.id === p.id);
           if (existing) {
-            if (!sameContent(existing, p) || existing.name !== p.name) { Object.assign(existing, serialize(p), { updatedAt: p.updatedAt || new Date().toISOString() }); updated++; }
+            if (!sameContent(existing, p) || existing.name !== p.name || existing.favorite !== p.favorite) {
+              Object.assign(existing, serialize(p), { favorite: p.favorite === true, updatedAt: p.updatedAt || new Date().toISOString() });
+              updated++;
+            }
           } else {
             fresh.push({ ...serialize(p), id: p.id || newId(), name: uniqueName(p.name, [...list, ...fresh]), updatedAt: p.updatedAt || new Date().toISOString() });
           }

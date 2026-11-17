@@ -57,7 +57,7 @@ function cleanPatch(p) {
     return { index: e.index, on: e.on !== false, values };
   });
   if (effects.includes(null)) return null;
-  return { id: p.id, name: p.name.slice(0, 28), output: p.output === 'amp' || p.output === 'mixer' ? p.output : null, effects, updatedAt: p.updatedAt };
+  return { id: p.id, name: p.name.slice(0, 28), favorite: p.favorite === true, output: p.output === 'amp' || p.output === 'mixer' ? p.output : null, effects, updatedAt: p.updatedAt };
 }
 
 function cleanState(state) {

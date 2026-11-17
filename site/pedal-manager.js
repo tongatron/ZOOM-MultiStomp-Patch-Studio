@@ -550,7 +550,7 @@
   }
   function linkMemory(number, patchId, patch, libraryPatch = patch) {
     const sync = readPedalSync();
-    sync.links[number] = { patchId, pedalBaseline: canonicalPatch(patch), libraryBaseline: canonicalPatch(libraryPatch), updatedAt: new Date().toISOString() };
+    sync.links[number] = { patchId, pedalName: patch.name || null, pedalBaseline: canonicalPatch(patch), libraryBaseline: canonicalPatch(libraryPatch), updatedAt: new Date().toISOString() };
     writePedalSync(sync);
   }
   function unlinkMemory(number) {
@@ -577,7 +577,7 @@
     if (!entry) { status('The selected My patch is no longer available.', 'danger'); return; }
     const baseline = canonicalPatch(patchForEntry(entry));
     const sync = readPedalSync();
-    sync.links[number] = { patchId: entry.id, pedalBaseline: canonicalPatch(pedalPatch), libraryBaseline: baseline, updatedAt: new Date().toISOString() };
+    sync.links[number] = { patchId: entry.id, pedalName: memory.decoded.name, pedalBaseline: canonicalPatch(pedalPatch), libraryBaseline: baseline, updatedAt: new Date().toISOString() };
     if (!writePedalSync(sync)) return;
     renderMemories();
     status(`Memory ${number} linked to “${entry.name}”`, 'ok');
@@ -1265,7 +1265,7 @@
     }
     if (choice === 'keep') {
       const sync = readPedalSync();
-      sync.links[number] = { ...found.link, pedalBaseline: canonicalPatch(found.pedalPatch), libraryBaseline: canonicalPatch(patchForEntry(entry)), updatedAt: new Date().toISOString() };
+      sync.links[number] = { ...found.link, pedalName: found.pedalPatch.name, pedalBaseline: canonicalPatch(found.pedalPatch), libraryBaseline: canonicalPatch(patchForEntry(entry)), updatedAt: new Date().toISOString() };
       writePedalSync(sync);
       renderMemories();
       status(`Kept “${entry.name}” in My patches`, 'ok');
