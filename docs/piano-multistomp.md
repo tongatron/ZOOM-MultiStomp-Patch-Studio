@@ -76,6 +76,13 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - **F6 — Prima generazione, scrittura.** Solo dopo un test su pedale vero da parte di un tester (backup + read-back).
 - Ogni fase: `stamp-update`, test, commit, deploy, verifica del dominio ufficiale.
 
+**Stato (2026-11-18):**
+- F0 fatta. F1 fatta (PDF, estrazione verbatim, confronto con zoom-zt2).
+- F2 (MS-200D+) e F3 (MS-80IR+): **ridotte** a Effects, Guide, Resources e Pedal manager in sola lettura (§14). Patch builder, My patches, scrittura e Pedal audition aspettano gli ID e un pedale vero (§13, §15). Gli ID: MS-80IR+ 40 su 41, MS-200D+ 73 su 217.
+- F4 (MS-90LP+) fatta come da decisione.
+- F5 e F6 (prima generazione): non iniziate, ambito da decidere.
+- Fatti oltre il piano: MS-50G+ in beta (barra beta con "Help us test"), landing con sei pedali e box Help wanted per tutti i pedali in beta o in test, link diretti a Effects, Patch builder e Pedal manager su ogni scheda, SEO della Home. Funzioni future: §15.
+
 ## 7. Decisioni (2026-11-17)
 
 1. Funzioni beta nei pedali nuovi: **solo Pedal audition** (`audition.js`). Niente Tone ideas, rule pack, Undo delle scritture sul pedale.
@@ -133,3 +140,32 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - `site/pedal-reader.js` e `pedal-reader.css`, pagine `ms-200d/pedal-manager.html` e `ms-80ir/pedal-manager.html`: connessione USB, lettura di tutte le memorie (nome dal PTCF, effetti per nome dove l'ID è noto, altrimenti `ID 0x…`), backup grezzi nel browser (ultimi 5, `<id>-usb-backups`), download `.zptc` e JSON. Nessuna scrittura, nessun My patches né Patch builder: il formato dei patch di questi pedali non è verificato su hardware. Test: `tools/pedal-reader-test.mjs` (pedale simulato, verifica anche che nessun comando di scrittura parta).
 - MS-80IR+: `firmware-data.js` ha 40 effetti su 41 (zoom-zt2); l'IR resta senza ID.
 - Per andare oltre (scrittura, My patches, builder) serve un export `.zptc` e una lettura da un pedale vero.
+
+## 15. Funzioni che si potrebbero implementare (2026-11-18)
+
+Stato: nessuna è iniziata. Ordine per ogni pedale: prima ciò che non richiede hardware.
+
+### MS-90LP+ (looper: Effects e Guida, nessuna catena di effetti)
+
+1. **Calcolatore di durata del loop** — tempo, misura e battute → durata, e il contrario; mostra il tempo di registrazione che resta (manuale: 90 minuti per loop, oltre 13 ore in totale). Solo dati già presenti.
+2. **Pianificatore di brano / scaletta** — per ogni sezione: ritmo (uno dei 68), tempo, misura, LOOP FX; foglio stampabile; salvato nel browser (e nell'account, se si aggiunge il pedale ai documenti sincronizzati).
+3. **Guida ai LOOP FX con ricette** — REVERSE, HALF SPEED, DOUBLE SPEED, HOLD, opzione "unlatch": quando usarli e come combinarli. Il testo ufficiale resta alla lettera; le ricette sono testo a parte, con fonti.
+4. **Regole d'uso con gli altri pedali** — looper prima o dopo gli effetti, effetti dentro il loop o sul segnale diretto; regole di Advice con fonti citate.
+5. **Elenco ritmi più comodo** — tap tempo e ascolto del tempo con un metronomo (nessun audio dei ritmi ufficiali: copyright).
+6. **Pedal manager in lettura** — solo con un pedale vero: protocollo USB non verificato, le memorie contengono audio (backup molto grandi).
+
+### MS-200D+ e MS-80IR+ (beta)
+
+1. **ID degli effetti dell'MS-200D+** — 144 di 217 mancano: serve un export `.zptc` di Handy Guitar Lab da un pedale vero (o da un tester).
+2. **ID dell'IR dell'MS-80IR+** — manca solo quello.
+3. **Patch builder** con regole per pedale: MS-200D+ 2 effetti e 250 memorie (routing parallelo, byte 32 di PRM2); MS-80IR+ 1 amp, 1 ambience e 1 altro effetto, 80 memorie. Da verificare su hardware.
+4. **My patches** e sincronizzazione con l'account (i pedali con `sync: true` in `site/pedals.js`, `deploy/pedals.mjs`, `PEDALS` di `site/account.js`).
+5. **Scrittura nel Pedal manager** con backup e lettura di controllo, come sull'MS-60B+: dopo i punti 1–3 e un test su un pedale vero.
+6. **Pedal audition** (l'unica funzione beta prevista per i nuovi pedali).
+7. **Advice** con regole e fonti per drive (MS-200D+) e amp/IR (MS-80IR+).
+
+### Tutti i pedali nuovi
+
+- **Pedali di prima generazione** (MS-50G, MS-60B, MS-70CDR): ambito ancora da decidere; foto già in `/Users/tonga/Downloads/zoom`.
+- **Test con tester**: pagine di aiuto per MS-200D+, MS-80IR+ e MS-90LP+ come quelle di MS-50G+ e MS-70CDR+.
+- **Test già noti da sistemare**: «Download .zptc» fuori schermo a 800 × 640 nel builder; «a local edit offers to update the linked pedal memory after reading the pedal» nel test del Pedal manager.
