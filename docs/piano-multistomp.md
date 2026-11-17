@@ -115,3 +115,9 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - Pagine `site/ms-80ir/` (Effects, Guide, Resources con manuale EN/IT, Effects List, Patch Memory List, supplemento v1.10, manuale IR Loader) con barra beta; `pedal.js` con `idsPending`, `maxEffects: 3` (un amp, un'ambience, un altro effetto), 80 memorie. In `site/pedals.js` con `sync: false`; SEO, orario, service worker (`ms60b-v39`) e testo "window too small" aggiornati.
 - Test: stessi di prima (fullscreen 132/133 con l'errore già presente, e2e 21, advice 82, sync 13). Non ancora pubblicato.
 - Per il Patch builder dell'MS-80IR+ servono slot tipizzati (amp, ambience, altro) e gli id degli effetti.
+
+## 12. MS-90LP+: Effects e Guide (2026-11-17)
+
+- Il pedale è un looper senza Effects List né formato di patch: i dati vengono dal manuale inglese (copia in `documentazione/ms-90lpplus/E_MS-90LPplus_manual.html`; il PDF inglese non esiste) con `python3 tools/ms90lp-data.py` → `site/ms-90lp/loop-data.js`: 8 LOOP FX, il suggerimento sui LOOP FX "unlatch", 68 ritmi (n. 1–68, con misura; il n. 63 METRONOME non ha misura nel manuale) e 8 righe di specifiche, parola per parola.
+- Pagine `site/ms-90lp/`: `index.html` (Effects: tabella dei LOOP FX, ritmi con ricerca per nome e filtro per misura, specifiche), `guide.html`, `resources.html` (manuale EN/IT, supplemento v1.10, guida all'aggiornamento del firmware). Barra beta con Write to us. Niente Patch builder né Pedal manager, come deciso.
+- In `site/pedals.js` (kind `looper`, `sync: false`), service worker `ms60b-v40`, SEO, orario e testo "window too small". Test come prima (fullscreen 132/133 con l'errore già presente, e2e 21, advice 82, sync 13). Pedal audition non c'è: nessun effetto da ascoltare.

@@ -67,6 +67,12 @@ const PAGES = [
     'How to use the studio with the ZOOM MS-80IR+ (beta): search the effects, filter them by category and keep your favorites.', IMG70, 0.4],
   ['ms-80ir/resources.html', '/ms-80ir/resources.html', 'ZOOM MS-80IR+ manual, Effects List and IR Loader manual (PDF)',
     'Official ZOOM MS-80IR+ documents: the manual in English and Italian, the Effects List, the Patch Memory List, the version 1.10 supplement and the IR Loader manual.', IMG70, 0.3],
+  ['ms-90lp/index.html', '/ms-90lp/', 'ZOOM MS-90LP+ looper: 8 loop effects, 68 rhythm patterns and specifications',
+    'The ZOOM MS-90LP+ looper pedal at a glance: its 8 loop effects, 68 rhythm patterns and main specifications, with the original text of the ZOOM manual. Beta.', IMG70, 0.7],
+  ['ms-90lp/guide.html', '/ms-90lp/guide.html', 'ZOOM MS-90LP+ guide: loop effects and rhythms',
+    'How to use the studio with the ZOOM MS-90LP+ looper (beta): find a loop effect, search the rhythm patterns and see what the pedal does.', IMG70, 0.4],
+  ['ms-90lp/resources.html', '/ms-90lp/resources.html', 'ZOOM MS-90LP+ manual and firmware update guide (PDF)',
+    'Official ZOOM MS-90LP+ documents: the manual in English and Italian, the version 1.10 supplement and the firmware update guide.', IMG70, 0.3],
   ['privacy.html', '/privacy.html', 'Privacy — what the studio stores and where',
     'What ZOOM MultiStomp Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
 ];
