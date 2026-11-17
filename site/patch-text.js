@@ -8,6 +8,9 @@ const PATCHTEXT = (() => {
   };
   const value = raw => raw === undefined || raw === null || raw === '' ? '—' : clean(raw);
   const fileName = name => `${clean(name).replace(/[^A-Za-z0-9_-]+/g, '_') || 'patch'}.txt`;
+  const rightPositionRaw = patch => Number.isInteger(patch?.rightPositionRaw)
+    ? patch.rightPositionRaw
+    : ZPTC.rightPositionRawFromPrm2(patch?._prm2);
 
   function format(patch) {
     const effects = (patch.effects || []).filter(effect => EFFECTS_DATA[effect.index]);
@@ -16,6 +19,9 @@ const PATCHTEXT = (() => {
       `Name: ${clean(patch.name) || '(untitled)'}`,
       patch.updatedAt ? `Modified: ${date(patch.updatedAt)}` : '',
       patch.output ? `Output: ${patch.output === 'amp' ? 'amp' : 'mixer'}` : '',
+      rightPositionRaw(patch) !== null && rightPositionRaw(patch) !== 0
+        ? `R OUT POSITION: ${ZPTC.rightPositionLabel(rightPositionRaw(patch), effects.length) || `raw ${rightPositionRaw(patch)}`} (raw ${rightPositionRaw(patch)})`
+        : '',
       '',
       `Effects used (${effects.length})`,
       ''
