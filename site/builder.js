@@ -250,7 +250,35 @@ function slotFor(index, values = null) {
 // Serializable patch shape: { name, effects: [{ index, on, values }] }
 const validPrm2 = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value) ? value.toLowerCase() : null;
 const validRightPositionRaw = value => Number.isInteger(value) && value >= 0 && value <= 15 ? value : null;
-const patchRightPositionRaw = patch => Number.isInteger(patch?.rightPositionRaw) ? validRightPositionRaw(patch.rightPositionRaw) : ZPTC.rightPositionRawFromPrm2(patch?._prm2);
+function linkedPedalRightPositionRaw(patchId) {
+  if (!patchId) return null;
+  const saved = readJson(PEDAL_SYNC_KEY, {});
+  const links = saved && typeof saved.links === 'object' && !Array.isArray(saved.links) ? saved.links : {};
+  const lastRead = readJson(PEDAL_LAST_READ_KEY, null);
+  for (const [memory, link] of Object.entries(links)) {
+    if (link?.patchId !== patchId) continue;
+    for (const baseline of [link.pedalBaseline, link.libraryBaseline]) {
+      if (typeof baseline !== 'string') continue;
+      try {
+        const raw = validRightPositionRaw(JSON.parse(baseline)?.rightPositionRaw);
+        if (raw !== null) return raw;
+      } catch {}
+    }
+    const encoded = lastRead?.memories?.[memory];
+    if (!encoded) continue;
+    try {
+      const bytes = Uint8Array.from(atob(encoded), ch => ch.charCodeAt(0));
+      const raw = validRightPositionRaw(ZPTC.decode(bytes).rightPositionRaw);
+      if (raw !== null) return raw;
+    } catch {}
+  }
+  return null;
+}
+const patchRightPositionRaw = patch => {
+  if (Number.isInteger(patch?.rightPositionRaw)) return validRightPositionRaw(patch.rightPositionRaw);
+  const fromPrm2 = ZPTC.rightPositionRawFromPrm2(patch?._prm2);
+  return fromPrm2 !== null ? fromPrm2 : linkedPedalRightPositionRaw(patch?.id);
+};
 const serialize = source => ({
   name: source.name,
   effects: source.effects.map(({ index, on, values }) => ({ index, on, values: { ...values } })),
@@ -351,7 +379,7 @@ function load() {
     state.effects = hydrate(saved);
     state.currentId = saved.currentId ?? null;
     state._prm2 = typeof saved._prm2 === 'string' ? saved._prm2 : null;
-    state.rightPositionRaw = patchRightPositionRaw(saved);
+    state.rightPositionRaw = patchRightPositionRaw({ ...saved, id: saved.currentId });
   } catch {}
 }
 
