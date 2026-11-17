@@ -111,6 +111,68 @@ def parse(path, image_dir=None):
     return effects
 
 
+def parse_200d(path, image_dir=None):
+    """MS-200D+ layout (--layout 200d): effect name 11 pt at x < 260, its CHARACTER line 6.8 pt under it, description
+    9.8 pt at x >= 255; parameter rows 7 pt: name x 265 – 305, description 305 – 470, range x >= 470. The knob labels
+    drawn next to the effect screen (x < 260) are not text of the list."""
+    effects, category = [], None
+    pdf = pdfplumber.open(path)
+    for pno, page in enumerate(pdf.pages):
+        words = [w for w in page.extract_words(extra_attrs=['size', 'fontname'], keep_blank_chars=False)
+                 if 0 <= w['x0'] < page.width and w['top'] < 780]
+        titles = [w for w in words if w['size'] > 15]
+        if titles:
+            category = join(titles)
+        if pno < 2 or not titles:
+            continue
+        names = [w for w in words if 10.5 < w['size'] < 11.5 and w['x0'] < 260]
+        blocks = []
+        for row in lines_of(names):
+            top = row[0]['top']
+            if blocks and top - blocks[-1]['bottom'] < 10:
+                blocks[-1]['name'] += row
+            else:
+                blocks.append({'name': list(row), 'top': top})
+            blocks[-1]['bottom'] = max(w['bottom'] for w in row)
+        imgs = sorted(page.images, key=lambda i: i['top'])
+        for i, b in enumerate(blocks):
+            end = blocks[i + 1]['top'] if i + 1 < len(blocks) else 780
+            inside = [w for w in words if b['top'] - 6 <= w['top'] < end - 6]
+            desc = [w for w in inside if 9.5 < w['size'] < 10.5 and w['x0'] >= 255]
+            char = [w for w in inside if w['size'] < 6.95 and w['x0'] < 260]
+            rows = [w for w in inside if w['size'] < 8 and w['x0'] >= 265 and w['text'] != SYNC]
+            anchors = [w for w in rows if w['x0'] < 305 and w['fontname'].endswith('Medium')]
+            params = [{'top': sum(w['top'] for w in r) / len(r), 'name': r, 'desc': [], 'range': []} for r in lines_of(anchors)]
+            for w in rows:
+                if w in anchors or w['x0'] >= 470 or not params:
+                    continue
+                p = min(params, key=lambda p: abs(p['top'] - w['top']))
+                if abs(p['top'] - w['top']) <= 12:
+                    p['desc'].append(w)
+            prev = None
+            for row in lines_of([w for w in rows if w['x0'] >= 470]):
+                if not params:
+                    break
+                top = sum(w['top'] for w in row) / len(row)
+                cont = prev and prev[1][-1]['text'].endswith(',') and top - prev[2] < 10.5
+                p = prev[0] if cont else min(params, key=lambda p: abs(p['top'] - top))
+                p['range'] += row
+                prev = (p, row, top)
+            img = next((im for im in imgs if b['top'] - 30 <= im['top'] < end - 10), None)
+            if not desc:
+                continue
+            effects.append({
+                'name': join(b['name']), 'category': category, 'description': join(desc),
+                'character': re.sub(r'^CHARACTER\s*:\s*', '', join(char)),
+                'handyGuitarLab': False, 'sync': any(w['text'] == SYNC for w in inside),
+                'params': [[join(p['name']), join(p['desc']), fix_range(join(p['range']))] for p in params],
+                'page': pno + 1, 'image': [img['x0'], img['top'], img['x1'], img['bottom']] if img else None,
+            })
+    if image_dir:
+        render_images(path, effects, image_dir)
+    return effects
+
+
 def render_images(path, effects, out):
     import pypdfium2 as pdfium
     doc = pdfium.PdfDocument(path)
@@ -131,4 +193,8 @@ if __name__ == '__main__':
     if '--images' in args:
         image_dir = args[args.index('--images') + 1]
         args = [a for a in args if a not in ('--images', image_dir)]
-    json.dump(parse(args[0], image_dir), sys.stdout, ensure_ascii=False, indent=1)
+    layout = 'plus'
+    if '--layout' in args:
+        layout = args[args.index('--layout') + 1]
+        args = [a for a in args if a not in ('--layout', layout)]
+    json.dump((parse_200d if layout == '200d' else parse)(args[0], image_dir), sys.stdout, ensure_ascii=False, indent=1)

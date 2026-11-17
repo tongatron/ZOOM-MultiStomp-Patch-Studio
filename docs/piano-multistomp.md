@@ -92,3 +92,11 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - Stile della barra in `fullscreen.css` (`?v=fs42-20261117` in tutte le pagine). Provata su una copia del sito con l'MS-70CDR+ marcato beta: barra visibile, il pulsante apre Contact us con il nome del pedale.
 - Un pedale nuovo si aggiunge con una riga in `site/pedals.js`, in `deploy/pedals.mjs` e in `PEDALS` di `site/account.js`, con le sue pagine in `CORE` di `site/sw.js`, e poi lanciando `node tools/pedals.mjs`.
 - Test: `e2e-test` e `sync-test` passano. `fullscreen-test` (builder a 800 × 640: "Download .zptc off screen") e `pedal-manager-test` ("a local edit offers to update the linked pedal memory") falliscono, ma falliscono uguali anche senza queste modifiche: vanno sistemati a parte.
+
+## 9. F1 in corso (2026-11-17)
+
+- PDF ufficiali scaricati da zoomcorp.com in `documentazione/ms-200dplus/` (Effects List, Patch list, manuale EN, supplemento v1.20, Handy Guitar Lab), `documentazione/ms-80irplus/` (FX list, Patch list, manuale EN, supplemento v1.10, Handy Guitar Lab) e `documentazione/ms-90lpplus/` (manuale IT e supplemento v1.10; il manuale inglese esiste solo in HTML: <https://zoomcorp.com/manuals/ms-90lpplus-en/>).
+- **MS-80IR+:** `python3 tools/extract-effects-list.py documentazione/ms-80irplus/E_MS-80IRplus_FX-list.pdf --images DIR` dà 23 AMP, 5 STUDIO AMBIENCE, 8 TOOL, 4 DELAY con testo e immagini; la sezione USER IR produce 4 voci sbagliate (testo esplicativo, non effetti): da trattare a mano.
+- **MS-200D+:** impaginazione diversa (nome 11 pt, riga CHARACTER, parametri più a destra): nuova modalità `--layout 200d` dell'estrattore (quella di default non cambia). Risultato: 213 effetti con nome, descrizione, CHARACTER e immagine 102 × 128 come gli altri pedali. Da sistemare: 18 effetti senza parametri (quasi tutti TOOL: noise gate, EQ, compressori) e 4 effetti mancanti rispetto alle 217 schede (2 DISTORTION, 1 PREAMP, 1 TOOL).
+- zoom-zt2 `MS200DPLUS/list_sorted.txt` ha solo 73 voci: gli id firmware degli altri effetti vanno cercati (firmware 1.30 o export da Handy Guitar Lab) prima del Patch builder (F2).
+- Prossimo: completare l'estrazione MS-200D+, controllo parola per parola sui PDF, poi `site/ms-200d/effects-data.js` e `assets/effects/`.
