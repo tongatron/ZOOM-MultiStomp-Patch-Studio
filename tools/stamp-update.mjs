@@ -2,7 +2,7 @@
 // Run it right before a deploy: node tools/stamp-update.mjs
 import fs from 'node:fs';
 
-const pages = ['ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'privacy.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/guide.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/resources.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'ms-70cdr/index.html', 'ms-70cdr/builder.html', 'ms-70cdr/guide.html', 'ms-70cdr/resources.html', 'ms-70cdr/help.html', 'ms-70cdr/pedal-manager.html', 'index.html', 'ms-200d/index.html', 'ms-200d/guide.html', 'ms-200d/resources.html'];
+const pages = ['ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'privacy.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/guide.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/resources.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'ms-70cdr/index.html', 'ms-70cdr/builder.html', 'ms-70cdr/guide.html', 'ms-70cdr/resources.html', 'ms-70cdr/help.html', 'ms-70cdr/pedal-manager.html', 'index.html', 'ms-200d/index.html', 'ms-200d/guide.html', 'ms-200d/resources.html', 'ms-80ir/index.html', 'ms-80ir/guide.html', 'ms-80ir/resources.html'];
 const now = new Date();
 const formatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', timeZoneName: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const parts = formatter.formatToParts(now);

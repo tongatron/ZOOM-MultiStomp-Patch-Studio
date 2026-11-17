@@ -61,6 +61,12 @@ const PAGES = [
     'How to use the studio with the ZOOM MS-200D+ (beta): search the 217 effects, filter them by category and keep your favorites.', IMG70, 0.4],
   ['ms-200d/resources.html', '/ms-200d/resources.html', 'ZOOM MS-200D+ manual, Effects List and Patch Memory List (PDF)',
     'Official ZOOM MS-200D+ documents: the manual in English and Italian, the Effects List, the Patch Memory List and the version 1.20 supplement.', IMG70, 0.3],
+  ['ms-80ir/index.html', '/ms-80ir/', 'ZOOM MS-80IR+ effects list: 41 amp, IR and ambience effects and their parameters',
+    'Explore the effects of the ZOOM MS-80IR+ amp and cabinet pedal: 23 amp models, studio ambiences, the IR effect, tools and delays, with the original Effects List text and every parameter and range. Beta.', IMG70, 0.8],
+  ['ms-80ir/guide.html', '/ms-80ir/guide.html', 'ZOOM MS-80IR+ guide: find an amp or ambience effect',
+    'How to use the studio with the ZOOM MS-80IR+ (beta): search the effects, filter them by category and keep your favorites.', IMG70, 0.4],
+  ['ms-80ir/resources.html', '/ms-80ir/resources.html', 'ZOOM MS-80IR+ manual, Effects List and IR Loader manual (PDF)',
+    'Official ZOOM MS-80IR+ documents: the manual in English and Italian, the Effects List, the Patch Memory List, the version 1.10 supplement and the IR Loader manual.', IMG70, 0.3],
   ['privacy.html', '/privacy.html', 'Privacy — what the studio stores and where',
     'What ZOOM MultiStomp Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
 ];

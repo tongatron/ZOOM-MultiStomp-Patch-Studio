@@ -108,3 +108,10 @@ Proposta, primo passo del lavoro: un solo elenco `site/pedals.js` (id, nome, tip
 - `site/pedals.js` ha `sync: false` per l'MS-200D+: niente patch da sincronizzare, quindi resta fuori da `deploy/pedals.mjs` e da `PEDALS` di `account.js` (nessun deploy del server necessario). Pagine e immagini nel `CORE` di `sw.js` (cache `ms60b-v38`); SEO in `tools/seo-tags.mjs`, orario in `tools/stamp-update.mjs`; il testo "window too small" di `fullscreen.js` cita l'MS-200D+.
 - `tools/fullscreen-test.mjs` legge le voci del menu da `site/pedals.js`. Test: fullscreen 132/133 (l'unico errore è quello già presente: "Download .zptc off screen" a 800 × 640), e2e 21, advice 82, sync 13.
 - Da fare: landing con la foto dell'MS-200D+; poi gli id firmware (Patch builder, Pedal manager, Pedal audition).
+
+## 11. MS-80IR+: pagina Effects (2026-11-17)
+
+- `python3 tools/ms80ir-data.py` scrive `site/ms-80ir/effects-data.js`, `firmware-data.js` (vuoto: id e DSP non noti) e 41 immagini 204 × 256 dall'Effects List ufficiale: 23 AMP, 5 STUDIO AMBIENCE, 1 USER IR (l'effetto IR), 8 TOOL, 4 DELAY. Le tre voci lette come effetti nella pagina USER IR erano paragrafi di spiegazione: scartate. Controllo parola per parola: tutte le parole delle schede corrispondono; mancano solo quelle del blocco introduttivo "Impulse response (IR) overview" (pagina 9), che non è una scheda.
+- Pagine `site/ms-80ir/` (Effects, Guide, Resources con manuale EN/IT, Effects List, Patch Memory List, supplemento v1.10, manuale IR Loader) con barra beta; `pedal.js` con `idsPending`, `maxEffects: 3` (un amp, un'ambience, un altro effetto), 80 memorie. In `site/pedals.js` con `sync: false`; SEO, orario, service worker (`ms60b-v39`) e testo "window too small" aggiornati.
+- Test: stessi di prima (fullscreen 132/133 con l'errore già presente, e2e 21, advice 82, sync 13). Non ancora pubblicato.
+- Per il Patch builder dell'MS-80IR+ servono slot tipizzati (amp, ambience, altro) e gli id degli effetti.
