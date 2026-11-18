@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Pedal models</title>
+  <style>
+    :root { --bg: #0d1117; --bg-subtle: #161b22; --border: #30363d; --fg: #e6edf3; --fg-muted: #8d96a0; --accent: #2f81f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    header { padding: 24px 32px 8px; }
+    h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: -.01em; }
+    header p { margin: 0; color: var(--fg-muted); max-width: 760px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; padding: 16px 32px; border-bottom: 1px solid var(--border); }
+    .controls label { display: flex; gap: 8px; align-items: center; color: var(--fg-muted); }
+    .controls label[hidden] { display: none; }
+    select, input[type=text] { background: var(--bg-subtle); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font: inherit; }
+    input[type=text] { width: 220px; }
+    .tabs { display: flex; gap: 4px; }
+    .tabs button { background: none; color: var(--fg-muted); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font: inherit; cursor: pointer; }
+    .tabs button[aria-pressed=true] { color: var(--fg); background: var(--bg-subtle); border-color: var(--fg-muted); }
+    main { padding: 24px 32px 48px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-subtle); overflow: hidden; }
+    .card h2 { margin: 0; font-size: 16px; }
+    .card h2 b { color: var(--accent); margin-right: 6px; }
+    .card p { margin: 2px 0 0; font-size: 13px; color: var(--fg-muted); }
+    .card-head { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .stage { position: relative; display: grid; place-items: center; height: 400px; padding: 16px; background: radial-gradient(ellipse at 50% 40%, #1f2630, #0d1117 75%); }
+    .stage > svg, .stage > img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .55)); }
+    .stage.is-line { color: #c9d1d9; }
+    .stage.is-line > svg { filter: none; }
+    .stage.is-photo img { -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent); }
+    .all .stage { height: 360px; }
+
+    /* 3D model */
+    .pm3d { perspective: 1500px; perspective-origin: 50% 30%; display: grid; place-items: center; cursor: grab; }
+    .pm3d-obj { position: relative; transform-style: preserve-3d; transition: transform .35s ease-out; }
+    .pm3d-obj > div { position: absolute; }
+    .pm3d-top { inset: 0; transform-origin: 50% 100%; transform-style: preserve-3d; }
+    .pm3d-top > svg { display: block; width: 100%; height: 100%; }
+    .pm3d-side { top: 0; transform-origin: 0 0; backface-visibility: visible; }
+    .pm3d-front { left: 0; transform-origin: 50% 0; transform: rotateX(-90deg); border-radius: 0 0 6px 6px; }
+    .pm3d-shadow { inset: -6% -10%; border-radius: 30px; background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,.75), rgba(0,0,0,0) 70%); filter: blur(8px); }
+    .pm3d-jack { position: absolute; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #050505 0 34%, #8a8f95 36%, #eceff1 52%, #6b7076 72%, #3a3d41 100%); box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+    .pm3d-knob, .pm3d-switch { position: absolute; width: 0; height: 0; transform-style: preserve-3d; }
+    .pm3d-disc, .pm3d-ring { position: absolute; border-radius: 50%; }
+    .pm3d-disc { background: repeating-conic-gradient(#0a0a0a 0 5deg, #262628 5deg 10deg); }
+    .pm3d-disc.is-cap { background: radial-gradient(circle at 36% 30%, #5d5d61, #232325 45%, #0b0b0c); box-shadow: 0 0 0 1px #000; }
+    .pm3d-disc.is-gold { background: radial-gradient(circle at 36% 30%, #fff3c8, #e8c66a 30%, #a8802a 75%, #5e430e); box-shadow: 0 0 0 1px #3b2a06; }
+    .pm3d-disc.is-steel { background: #7d838a; }
+    .pm3d-disc.is-chrome { background: radial-gradient(circle at 40% 34%, #fff, #eef0f3 40%, #b3b8bf 72%, #5d6269); }
+    .pm3d-ring { background: radial-gradient(circle, #080b26 0 52%, #1c2a8a 56%, #3a50cf 78%, #2a3ba8 93%, #141d66); }
+    @media (prefers-reduced-motion: reduce) { .pm3d-obj { transition: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pedal models</h1>
+    <p>Drawings of the pedals measured from the product photos. Chosen style: <strong>A · Realistic, with cables</strong> (2026-11-18); the other styles stay under Compare styles. The display is drawn, so it can show any effect or patch name.</p>
+  </header>
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="View">
+      <button type="button" data-view="styles" aria-pressed="true">Compare styles</button>
+      <button type="button" data-view="all" aria-pressed="false">All six pedals</button>
+    </div>
+    <label>Pedal <select id="pedal"></select></label>
+    <label>Style <select id="style">
+      <option value="real">A · Realistic</option>
+      <option value="flat">B · Flat</option>
+      <option value="line">C · Line drawing</option>
+      <option value="3d">D · 3D model</option>
+    </select></label>
+    <label>Display <input type="text" id="display" placeholder="Lines separated by /" /></label>
+    <label><input type="checkbox" id="cables" /> Cables plugged in</label>
+  </div>
+  <main id="main"></main>
+
+  <script src="../../pedal-model.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const PM = window.PEDALMODEL;
+      const PHOTOS = {
+        'ms-60b': '../../landing/pedal-ms60b.webp', 'ms-50g': '../../landing/pedal-ms50g.webp',
+        'ms-70cdr': '../../landing/pedal-ms70cdr.png', 'ms-200d': '../../landing/pedal-ms200d.webp',
+        'ms-80ir': '../../landing/pedal-ms80ir.webp', 'ms-90lp': '../../landing/pedal-ms90lp.webp',
+      };
+      const STYLES = [
+        { id: 'real', letter: 'A', name: 'Realistic', text: 'Gradients, chrome, rubber grain and a dot-matrix display. Closest to the photo.' },
+        { id: 'flat', letter: 'B', name: 'Flat', text: 'Flat colours with a few shading bands. Crisp at any size, lighter to look at.' },
+        { id: 'line', letter: 'C', name: 'Line drawing', text: 'Outlines only, like the drawings in a manual. Takes the colour of the page.' },
+        { id: '3d', letter: 'D', name: '3D model', text: 'The realistic top on a box with sides, knobs and footswitch. Move the pointer over it.' },
+      ];
+      const $ = (id) => document.getElementById(id);
+      const params = new URLSearchParams(location.search);
+      const state = {
+        view: params.get('view') || 'all',
+        pedal: params.get('pedal') || 'ms-60b',
+        style: params.get('style') || 'real',
+        display: '', cables: params.get('cables') !== '0',
+      };
+
+      Object.keys(PM.pedals).forEach((id) => {
+        const opt = document.createElement('option');
+        opt.value = id; opt.textContent = PM.pedals[id].name;
+        $('pedal').appendChild(opt);
+      });
+
+      function displayOpt(id) {
+        if (!state.display.trim()) return null;
+        const lines = state.display.split('/').map((s) => s.trim()).filter(Boolean);
+        return PM.pedals[id].display.type === 'looper' ? null : { lines };
+      }
+
+      function stage(id, style) {
+        const s = document.createElement('div');
+        s.className = 'stage' + (style === 'line' ? ' is-line' : '');
+        if (style === 'photo') {
+          s.classList.add('is-photo');
+          s.innerHTML = `<img src="${PHOTOS[id]}" alt="Product photo of the ${PM.pedals[id].name}" />`;
+        } else if (style === '3d') {
+          const host = document.createElement('div');
+          host.style.cssText = 'width:100%;height:100%';
+          s.appendChild(host);
+          requestAnimationFrame(() => {
+            const h = host.clientHeight;
+            PM.mount3d(host, id, { width: Math.min(host.clientWidth * 0.62, h * 0.42), display: displayOpt(id) });
+          });
+        } else {
+          s.innerHTML = PM.render(id, { style, cables: state.cables, display: displayOpt(id) });
+        }
+        return s;
+      }
+
+      function card(title, text, st) {
+        const c = document.createElement('section');
+        c.className = 'card';
+        c.innerHTML = `<div class="card-head"><h2>${title}</h2>${text ? `<p>${text}</p>` : ''}</div>`;
+        c.appendChild(st);
+        return c;
+      }
+
+      function draw() {
+        const main = $('main');
+        main.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'grid' + (state.view === 'all' ? ' all' : '');
+        if (state.view === 'styles') {
+          grid.appendChild(card('Photo today', 'The product photo the site shows now.', stage(state.pedal, 'photo')));
+          STYLES.forEach((s) => grid.appendChild(card(`<b>${s.letter}</b>${s.name}`, s.text, stage(state.pedal, s.id))));
+        } else {
+          Object.keys(PM.pedals).forEach((id) => grid.appendChild(card(PM.pedals[id].name, '', stage(id, state.style))));
+        }
+        main.appendChild(grid);
+        document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+        $('pedal').closest('label').hidden = state.view !== 'styles';
+        $('style').closest('label').hidden = state.view !== 'all';
+        const q = new URLSearchParams({ view: state.view, pedal: state.pedal, style: state.style });
+        if (!state.cables) q.set('cables', '0');
+        history.replaceState(null, '', '?' + q);
+      }
+
+      $('pedal').value = state.pedal;
+      $('style').value = state.style;
+      $('cables').checked = state.cables;
+      $('pedal').addEventListener('change', (e) => { state.pedal = e.target.value; draw(); });
+      $('style').addEventListener('change', (e) => { state.style = e.target.value; draw(); });
+      $('cables').addEventListener('change', (e) => { state.cables = e.target.checked; draw(); });
+      let t;
+      $('display').addEventListener('input', (e) => { state.display = e.target.value; clearTimeout(t); t = setTimeout(draw, 150); });
+      document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { state.view = b.dataset.view; draw(); }));
+      draw();
+    })();
+  </script>
+</body>
+</html>

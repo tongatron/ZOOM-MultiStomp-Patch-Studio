@@ -623,9 +623,9 @@ try {
     await page.locator('#usb-memories [data-n="3"] [data-act="stale-open"]').click();
     assert.equal(await page.locator('#usb-memories .usb-mem-detail').count(), 0, 'selecting it again closes it');
 
-    // The connection box shows the real MS-60B+ of the landing page: dim and grey while the pedal is not connected, in colour once it is
+    // The connection box shows the MS-60B+ drawing of the landing page: dim and grey while the pedal is not connected, in colour once it is
     const pedal = page.locator('.usb-connect > img.usb-pedal');
-    assert.match(await pedal.getAttribute('src'), /^\.\.\/landing\/pedal-ms60b-small\.webp$/, 'the picture of the landing page');
+    assert.match(await pedal.getAttribute('src'), /^\.\.\/landing\/pedal-ms60b\.svg$/, 'the drawing of the landing page');
     assert.equal(await pedal.evaluate(img => img.complete && img.naturalWidth > 0), true, 'the picture loads');
     const look = () => pedal.evaluate(img => ({ filter: getComputedStyle(img).filter, opacity: Number(getComputedStyle(img).opacity) }));
     const off = await look();
@@ -921,6 +921,20 @@ try {
     await page.goto(`${base}/`);
     assert.equal(new URL(page.url()).pathname, '/');
     assert.match(await page.locator('h1').first().innerText(), /big screen/);
+    // The pedal carousel shows the six drawings of tools/pedal-models.mjs, one at a time; the arrows go round
+    const carousel = page.locator('.lp-pedal-img');
+    assert.deepEqual(await carousel.evaluateAll(imgs => imgs.map(img => img.getAttribute('src'))),
+      ['ms60b', 'ms50g', 'ms70cdr', 'ms200d', 'ms80ir', 'ms90lp'].map(id => `landing/pedal-${id}.svg`), 'the six pedal drawings');
+    for (const src of await carousel.evaluateAll(imgs => imgs.map(img => img.src))) {
+      const res = await fetch(src);
+      assert.equal(res.status, 200, src);
+      assert.match(await res.text(), /^<!-- Drawn by tools\/pedal-models\.mjs[^]*<svg [^>]*viewBox="-34 6 488 564"/, `${src} is a drawing`);
+    }
+    const active = () => page.evaluate(() => [...document.querySelectorAll('.lp-pedal-img')].findIndex(img => img.classList.contains('is-active')));
+    assert.equal(await active(), 0, 'the MS-60B+ first');
+    await page.locator('.lp-pedal-nav--prev').click();
+    assert.equal(await active(), 5, 'back from the first is the last');
+    assert.equal(await page.locator('.lp-pedal-name:not([hidden])').innerText(), 'ZOOM MS-90LP+Looper · beta');
     await page.goto(`${base}/landing/`);
     await page.waitForURL(url => url.pathname === '/');
   });
