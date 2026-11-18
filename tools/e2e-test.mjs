@@ -364,7 +364,8 @@ try {
     await tablet.page.click('.account-button');
     await tablet.page.click('[data-action="aside"]');
     await tablet.page.waitForFunction(() => document.querySelector('#library-count').textContent === '3');
-    await tablet.page.waitForFunction(() => /Synced at/.test(document.querySelector('.account-state')?.textContent || ''));
+    // synced: the account menu has no status line any more (it only shows one while syncing or after an error)
+    await tablet.page.waitForFunction(() => document.querySelector('.account-dropdown') && !document.querySelector('.account-state'));
     await tablet.context.close();
   });
 

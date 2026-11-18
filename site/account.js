@@ -366,7 +366,8 @@ const ACCOUNT = (() => {
       } else {
         const s = account.status;
         const pushed = sitePushedLabel(sitePushedAt());
-        const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${pushed || new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : pushed ? `Not synced yet · site push ${pushed}` : 'Not synced yet');
+        // The menu says nothing once the account is synced: only while syncing, after an error and before the first sync
+        const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? '' : pushed ? `Not synced yet · site push ${pushed}` : 'Not synced yet');
         const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
         const beta = readBetaSettings();
         const betaCount = Object.values(beta).filter(Boolean).length;
@@ -374,7 +375,7 @@ const ACCOUNT = (() => {
           `<summary class="btn btn-sm account-button${s.error ? ' has-error' : ''}" aria-label="Account: ${esc(me.email)}" title="${esc(me.email)}">${esc((me.name || me.email).charAt(0).toUpperCase())}</summary>`,
           `<div class="account-dropdown" role="menu">
             <div class="account-who"><b>${esc(me.name || me.email)}</b>${me.name ? `<span>${esc(me.email)}</span>` : ''}<small class="account-version">v. ${esc(siteVersion())}</small></div>
-            <div class="account-state" role="status">${esc(state)}</div>
+            ${state ? `<div class="account-state" role="status">${esc(state)}</div>` : ''}
             ${aside ? `<button class="account-item" type="button" data-action="aside">Add ${aside} ${aside === 1 ? 'patch' : 'patches'} kept aside in this browser</button>` : ''}
             <div class="account-beta" role="group" aria-labelledby="account-beta-title">
               <div class="account-beta-title" id="account-beta-title"><b>Beta features</b><small>${betaCount ? `${betaCount} enabled` : 'Off by default'}</small></div>
