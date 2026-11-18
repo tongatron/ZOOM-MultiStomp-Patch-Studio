@@ -105,7 +105,7 @@ const confirmDelete = user => {
 
 const COLUMNS = [['email', 'Email'], ['name', 'Name'], ['created', 'Signed up'], ...PEDALS.map(({ id, name }) => [id, name]), ['change', 'Last change']];
 
-export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, inbox = [], message = {}, changelog = {}, changelogEntries = [] }) {
+export function adminPage({ me, users, recipients = users, query = '', sort = 'created', dir = 'desc', pageNumber = 1, pageSize = 25, pageCount = 1, totalUsers = users.length, note = '', error = '', link = '', log, downloadLogs = [], inbox = [], message = {}, changelog = {}, changelogEntries = [] }) {
   const sizeParam = pageSize === 0 ? 'all' : String(pageSize);
   const navigationParams = (targetPage, extra = {}) => new URLSearchParams({ ...(query ? { q: query } : {}), sort, dir, size: sizeParam, page: String(targetPage), ...extra });
   const sortLink = key => {
@@ -149,6 +149,10 @@ ${inboxSection}
   <tbody>${rows || `<tr><td colspan="8" class="muted">No accounts${query ? ' match this search' : ''}.</td></tr>`}</tbody></table></div>
   <div class="admin-table-footer">${pagination}<a class="btn btn-sm" href="/admin/users.xlsx?${esc(navigationParams(1))}">Download users (.xlsx)</a></div>
   <p class="admin-results">${totalUsers ? `Showing ${(pageNumber - 1) * (pageSize || totalUsers) + 1}–${Math.min(totalUsers, pageNumber * (pageSize || totalUsers))} of ${totalUsers} users` : 'No users found'}</p>
+</section>
+<section class="auth-card"><h2>Desktop app downloads</h2>
+  ${downloadLogs.length ? `<div class="admin-table admin-downloads-table"><table><thead><tr><th>User</th><th>Date and time</th><th>Version</th></tr></thead><tbody>${downloadLogs.map(download => `<tr><td>${esc(download.name || '—')} <span class="muted">(${esc(download.email)})</span></td><td>${dateTime(download.downloaded_at)}</td><td><code>${esc(download.version)}</code></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No signed-in users have downloaded the desktop software yet.</p>'}
+  ${downloadLogs.length >= 200 ? '<p class="admin-results">Showing the latest 200 downloads.</p>' : ''}
 </section>
 <section class="auth-card"><h2>Admin log</h2>
   ${log.length ? `<div class="admin-table"><table><tbody>${log.map(l => `<tr><td>${dateTime(l.at)}</td><td>${esc(l.admin_email || '(deleted)')}</td><td>${esc(l.action)}</td><td>${esc(l.target_email || l.target_id || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No admin actions yet.</p>'}

@@ -4,6 +4,8 @@ This is the desktop shell for the beta builds published from the studio. It
 starts the existing site on a loopback-only local server and opens the MS-60B+
 studio in an Electron window. The app currently reuses the web UI; direct
 MIDI/USB access is still the next desktop-specific layer to validate.
+Sign-in and account sync are forwarded securely to the canonical online site,
+so an internet connection is required for those features.
 
 From the repository root:
 

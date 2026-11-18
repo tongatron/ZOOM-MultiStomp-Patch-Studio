@@ -30,7 +30,8 @@
         "to": "site",
         "filter": [
           "**/*",
-          "!**/.DS_Store"
+          "!**/.DS_Store",
+          "!downloads/*.zip"
         ]
       },
       {

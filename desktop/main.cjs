@@ -8,6 +8,7 @@ const SITE_ROOT = app.isPackaged ? join(process.resourcesPath, 'site') : join(PR
 const SERVER_ENTRY = app.isPackaged ? join(process.resourcesPath, 'deploy', 'server.mjs') : join(PROJECT_ROOT, 'deploy', 'server.mjs');
 const START_PAGE = '/ms-60b/';
 const PORT_START = 8098;
+const AUTH_SITE_URL = 'https://zoommultistompstudio.tongatron.org';
 
 // Set the app identity and its private test profile before Electron creates the
 // default session. This keeps the prototype separate from other Electron apps
@@ -58,6 +59,7 @@ async function startLocalServer() {
       ...process.env,
       ELECTRON_RUN_AS_NODE: '1',
       ROOT: SITE_ROOT,
+      AUTH_PROXY_URL: AUTH_SITE_URL,
       DATA_DIR: dataDir,
       HOST: '127.0.0.1',
       PORT: String(port)
@@ -155,7 +157,7 @@ async function start() {
 }
 
 app.whenReady().then(async () => {
-  // The public site includes analytics, but this local test app is intentionally offline-first.
+  // The static site is local; account requests are forwarded to the canonical site by the local server.
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['*://analytics.tongatron.org/*'] }, (details, callback) => callback({ cancel: true }));
   try {
     await start();

@@ -25,6 +25,8 @@ const setBetaSetting = (name, enabled) => {
   return settings;
 };
 const siteVersion = () => typeof window !== 'undefined' && window.SITE_UPDATES?.version ? window.SITE_UPDATES.version : '1.0';
+const sitePushedAt = () => typeof window !== 'undefined' && window.SITE_UPDATES?.pushedAt ? window.SITE_UPDATES.pushedAt : '';
+const sitePushedLabel = value => value ? new Date(value).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome' }) : '';
 
 const ACCOUNT = (() => {
   const PEDALS = ['ms60b', 'ms50g', 'ms70cdr'];
@@ -363,7 +365,8 @@ const ACCOUNT = (() => {
         paint(`<a class="btn btn-sm account-signin" href="/login?next=${encodeURIComponent(here())}">Sign in</a>`);
       } else {
         const s = account.status;
-        const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet');
+        const pushed = sitePushedLabel(sitePushedAt());
+        const state = s.syncing ? 'Syncing…' : s.error || (s.lastSync ? `Synced at ${pushed || new Date(s.lastSync).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : pushed ? `Not synced yet · site push ${pushed}` : 'Not synced yet');
         const aside = PEDALS.reduce((n, pedal) => n + list(ASIDE(pedal)).length, 0);
         const beta = readBetaSettings();
         const betaCount = Object.values(beta).filter(Boolean).length;

@@ -12,6 +12,18 @@ const label = `Last update ${part('day')} ${part('month')} ${part('year')} ${par
 const iso = now.toISOString().slice(0, 16) + 'Z';
 const stamp = `<time class="gh-updated" datetime="${iso}">${label}</time>`;
 
+const updatesFile = 'site/updates.js';
+let updates = fs.readFileSync(updatesFile, 'utf8');
+if (!/pushedAt:\s*'[^']*'/.test(updates)) throw new Error(`${updatesFile}: pushedAt is missing`);
+updates = updates.replace(/pushedAt:\s*'[^']*'/, `pushedAt: '${iso}'`);
+fs.writeFileSync(updatesFile, updates);
+
+const serverPagesFile = 'deploy/pages.mjs';
+let serverPages = fs.readFileSync(serverPagesFile, 'utf8');
+if (!/const footerNow = new Date\('[^']*'\);/.test(serverPages)) throw new Error(`${serverPagesFile}: footerNow is missing`);
+serverPages = serverPages.replace(/const footerNow = new Date\('[^']*'\);/, `const footerNow = new Date('${iso}');`);
+fs.writeFileSync(serverPagesFile, serverPages);
+
 for (const page of pages) {
   const file = `site/${page}`;
   let html = fs.readFileSync(file, 'utf8');
