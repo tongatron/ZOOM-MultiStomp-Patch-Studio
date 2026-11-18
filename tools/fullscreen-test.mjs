@@ -764,6 +764,8 @@ try {
   await test('MS-90LP+ Loop tools: loop length, tempo for a length, tap tempo and a song planner kept in this browser', async () => {
     await open('ms-90lp/loop-tools.html', SIZES[1]);
     assert.equal(await page.locator('.fs-nav a[aria-current="page"]').innerText(), 'Loop tools');
+    // the two sections of advice name their sources
+    for (const id of ['looper-in-chain', 'loop-fx-ideas']) assert.ok(await page.locator(`#${id} ~ details.sources a`).count() >= 2, `sources of #${id}`);
     assert.match(await page.locator('#len-result').innerText(), /^8 bars of 4\/4 at 120 BPM last 0:16\.0 \(16\.0 seconds, 32 beats\)/);
     await page.fill('#len-tempo', '90');
     await page.selectOption('#len-sig', '3/4');
