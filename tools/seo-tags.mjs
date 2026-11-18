@@ -77,6 +77,8 @@ const PAGES = [
     'How to use the studio with the ZOOM MS-90LP+ looper (beta): find a loop effect, search the rhythm patterns and see what the pedal does.', IMG70, 0.4],
   ['ms-90lp/resources.html', '/ms-90lp/resources.html', 'ZOOM MS-90LP+ manual and firmware update guide (PDF)',
     'Official ZOOM MS-90LP+ documents: the manual in English and Italian, the version 1.10 supplement and the firmware update guide.', IMG70, 0.3],
+  ['downloads.html', '/downloads.html', 'ZOOM MultiStomp Studio desktop app beta for macOS, Windows and Linux',
+    'Download the beta desktop version of ZOOM MultiStomp Studio for macOS, Windows and Linux, with installation instructions and notes about the local test build.', IMG60, 0.3],
   ['privacy.html', '/privacy.html', 'Privacy — what the studio stores and where',
     'What ZOOM MultiStomp Studio stores, where, and why: the data kept in your browser, the data kept in an account, emails, backups and how to delete everything.', IMG60, 0.2]
 ];

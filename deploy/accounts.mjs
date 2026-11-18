@@ -186,7 +186,8 @@ export function createAccounts({ dataDir }) {
     const log = store.db.prepare(`SELECT l.*, a.email AS admin_email, t.email AS target_email FROM admin_log l
       LEFT JOIN users a ON a.id = l.admin_id LEFT JOIN users t ON t.id = l.target_id ORDER BY l.at DESC LIMIT 100`).all();
     const changelogEntries = store.allChangelog();
-    html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, changelogEntries, ...rest }));
+    const downloadLogs = store.desktopDownloads();
+    html(response, status, adminPage({ me, users, recipients, query, sort, dir, pageNumber, pageSize, pageCount, totalUsers, log, inbox, changelogEntries, downloadLogs, ...rest }));
   }
 
   const cleanMessageText = (value, max) => String(value || '').replace(/\r\n?/g, '\n').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '').trim().slice(0, max);
@@ -623,5 +624,5 @@ export function createAccounts({ dataDir }) {
     return true;
   }
 
-  return { handle, current, store };
+  return { handle, current, store, logDesktopDownload: (userId, version) => store.addDesktopDownload(userId, version) };
 }

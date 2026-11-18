@@ -251,6 +251,7 @@ try {
     const idOf = email => store.userByEmail(email).id;
     assert.equal((await post('/admin/role', { id: idOf('new2@example.com'), role: 'admin' }, { cookie: userSession })).status, 403);
     assert.equal(store.userByEmail('new2@example.com').role, 'user');
+    store.addDesktopDownload(idOf('new1@example.com'), '0.1.0-macos-arm64', '2026-11-18T03:20:00.000Z');
     const admin = sessionOf(await post('/login', { email: 'admin@example.com', password: 'admin password 1' }));
     const page = await (await get('/admin', { cookie: admin })).text();
     assert.match(page, /class="gh-footer container"/, 'the admin page has the standard site footer');
@@ -259,6 +260,8 @@ try {
     assert.match(page, /href="\/privacy\.html"[^>]*>Privacy<\/a>/);
     assert.doesNotMatch(page, /<h2>Summary<\/h2>/, 'the Summary section is gone');
     assert.match(page, /admin-accounts-table/);
+    assert.match(page, /Desktop app downloads/);
+    assert.match(page, /0\.1\.0-macos-arm64/);
     assert.match(page, /data-label="Email"/);
     assert.match(page, /overflow: visible/);
     assert.doesNotMatch(page, /Last sign-in/, 'the users table does not show last sign-in');

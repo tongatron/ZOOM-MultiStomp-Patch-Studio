@@ -1,0 +1,93 @@
+{
+  "name": "zoom-multistomp-studio-desktop",
+  "version": "0.1.0",
+  "productName": "ZOOM MultiStomp Studio",
+  "author": "tongatron.org",
+  "private": true,
+  "description": "Local Electron test shell for ZOOM MultiStomp Studio.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.cjs && node --check preload.cjs",
+    "dist:win": "electron-builder --win zip --x64",
+    "dist:linux": "electron-builder --linux zip --x64",
+    "dist:mac": "electron-builder --mac zip --arm64"
+  },
+  "build": {
+    "appId": "org.tongatron.zoom-multistomp-studio",
+    "productName": "ZOOM MultiStomp Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../site",
+        "to": "site",
+        "filter": [
+          "**/*",
+          "!**/.DS_Store",
+          "!downloads/*.zip"
+        ]
+      },
+      {
+        "from": "../deploy",
+        "to": "deploy",
+        "filter": [
+          "**/*",
+          "!mail.json",
+          "!telegram.json",
+          "!.env"
+        ]
+      }
+    ],
+    "icon": "../site/icon-512.png",
+    "win": {
+      "artifactName": "zoom-multistomp-studio-${version}-win-x64.${ext}",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "artifactName": "zoom-multistomp-studio-${version}-linux-x64.${ext}",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "AudioVideo"
+    },
+    "mac": {
+      "artifactName": "zoom-multistomp-studio-${version}-macos-arm64.${ext}",
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.music"
+    }
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "allowScripts": {
+    "electron@39.8.10": true,
+    "electron-winstaller@5.4.0": true
+  }
+}

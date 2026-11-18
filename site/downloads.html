@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" data-color-mode="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Download the beta desktop version of ZOOM MultiStomp Studio for macOS, Windows and Linux, with installation instructions and notes about the local test build." />
+    <link rel="canonical" href="https://zoommultistompstudio.tongatron.org/downloads.html" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ZOOM MultiStomp Studio" />
+    <meta property="og:title" content="ZOOM MultiStomp Studio desktop app beta for macOS, Windows and Linux" />
+    <meta property="og:description" content="Download the beta desktop version of ZOOM MultiStomp Studio for macOS, Windows and Linux, with installation instructions and notes about the local test build." />
+    <meta property="og:url" content="https://zoommultistompstudio.tongatron.org/downloads.html" />
+    <meta property="og:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor for the MS-60B+, MS-50G+ and MS-70CDR+, and effects lists for the MS-200D+, MS-80IR+ and MS-90LP+." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ZOOM MultiStomp Studio desktop app beta for macOS, Windows and Linux" />
+    <meta name="twitter:description" content="Download the beta desktop version of ZOOM MultiStomp Studio for macOS, Windows and Linux, with installation instructions and notes about the local test build." />
+    <meta name="twitter:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>ZOOM MultiStomp Studio desktop app beta for macOS, Windows and Linux</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=zoom84-20261118" />
+    <link rel="stylesheet" href="theme.css?v=zoom48-20261027" />
+    <style>
+      .download-page { max-width: 1050px; padding: 54px 24px 70px; }
+      .download-hero { max-width: 760px; margin-bottom: 36px; }
+      .download-eyebrow { margin: 0 0 10px; color: var(--accent-fg); font: 600 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+      .download-page h1 { margin: 0 0 14px; font-size: clamp(32px, 5vw, 52px); letter-spacing: -.025em; line-height: 1.05; }
+      .download-lead { max-width: 700px; margin: 0; color: var(--fg-muted); font-size: 18px; line-height: 1.55; }
+      .download-note { margin: 24px 0 0; padding: 16px 18px; border: 1px solid rgba(210, 153, 34, .55); border-radius: var(--radius); color: var(--fg); background: rgba(210, 153, 34, .1); }
+      .download-note b { color: #e3b341; }
+      .download-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 28px 0 52px; }
+      .download-card { display: flex; flex-direction: column; gap: 14px; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); }
+      .download-card h2 { margin: 0; font-size: 21px; }
+      .download-card p { margin: 0; color: var(--fg-muted); line-height: 1.5; }
+      .download-card .btn { align-self: flex-start; margin-top: auto; }
+      .download-meta { margin: -4px 0 0; color: var(--fg-muted); font: 12px var(--mono); }
+      .download-section { max-width: 820px; }
+      .download-section h2 { margin: 0 0 14px; font-size: 24px; }
+      .download-section + .download-section { margin-top: 34px; }
+      .download-steps { margin: 0; padding-left: 24px; color: var(--fg-muted); line-height: 1.65; }
+      .download-steps li + li { margin-top: 8px; }
+      .download-steps strong, .download-steps code { color: var(--fg); }
+      .download-steps code { padding: 2px 5px; border-radius: 4px; background: var(--bg-muted); font: 13px var(--mono); }
+      .download-back { margin-top: 42px; }
+    </style>
+  </head>
+  <body>
+    <header class="gh-header">
+      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Studio, home">
+        <img src="favicon.svg" alt="" width="32" height="32" />
+        <span class="gh-brand-name">ZOOM MultiStomp <span>STUDIO</span></span>
+      </a>
+      <span class="gh-spacer"></span>
+      <a class="btn btn-sm gh-header-link" href="ms-60b/">Open the studio</a>
+    </header>
+
+    <main class="container download-page">
+      <section class="download-hero">
+        <p class="download-eyebrow">Desktop app · beta</p>
+        <h1>ZOOM MultiStomp Studio on your computer.</h1>
+        <p class="download-lead">The desktop test version opens the same effects library and Patch builder in a local window. Your patches stay on this computer. The app is unsigned and unpublished as a store application.</p>
+        <p class="download-note"><b>Beta warning.</b> This first release is for testing the desktop shell. Direct MIDI/USB support is the next layer to validate; the browser Pedal manager remains the tested route for now.</p>
+      </section>
+
+      <section aria-labelledby="downloads-title">
+        <h2 id="downloads-title">Downloads</h2>
+        <div class="download-grid">
+          <article class="download-card">
+            <h2>macOS · Apple Silicon</h2>
+            <p>ZIP for Macs with Apple silicon. No installer is required.</p>
+            <p class="download-meta">zoom-multistomp-studio-0.1.0-macos-arm64.zip</p>
+            <a class="btn btn-primary" href="downloads/zoom-multistomp-studio-0.1.0-macos-arm64.zip" download>Download for macOS</a>
+          </article>
+          <article class="download-card">
+            <h2>Windows 10/11 · x64</h2>
+            <p>Portable ZIP. No installer is required.</p>
+            <p class="download-meta">zoom-multistomp-studio-0.1.0-win-x64.zip</p>
+            <a class="btn btn-primary" href="downloads/zoom-multistomp-studio-0.1.0-win-x64.zip" download>Download for Windows</a>
+          </article>
+          <article class="download-card">
+            <h2>Linux · x64</h2>
+            <p>Portable ZIP for common x64 desktop distributions.</p>
+            <p class="download-meta">zoom-multistomp-studio-0.1.0-linux-x64.zip</p>
+            <a class="btn btn-primary" href="downloads/zoom-multistomp-studio-0.1.0-linux-x64.zip" download>Download for Linux</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="download-section" aria-labelledby="macos-title">
+        <h2 id="macos-title">macOS installation</h2>
+        <ol class="download-steps">
+          <li>Download the macOS ZIP and open it to extract <strong>ZOOM MultiStomp Studio.app</strong>.</li>
+          <li>Drag the app to your Applications folder, then open it.</li>
+          <li>Because this beta build is not code-signed, macOS may block the first launch. Control-click the app, choose <strong>Open</strong>, and confirm only if you trust this test build.</li>
+        </ol>
+      </section>
+
+      <section class="download-section" aria-labelledby="windows-title">
+        <h2 id="windows-title">Windows installation</h2>
+        <ol class="download-steps">
+          <li>Download the Windows ZIP and extract it somewhere you can keep it, such as your Desktop or another folder.</li>
+          <li>Open the extracted folder and double-click <strong>ZOOM MultiStomp Studio.exe</strong>.</li>
+          <li>Windows may show a SmartScreen warning because this beta build is not code-signed. Choose the option to view more information, then continue only if you trust this test build.</li>
+        </ol>
+      </section>
+
+      <section class="download-section" aria-labelledby="linux-title">
+        <h2 id="linux-title">Linux installation</h2>
+        <ol class="download-steps">
+          <li>Download the Linux ZIP and extract it.</li>
+          <li>In a terminal, enter the extracted folder and make the app executable: <code>chmod +x "ZOOM MultiStomp Studio"</code>.</li>
+          <li>Start it with <code>./"ZOOM MultiStomp Studio"</code>. The ZIP is a portable build; it does not add a desktop launcher.</li>
+        </ol>
+      </section>
+
+      <p class="download-back"><a class="btn" href="ms-60b/">Back to the studio</a></p>
+    </main>
+
+    <script src="updates.js?v=updates3-20261118"></script>
+    <script src="library-merge.js?v=zoom33-20261102"></script>
+    <script src="account.js?v=zoom60-20261118"></script>
+  </body>
+</html>
