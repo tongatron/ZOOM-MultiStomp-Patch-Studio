@@ -14,8 +14,8 @@ const PEDAL_LIST = [
   { id: 'ms60b', folder: 'ms-60b', name: 'MS-60B+', kind: 'bass', status: '', beta: false },
   { id: 'ms50g', folder: 'ms-50g', name: 'MS-50G+', kind: 'guitar', status: 'Beta', beta: true, help: 'help.html' },
   { id: 'ms70cdr', folder: 'ms-70cdr', name: 'MS-70CDR+', kind: 'spatial', status: 'Testing', beta: false },
-  { id: 'ms200d', folder: 'ms-200d', name: 'MS-200D+', kind: 'drive', status: 'Beta', beta: true, sync: false },
-  { id: 'ms80ir', folder: 'ms-80ir', name: 'MS-80IR+', kind: 'amp', status: 'Beta', beta: true, sync: false },
-  { id: 'ms90lp', folder: 'ms-90lp', name: 'MS-90LP+', kind: 'looper', status: 'Beta', beta: true, sync: false }
+  { id: 'ms200d', folder: 'ms-200d', name: 'MS-200D+', kind: 'drive', status: 'Beta', beta: true, help: 'help.html', sync: false },
+  { id: 'ms80ir', folder: 'ms-80ir', name: 'MS-80IR+', kind: 'amp', status: 'Beta', beta: true, help: 'help.html', sync: false },
+  { id: 'ms90lp', folder: 'ms-90lp', name: 'MS-90LP+', kind: 'looper', status: 'Beta', beta: true, help: 'help.html', sync: false }
 ];
 if (typeof module !== 'undefined') module.exports = { PEDAL_LIST };

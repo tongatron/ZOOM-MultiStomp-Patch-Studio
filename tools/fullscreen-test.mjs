@@ -65,7 +65,9 @@ const PAGES_70CDR = {
 const READER = [['#rd-connect', 'Connect'], ['#rd-pedal-title', 'On the pedal'], ['#rd-backups-title', 'Backups'], ['#rd-list', 'memory list', 120]];
 // The Loop tools of the MS-90LP+ (loop-tools.html, loop-tools.js): calculators and a song planner in a document pane
 const PAGES_BETA = { 'ms-200d/pedal-manager.html': READER, 'ms-80ir/pedal-manager.html': READER,
-  'ms-90lp/loop-tools.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['#len-tempo', 'tempo'], ['.fs-doc .fs-pane-body', 'document', 300]] };
+  'ms-90lp/loop-tools.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['#len-tempo', 'tempo'], ['.fs-doc .fs-pane-body', 'document', 300]],
+  // the pages of checks for owners of the beta pedals, laid out like the Guide
+  'ms-200d/help.html': PAGES['guide.html'], 'ms-80ir/help.html': PAGES['guide.html'], 'ms-90lp/help.html': PAGES['guide.html'] };
 const ALL_PAGES = { ...PAGES, ...PAGES_50G, ...PAGES_70CDR, ...PAGES_BETA };
 
 // Runs in the page: what is cut, off screen or too small
@@ -323,10 +325,10 @@ try {
     const testers = page.locator('section[aria-labelledby="testers-title"]');
     assert.equal(await testers.locator('ol, li').count(), 0, 'no list of steps to follow');
     const help = testers.locator('a.btn');
-    assert.equal(await help.count(), 2, 'two help pages: the pedals in test');
-    assert.deepEqual(await help.allTextContents(), ['Help us test the MS-50G+', 'Help us test the MS-70CDR+']);
-    assert.deepEqual(await help.evaluateAll(links => links.map(a => new URL(a.href).pathname)), ['/ms-50g/help.html', '/ms-70cdr/help.html']);
-    assert.deepEqual(await testers.locator('button[data-report="contact"]').allTextContents(), ['I own an MS-200D+', 'I own an MS-80IR+', 'I own an MS-90LP+'], 'one contact button for each beta pedal');
+    assert.equal(await help.count(), 5, 'a help page for every pedal in test or in beta');
+    assert.deepEqual(await help.allTextContents(), ['MS-50G+', 'MS-70CDR+', 'MS-200D+', 'MS-80IR+', 'MS-90LP+'].map(name => `Help us test the ${name}`));
+    assert.deepEqual(await help.evaluateAll(links => links.map(a => new URL(a.href).pathname)), ['ms-50g', 'ms-70cdr', 'ms-200d', 'ms-80ir', 'ms-90lp'].map(folder => `/${folder}/help.html`));
+    for (const path of await help.evaluateAll(links => links.map(a => a.href))) assert.equal((await fetch(path)).status, 200, path);
     // Contact us: the form of report.js, an email address is needed
     const outbox = join(dataDir, 'telegram');
     const lastNotice = async () => { const all = (await readdir(outbox)).sort(); return readFile(join(outbox, all[all.length - 1]), 'utf8'); };
@@ -784,6 +786,7 @@ try {
     assert.match(await page.locator('#plan-total').innerText(), /^4 parts, 1:12\.0/);
     await page.click('#plan-clear');
     await page.locator('dialog[open] button[value="yes"]').click();
+    await page.locator('#plan-parts .lt-empty').waitFor({ timeout: 3000 });
     assert.match(await page.locator('#plan-parts').innerText(), /No parts yet/);
     await page.evaluate(() => localStorage.removeItem('ms90lp-song-plan'));
   });

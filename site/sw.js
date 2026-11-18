@@ -4,7 +4,7 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v44';
+const CACHE = 'ms60b-v45';
 const CORE = [
   // No './' and no old-address pages here: they only send the visitor on to /ms-60b/
   'ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/technical-notes.md', 'ms-60b/guide.html', 'audition.js', 'audition.css', 'updates.js', 'privacy.html', 'downloads.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest', 'assets/audition/bass-guitar-groove-loop.mp3', 'assets/audition/electric-bass-groove-110.mp3', 'assets/audition/electric-bass-groove-2-110.mp3', 'assets/audition/slap-bass-hit.mp3',
@@ -13,11 +13,11 @@ const CORE = [
   ...Array.from({ length: 127 }, (_, i) => `ms-50g/assets/effects/fx-${String(i).padStart(3, '0')}.png`),
   'ms-70cdr/index.html', 'ms-70cdr/builder.html', 'ms-70cdr/guide.html', 'ms-70cdr/help.html', 'ms-70cdr/resources.html', 'ms-70cdr/pedal-manager.html',
   ...Array.from({ length: 149 }, (_, i) => `ms-70cdr/assets/effects/fx-${String(i).padStart(3, '0')}.png`),
-  'ms-200d/index.html', 'ms-200d/guide.html', 'ms-200d/resources.html', 'ms-200d/pedal-manager.html', 'pedal-reader.js?v=reader1-20261117', 'pedal-reader.css?v=reader1-20261117',
+  'ms-200d/index.html', 'ms-200d/guide.html', 'ms-200d/help.html', 'ms-200d/resources.html', 'ms-200d/pedal-manager.html', 'pedal-reader.js?v=reader1-20261117', 'pedal-reader.css?v=reader1-20261117',
   ...Array.from({ length: 217 }, (_, i) => `ms-200d/assets/effects/fx-${String(i).padStart(3, '0')}.png`),
-  'ms-80ir/index.html', 'ms-80ir/guide.html', 'ms-80ir/resources.html', 'ms-80ir/pedal-manager.html',
+  'ms-80ir/index.html', 'ms-80ir/guide.html', 'ms-80ir/help.html', 'ms-80ir/resources.html', 'ms-80ir/pedal-manager.html',
   ...Array.from({ length: 41 }, (_, i) => `ms-80ir/assets/effects/fx-${String(i).padStart(3, '0')}.png`),
-  'ms-90lp/index.html', 'ms-90lp/loop-tools.html', 'ms-90lp/guide.html', 'ms-90lp/resources.html', 'ms-90lp/loop-data.js?v=loop1-20261117', 'ms-90lp/loop-tools.js?v=lt1-20261118'
+  'ms-90lp/index.html', 'ms-90lp/loop-tools.html', 'ms-90lp/guide.html', 'ms-90lp/help.html', 'ms-90lp/resources.html', 'ms-90lp/loop-data.js?v=loop1-20261117', 'ms-90lp/loop-tools.js?v=lt1-20261118'
 ];
 
 // Sign-in and account pages are always asked to the server (they depend on the session); so is /moved, which receives
