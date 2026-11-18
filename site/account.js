@@ -7,7 +7,8 @@
 const BETA_KEY = 'site-beta-features';
 const BETA_FEATURES = Object.freeze({
   audition: { label: 'Pedal audition', hint: 'Play a clean reference loop through the pedal.' },
-  live: { label: 'Live mode', hint: 'Send supported edits to the pedal edit buffer.' }
+  live: { label: 'Live mode', hint: 'Send supported edits to the pedal edit buffer.' },
+  desktop: { label: 'Desktop app downloads', hint: 'Show the beta desktop downloads in the header.' }
 });
 const readBetaSettings = () => {
   try {
@@ -321,6 +322,21 @@ const ACCOUNT = (() => {
     const slot = document.createElement('div');
     slot.className = 'account-slot';
     header?.append(slot);
+    let desktopLink = null;
+    function renderDesktopLink() {
+      const show = !!account.me?.signedIn && account.betaEnabled('desktop');
+      if (show && !desktopLink && header) {
+        desktopLink = document.createElement('a');
+        desktopLink.className = 'btn btn-sm gh-header-link desktop-beta-link';
+        desktopLink.href = '/downloads.html';
+        desktopLink.title = 'Beta desktop app downloads';
+        desktopLink.innerHTML = 'Desktop app <span class="Label Label--attention">Beta</span>';
+        header.insertBefore(desktopLink, slot);
+      } else if (!show && desktopLink) {
+        desktopLink.remove();
+        desktopLink = null;
+      }
+    }
     let notice = null;
 
     // What the slot shows now. A render that changes nothing leaves the button alone, and one that only changes
@@ -341,6 +357,7 @@ const ACCOUNT = (() => {
       const me = account.me;
       document.documentElement.classList.toggle('signed-out', !me?.signedIn);
       document.documentElement.classList.toggle('signed-in', !!me?.signedIn);
+      renderDesktopLink();
       if (!me) return;
       if (!me.signedIn) {
         paint(`<a class="btn btn-sm account-signin" href="/login?next=${encodeURIComponent(here())}">Sign in</a>`);
