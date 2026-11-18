@@ -452,7 +452,7 @@
           updatedAt: new Date().toISOString() };
         list.unshift(entry);
         if (!storeLibrary(list)) return;
-        linkMemory(n, entry.id, patch);
+        linkMemory(n, entry.id, patch, entry);
         renderLocals();
         const copiedMessage = `“${entry.name}” copied to My patches`;
         result(true, copiedMessage);
@@ -607,7 +607,7 @@
     ).changes : [];
     if (!changes.length) { status('The full patch is already synchronized.', 'ok'); return; }
     if (direction === 'local-to-pedal') {
-      try { await send(number, toFile(pair.libraryPatch, pair.memory.data), false, `Synchronized full patch to memory ${number}`, pair.entry.id); }
+      try { await send(number, toFile(pair.libraryPatch, pair.memory.data), false, `Synchronized full patch to memory ${number}`, { id: pair.entry.id, patch: pair.libraryPatch }); }
       catch (error) { status(`The full patch could not be prepared: ${error.message}`, 'danger'); }
       return;
     }
@@ -633,9 +633,11 @@
       return { ok: true, text: `Full patch restored in “${before.name}”.` };
     }, { toast: true });
   }
-  function linkMemory(number, patchId, patch, libraryPatch = patch) {
+  // pedalPatch: what the memory holds; libraryPatch: the My patch as saved. The two baselines differ when the My patch
+  // leaves something to the memory (no R OUT POSITION of its own) or has another name, so each side keeps its own
+  function linkMemory(number, patchId, pedalPatch, libraryPatch) {
     const sync = readPedalSync();
-    sync.links[number] = { patchId, pedalName: patch.name || null, pedalBaseline: canonicalPatch(patch), libraryBaseline: canonicalPatch(libraryPatch), updatedAt: new Date().toISOString() };
+    sync.links[number] = { patchId, pedalName: pedalPatch.name || null, pedalBaseline: canonicalPatch(pedalPatch), libraryBaseline: canonicalPatch(patchForEntry(libraryPatch)), updatedAt: new Date().toISOString() };
     writePedalSync(sync);
   }
   function unlinkMemory(number) {
@@ -756,7 +758,7 @@
         const patchId = key.startsWith('lib:') ? key.slice('lib:'.length) : null;
         // The builder already holds its own patch (draft); the others open in it through a patch link
         const href = key === 'draft' ? 'builder.html' : PATCHLINK.url(patch);
-        try { items.push({ key, label, href, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null, patchId, linkedMemories: patchId ? linkedMemories(patchId) : [] }); }
+        try { items.push({ key, label, href, name: patch.name || '(no name)', chain, bytes: toFile(patch, edit?.memory ? fromBase64(edit.base) : null), memory: edit?.memory ?? null, patchId, patch, linkedMemories: patchId ? linkedMemories(patchId) : [] }); }
         catch (error) { items.push({ key, label, href, name: patch.name || '(no name)', chain, error: error.message, patchId, linkedMemories: patchId ? linkedMemories(patchId) : [] }); }
       } catch {}
     };
@@ -808,7 +810,7 @@
     }
     if (!button || !selected) return;
     const item = localItems().find(i => i.key === button.closest('[data-key]').dataset.key);
-    if (item?.bytes) send(selected, item.bytes, false, '', item.patchId || null);
+    if (item?.bytes) send(selected, item.bytes, false, '', item.patchId ? { id: item.patchId, patch: item.patch } : null);
   });
   $('#usb-sync-changes').addEventListener('change', event => {
     const sync = readPedalSync();
@@ -1321,7 +1323,7 @@
       let bytes;
       try { bytes = toFile(found.libraryPatch, found.memory.data); }
       catch (error) { status(`The local patch could not be prepared for the pedal: ${error.message}`, 'danger'); return; }
-      await send(number, bytes, false, `Updated memory ${number} from “${found.entry.name}”`, found.entry.id);
+      await send(number, bytes, false, `Updated memory ${number} from “${found.entry.name}”`, { id: found.entry.id, patch: found.libraryPatch });
       return;
     }
     const beforeSync = cloneJson(readPedalSync());
@@ -1337,7 +1339,7 @@
         updatedAt: new Date().toISOString() };
       list.unshift(copy);
       if (!storeLibrary(list)) return;
-      linkMemory(number, copy.id, found.pedalPatch);
+      linkMemory(number, copy.id, found.pedalPatch, copy);
       renderLocals();
       renderMemories();
       const savedMessage = `“${copy.name}” saved as a new My patch`;
@@ -1363,7 +1365,7 @@
     }
     Object.assign(entry, { name: found.pedalPatch.name, effects: cloneJson(found.pedalPatch.effects), updatedAt: new Date().toISOString() });
     if (!storeLibrary(list)) return;
-    linkMemory(number, entry.id, found.pedalPatch);
+    linkMemory(number, entry.id, found.pedalPatch, entry);
     renderLocals();
     renderMemories();
     status(`Updated “${entry.name}” from memory ${number}`, 'ok');
@@ -1470,13 +1472,14 @@
   }
 
   // label: what the change is called on the Undo list (a rename passes its own)
-  async function send(number, bytes, clearing = false, label = '', sourcePatchId = null) {
+  // source: { id, patch } of the My patch the bytes were made from; after the write the memory is linked to it
+  async function send(number, bytes, clearing = false, label = '', source = null) {
     if (busy) return;
     busy = true;
     renderLocals();
-    try { await sendNow(number, bytes, clearing, label, sourcePatchId); } finally { busy = false; renderLocals(); }
+    try { await sendNow(number, bytes, clearing, label, source); } finally { busy = false; renderLocals(); }
   }
-  async function sendNow(number, bytes, clearing = false, label = '', sourcePatchId = null) {
+  async function sendNow(number, bytes, clearing = false, label = '', source = null) {
     result(true, '');
     let d;
     try { d = ZPTC.decode(bytes); } catch (error) { status(`Not a patch: ${error.message}`, 'danger'); return; }
@@ -1513,8 +1516,8 @@
     const r = await writeAndCheck(number, bytes);
     result(r.ok, r.text);
     status(r.ok ? (clearing ? 'Cleared' : 'Written') : 'Check the pedal', r.ok ? 'ok' : 'danger');
-    if (r.ok && sourcePatchId) {
-      try { linkMemory(number, sourcePatchId, toPatch(ZPTC.decode(ptcfOf(bytes)), { strict: true })); renderMemory(number); }
+    if (r.ok && source) {
+      try { linkMemory(number, source.id, toPatch(ZPTC.decode(ptcfOf(bytes)), { strict: true }), source.patch); renderMemory(number); }
       catch (error) { status(`Written, but the My patch link could not be saved: ${error.message}`, 'danger'); }
     } else if (r.ok && clearing) { unlinkMemory(number); renderMemory(number); }
     // A memory that could not be read as a valid patch is only kept in Backups: writing its raw bytes back cannot be read back to check

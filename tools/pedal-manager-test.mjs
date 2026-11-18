@@ -232,6 +232,8 @@ try {
   await test('Copy to My patches can be undone', async () => {
     await page3.click('#usb-connect');
     await page3.locator('#usb-memories li[data-state="ok"]').first().waitFor({ timeout: 20000 });
+    // The whole pedal is read before the link: Read again below must not start while this first reading still runs
+    await page3.waitForFunction(() => document.querySelector('#usb-status')?.textContent === 'Connected', null, { timeout: 30000 });
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] [data-act="link"]').click();
     await page3.selectOption('#usb-link-patch', 'p1');
@@ -257,11 +259,16 @@ try {
       await page3.click('#usb-confirm-yes');
       await page3.waitForFunction(() => /Written/.test(document.querySelector('#usb-status')?.textContent || ''), null, { timeout: 30000 });
       assert.match(await page3.locator('#usb-memories li[data-n="1"] .usb-name').innerText(), /Edited locally/);
+      // The baseline is My patch as saved (it has no R OUT POSITION, the memory keeps its own), not the patch read back
       assert.equal(await page3.evaluate(() => {
         const sync = JSON.parse(localStorage.getItem('ms60b-pedal-sync'));
-        const library = JSON.parse(localStorage.getItem('ms60b-library'));
-        return sync.links[1].libraryBaseline === JSON.stringify({ name: library[0].name, effects: library[0].effects.map(effect => ({ index: effect.index, on: effect.on !== false, values: Object.fromEntries(Object.entries(effect.values || {}).sort(([a], [b]) => a.localeCompare(b))) })) });
-      }), true);
+        const patch = JSON.parse(localStorage.getItem('ms60b-library')).find(entry => entry.id === 'p1');
+        return sync.links[1].libraryBaseline === JSON.stringify({ name: patch.name, rightPositionRaw: Number.isInteger(patch.rightPositionRaw) ? patch.rightPositionRaw : null, effects: patch.effects.map(effect => ({ index: effect.index, on: effect.on !== false, values: Object.fromEntries(Object.entries(effect.values || {}).sort(([a], [b]) => a.localeCompare(b))) })) });
+      }), true, 'the link baseline is the saved My patch');
+      await page3.click('#usb-refresh');
+      await page3.waitForFunction(() => document.querySelector('#usb-status')?.textContent === 'Connected', null, { timeout: 30000 });
+      await page3.waitForTimeout(500);
+      assert.equal(await page3.locator('#usb-confirm[open]').count(), 0, 'reading the pedal again offers no update: the two sides are in sync');
     });
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
