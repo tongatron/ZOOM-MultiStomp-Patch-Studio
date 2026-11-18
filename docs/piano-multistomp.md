@@ -168,4 +168,4 @@ Stato: nessuna è iniziata. Ordine per ogni pedale: prima ciò che non richiede 
 
 - **Pedali di prima generazione** (MS-50G, MS-60B, MS-70CDR): ambito ancora da decidere; foto già in `/Users/tonga/Downloads/zoom`.
 - **Test con tester**: pagine di aiuto per MS-200D+, MS-80IR+ e MS-90LP+ come quelle di MS-50G+ e MS-70CDR+.
-- **Test già noti da sistemare**: «Download .zptc» fuori schermo a 800 × 640 nel builder; «a local edit offers to update the linked pedal memory after reading the pedal» nel test del Pedal manager.
+- **Test già noti**: risolti il 2026-11-18. «Download .zptc» fuori schermo a 800 × 640 (il campo R OUT nascosto non occupa più spazio) e «a local edit offers to update the linked pedal memory after reading the pedal» (il collegamento memoria ↔ My patches usa la patch salvata; Read again aspetta il pedale). `fullscreen-test` e `pedal-manager-test` passano tutti.

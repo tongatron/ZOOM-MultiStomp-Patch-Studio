@@ -1,8 +1,14 @@
 // Writes "Last update <day> <month> <year> HH:MM CET/CEST" (Europe/Rome time) under the GitHub link in every page footer.
 // Run it right before a deploy: node tools/stamp-update.mjs
+// The pages are found, not listed: every .html under site/ (not the design prototypes) that already has the footer time
+// (<time class="gh-updated">) or a footer GitHub link to put it after, so a new page is stamped without touching this file.
 import fs from 'node:fs';
 
-const pages = ['ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'privacy.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/guide.html', 'ms-50g/index.html', 'ms-50g/builder.html', 'ms-50g/resources.html', 'ms-50g/guide.html', 'ms-50g/help.html', 'ms-50g/pedal-manager.html', 'ms-70cdr/index.html', 'ms-70cdr/builder.html', 'ms-70cdr/guide.html', 'ms-70cdr/resources.html', 'ms-70cdr/help.html', 'ms-70cdr/pedal-manager.html', 'index.html', 'ms-200d/index.html', 'ms-200d/guide.html', 'ms-200d/resources.html', 'ms-200d/pedal-manager.html', 'ms-80ir/index.html', 'ms-80ir/guide.html', 'ms-80ir/resources.html', 'ms-80ir/pedal-manager.html', 'ms-90lp/index.html', 'ms-90lp/guide.html', 'ms-90lp/resources.html'];
+const GITHUB_LINK = '<span>Source on GitHub</span></a>';
+const pages = fs.readdirSync('site', { recursive: true })
+  .filter(file => file.endsWith('.html') && !file.startsWith('designs/'))
+  .filter(file => { const html = fs.readFileSync(`site/${file}`, 'utf8'); return html.includes('class="gh-updated"') || html.includes(GITHUB_LINK); })
+  .sort();
 const now = new Date();
 const formatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', timeZoneName: 'short', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const parts = formatter.formatToParts(now);
