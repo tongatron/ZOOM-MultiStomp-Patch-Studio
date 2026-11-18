@@ -935,6 +935,17 @@ try {
     await page.locator('.lp-pedal-nav--prev').click();
     assert.equal(await active(), 5, 'back from the first is the last');
     assert.equal(await page.locator('.lp-pedal-name:not([hidden])').innerText(), 'ZOOM MS-90LP+Looper · beta');
+    // Patch builder and Pedal manager (screenshots from tools/landing-shots.mjs): the MS-60B+ pages first, one switch shows
+    // the MS-70CDR+ pages in both pictures; each tool links to its page for both pedals
+    const studio = page.locator('#studio');
+    const shown = () => studio.locator('.lp-switchable img').evaluateAll(imgs => imgs.filter(img => img.checkVisibility()).map(img => img.getAttribute('src')));
+    assert.deepEqual(await shown(), ['landing/shots/ms60b-builder.webp', 'landing/shots/ms60b-pedal-manager.webp']);
+    for (const src of await studio.locator('.lp-switchable img').evaluateAll(imgs => imgs.map(img => img.src))) assert.equal((await fetch(src)).status, 200, src);
+    await studio.locator('.lp-switch').first().locator('button[data-pedal="ms70cdr"]').click();
+    assert.deepEqual(await shown(), ['landing/shots/ms70cdr-builder.webp', 'landing/shots/ms70cdr-pedal-manager.webp']);
+    assert.deepEqual(await studio.locator('button[aria-pressed="true"]').allTextContents(), ['MS-70CDR+spatial', 'MS-70CDR+spatial'], 'the switches move together');
+    assert.deepEqual(await studio.locator('.lp-cta a').evaluateAll(links => links.map(a => new URL(a.href).pathname)),
+      ['/ms-60b/builder.html', '/ms-70cdr/builder.html', '/ms-60b/pedal-manager.html', '/ms-70cdr/pedal-manager.html']);
     await page.goto(`${base}/landing/`);
     await page.waitForURL(url => url.pathname === '/');
   });

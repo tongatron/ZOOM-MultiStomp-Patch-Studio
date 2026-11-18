@@ -120,8 +120,17 @@
       .lp-shot { margin: 0; }
       .lp-shot img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: calc(var(--radius) * 2); background: var(--bg); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
       .lp-shot figcaption { margin-top: 12px; font-size: 13px; color: var(--fg-muted); }
-      .lp-hero .lp-shot { margin-top: 48px; }
       .lp-shot--small img { box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+      .lp-shot--menu { max-width: 292px; justify-self: center; }
+      /* Patch builder and Pedal manager: a switch above each screenshot shows the page of either pedal (all the switches move together; hidden until the script runs) */
+      .lp-switch { display: inline-flex; gap: 4px; margin: 0 0 12px; padding: 3px; border: 1px solid var(--border); border-radius: 2em; background: var(--bg-subtle); }
+      .lp-switch[hidden], .lp-switchable [data-pedal][hidden] { display: none; }
+      .lp-switch button { height: 28px; padding: 0 14px; border: 0; border-radius: 2em; font: inherit; font-size: 13px; font-weight: 600; color: var(--fg-muted); background: none; cursor: pointer; }
+      .lp-switch button:hover { color: var(--fg); }
+      .lp-switch button[aria-pressed="true"] { color: var(--fg); background: var(--bg-muted); box-shadow: inset 0 0 0 1px var(--border); }
+      .lp-switch button:focus-visible { outline: 2px solid var(--accent-fg); outline-offset: 2px; }
+      .lp-switch small { margin-left: 4px; font-size: 12px; font-weight: 500; color: var(--fg-muted); }
+      .lp-tour-text .lp-cta { margin-top: 20px; }
       .lp-split--wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: start; }
       .lp-stack { display: grid; gap: 28px; }
       .lp-shot--dialog { max-width: 440px; }
@@ -187,10 +196,58 @@
             </figcaption>
           </figure>
         </div>
-        <figure class="lp-shot">
-          <img src="landing/shots/builder.webp" alt="The Patch builder of the studio: a chain of six effects from DYNAMIC COMPRESSOR to ROOM REVERB, the patch name and a DSP load of 85%, the Advice pane with a tip, and the My patches list on the right." width="1920" height="1200" fetchpriority="high" />
-          <figcaption>The Patch builder: a chain of 6 effects at 85% DSP, advice with sources, and your saved patches at the right.</figcaption>
-        </figure>
+      </section>
+
+      <section id="studio" aria-labelledby="studio-title">
+        <p class="lp-eyebrow">Patch builder and Pedal manager · MS-60B+ and MS-70CDR+</p>
+        <h2 id="studio-title">Build a patch, then put it on the pedal</h2>
+        <p class="lp-lead">The two tools at the heart of the studio, the same for the MS-60B+ bass and the MS-70CDR+ spatial pedal, each with its own effects and advice. Switch the pedal above a picture to see its page.</p>
+        <div class="lp-tour">
+          <div class="lp-tour-row">
+            <div class="lp-tour-text">
+              <h3>Patch builder</h3>
+              <p>Your saved patches at the left, the chain in the middle, the patch and its advice at the right.</p>
+              <ul class="lp-checks">
+                <li><b>Up to 6 effects</b>, as on the pedal: drag them into order and set every parameter with its real range.</li>
+                <li><b>Live DSP meter:</b> the load of each effect and of the whole chain against the 100% limit.</li>
+                <li><b>Advice</b> on effect order and levels, with sources, often with a one-click fix.</li>
+                <li><b>My patches:</b> save, compare, back up, and download a <code>.zptc</code> file for Handy Guitar Lab.</li>
+                <li><b>Undo and redo</b> for every edit, also for a deleted or duplicated patch.</li>
+              </ul>
+              <div class="lp-cta lp-pedal-links"><a class="btn btn-sm btn-primary" href="ms-60b/builder.html">MS-60B+ builder</a> <a class="btn btn-sm" href="ms-70cdr/builder.html">MS-70CDR+ builder</a></div>
+            </div>
+            <figure class="lp-shot lp-switchable">
+              <div class="lp-switch" role="group" aria-label="Pedal shown" hidden><button type="button" data-pedal="ms60b" aria-pressed="true">MS-60B+<small>bass</small></button><button type="button" data-pedal="ms70cdr" aria-pressed="false">MS-70CDR+<small>spatial</small></button></div>
+              <img data-pedal="ms60b" src="landing/shots/ms60b-builder.webp" alt="The MS-60B+ Patch builder: My patches on the left with ALT ROCK open, its chain of six effects from DYNAMIC COMPRESSOR to ROOM REVERB in the middle, and on the right the saved patch at 85.1% DSP with Advice under it showing a tip." width="1920" height="1200" fetchpriority="high" />
+              <img data-pedal="ms70cdr" src="landing/shots/ms70cdr-builder.webp" alt="The MS-70CDR+ Patch builder under the yellow Testing bar: My patches on the left with DREAM WASH open, its chain of six effects from COMPRESSOR to HALL REVERB in the middle, and on the right the saved patch at 40.7% DSP with Advice under it." width="1920" height="1200" loading="lazy" hidden />
+              <figcaption data-pedal="ms60b">MS-60B+ bass: a chain of 6 effects at 85.1% DSP, with a tip from Advice.</figcaption>
+              <figcaption data-pedal="ms70cdr" hidden>MS-70CDR+ spatial: the same builder, with its modulation, delay and reverb effects and its own advice rules.</figcaption>
+            </figure>
+          </div>
+
+          <div class="lp-tour-row lp-tour-row--flip">
+            <div class="lp-tour-text">
+              <h3>Pedal manager</h3>
+              <p>Connect the pedal with a USB cable: the patches stored on it next to the ones you saved, without Handy Guitar Lab.</p>
+              <ul class="lp-checks">
+                <li><b>Read</b> every memory of the pedal and open a patch in the builder to edit it.</li>
+                <li><b>Write</b> a patch from My patches to the memory you choose, or clear one.</li>
+                <li><b>Arrange:</b> rename, move or swap memories, or drag the whole pedal into a new order.</li>
+                <li><b>Backup first:</b> before a memory is overwritten its patch is kept in Backups, and you can restore it.</li>
+                <li><b>Checked:</b> after a write the memory is read back, and <b>Undo</b> takes the change back.</li>
+              </ul>
+              <div class="lp-cta lp-pedal-links"><a class="btn btn-sm btn-primary" href="ms-60b/pedal-manager.html">MS-60B+ manager</a> <a class="btn btn-sm" href="ms-70cdr/pedal-manager.html">MS-70CDR+ manager</a></div>
+            </div>
+            <figure class="lp-shot lp-switchable">
+              <div class="lp-switch" role="group" aria-label="Pedal shown" hidden><button type="button" data-pedal="ms60b" aria-pressed="true">MS-60B+<small>bass</small></button><button type="button" data-pedal="ms70cdr" aria-pressed="false">MS-70CDR+<small>spatial</small></button></div>
+              <img data-pedal="ms60b" src="landing/shots/ms60b-pedal-manager.webp" alt="The MS-60B+ Pedal manager with a pedal connected: the red pedal drawing and the connection box on the left, the 100 memories of the pedal in the middle with memory 4 ALT ROCK open to its six effects and its buttons, and My patches on the right, each with a button that sends it to the pedal." width="1920" height="1200" loading="lazy" />
+              <img data-pedal="ms70cdr" src="landing/shots/ms70cdr-pedal-manager.webp" alt="The MS-70CDR+ Pedal manager under the yellow Testing bar, with a pedal connected: the blue pedal drawing on the left, the memories of the pedal in the middle with memory 4 DREAM WASH open to its six effects, and My patches on the right." width="1920" height="1200" loading="lazy" hidden />
+              <figcaption data-pedal="ms60b">MS-60B+: a memory open, ready to edit in the builder, rename or copy to My patches. Shown with a simulated pedal.</figcaption>
+              <figcaption data-pedal="ms70cdr" hidden>MS-70CDR+: the same manager, now being tested on a real pedal. Shown with a simulated pedal.</figcaption>
+            </figure>
+          </div>
+        </div>
+        <p class="lp-note">The Pedal manager works in Chrome or Edge on a computer (Web MIDI); the USB protocol is not documented by ZOOM. The MS-70CDR+ is being tested on a real pedal: until the tests are done, write to a free memory and check the patch on the pedal. The MS-50G+ guitar has both tools too, in beta.</p>
       </section>
 
       <section id="pedals" aria-labelledby="pedals-title">
@@ -200,8 +257,8 @@
             <h2 id="pedals-title">Six pedals, one studio</h2>
             <p class="lp-lead" style="margin-bottom: 0;">Switch between them at the top of every page of the studio. The bass version is tested on a real pedal; the guitar and spatial versions are being tested, and the drive, amp and looper pedals are in beta, waiting for testers.</p>
           </div>
-          <figure class="lp-shot lp-shot--small">
-            <img src="landing/shots/menu.webp" alt="The pedal menu at the top of the studio: MS-60B+ bass with the green tag Tested on firmware 1.20, and MS-50G+ guitar with the grey tag Not tested." width="960" height="330" loading="lazy" />
+          <figure class="lp-shot lp-shot--small lp-shot--menu">
+            <img src="landing/shots/menu.webp" alt="The pedal menu at the top of the studio, open: MS-60B+ bass ticked, MS-50G+ guitar with the tag Beta, MS-70CDR+ spatial with the tag Testing, and the MS-200D+ drive, MS-80IR+ amp and MS-90LP+ looper with the tag Beta." width="438" height="426" loading="lazy" />
           </figure>
         </div>
         <div class="lp-pedals">
@@ -335,7 +392,7 @@
         <ol class="lp-steps">
           <li><h3>Build the chain</h3><p>Pick up to 6 effects, drag them into order and set every parameter with the real ranges.</p></li>
           <li><h3>Check it</h3><p>Watch the DSP load against the 100% limit and read the advice before you leave the desk.</p></li>
-          <li><h3>Send it to the pedal</h3><p>Download the <code>.zptc</code> file for Handy Guitar Lab, or connect the MS-60B+ by USB and write it from the Pedal manager.</p></li>
+          <li><h3>Send it to the pedal</h3><p>Download the <code>.zptc</code> file for Handy Guitar Lab, or connect the MS-60B+ or MS-70CDR+ by USB and write it from the Pedal manager.</p></li>
         </ol>
       </section>
 
@@ -440,8 +497,8 @@
             </div>
           </div>
           <figure class="lp-shot">
-            <img src="landing/shots/ms50g-builder.webp" alt="The MS-50G+ Patch builder with a guitar chain of six effects from COMPRESSOR to HALL REVERB at 70% DSP, under a red notice that no generated patch has been checked on a real MS-50G+ yet." width="1920" height="1200" loading="lazy" />
-            <figcaption>The MS-50G+ builder: the same studio, with a notice that it is not tested yet.</figcaption>
+            <img src="landing/shots/ms50g-builder.webp" alt="The MS-50G+ Patch builder with a guitar chain of six effects from COMPRESSOR to HALL REVERB at 70.1% DSP, under the amber Beta bar that says the pedal has not been tested on real hardware yet, with the Help us test and Write to us buttons." width="1920" height="1200" loading="lazy" />
+            <figcaption>The MS-50G+ builder: the same studio, with a Beta bar until it is tested.</figcaption>
           </figure>
         </div>
       </section>
@@ -488,6 +545,23 @@
         stage.addEventListener('keydown', function (e) {
           if (e.key === 'ArrowLeft') show(current - 1);
           else if (e.key === 'ArrowRight') show(current + 1);
+        });
+      })();
+      // Patch builder and Pedal manager: the switches (hidden until this runs) show the pages of one pedal in every picture
+      (function () {
+        var parts = document.querySelectorAll('.lp-switchable [data-pedal]');
+        function pick(pedal) {
+          parts.forEach(function (part) {
+            if (part.tagName === 'BUTTON') part.setAttribute('aria-pressed', String(part.dataset.pedal === pedal));
+            else part.hidden = part.dataset.pedal !== pedal;
+          });
+        }
+        document.querySelectorAll('.lp-switch').forEach(function (group) {
+          group.hidden = false;
+          group.addEventListener('click', function (e) {
+            var button = e.target.closest('button[data-pedal]');
+            if (button) pick(button.dataset.pedal);
+          });
         });
       })();
     </script>
