@@ -748,6 +748,19 @@ try {
     await page.waitForURL(url => url.pathname === '/ms-60b/builder.html');
   });
 
+  await test('MS-200D+ Effects: the CHARACTER line of the Effects List is a label of each effect and a filter', async () => {
+    await open('ms-200d/index.html', SIZES[1]);
+    const filter = page.locator('#character-list [data-character]');
+    assert.deepEqual(await filter.evaluateAll(items => items.map(b => b.dataset.character)), ['MID BOOST', 'BRIGHT', 'FAT', 'MID SCOOP', 'FLAT']);
+    await page.locator('#character-list [data-character="FAT"]').click();
+    assert.equal(await page.locator('#result-count').innerText(), '51 effects');
+    assert.equal(await page.locator('#fx-list .fx-title .Label', { hasText: /^FAT$/ }).count(), 51, 'each effect shows its character');
+    await page.locator('#active-filters [data-clear="character"]').click();
+    assert.equal(await page.locator('#result-count').innerText(), '217 effects');
+    await open('ms-60b/index.html', SIZES[1]);
+    assert.equal(await page.locator('#character-list').count(), 0, 'no Character filter on a pedal without it');
+  });
+
   await test('MS-90LP+ Loop tools: loop length, tempo for a length, tap tempo and a song planner kept in this browser', async () => {
     await open('ms-90lp/loop-tools.html', SIZES[1]);
     assert.equal(await page.locator('.fs-nav a[aria-current="page"]').innerText(), 'Loop tools');

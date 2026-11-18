@@ -8,17 +8,19 @@ const FW_SOURCE_URL = PEDAL.fwSourceUrl;
 const KNOBS = 4;
 const SLOTS = PEDAL.maxEffects; // effects in one patch
 
+// The CHARACTER line of an effect in the Effects List (MS-200D+: MID BOOST, BRIGHT, FAT, MID SCOOP, FLAT), when the pedal has one
+const CHARACTER_OF = index => (typeof EFFECT_CHARACTER !== 'undefined' && EFFECT_CHARACTER[index]) || null;
 const slugify = text => text.toLowerCase().replace(/\+/g, '-plus-').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const effects = EFFECTS_DATA.map(([name, category, model, description, tags, params], index) => {
   // No firmware entry: a Handy Guitar Lab additional effect whose ID is not known, so the builder cannot use it
   const [dspRaw, lcd, fxId, zd2, version] = FIRMWARE_DATA[index] ?? [null, '', null, null, null];
   return {
-    index, name, category, model, description, tags, params, lcd, fxId, zd2, version,
+    index, name, category, model, description, tags, params, lcd, fxId, zd2, version, character: CHARACTER_OF(index),
     extra: !fxId,
     dsp: dspRaw === null ? null : dspRaw * DSP_SCALE,
     slug: slugify(name),
     image: `assets/effects/fx-${String(index).padStart(3, '0')}.png`,
-    haystack: [name, lcd, category, model, description, ...params.map(p => p[0])].join(' ').toLowerCase()
+    haystack: [name, lcd, category, model, description, CHARACTER_OF(index), ...params.map(p => p[0])].join(' ').toLowerCase()
   };
 });
 
@@ -32,7 +34,9 @@ const EXTRA_LABEL = PEDAL.idsPending || PEDAL.noBuilder
   : '<span class="Label" title="Additional effect downloaded with Handy Guitar Lab. Its ID is not known yet, so the Patch builder cannot use it.">Handy Guitar Lab add-on</span>';
 const dspMeter = (dsp, wide = false) => dsp === null ? EXTRA_LABEL : `<span class="dsp${wide ? ' dsp--wide' : ''}" data-level="${dspLevel(dsp)}" title="Estimated DSP load: ${dspText(dsp)} of capacity"><span class="dsp-bar"><span style="width:${Math.min(dsp, 100)}%"></span></span><span class="dsp-val">${dspText(dsp)}</span></span>`;
 
-const state = { query: '', category: null, features: new Set(), favOnly: false, sort: 'zoom', view: 'list', visible: [] };
+const state = { query: '', category: null, character: null, features: new Set(), favOnly: false, sort: 'zoom', view: 'list', visible: [] };
+// The characters in the order the Effects List brings them; a pedal without them has no Character filter
+const CHARACTERS = [...new Set(effects.map(effect => effect.character).filter(Boolean))];
 try { state.view = localStorage.getItem(`${PEDAL.id}-view`) === 'grid' ? 'grid' : 'list'; } catch {}
 
 // Favorite effects (a star): kept in this browser only, as a list of effect slugs
@@ -62,11 +66,13 @@ function highlight(text) {
   return safe.replace(pattern, '<mark>$1</mark>');
 }
 const categoryLabel = category => `<span class="Label Label--cat" style="--c:${CATEGORIES[category].color}">${CATEGORIES[category].label}</span>`;
+const characterLabel = effect => effect.character ? `<span class="Label" title="Character in the ZOOM Effects List">${escapeHtml(effect.character)}</span>` : '';
 const featureLabel = key => `<span class="Label" title="${FEATURES[key].hint}">${FEATURES[key].label}</span>`;
 
-function matches(effect, { ignoreCategory = false } = {}) {
+function matches(effect, { ignoreCategory = false, ignoreCharacter = false } = {}) {
   if (!ignoreCategory && state.category && effect.category !== state.category) return false;
   if (state.favOnly && !favorites.has(effect.slug)) return false;
+  if (!ignoreCharacter && state.character && effect.character !== state.character) return false;
   for (const feature of state.features) if (!effect.tags.includes(feature)) return false;
   return !state.query || effect.haystack.includes(state.query);
 }
@@ -82,6 +88,18 @@ function renderFilters() {
     const count = scoped.filter(effect => effect.tags.includes(key)).length;
     return `<li><button class="filter-item" data-feature="${key}" aria-pressed="${state.features.has(key)}" title="${hint}"><span class="check">${icon(ICON_CHECK, 12)}</span><span class="name">${label}</span><span class="Counter">${count}</span></button></li>`;
   }).join('');
+  if (CHARACTERS.length) {
+    let list = $('#character-list');
+    if (!list) { // added after Features, only on the pages of a pedal whose Effects List has a CHARACTER line
+      const group = document.createElement('div');
+      group.className = 'filter-group';
+      group.innerHTML = '<h2 class="filter-heading" title="The CHARACTER line of each effect in the ZOOM Effects List">Character</h2><ul class="filter-list feature-list" id="character-list"></ul>';
+      $('#feature-list').closest('.filter-group').after(group);
+      list = $('#character-list');
+    }
+    const inScope = effects.filter(effect => matches(effect, { ignoreCharacter: true }));
+    list.innerHTML = CHARACTERS.map(character => `<li><button class="filter-item" data-character="${escapeHtml(character)}" aria-pressed="${state.character === character}"><span class="check">${icon(ICON_CHECK, 12)}</span><span class="name">${escapeHtml(character)}</span><span class="Counter">${inScope.filter(effect => effect.character === character).length}</span></button></li>`).join('');
+  }
 }
 
 function sorted(list) {
@@ -101,6 +119,7 @@ function renderList() {
   const chips = [];
   if (state.query) chips.push(`<button class="chip" data-clear="query">“${escapeHtml(state.query)}” ${icon(ICON_X, 12)}</button>`);
   if (state.category) chips.push(`<button class="chip" data-clear="category">${CATEGORIES[state.category].label} ${icon(ICON_X, 12)}</button>`);
+  if (state.character) chips.push(`<button class="chip" data-clear="character">${escapeHtml(state.character)} ${icon(ICON_X, 12)}</button>`);
   if (state.favOnly) chips.push(`<button class="chip" data-clear="favorites">Favorites ${icon(ICON_X, 12)}</button>`);
   state.features.forEach(key => chips.push(`<button class="chip" data-clear="feature" data-key="${key}">${FEATURES[key].label} ${icon(ICON_X, 12)}</button>`));
   if (chips.length > 1) chips.push('<button class="clear-link" data-clear="all">Clear filters</button>');
@@ -115,7 +134,7 @@ function renderList() {
     return `<li class="fx-row">${favButton(effect)}<div class="fx-link" role="link" tabindex="0" data-slug="${effect.slug}" style="--cat:${CATEGORIES[effect.category].color}">
       <img class="fx-thumb" src="${effect.image}" alt="" loading="lazy" width="56" height="70" />
       <div class="fx-main">
-        <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}</div>
+        <div class="fx-title"><span class="fx-name">${highlight(effect.name)}</span>${lcdBadge(effect, highlight(effect.lcd))}${categoryLabel(effect.category)}${characterLabel(effect)}</div>
         ${effect.model ? `<div class="fx-model">Model: <b>${highlight(effect.model)}</b>${modelSearchLink(effect.model)}</div>` : ''}
         <p class="fx-desc" lang="en">${highlight(effect.description)}</p>
         <div class="fx-params" aria-label="Parameters">${paramChips}</div>
@@ -163,7 +182,7 @@ function openEffect(effect) {
       <img class="fx-thumb" src="${effect.image}" alt="${escapeHtml(effect.name)} icon on the pedal display" width="96" height="120" />
       <div>
         <h2 id="dialog-title">${escapeHtml(effect.name)}</h2>
-        <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${effect.tags.map(featureLabel).join('')}</div>
+        <div class="detail-meta">${lcdBadge(effect)}${categoryLabel(effect.category)}${characterLabel(effect)}${effect.tags.map(featureLabel).join('')}</div>
         <p class="detail-desc" lang="en">${escapeHtml(effect.description)}</p>
         ${effect.model ? `<p class="detail-model">Reference model: <b>${escapeHtml(effect.model)}</b>${modelSearchLink(effect.model)}</p>` : ''}
         <div class="detail-add">${addToPatch} ${favButton(effect, true)}</div>
@@ -250,6 +269,12 @@ document.addEventListener('click', event => {
     render();
     return;
   }
+  const character = event.target.closest('[data-character]');
+  if (character) {
+    state.character = state.character === character.dataset.character ? null : character.dataset.character;
+    render();
+    return;
+  }
   const feature = event.target.closest('[data-feature]');
   if (feature) {
     const key = feature.dataset.feature;
@@ -263,6 +288,7 @@ document.addEventListener('click', event => {
     if (what === 'query' || what === 'all') { state.query = ''; search.value = ''; }
     if (what === 'favorites' || what === 'all') state.favOnly = false;
     if (what === 'category' || what === 'all') state.category = null;
+    if (what === 'character' || what === 'all') state.character = null;
     if (what === 'feature') state.features.delete(clear.dataset.key);
     if (what === 'all') state.features.clear();
     render();
