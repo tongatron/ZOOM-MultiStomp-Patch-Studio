@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en" data-color-mode="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Free tools for the ZOOM MS-90LP+ looper (beta): how long a loop of a number of bars lasts, the tempo that fits a length, tap tempo with a metronome and a song planner with the 68 rhythm patterns." />
+    <link rel="canonical" href="https://zoommultistompstudio.tongatron.org/ms-90lp/loop-tools.html" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ZOOM MultiStomp Studio" />
+    <meta property="og:title" content="ZOOM MS-90LP+ loop tools: loop length, tempo, tap tempo and song planner | MultiStomp Studio" />
+    <meta property="og:description" content="Free tools for the ZOOM MS-90LP+ looper (beta): how long a loop of a number of bars lasts, the tempo that fits a length, tap tempo with a metronome and a song planner with the 68 rhythm patterns." />
+    <meta property="og:url" content="https://zoommultistompstudio.tongatron.org/ms-90lp/loop-tools.html" />
+    <meta property="og:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="ZOOM MultiStomp STUDIO: build patches, save presets, load to the pedal. A favorites list and the Patch Editor for the MS-60B+, MS-50G+ and MS-70CDR+, and effects lists for the MS-200D+, MS-80IR+ and MS-90LP+." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ZOOM MS-90LP+ loop tools: loop length, tempo, tap tempo and song planner | MultiStomp Studio" />
+    <meta name="twitter:description" content="Free tools for the ZOOM MS-90LP+ looper (beta): how long a loop of a number of bars lasts, the tempo that fits a length, tap tempo with a metronome and a song planner with the 68 rhythm patterns." />
+    <meta name="twitter:image" content="https://zoommultistompstudio.tongatron.org/og-image.jpg" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>ZOOM MS-90LP+ loop tools: loop length, tempo, tap tempo and song planner | MultiStomp Studio</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <link rel="stylesheet" href="../styles.css?v=zoom84-20261118" />
+    <link rel="stylesheet" href="../theme.css?v=zoom48-20261027" />
+    <link rel="stylesheet" href="../fullscreen.css?v=fs43-20261118" />
+    <script defer src="https://analytics.tongatron.org/script.js" data-website-id="b2709fd6-df71-4f36-9439-89654b04f57e"></script>
+    <style>
+      /* Loop tools of the MS-90LP+: small forms inside the document pane */
+      .lt-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; margin: 0 0 12px; }
+      .lt-form label { display: grid; gap: 4px; font-size: 13px; color: var(--fg-muted); }
+      .lt-form input, .lt-form select { width: 110px; }
+      .lt-form input.lt-wide { width: 220px; }
+      .lt-result { margin: 0 0 8px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); font-size: 14px; }
+      .lt-result b { color: var(--fg); }
+      .lt-result.is-warning { border-color: rgba(240, 195, 106, .5); }
+      .lt-tap { min-width: 140px; height: 64px; font-size: 18px; font-weight: 600; }
+      .lt-bpm { align-self: center; min-width: 150px; font: 600 28px/1 var(--mono); color: var(--fg); }
+      .lt-form .lt-bpm-use { align-self: center; }
+      .lt-beats { display: flex; gap: 8px; margin: 4px 0 12px; }
+      .lt-beats span { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-muted); }
+      .lt-beats span.is-on { background: #3fb950; border-color: #3fb950; }
+      .lt-beats span.is-on.is-first { background: #f0c36a; border-color: #f0c36a; }
+      .lt-parts { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: part; }
+      .lt-part { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-subtle); counter-increment: part; }
+      .lt-part::before { content: counter(part); align-self: center; min-width: 20px; font: 600 13px/1 var(--mono); color: var(--fg-muted); }
+      .lt-part label { display: grid; gap: 4px; font-size: 12px; color: var(--fg-muted); }
+      .lt-part input, .lt-part select { width: 84px; }
+      .lt-part .lt-name { width: 180px; }
+      .lt-part .lt-rhythm { width: 240px; }
+      .lt-part .lt-fx { width: 150px; }
+      /* Two lines per part: the part, its rhythm and time signature; then tempo, bars, loop effect, length and the buttons */
+      .lt-part .lt-break { flex-basis: 100%; height: 0; }
+      .lt-part .lt-break + label { margin-left: 32px; }
+      .lt-part output { align-self: center; min-width: 64px; font: 600 13px/1 var(--mono); color: var(--fg); }
+      .lt-part .lt-tools { display: flex; gap: 4px; margin-left: auto; align-self: center; }
+      .lt-empty { padding: 12px; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--fg-muted); font-size: 14px; }
+      .lt-print-title { display: none; }
+      @media print {
+        html, body { overflow: visible !important; height: auto !important; background: #fff !important; color: #000 !important; }
+        .fs-top, .fs-note, .fs-status, .fs-toc, .lt-noprint, .lt-part .lt-tools { display: none !important; }
+        .fs-main, .fs-doc, .fs-pane-body { display: block !important; overflow: visible !important; height: auto !important; border: 0 !important; padding: 0 !important; }
+        #doc > :not(#planner) { display: none !important; }
+        .lt-print-title { display: block; font-size: 20px; font-weight: 600; }
+        .lt-part { break-inside: avoid; background: none; }
+      }
+    </style>
+  </head>
+<body>
+    <header class="gh-header fs-top">
+      <a class="gh-brand" href="./" aria-label="ZOOM MultiStomp Studio, effects">
+        <img src="../favicon.svg" alt="" width="24" height="24" />
+        <span class="gh-brand-name">ZOOM MultiStomp <span>STUDIO</span></span>
+      </a>
+      <nav class="fs-nav" aria-label="Sections">
+          <div class="fs-menu">
+            <span class="fs-menu-label" aria-hidden="true">Pedal:</span>
+            <button class="fs-menu-button" type="button" aria-expanded="false" aria-controls="pedal-menu" title="Change pedal"><span class="sr-only">Pedal: </span><span class="fs-menu-current">MS-90LP+ looper</span> <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M12.78 6.22a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 7.28a.75.75 0 0 1 1.06-1.06L8 9.94l3.72-3.72a.75.75 0 0 1 1.06 0Z"/></svg></button>
+            <ul class="fs-menu-list" id="pedal-menu" hidden>
+              <li><a href="../ms-60b/">MS-60B+ bass</a></li>
+              <li><a href="../ms-50g/">MS-50G+ guitar <span class="Label">Beta</span></a></li>
+              <li><a href="../ms-70cdr/">MS-70CDR+ spatial <span class="Label">Testing</span></a></li>
+              <li><a href="../ms-200d/">MS-200D+ drive <span class="Label">Beta</span></a></li>
+              <li><a href="../ms-80ir/">MS-80IR+ amp <span class="Label">Beta</span></a></li>
+              <li><a href="./" aria-current="true">MS-90LP+ looper <span class="Label">Beta</span></a></li>
+            </ul>
+          </div>
+          <a href="./">Effects</a>
+          <a href="loop-tools.html" aria-current="page">Loop tools</a>
+      </nav>
+      <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"/></svg><span>Guide</span></a>
+    </header>
+    <div class="fs-note fs-beta" role="note"><p><b>Beta</b> — this pedal has not been tested on real hardware yet. Own one? Tell us.</p><button class="btn btn-sm btn-primary" type="button" data-report="contact" data-intro="Tell us about your MS-90LP+: what works, what does not, or how you could help test it.">Write to us</button></div>
+
+    <main class="fs-main fs-docs">
+      <nav class="Box fs-pane fs-toc" aria-labelledby="toc-title">
+        <div class="Box-header"><h2 class="Box-title" id="toc-title">On this page</h2></div>
+        <div class="fs-pane-body"><ol id="toc"></ol></div>
+      </nav>
+      <section class="Box fs-pane fs-doc" aria-labelledby="doc-title">
+        <div class="Box-header"><h1 class="Box-title" id="doc-title">Loop tools</h1></div>
+        <div class="fs-pane-body" tabindex="0" aria-label="Loop tools">
+          <article class="markdown-body" id="doc">
+            <p>Tools to plan loops for the ZOOM MS-90LP+, worked out from the tempo and the time signature. They do not talk to the pedal, and what you enter stays in this browser. The limits come from the <a href="https://zoomcorp.com/manuals/ms-90lpplus-en/" target="_blank" rel="noreferrer">manual</a>: a tempo from 40 to 300 and up to 90 minutes for one loop.</p>
+
+            <h2 id="loop-length">Loop length</h2>
+            <p>How long a loop of a number of bars lasts at a tempo.</p>
+            <div class="lt-form">
+              <label>Tempo (BPM) <input class="form-control" id="len-tempo" type="number" min="40" max="300" step="1" value="120" inputmode="decimal" /></label>
+              <label>Time signature <select class="form-control" id="len-sig"></select></label>
+              <label>Bars <input class="form-control" id="len-bars" type="number" min="1" max="9999" step="1" value="8" inputmode="numeric" /></label>
+            </div>
+            <p class="lt-result" id="len-result" aria-live="polite"></p>
+
+            <h2 id="tempo-for-length">Tempo for a length</h2>
+            <p>The tempo at which a number of bars lasts a given time, for a loop that must be as long as a part of a song. Write the length in seconds or as minutes:seconds (1:30).</p>
+            <div class="lt-form">
+              <label>Length <input class="form-control" id="fit-length" type="text" value="0:40" autocomplete="off" spellcheck="false" /></label>
+              <label>Time signature <select class="form-control" id="fit-sig"></select></label>
+              <label>Bars <input class="form-control" id="fit-bars" type="number" min="1" max="9999" step="1" value="16" inputmode="numeric" /></label>
+            </div>
+            <p class="lt-result" id="fit-result" aria-live="polite"></p>
+
+            <h2 id="tap-tempo">Tap tempo and metronome</h2>
+            <p>Tap the button (or press <kbd>T</kbd>) along with the music: the tempo is the average of the last taps, and a pause of more than two seconds starts again. The metronome plays a plain click at a tempo, with the first beat of each bar higher. It is not one of the rhythm patterns of the pedal.</p>
+            <div class="lt-form">
+              <button class="btn lt-tap" id="tap" type="button">Tap</button>
+              <span class="lt-bpm" id="tap-bpm" aria-live="polite">— BPM</span>
+              <button class="btn btn-sm lt-bpm-use" id="tap-use" type="button" disabled title="Put this tempo in Loop length and in the metronome">Use this tempo</button>
+            </div>
+            <div class="lt-form">
+              <label>Metronome tempo <input class="form-control" id="met-tempo" type="number" min="40" max="300" step="1" value="120" inputmode="decimal" /></label>
+              <label>Time signature <select class="form-control" id="met-sig"></select></label>
+              <button class="btn btn-primary" id="met-toggle" type="button" aria-pressed="false">Start</button>
+            </div>
+            <div class="lt-beats" id="met-beats" aria-hidden="true"></div>
+
+            <section id="planner" aria-labelledby="song-planner">
+              <h2 id="song-planner">Song planner</h2>
+              <p class="lt-noprint">The parts of a song, each with a rhythm pattern, a tempo, a number of bars and a loop effect: the planner adds up the time. It is kept in this browser only; <b>Print</b> gives you a sheet to keep next to the pedal.</p>
+              <p class="lt-print-title" id="plan-print-title"></p>
+              <div class="lt-form lt-noprint">
+                <label>Song <input class="form-control lt-wide" id="plan-title" type="text" maxlength="60" placeholder="Song title" autocomplete="off" /></label>
+              </div>
+              <ol class="lt-parts" id="plan-parts" aria-label="Parts of the song"></ol>
+              <p class="lt-result" id="plan-total" aria-live="polite"></p>
+              <div class="lt-form lt-noprint">
+                <button class="btn btn-sm btn-primary" id="plan-add" type="button">Add a part</button>
+                <button class="btn btn-sm" id="plan-print" type="button">Print</button>
+                <button class="btn btn-sm" id="plan-clear" type="button">Clear the plan</button>
+              </div>
+            </section>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="fs-status">
+      <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
+      <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
+      <a href="../privacy.html">Privacy</a>
+      <time class="gh-updated" datetime="2026-11-18T15:19Z">Last update 18 November 2026 16:19 CET</time>
+    </footer>
+
+    <script src="pedal.js?v=pedal1-20261117"></script>
+    <script src="../fullscreen.js?v=fs41-20261117"></script>
+    <script src="../dialogs.js?v=dialogs2-20261104"></script>
+    <script src="loop-data.js?v=loop1-20261117"></script>
+    <script src="../library-merge.js?v=zoom29-20261028"></script>
+    <script src="../account.js?v=zoom61-20261118"></script>
+    <script src="../report.js?v=report6-20261029"></script>
+    <script src="loop-tools.js?v=lt1-20261118"></script>
+    <script src="../pwa.js?v=zoom29-20261114"></script>
+  </body>
+</html>

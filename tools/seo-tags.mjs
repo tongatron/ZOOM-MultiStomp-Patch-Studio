@@ -73,6 +73,8 @@ const PAGES = [
     'Official ZOOM MS-80IR+ documents: the manual in English and Italian, the Effects List, the Patch Memory List, the version 1.10 supplement and the IR Loader manual.', IMG70, 0.3],
   ['ms-90lp/index.html', '/ms-90lp/', 'ZOOM MS-90LP+ looper: 8 loop effects, 68 rhythm patterns and specifications',
     'The ZOOM MS-90LP+ looper pedal at a glance: its 8 loop effects, 68 rhythm patterns and main specifications, with the original text of the ZOOM manual. Beta.', IMG70, 0.7],
+  ['ms-90lp/loop-tools.html', '/ms-90lp/loop-tools.html', 'ZOOM MS-90LP+ loop tools: loop length, tempo, tap tempo and song planner',
+    'Free tools for the ZOOM MS-90LP+ looper (beta): how long a loop of a number of bars lasts, the tempo that fits a length, tap tempo with a metronome and a song planner with the 68 rhythm patterns.', IMG70, 0.5],
   ['ms-90lp/guide.html', '/ms-90lp/guide.html', 'ZOOM MS-90LP+ guide: loop effects and rhythms',
     'How to use the studio with the ZOOM MS-90LP+ looper (beta): find a loop effect, search the rhythm patterns and see what the pedal does.', IMG70, 0.4],
   ['ms-90lp/resources.html', '/ms-90lp/resources.html', 'ZOOM MS-90LP+ manual and firmware update guide (PDF)',

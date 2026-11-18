@@ -147,11 +147,11 @@ Stato: nessuna è iniziata. Ordine per ogni pedale: prima ciò che non richiede 
 
 ### MS-90LP+ (looper: Effects e Guida, nessuna catena di effetti)
 
-1. **Calcolatore di durata del loop** — tempo, misura e battute → durata, e il contrario; mostra il tempo di registrazione che resta (manuale: 90 minuti per loop, oltre 13 ore in totale). Solo dati già presenti.
-2. **Pianificatore di brano / scaletta** — per ogni sezione: ritmo (uno dei 68), tempo, misura, LOOP FX; foglio stampabile; salvato nel browser (e nell'account, se si aggiunge il pedale ai documenti sincronizzati).
+1. **Fatto (2026-11-18), pagina Loop tools.** **Calcolatore di durata del loop** — tempo, misura e battute → durata, e il contrario; mostra il tempo di registrazione che resta (manuale: 90 minuti per loop, oltre 13 ore in totale). Solo dati già presenti.
+2. **Fatto (2026-11-18), pagina Loop tools, solo nel browser.** **Pianificatore di brano / scaletta** — per ogni sezione: ritmo (uno dei 68), tempo, misura, LOOP FX; foglio stampabile; salvato nel browser (e nell'account, se si aggiunge il pedale ai documenti sincronizzati).
 3. **Guida ai LOOP FX con ricette** — REVERSE, HALF SPEED, DOUBLE SPEED, HOLD, opzione "unlatch": quando usarli e come combinarli. Il testo ufficiale resta alla lettera; le ricette sono testo a parte, con fonti.
 4. **Regole d'uso con gli altri pedali** — looper prima o dopo gli effetti, effetti dentro il loop o sul segnale diretto; regole di Advice con fonti citate.
-5. **Elenco ritmi più comodo** — tap tempo e ascolto del tempo con un metronomo (nessun audio dei ritmi ufficiali: copyright).
+5. **Fatto (2026-11-18), pagina Loop tools: tap tempo e metronomo.** **Elenco ritmi più comodo** — tap tempo e ascolto del tempo con un metronomo (nessun audio dei ritmi ufficiali: copyright).
 6. **Pedal manager in lettura** — solo con un pedale vero: protocollo USB non verificato, le memorie contengono audio (backup molto grandi).
 
 ### MS-200D+ e MS-80IR+ (beta)

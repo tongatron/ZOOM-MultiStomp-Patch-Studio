@@ -63,7 +63,9 @@ const PAGES_70CDR = {
 };
 // The read-only Pedal manager of the beta pedals MS-200D+ and MS-80IR+ (pedal-reader.js)
 const READER = [['#rd-connect', 'Connect'], ['#rd-pedal-title', 'On the pedal'], ['#rd-backups-title', 'Backups'], ['#rd-list', 'memory list', 120]];
-const PAGES_BETA = { 'ms-200d/pedal-manager.html': READER, 'ms-80ir/pedal-manager.html': READER };
+// The Loop tools of the MS-90LP+ (loop-tools.html, loop-tools.js): calculators and a song planner in a document pane
+const PAGES_BETA = { 'ms-200d/pedal-manager.html': READER, 'ms-80ir/pedal-manager.html': READER,
+  'ms-90lp/loop-tools.html': [['#toc a', 'contents'], ['#doc-title', 'title'], ['#len-tempo', 'tempo'], ['.fs-doc .fs-pane-body', 'document', 300]] };
 const ALL_PAGES = { ...PAGES, ...PAGES_50G, ...PAGES_70CDR, ...PAGES_BETA };
 
 // Runs in the page: what is cut, off screen or too small
@@ -742,6 +744,48 @@ try {
     await page.locator('.fs-menu-button').click();
     await page.locator('.fs-menu-list a[href="../ms-60b/builder.html"]').click();
     await page.waitForURL(url => url.pathname === '/ms-60b/builder.html');
+  });
+
+  await test('MS-90LP+ Loop tools: loop length, tempo for a length, tap tempo and a song planner kept in this browser', async () => {
+    await open('ms-90lp/loop-tools.html', SIZES[1]);
+    assert.equal(await page.locator('.fs-nav a[aria-current="page"]').innerText(), 'Loop tools');
+    assert.match(await page.locator('#len-result').innerText(), /^8 bars of 4\/4 at 120 BPM last 0:16\.0 \(16\.0 seconds, 32 beats\)/);
+    await page.fill('#len-tempo', '90');
+    await page.selectOption('#len-sig', '3/4');
+    await page.fill('#len-bars', '12');
+    assert.match(await page.locator('#len-result').innerText(), /^12 bars of 3\/4 at 90 BPM last 0:24\.0/);
+    // 16 bars of 4/4 in 40 seconds: 96 BPM; 2 bars would need 12 BPM, so the page says how many bars fit the 40–300 range
+    assert.match(await page.locator('#fit-result').innerText(), /at 96\.0 BPM\.$/);
+    await page.fill('#fit-bars', '2');
+    assert.match(await page.locator('#fit-result').innerText(), /from 40 to 300: with 8 bars the tempo is 48\.0 BPM/);
+    // tap tempo: a tap every half second is about 120 BPM; Use this tempo fills Loop length and the metronome
+    for (let i = 0; i < 5; i++) { await page.click('#tap'); await page.waitForTimeout(500); }
+    const bpm = parseFloat(await page.locator('#tap-bpm').innerText());
+    assert.ok(bpm > 100 && bpm < 140, `tap tempo ${bpm}`);
+    await page.click('#tap-use');
+    assert.equal(await page.inputValue('#met-tempo'), String(Math.round(bpm)));
+    assert.equal(await page.inputValue('#len-tempo'), String(Math.round(bpm)));
+    // the planner: three parts to start with; a rhythm brings its time signature; the plan is still there after a reload
+    await page.evaluate(() => localStorage.removeItem('ms90lp-song-plan'));
+    await page.reload();
+    assert.equal(await page.locator('#plan-parts .lt-part').count(), 3);
+    await page.fill('#plan-title', 'Test song');
+    await page.locator('#plan-parts [data-i="0"] [data-field="rhythm"]').selectOption('20'); // COUNTRY 1, 2/4
+    assert.equal(await page.locator('#plan-parts [data-i="0"] input[readonly]').inputValue(), '2/4');
+    await page.click('#plan-add');
+    await page.reload();
+    assert.equal(await page.inputValue('#plan-title'), 'Test song');
+    // 8 bars of 2/4 + 16 + 8 + 8 bars of 4/4, all at 120 BPM: 8 + 32 + 16 + 16 seconds
+    assert.match(await page.locator('#plan-total').innerText(), /^4 parts, 1:12\.0 in all\.$/);
+    // deleting a part can be undone from the message; Clear the plan asks first (the site's dialog, not the browser's)
+    await page.locator('#plan-parts [data-i="1"] [data-act="delete"]').click();
+    assert.match(await page.locator('#plan-total').innerText(), /^3 parts, 0:40\.0/);
+    await page.locator('[data-toast="action"]').click();
+    assert.match(await page.locator('#plan-total').innerText(), /^4 parts, 1:12\.0/);
+    await page.click('#plan-clear');
+    await page.locator('dialog[open] button[value="yes"]').click();
+    assert.match(await page.locator('#plan-parts').innerText(), /No parts yet/);
+    await page.evaluate(() => localStorage.removeItem('ms90lp-song-plan'));
   });
 
   await test('MS-50G+: the same layout with its own data, Pedal manager and the beta bar', async () => {
