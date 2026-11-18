@@ -309,8 +309,11 @@ function save() {
 // ---- undo / redo ------------------------------------------------------------------------------
 // Every change goes through save(). Each distinct patch content is kept as a snapshot together with the saved
 // patch it belonged to (so undoing never makes "Save" overwrite another patch). Changes less than 700 ms apart,
-// like dragging a slider or typing a name, collapse into one undo step. History lives in memory only.
+// like dragging a slider or typing a name, collapse into one undo step. The snapshots of the patch are also kept in
+// sessionStorage (HISTORY_KEY: this tab only), so Undo still works after a reload; the steps of My patches are not, as an
+// account sync may have changed My patches in the meantime.
 const patchHistory = { undo: [], redo: [], last: null, lastChangeAt: 0, restoring: false };
+const HISTORY_KEY = `${PEDAL.id}-builder-history`;
 // A step of the list is either a snapshot of the patch in the editor or, for a change to My patches, { kind: 'library', label, undo, redo }
 function updateHistoryButtons() {
   const back = patchHistory.undo.at(-1), forward = patchHistory.redo.at(-1);
@@ -318,6 +321,24 @@ function updateHistoryButtons() {
   $('#redo').disabled = !forward;
   $('#undo').title = back?.kind === 'library' ? `Undo: ${back.label} (Ctrl/⌘ + Z)` : 'Undo (Ctrl/⌘ + Z)';
   $('#redo').title = forward?.kind === 'library' ? `Redo: ${forward.label} (Shift + Ctrl/⌘ + Z)` : 'Redo (Shift + Ctrl/⌘ + Z)';
+  storeHistory();
+}
+function storeHistory() {
+  const snapshots = list => list.filter(step => step.kind !== 'library').slice(-100);
+  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify({ undo: snapshots(patchHistory.undo), redo: snapshots(patchHistory.redo), last: patchHistory.last })); } catch {}
+}
+// At start-up, after load(): the history of this tab comes back only if the editor still holds its last patch (another
+// tab or a sync may have changed it); otherwise it starts again from the patch in the editor
+function restoreHistory() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(HISTORY_KEY));
+    const snapshot = s => s && typeof s.content === 'string' && (s.id === null || s.id === undefined || typeof s.id === 'string');
+    if (!snapshot(saved?.last) || saved.last.content !== JSON.stringify(serialize(state))) return;
+    patchHistory.undo = (Array.isArray(saved.undo) ? saved.undo : []).filter(snapshot).slice(-100);
+    patchHistory.redo = (Array.isArray(saved.redo) ? saved.redo : []).filter(snapshot).slice(-100);
+    patchHistory.last = { content: saved.last.content, id: saved.last.id ?? null };
+    updateHistoryButtons();
+  } catch {}
 }
 // Deleting or duplicating a patch in My patches goes on the same list, so Undo and Redo take it back and forth in order with the edits
 function recordLibraryStep(label, undoStep, redoStep) {
@@ -1496,6 +1517,7 @@ function renderPedalEdit() {
 $('#pedal-edit-bar')?.addEventListener('click', event => { if (event.target.id === 'pedal-edit-stop') endPedalEdit(); });
 
 load();
+restoreHistory();
 const addSlug = new URLSearchParams(location.search).get('add');
 const sharedLink = PATCHLINK.fromHash(location.hash);
 const pedalMemory = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('m')) || null;

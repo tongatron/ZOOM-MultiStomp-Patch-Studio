@@ -104,8 +104,8 @@ Close each one with a generated patch checked on the pedal, then add the range t
 
 ## 5. Patch builder
 
-- Patch description (`TXE1`) and patch level fields.
-- Undo/redo is done (history of the editor in memory, Ctrl/⌘+Z, Shift+Ctrl/⌘+Z; slider and name edits collapse into one step). Possible extension: keep the history across page reloads.
+- Patch description (`TXE1`) and patch level fields. The codec can already write a description (`spec.description`), but every Handy Guitar Lab export seen so far has an empty `TXE1`: check on a real pedal that the app and the pedal accept a file with one before the builder offers it.
+- Undo/redo is done (history of the editor in memory, Ctrl/⌘+Z, Shift+Ctrl/⌘+Z; slider and name edits collapse into one step). Since 2026-11-18 the snapshots of the patch also survive a reload of the tab (sessionStorage); the steps of My patches do not.
 - Drag-and-drop reordering is done (grip handle, pointer events). Not yet tried on a real touch screen.
 - Compare two patches: done ("Compare" in My patches; also accepts the editor). Each side has "Open in editor". Changed values and the ON/OFF state can be copied from one side to the other (arrow buttons).
 - Sync "My patches" across devices: done (Sync button in My patches; a random code identifies the shared copy, `deploy/server.mjs` merges it, newest edit wins and deletions travel too). Possible extension: a list of the devices that sync.

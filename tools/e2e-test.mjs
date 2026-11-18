@@ -175,6 +175,16 @@ try {
     await p.click('#undo');
     await count(1);
     assert.equal(await p.locator('#library-list .library-item').count(), 1);
+    // The edits of the patch can still be undone after a reload of the tab (sessionStorage), and redone
+    const before = await chain(p);
+    await addEffect(p, 'BASS GRAPHIC EQ');
+    assert.equal(await chain(p), before + 1);
+    await p.reload();
+    await p.waitForFunction(() => !document.querySelector('#undo').disabled, null, { timeout: 3000 });
+    await p.click('#undo');
+    await p.waitForFunction(n => document.querySelectorAll('#chain-list .chain-item').length === n, before);
+    await p.click('#redo');
+    await p.waitForFunction(n => document.querySelectorAll('#chain-list .chain-item').length === n, before + 1);
     await fresh.context.close();
   });
 
