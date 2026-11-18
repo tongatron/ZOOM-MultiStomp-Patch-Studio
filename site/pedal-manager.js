@@ -27,6 +27,7 @@
   let identity = null; // { device, family, model, version } from the connected pedal
   let connected = false;
   let reading = 0; // bumps on every full read, so an older read stops
+  let readingOwner = 0; // the full read that set busy: a stopped one frees it only if no newer read has taken it
   let busy = false; // a full read or a write is running: one exchange with the pedal at a time
   let fullRead = false; // readAll() is running: the last-read list is saved once, at the end
   const memories = new Map(); // number → { state: 'loading' | 'ok' | 'empty' | 'error', data, memory, decoded, error }
@@ -37,10 +38,12 @@
   function needsReadAgain() {
     return connected && [...memories.values()].some(m => m.state === 'error' || (m.state === 'ok' && !m.crcOk));
   }
+  // One exchange with the pedal at a time: Read again waits while a read or a write runs
   function updateReadAgainButton() {
     const button = $('#usb-refresh');
+    button.disabled = !connected || !info || busy;
     button.classList.toggle('btn-warning', needsReadAgain());
-    button.title = needsReadAgain() ? 'A memory needs to be read again' : 'Read all pedal memories again';
+    button.title = connected && busy ? 'Wait until the pedal is free' : needsReadAgain() ? 'A memory needs to be read again' : 'Read all pedal memories again';
   }
   // "Send to memory N" in the builder opens this page with #send=N: once the pedal is read, the builder's patch goes there
   let pendingSend = Number(new URLSearchParams(location.hash.replace(/^#/, '')).get('send')) || null;
@@ -173,7 +176,6 @@
     $('#usb-disconnect').hidden = !on;
     $('#usb-howto').hidden = on; // the instructions are for a pedal that is not connected yet
     $('.usb-connect').classList.toggle('is-connected', on); // the pedal in the connection box: dim when off, in colour when connected
-    $('#usb-refresh').disabled = !on || !info;
     updateReadAgainButton();
     renderMemories();
     renderLocals();
@@ -264,6 +266,7 @@
   }
   async function readAll() {
     const run = ++reading;
+    readingOwner = run;
     busy = true;
     fullRead = true;
     renderLocals();
@@ -271,13 +274,17 @@
     for (let n = 1; n <= info.count; n++) memories.set(n, { state: 'loading' });
     renderMemories();
     for (let n = 1; n <= info.count; n++) {
-      if (run !== reading || !connected) { busy = false; fullRead = false; return; }
+      if (run !== reading || !connected) { // stopped by Disconnect, or by a newer reading that now owns busy
+        if (readingOwner === run) { busy = false; fullRead = false; readingOwner = 0; renderLocals(); }
+        return;
+      }
       status(`Reading memory ${n} of ${info.count}…`);
       await readOne(n);
       renderMemory(n);
     }
     busy = false;
     fullRead = false;
+    readingOwner = 0;
     saveLastRead();
     renderLocals();
     const failed = [...memories.values()].filter(m => m.state === 'error').length;
@@ -296,7 +303,7 @@
     $(`#usb-memories [data-n="${n}"]`)?.scrollIntoView({ block: 'nearest' });
     send(n, item.bytes);
   }
-  $('#usb-refresh').addEventListener('click', () => { if (info) readAll(); });
+  $('#usb-refresh').addEventListener('click', () => { if (info && connected && !busy) readAll(); });
   $('#usb-result').addEventListener('click', async event => {
     const button = event.target.closest('[data-result-act="reread"]');
     if (!button || !connected || busy) return;
@@ -440,7 +447,9 @@
       case 'rename-cancel': renaming = null; renderMemory(n); break;
       case 'download': download(m.data, `${String(n).padStart(3, '0')} ${fileName(m.decoded.name)}.zptc`); break;
       case 'clear': send(n, ZPTC.encode({ name: CLEARED_NAME, empty: true, effects: [] }).file, true); break;
-      case 'reread': await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
+      case 'reread':
+        if (!connected || busy) { status('Wait until the pedal is free, then read the memory again.'); break; }
+        await readOne(n); renderMemory(n); status(`Memory ${n} read again`, 'ok'); break;
       case 'sync': await syncMemory(n); break;
       case 'patch-pedal-to-local': await syncWholePatch(n, 'pedal-to-local'); break;
       case 'patch-local-to-pedal': await syncWholePatch(n, 'local-to-pedal'); break;
@@ -555,6 +564,9 @@
       const params = new Set([...Object.keys(a.values || {}), ...Object.keys(b.values || {})]);
       for (const name of params) if (JSON.stringify(a.values?.[name]) !== JSON.stringify(b.values?.[name])) changes.push(`${aName} ${name}: changed`);
     }
+    // from is the side that changes, to the one copied: a My patch without R OUT POSITION leaves the memory its own
+    const fromRout = validRightPositionRaw(from.rightPositionRaw), toRout = validRightPositionRaw(to.rightPositionRaw);
+    if (toRout !== null && fromRout !== toRout) changes.push(`R OUT POSITION: ${fromRout === null ? 'not set' : ZPTC.rightPositionOptionLabel(fromRout, from.effects?.length || 0)} → ${ZPTC.rightPositionOptionLabel(toRout, to.effects?.length || 0)}`);
     return { count: changes.length, changes };
   }
   function linkedPair(number) {
@@ -774,6 +786,7 @@
   }
   function renderLocals() {
     updateArrangeButton();
+    updateReadAgainButton();
     renderUndo(); // busy and connected change the same moments as this list
     const items = localItems();
     $('#usb-local-count').textContent = items.filter(i => i.key.startsWith('lib:')).length;
@@ -1364,6 +1377,7 @@
       return;
     }
     Object.assign(entry, { name: found.pedalPatch.name, effects: cloneJson(found.pedalPatch.effects), updatedAt: new Date().toISOString() });
+    if (Number.isInteger(found.pedalPatch.rightPositionRaw)) entry.rightPositionRaw = found.pedalPatch.rightPositionRaw; // as Sync full patch does
     if (!storeLibrary(list)) return;
     linkMemory(number, entry.id, found.pedalPatch, entry);
     renderLocals();
@@ -1557,6 +1571,7 @@
       const yes = await confirmWrite(`<p>Put <b>${escapeHtml(backup.name)}</b> (backup of ${escapeHtml(when(backup.at))}) back into <b>memory ${backup.memory}</b>?</p><p>It replaces what that memory holds now.</p>`, `Restore memory ${backup.memory}`);
       if (!yes || busy) return;
       busy = true;
+      renderLocals();
       const before = await snapshotOf(backup.memory); // what the memory holds now, so that Undo can put it back
       const r = await writeAndCheck(backup.memory, memory).finally(() => { busy = false; renderLocals(); });
       result(r.ok, r.ok ? r.text.replace('now holds', 'holds its backup again,') : r.text);

@@ -232,8 +232,10 @@ try {
   await test('Copy to My patches can be undone', async () => {
     await page3.click('#usb-connect');
     await page3.locator('#usb-memories li[data-state="ok"]').first().waitFor({ timeout: 20000 });
-    // The whole pedal is read before the link: Read again below must not start while this first reading still runs
+    // One exchange with the pedal at a time: Read again waits until this first reading is over
+    assert.deepEqual(await page3.evaluate(() => [/^Reading memory/.test(document.querySelector('#usb-status').textContent), document.querySelector('#usb-refresh').disabled]), [true, true], 'Read again is off while the pedal is read');
     await page3.waitForFunction(() => document.querySelector('#usb-status')?.textContent === 'Connected', null, { timeout: 30000 });
+    assert.equal(await page3.locator('#usb-refresh').isDisabled(), false, 'and on again once it is read');
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] [data-act="link"]').click();
     await page3.selectOption('#usb-link-patch', 'p1');
@@ -276,15 +278,24 @@ try {
     assert.match(await page3.locator('#usb-result').innerText(), /copied to My patches$/);
     assert.equal(await page3.locator('#usb-local-count').innerText(), '2');
     const copiedId = await page3.evaluate(() => JSON.parse(localStorage.getItem('ms60b-library')).find(p => p.id !== 'p1').id);
-    await page3.evaluate(id => localStorage.setItem('ms60b-pedal-sync', JSON.stringify({ enabled: false, links: { 1: { patchId: id, pedalBaseline: 'changed', libraryBaseline: 'changed' } } })), copiedId);
+    await page3.evaluate(id => {
+      localStorage.setItem('ms60b-pedal-sync', JSON.stringify({ enabled: false, links: { 1: { patchId: id, pedalBaseline: 'changed', libraryBaseline: 'changed' } } }));
+      const list = JSON.parse(localStorage.getItem('ms60b-library'));
+      const copy = list.find(entry => entry.id === id);
+      delete copy.rightPositionRaw; // a My patch without its own R OUT POSITION (the page would read it from PRM2 too)
+      delete copy._prm2;
+      localStorage.setItem('ms60b-library', JSON.stringify(list));
+    }, copiedId);
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] .usb-mem-main').click();
     await page3.locator('#usb-memories li[data-n="1"] [data-act="sync"]').click();
     await page3.waitForSelector('#usb-confirm[open]');
     assert.equal(await page3.locator('#usb-confirm-title').innerText(), 'Update My patch');
+    assert.match(await page3.locator('#usb-confirm-body').innerText(), /R OUT POSITION: not set → raw \d+/, 'the change of R OUT POSITION is listed');
     await page3.click('#usb-confirm-yes');
     await page3.waitForFunction(id => JSON.parse(localStorage.getItem('ms60b-pedal-sync')).links[1].patchId === id, copiedId);
     assert.match(await page3.locator('#usb-status').innerText(), /Updated/);
+    assert.equal(await page3.evaluate(id => Number.isInteger(JSON.parse(localStorage.getItem('ms60b-library')).find(entry => entry.id === id).rightPositionRaw), copiedId), true, 'Update My patch copies R OUT POSITION, as Sync full patch does');
     await page3.click('#usb-undo');
     await page3.waitForFunction(id => JSON.parse(localStorage.getItem('ms60b-pedal-sync')).links[1].pedalBaseline === 'changed', copiedId);
     assert.match(await page3.locator('#usb-undo-text').innerText(), /^Copied “.+” to My patches/);
