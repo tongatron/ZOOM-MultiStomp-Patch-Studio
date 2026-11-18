@@ -236,10 +236,10 @@ const ACCOUNT = (() => {
       const hasLocalData = ownerChanged && PEDALS.some(pedal => ['library', 'deleted', 'pedal-edit', ...KINDS].some(kind => localStorage.getItem(`${pedal}-${kind}`) !== null));
       if (hasLocalData) {
         const add = await choose({
-          title: 'Dati locali e nuovo account',
-          text: 'Questo browser contiene dati associati a un altro account.',
-          note: 'Aggiungerli invierà i dati locali al nuovo account. Iniziare dai dati del nuovo account rimuoverà la copia locale da questo browser.',
-          primary: 'Aggiungi al nuovo account', secondary: 'Inizia dai dati account'
+          title: 'Data of another account',
+          text: 'This browser holds data that belongs to another account.',
+          note: 'Adding it sends the data in this browser to the account you just signed in to. Starting from your account removes the copy in this browser.',
+          primary: 'Add it to this account', secondary: 'Start from my account'
         });
         if (add !== true) clearBrowser();
       }
