@@ -63,7 +63,9 @@ const MIGRATIONS = [
      downloaded_at TEXT NOT NULL,
      version TEXT NOT NULL
    );
-   CREATE INDEX desktop_downloads_time ON desktop_downloads (downloaded_at DESC);`
+   CREATE INDEX desktop_downloads_time ON desktop_downloads (downloaded_at DESC);`,
+  // The desktop app was removed (2026-11-20): its download log goes too
+  `DROP TABLE IF EXISTS desktop_downloads;`
 ];
 
 export function openDb(file) {
@@ -111,10 +113,6 @@ function accounts(db) {
                     WHERE m.recipient_id = ?
                     ORDER BY m.message_date DESC, m.created_at DESC`),
     markMessagesRead: q('UPDATE messages SET read_at = ? WHERE recipient_id = ? AND read_at IS NULL'),
-    addDesktopDownload: q('INSERT INTO desktop_downloads (user_id, downloaded_at, version) VALUES (?, ?, ?)'),
-    desktopDownloads: q(`SELECT d.downloaded_at, d.version, u.name, u.email
-                         FROM desktop_downloads d JOIN users u ON u.id = d.user_id
-                         ORDER BY d.downloaded_at DESC LIMIT 200`),
     addChangelog: q(`INSERT INTO changelog (id, created_by, entry_date, title, objects, kind, created_at)
                      VALUES (:id, :created_by, :entry_date, :title, :objects, :kind, :created_at)`),
     changelogById: q('SELECT * FROM changelog WHERE id = ?'),
@@ -154,8 +152,6 @@ function accounts(db) {
     unreadMessages: userId => s.unreadMessages.all(userId),
     allMessages: userId => s.allMessages.all(userId),
     markMessagesRead: userId => s.markMessagesRead.run(now(), userId),
-    addDesktopDownload: (userId, version, downloadedAt = now()) => s.addDesktopDownload.run(userId, downloadedAt, version),
-    desktopDownloads: () => s.desktopDownloads.all(),
     addChangelog: ({ id, createdBy, date, title, objects, kind = 'Change log', createdAt = now() }) => s.addChangelog.run({ id, created_by: createdBy, entry_date: date, title, objects, created_at: createdAt, kind }),
     changelogById: id => s.changelogById.get(id) ?? null,
     updateChangelog: ({ id, date, title, objects, kind }) => s.updateChangelog.run({ id, entry_date: date, title, objects, kind }),

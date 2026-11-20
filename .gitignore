@@ -4,9 +4,6 @@ tmp/
 .DS_Store
 sync-data/
 node_modules/
-desktop/node_modules/
-desktop/release/
-site/downloads/*.zip
 firmware/downloads/
 firmware/extracted/
 deploy/mail.json

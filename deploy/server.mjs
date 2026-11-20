@@ -11,7 +11,6 @@ import { createReadStream } from 'node:fs';
 import { mkdir, realpath, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
-import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { createAccounts } from './accounts.mjs';
 import { cleanDocs, createAccountSync } from './account-sync.mjs';
@@ -71,9 +70,6 @@ function cleanState(state) {
 }
 
 const accountSync = createAccountSync({ store: accounts.store, LIBMERGE, maxPatches: MAX_PATCHES });
-const AUTH_PROXY_URL = String(process.env.AUTH_PROXY_URL || '').replace(/\/$/, '');
-const DESKTOP_DOWNLOAD = /^\/downloads\/zoom-multistomp-studio-(\d+\.\d+\.\d+-(?:macos-arm64|win-x64|linux-x64))\.zip$/;
-const PROXY_AUTH_PATH = /^(?:\/(?:login|register|forgot|reset|verify|logout|account|admin|change-log)(?:\/|$)|\/api\/(?:me|messages\/read|report|account\/sync\/|sync\/))/;
 
 // ---- helpers ------------------------------------------------------------------------------------
 const hits = new Map();
@@ -127,46 +123,6 @@ async function serveStatic(request, response, pathname) {
   createReadStream(target).pipe(response);
 }
 
-const PROXY_REQUEST_HEADERS = ['accept', 'accept-language', 'cookie', 'if-modified-since', 'if-none-match', 'if-range', 'range', 'sec-fetch-site', 'user-agent'];
-const PROXY_RESPONSE_HEADERS = ['accept-ranges', 'cache-control', 'content-disposition', 'content-length', 'content-range', 'content-type', 'etag', 'last-modified'];
-
-function localRequestUrl(request) {
-  return new URL(request.url, `http://${request.headers.host || '127.0.0.1'}`);
-}
-
-function localizeLocation(location, request) {
-  if (!location) return null;
-  try {
-    const target = new URL(location, AUTH_PROXY_URL);
-    const remote = new URL(AUTH_PROXY_URL);
-    if (target.origin !== remote.origin) return location;
-    const local = localRequestUrl(request);
-    return `${local.origin}${target.pathname}${target.search}${target.hash}`;
-  } catch {
-    return location;
-  }
-}
-
-async function proxyToSite(request, response) {
-  const target = new URL(request.url, `${AUTH_PROXY_URL}/`);
-  const headers = {};
-  for (const name of PROXY_REQUEST_HEADERS) if (request.headers[name]) headers[name] = request.headers[name];
-  const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await readBody(request);
-  const upstream = await fetch(target, { method: request.method, headers, body, redirect: 'manual' });
-  const outgoing = {};
-  for (const name of PROXY_RESPONSE_HEADERS) {
-    const value = upstream.headers.get(name);
-    if (value) outgoing[name] = value;
-  }
-  const cookies = typeof upstream.headers.getSetCookie === 'function' ? upstream.headers.getSetCookie() : [];
-  if (cookies.length) outgoing['Set-Cookie'] = cookies.map(cookie => cookie.replace(/;\s*Secure/gi, '').replace(/;\s*Domain=[^;]+/gi, ''));
-  const location = localizeLocation(upstream.headers.get('location'), request);
-  if (location) outgoing.Location = location;
-  response.writeHead(upstream.status, outgoing);
-  if (request.method === 'HEAD' || !upstream.body) return response.end();
-  Readable.fromWeb(upstream.body).pipe(response);
-}
-
 // ---- server -------------------------------------------------------------------------------------
 const server = createServer(async (request, response) => {
   try {
@@ -176,7 +132,6 @@ const server = createServer(async (request, response) => {
     const { pathname } = url;
     if (legacy.isLegacy(request)) return legacy.handle(request, response, url);
     if (legacy.enabled && pathname === '/moved' && request.method === 'GET') return legacy.receiver(response);
-    if (AUTH_PROXY_URL && (PROXY_AUTH_PATH.test(pathname) || DESKTOP_DOWNLOAD.test(pathname))) return await proxyToSite(request, response);
     if (await accounts.handle(request, response, url)) return;
     const accountRoute = pathname.match(/^\/api\/account\/sync\/([a-z0-9]{1,12})$/);
     if (accountRoute) {
@@ -198,11 +153,6 @@ const server = createServer(async (request, response) => {
     const moved = MOVED.get(pathname);
     if (moved && (request.method === 'GET' || request.method === 'HEAD')) return send(response, 301, '', { Location: moved + url.search });
     if (request.method !== 'GET' && request.method !== 'HEAD') return send(response, 405, 'Method not allowed');
-    const desktopDownload = pathname.match(DESKTOP_DOWNLOAD);
-    if (desktopDownload && request.method === 'GET') {
-      const session = accounts.current(request);
-      if (session) accounts.logDesktopDownload(session.user.id, desktopDownload[1]);
-    }
     await serveStatic(request, response, pathname);
   } catch (error) {
     if (error.status) return sendJson(response, error.status, { error: error.message });
