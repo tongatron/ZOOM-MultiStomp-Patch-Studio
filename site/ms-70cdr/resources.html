@@ -55,7 +55,7 @@
       <span class="Label Label--attention fs-test-tag" title="Testing on a real MS-70CDR+ is in progress">Testing MS-70CDR+</span>
       <a class="fs-guide" href="guide.html" aria-label="Guide" title="Guide: how to use the site and load patches on the pedal"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.060 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.250 2.25Z"/></svg><span class="fs-guide-text">Guide</span></a>
     </header>
-    <div class="fs-note" role="note"><p><b>Testing in progress.</b> The first patches are being checked on a real MS-70CDR+ (the format comes from the MS-60B+); parameter values may still be wrong. Own the pedal? A few short tests at home would tell us what to fix.</p><a class="btn btn-sm btn-primary" href="help.html" title="Help us test the MS-70CDR+: a few short tests you can do at home">Help us</a></div>
+    <div class="fs-note" role="note"><p><b>Testing in progress.</b> Seven single-effect files from an MS-70CDR+ on system 1.20 are now available. The target matches the pedal profile and six effects decode correctly; <code>0x020000c8</code> is still catalogued as an unknown “STEREO GUITAR GRAPHIC EQ7”. See the <a href="resources.html#hardware-report">hardware report</a>.</p><a class="btn btn-sm btn-primary" href="help.html" title="Help us test the MS-70CDR+: a few short tests you can do at home">Help us</a></div>
 
     <main class="fs-main fs-resources">
       <div class="fs-col fs-pane">
@@ -96,7 +96,21 @@
           </ul>
           <section class="Box resource-section" aria-labelledby="format-title">
             <div class="Box-header"><h2 class="Box-title" id="format-title">About the patch files</h2></div>
-            <p class="resource-note">The <code>.zptc</code> format was reverse-engineered from exported patches and is not supported by ZOOM. Parameters marked "unverified" use an inferred encoding. Being tested on an MS-70CDR+: the format is assumed to match the MS-60B+ until the tests confirm it. How it was done: <a href="../ms-60b/technical-notes.html">Technical notes</a>.</p>
+            <p class="resource-note">The <code>.zptc</code> format was reverse-engineered from exported patches and is not supported by ZOOM. Parameters marked "unverified" use an inferred encoding. The first MS-70CDR+ exports are now available, but the format still needs generated-patch write/read-back tests on the pedal. How it was done: <a href="../ms-60b/technical-notes.html">Technical notes</a>.</p>
+          </section>
+          <section class="Box resource-section" id="hardware-report" aria-labelledby="hardware-report-title">
+            <div class="Box-header"><h2 class="Box-title" id="hardware-report-title">Latest hardware report</h2></div>
+            <p class="resource-note">A tester supplied seven one-effect <code>.zptc</code> files from an MS-70CDR+ with <b>System 1.20</b>, <b>Preset 1.00</b>, <b>Boot 1.00</b> and checksum <code>E473</code>. Every file carries target mask <code>0x00040000</code>, confirming the target used by this page.</p>
+            <div class="md-table"><table class="check-table">
+              <thead><tr><th>Files</th><th>Result in Studio</th><th>Origin reported by tester</th></tr></thead>
+              <tbody>
+                <tr><td><code>098 OPT COMP.zptc</code><br><code>099 OPT COMP STUDIO.zptc</code></td><td>OPTICAL COMPRESSOR</td><td>Pedal / Studio</td></tr>
+                <tr><td><code>096 BIT CRUSHER STUDIO.zptc</code><br><code>097 BIT CRUSHER.zptc</code></td><td>BIT CRUSHER</td><td>Studio / Pedal</td></tr>
+                <tr><td><code>094 REV REV STUDIO.zptc</code><br><code>095 REV REV.zptc</code></td><td>REVERSE REVERB</td><td>Studio / Pedal</td></tr>
+                <tr><td><code>100 EQ7.zptc</code></td><td><b>Unknown <code>0x020000c8</code></b></td><td>Pedal: “STEREO GUITAR GRAPHIC EQ7”</td></tr>
+              </tbody>
+            </table></div>
+            <p class="resource-note">The three paired effects prove that the current catalog recognizes the IDs for OPTICAL COMPRESSOR, BIT CRUSHER and REVERSE REVERB. EQ7 is a useful new catalog lead, but it is not added to the official Effects List until its parameter names, ranges and image are confirmed.</p>
           </section>
         </div>
       </div>
@@ -105,8 +119,9 @@
               <div class="fs-pane-body" tabindex="0" aria-label="Still to check">
       <div class="resource-check">
                 <ul class="check-list">
-                  <li><b>The whole format on an MS-70CDR+</b>: no generated patch has been imported on a real MS-70CDR+ yet. The structure and the encodings come from the MS-60B+. Own the pedal? <a href="help.html">Help us test it</a>.</li>
-                  <li><b>Firmware catalogue</b>: effect IDs and DSP figures come from the open-source zoom-zt2 catalogue and still need a real-pedal check.</li>
+                  <li><b>Generated-patch write/read-back</b>: the supplied files confirm exported one-effect patches, but not yet a patch generated by this Studio and written back to the pedal. Own the pedal? <a href="help.html">Help us test it</a>.</li>
+                  <li><b>Firmware catalogue</b>: the tester confirms the target mask and three effect IDs; the remaining effect IDs and DSP figures still come from the open-source zoom-zt2 catalogue and need a real-pedal check.</li>
+                  <li><b>STEREO GUITAR GRAPHIC EQ7</b>: the pedal reports ID <code>0x020000c8</code>, which is not in the current official 149-effect catalog. Its parameter layout still needs to be captured.</li>
                   <li><b>PRM2 block</b>: only partly decoded on the MS-60B+; the rest of the patch data is copied from a reference export.</li>
                 </ul>
                 <h3>Unverified encoding <span class="Counter" id="check-unverified-count"></span></h3>
@@ -124,7 +139,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-20T19:48Z">Last update 20 November 2026 20:48 CET</time>
+      <time class="gh-updated" datetime="2026-11-22T16:03Z">Last update 22 November 2026 17:03 CET</time>
     </footer>
 
     <script src="pedal.js?v=pedal2-20261104"></script>

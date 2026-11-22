@@ -21,6 +21,6 @@
     "targetMask": "0x00040000",
     "supportUrl": "https://zoomcorp.com/en/us/multi-effects/multistomp-pedals/ms-70cdr-plus/ms-70cdr-plus_support/",
     "sourceUrl": "https://github.com/mungewell/zoom-zt2/tree/master/zoom_fx_HGL/zoom_fx/MS70CDRPLUS",
-    "notes": "The target mask is source-based and still needs a physical export/read-back."
+    "notes": "Seven tester exports on System 1.20 carry this target mask; generated-patch write/read-back and the full effect catalogue still need physical checks."
   }
 }
