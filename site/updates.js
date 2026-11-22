@@ -12,7 +12,7 @@
       date: '2026-11-22',
       kind: 'Compatibility',
       title: 'MS-70CDR patch conversion groundwork',
-      objects: 'The studio now carries an audited effect-ID map for researching conversion from original MS-70CDR patches to MS-70CDR+. Full parameter conversion remains experimental until the legacy effect metadata is mapped.'
+      objects: 'The studio now carries an audited effect-ID map and an isolated experimental converter for original MS-70CDR patches. Known effects can be encoded for MS-70CDR+ with raw parameters preserved and a verification report; full parameter-scale conversion remains experimental.'
     },
     {
       date: '2026-11-12',
@@ -36,7 +36,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T22:38Z',
+    pushedAt: '2026-11-22T22:41Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]
