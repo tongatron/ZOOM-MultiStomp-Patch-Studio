@@ -18,5 +18,10 @@ assert.ok(result.encoded && result.encoded.length > 0);
 assert.equal(result.report.converted.length, 1);
 assert.equal(result.report.unmapped.length, 1);
 assert.equal(result.report.converted[0].parameterMode, 'names');
+const pingPong = LEGACY_PATCH_CONVERTER.convert({ name: 'Ping pong', effects: [
+  { id: '0x08000008', effect: 'Delay', params: { 'P-P': 1, TIME: 200, Fdbk: 30, MIX: 40 }, raw: [1, 2, 3] }
+] });
+assert.equal(pingPong.report.converted[0].variant, 'ping-pong');
+assert.equal(pingPong.report.converted[0].targetId, '0x08000080');
 assert.equal(ZPTC.decode(result.encoded).effects.length, 1);
 console.log('✓ experimental converter maps known IDs, preserves raw values and reports unknown effects');

@@ -12,7 +12,11 @@ const LEGACY_PATCH_CONVERTER = (() => {
     REPEAT: ['FDBK', 'FEEDBACK', 'FB'], FDBK: ['REPEAT', 'FEEDBACK', 'FB'],
     RATE: ['SPEED', 'CYCLE'], SPEED: ['RATE', 'CYCLE'], CYCLE: ['RATE', 'SPEED'],
     DEPTH: ['MOD'], MOD: ['DEPTH'], DECAY: ['DCY', 'DWELL'], DWELL: ['DECAY', 'DCY'],
-    TONE: ['TREBLE'], TREBLE: ['TONE'], MODE: ['DRCTN', 'TYPE'], TYPE: ['MODE', 'DRCTN']
+    TONE: ['TREBLE'], TREBLE: ['TONE'], MODE: ['DRCTN', 'TYPE'], TYPE: ['MODE', 'DRCTN'],
+    TIME: ['SYNC', 'TIMEA', 'TIMEB', 'TIMEL', 'TIMER'],
+    PREDLY: ['PDLY', 'MNL', 'PRED'], PREDELAY: ['PDLY', 'MNL', 'PRED'],
+    THRSHLD: ['THRSH', 'TRGGR'], FREQ: ['FREQ1', 'FREQUENCY'],
+    HI: ['HIGH'], LO: ['LOW'], HIDMP: ['HIDAMP'], LODMP: ['LODAMP']
   };
   function translatedParams(source, target) {
     if (!source.params || typeof source.params !== 'object') return null;
@@ -44,20 +48,23 @@ const LEGACY_PATCH_CONVERTER = (() => {
         report.unmapped.push({ slot: slot + 1, sourceId: hexId(sourceId), source: source.effect || mapping?.msogName || 'unknown' });
         continue;
       }
-      const target = ZPTC.byId.get(mapping.msplusID);
+      // The original Delay's ping-pong variant has a dedicated Plus effect.
+      const pingPong = mapping.msogName === 'Delay' && source.params && Number(source.params['P-P'] ?? source.params['P-P Delay']) === 1;
+      const targetId = pingPong ? 0x08000080 : mapping.msplusID;
+      const target = ZPTC.byId.get(targetId);
       if (!target) {
         report.unmapped.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(mapping.msplusID), target: mapping.msplusName });
         continue;
       }
       const translated = translatedParams(source, target);
       if (translated) {
-        effects.push({ id: hexId(mapping.msplusID), on: source.on !== false, params: translated.params });
-        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(mapping.msplusID), target: mapping.msplusName, parameterMode: 'names', mappedParameters: translated.mapped, targetParameters: translated.total });
+        effects.push({ id: hexId(targetId), on: source.on !== false, params: translated.params });
+        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(targetId), target: target.name, ...(pingPong ? { variant: 'ping-pong' } : {}), parameterMode: 'names', mappedParameters: translated.mapped, targetParameters: translated.total });
       } else {
         const raw = Array.from(source.raw || []).slice(0, 12);
         while (raw.length < 12) raw.push(0);
-        effects.push({ id: hexId(mapping.msplusID), on: source.on !== false, raw });
-        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(mapping.msplusID), target: mapping.msplusName, parameterMode: 'raw' });
+        effects.push({ id: hexId(targetId), on: source.on !== false, raw });
+        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(targetId), target: target.name, ...(pingPong ? { variant: 'ping-pong' } : {}), parameterMode: 'raw' });
       }
     }
     const encoded = effects.length ? ZPTC.encode({ name: input.name || 'Converted patch', description: `Experimental conversion from MS-70CDR: ${input.name || ''}`.trim(), effects }).file : null;
