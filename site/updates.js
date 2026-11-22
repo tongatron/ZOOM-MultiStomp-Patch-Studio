@@ -12,7 +12,7 @@
       date: '2026-11-22',
       kind: 'Compatibility',
       title: 'MS-70CDR patch conversion groundwork',
-      objects: 'The studio now carries an audited effect-ID map, an experimental decoder for original MS patch payloads and a converter to MS-70CDR+. The converter accepts decoded JSON or original binary payloads, uses compatible parameter names when available, falls back to raw values otherwise, and produces a .zptc file plus verification report; full parameter-scale conversion remains experimental.'
+      objects: 'The studio now carries an audited effect-ID map, an experimental decoder for original MS patch payloads and a converter to MS-70CDR+. The converter accepts decoded JSON or original binary payloads, uses compatible parameter names when available, falls back to raw values otherwise, and produces a .zptc file plus verification report; the binary path is covered by an end-to-end test, while full parameter-scale conversion remains experimental.'
     },
     {
       date: '2026-11-12',
@@ -36,7 +36,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T22:49Z',
+    pushedAt: '2026-11-22T22:53Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]

@@ -13,7 +13,8 @@
     "test:converter": "node tools/patch-converter-test.mjs",
     "convert:legacy": "node tools/zoom-explorer-convert.mjs",
     "decode:legacy": "node tools/msog-decode.mjs",
-    "test:legacy-decoder": "node tools/msog-decode-test.mjs"
+    "test:legacy-decoder": "node tools/msog-decode-test.mjs",
+    "test:legacy-convert": "node tools/legacy-convert-test.mjs"
   },
   "devDependencies": {
     "playwright": "1.48.2"

@@ -49,7 +49,7 @@ const timelineCards = (timeline, isAdmin = false) => timeline.map(entry => `<art
   </div>
 </article>`).join('');
 // Release timestamp from the latest commit pushed to GitHub, not the page request time.
-const footerNow = new Date('2026-11-22T22:49Z');
+const footerNow = new Date('2026-11-22T22:53Z');
 const footerDateParts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
   day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Rome', timeZoneName: 'short'
 }).formatToParts(footerNow).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
