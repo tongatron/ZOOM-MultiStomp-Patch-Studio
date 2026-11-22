@@ -38,8 +38,10 @@ if (process.argv[1]?.endsWith('zoom-explorer-convert.mjs')) {
   writeFileSync(outputPath, Buffer.from(result.encoded));
   writeFileSync(reportPath, JSON.stringify(result.report, null, 2) + '\n');
   console.log(`Wrote ${outputPath} and ${reportPath}`);
-  if (result.report.unmapped.length) {
-    console.error(`⚠ ${result.report.unmapped.length} effect(s) were not converted; inspect the report.`);
+  if (result.report.unmapped.length || result.report.summary.effectsWithUnmappedParameters) {
+    const effects = result.report.unmapped.length ? `${result.report.unmapped.length} effect(s) were not converted` : 'no effects were completely unmapped';
+    const parameters = result.report.summary.effectsWithUnmappedParameters ? `; ${result.report.summary.effectsWithUnmappedParameters} effect(s) have unmatched parameters` : '';
+    console.error(`⚠ ${effects}${parameters}; inspect the report.`);
     process.exitCode = 1;
   }
 }

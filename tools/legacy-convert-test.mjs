@@ -19,4 +19,6 @@ assert.ok(result.encoded?.length > 0);
 assert.equal(result.report.input.format, 'original-ms-binary');
 assert.equal(result.report.converted[0].source, 'Chorus');
 assert.equal(result.report.unmapped.length, 0);
+assert.equal(result.report.summary.namedParameterEffects, 0);
+assert.equal(result.report.summary.rawFallbackEffects, 1);
 console.log('✓ binary patch decodes and converts end-to-end');
