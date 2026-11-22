@@ -3,6 +3,12 @@
 (() => {
   const entries = [
     {
+      date: '2026-11-23',
+      kind: 'Compatibility',
+      title: 'Multi-pedal expansion audit',
+      objects: 'The development tooling now inventories the remaining compatibility gaps: 24 MS-50G+ add-on effect IDs, the MS-80IR+ USER IR slot and the unmapped MS-200D+ catalog. It reports missing evidence without inventing IDs; confirmed pedal exports, backups or firmware artifacts can be added incrementally.'
+    },
+    {
       date: '2026-11-22',
       kind: 'Beta',
       title: 'Experimental live patch controls',
@@ -36,7 +42,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T23:05Z',
+    pushedAt: '2026-11-22T23:10Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]
