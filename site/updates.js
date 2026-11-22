@@ -5,6 +5,12 @@
     {
       date: '2026-11-23',
       kind: 'Compatibility',
+      title: 'Trusted MS Plus protocol reference',
+      objects: 'The project now records thammer/zoom-explorer as a trusted, tested reference for the documented MS Plus MIDI commands and patch transport, especially the MS-50G+ path. Model-specific effect IDs and memory layouts for the other pedals still require their own evidence.'
+    },
+    {
+      date: '2026-11-23',
+      kind: 'Compatibility',
       title: 'Multi-pedal expansion audit',
       objects: 'The development tooling now inventories the remaining compatibility gaps: 24 MS-50G+ add-on effect IDs, the MS-80IR+ USER IR slot and the unmapped MS-200D+ catalog. It reports missing evidence without inventing IDs; confirmed pedal exports, backups or firmware artifacts can be added incrementally.'
     },
@@ -42,7 +48,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T23:26Z',
+    pushedAt: '2026-11-22T23:36Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]

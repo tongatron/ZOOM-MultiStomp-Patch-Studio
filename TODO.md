@@ -2,6 +2,10 @@
 
 Status: development paused on 23 November 2026. This file records the next work; no new feature work should start until the project is resumed.
 
+## Source policy
+
+`thammer/zoom-explorer` is now marked as a trusted, tested reference for the MS Plus MIDI commands and patch transport documented there. Its working observations can be used directly for the MS-50G+ implementation. It is not treated as automatic confirmation of effect IDs, USER IR data or memory layouts for MS-80IR+, MS-200D+ or MS-90LP+; those still need model-specific evidence.
+
 ## Completed groundwork
 
 - MS-50G+, MS-80IR+ and MS-200D+ catalog-gap audit (`npm run audit:expansion`).
