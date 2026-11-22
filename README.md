@@ -89,6 +89,8 @@ MultiStomp Studio puts the whole pedal on your desk:
 | 🔁 **Loop tools** *(MS-90LP+)* | Loop length from a tempo, the tempo for a length, tap tempo with a metronome, and a song planner, all within the pedal's limits (tempo 40–300, 90 minutes per loop). |
 | 🧪 **Beta features** *(MS-60B+, MS-50G+, MS-70CDR+)* | Off by default, switched on from the account menu. **Live mode** sends parameter and ON/OFF changes to the pedal's edit buffer and exposes experimental effect selection, tempo, routing, R OUT, tuner and pedal-status controls; these are unverified on the beta pedals. **Pedal audition** plays a clean bass loop through the MS-60B+ while you edit. |
 | 🔁 **Patch conversion research** *(MS-70CDR+)* | Includes an audited effect-ID map and an isolated experimental converter for original MS-70CDR patches. Compatible parameter names are translated when possible, with raw values as fallback; every converted patch must be verified on the pedal. |
+
+The experimental converter can be run on a decoded legacy patch JSON with `npm run convert:legacy -- legacy.json converted.zptc`. It also writes a verification report; an unmapped effect makes the command exit with a warning status.
 | ☁️ **Free account** *(optional)* | Sync patches, settings, rule packs and pedal backups of the MS-60B+, MS-50G+ and MS-70CDR+ across devices. Download everything or delete the account at any time. Without an account everything stays in your browser. |
 | 📰 **Change log and messages** | A public change log of what's new, and in-app messages from the administrators. |
 | ✉️ **Contact us and Report a problem** | A short form on every page; the message goes to the site's own Telegram bot and nothing is stored on the server. |

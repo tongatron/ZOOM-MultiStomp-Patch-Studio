@@ -1,0 +1,12 @@
+{
+  "name": "Legacy converter test",
+  "effects": [
+    {
+      "id": "0x06000070",
+      "effect": "Chorus",
+      "on": true,
+      "params": { "DEPTH": 10, "RATE": 20, "TONE": 5, "MIX": 40, "VOL": 50 },
+      "raw": [10, 20, 30, 40, 50]
+    }
+  ]
+}

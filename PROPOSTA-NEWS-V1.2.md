@@ -19,6 +19,7 @@ Zoom MS-60B+ Studio version 1.2 makes patch organisation clearer and safer when 
 - **Safer cleanup of deleted links**: when a connected pedal contains a memory linked to a local patch that no longer exists, Pedal Manager offers to clear that memory with the name `Empty`. The action is read back, backed up, and can be undone.
 - **Experimental Live controls**: on the MS-60B+, MS-50G+ and MS-70CDR+, Live mode can select the current effect, send tempo, routing and R OUT changes to the current edit buffer, toggle the tuner and read the current bank/patch without overwriting a stored memory. These controls remain beta and are not yet verified on the MS-50G+ or MS-70CDR+.
 - **Experimental MS-70CDR conversion**: an isolated converter can map known original MS-70CDR effect IDs to MS-70CDR+, translate compatible parameter names when available and preserve raw values as fallback, while reporting unmapped effects and warning that parameter scales still need verification.
+  The development CLI accepts decoded legacy JSON and writes an experimental `.zptc` plus a conversion report.
 
 ## Ready-to-send user message
 
