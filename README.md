@@ -114,6 +114,8 @@ Original MS patch payloads can be inspected with `npm run decode:legacy -- patch
 
 Every pedal keeps its pages and data in its own folder: `site/ms-60b/`, `site/ms-50g/`, `site/ms-70cdr/`, `site/ms-200d/`, `site/ms-80ir/`, `site/ms-90lp/` (`pedal.js`, `effects-data.js`, `firmware-data.js`, `advice-rules.js`, effect images). The codec, builder, catalog, advice engine and Pedal manager are shared scripts in `site/`, and the list of pedals lives in one file, [`site/pedals.js`](site/pedals.js).
 
+The paused development roadmap is in [`TODO.md`](TODO.md), including the evidence still needed before enabling broader pedal support.
+
 ## 🙋 Help wanted
 
 Only the MS-60B+ has been fully tested on a real pedal. The other pages are built from the official ZOOM documentation, and a little of an owner's time would show what works and what needs fixing. Nobody is expected to do everything: each page lists the checks that would help, with the time each takes, and how to get in touch.
