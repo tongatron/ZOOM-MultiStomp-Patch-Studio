@@ -967,7 +967,7 @@ body.is-dropping .drop-overlay { display: grid; }
 .account-perks { display: grid; gap: 6px; margin: 0 0 4px; padding-left: 20px; }
 .account-later { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin-top: 8px; }
 .account-welcome .account-note { margin: 8px 0 0; }
-/* The form of report.js (Report a problem, Contact us), also on the landing page */
+/* The form of report.js (Contact us for bugs or anything, Contact us), also on the landing page */
 .report-form { display: flex; flex-direction: column; gap: 12px; }
 .report-form > p { margin: 0; }
 .report-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }

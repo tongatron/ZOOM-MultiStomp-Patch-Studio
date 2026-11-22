@@ -1,8 +1,8 @@
-// "Report a problem" and "Contact us": the form opens from the button in the status bar, or from any element with
+// "Contact us for bugs or anything" and "Contact us": the form opens from the button in the status bar, or from any element with
 // data-report="report" | "contact" | "feedback"; the message goes to the site administrator through POST /api/report (a Telegram bot,
 // see deploy/accounts.mjs). Open to everyone, signed in or not.
 // A trigger can bring its own sentence above the form: data-intro. "Contact us" sends only what the visitor writes
-// (name, email, message); "Report a problem" can also send the technical details (a ticked box).
+// (name, email, message); the bug form can also send the technical details (a ticked box).
 // Pages without a status bar (the landing page) get the form from their own buttons only.
 // Load after pedal.js and account.js (a signed-in visitor gets their name and email filled in).
 
@@ -11,7 +11,7 @@
 
   const MODES = {
     report: {
-      kind: 'problem', title: 'Report a problem', intro: 'Tell us what is wrong or what you would like: the message goes straight to the person who makes this site.',
+      kind: 'problem', title: 'Contact us for bugs or anything', intro: 'Tell us what is wrong, what you would like, or anything else: the message goes straight to the person who makes this site.',
       emailHint: '(optional, so we can reply)', needEmail: false, placeholder: 'What you were doing, what happened, what you expected', technical: true
     },
     contact: {
@@ -29,7 +29,7 @@
     button.type = 'button';
     button.className = 'fs-report';
     button.dataset.report = 'report';
-    button.textContent = 'Report a problem';
+    button.textContent = 'Contact us for bugs or anything';
     const privacy = status.querySelector('a[href$="privacy.html"]');
     if (privacy) privacy.after(button); else status.append(button);
   }
@@ -98,7 +98,7 @@
         if (button && current.name === 'report') {
           button.textContent = '✓ Message sent';
           clearTimeout(resetLabel);
-          resetLabel = setTimeout(() => { button.textContent = 'Report a problem'; }, 8000);
+          resetLabel = setTimeout(() => { button.textContent = 'Contact us for bugs or anything'; }, 8000);
         }
         if (triggerButton && current.name === 'feedback') {
           triggerButton.textContent = '✓ Feedback sent';

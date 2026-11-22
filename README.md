@@ -97,7 +97,7 @@ The experimental converter accepts either a decoded legacy patch JSON or the ori
 Original MS patch payloads can be inspected with `npm run decode:legacy -- patch.bin`; the decoder shows known legacy effect names when available and preserves the raw effect blocks and metadata for verification before conversion.
 | ☁️ **Free account** *(optional)* | Sync patches, settings, rule packs and pedal backups of the MS-60B+, MS-50G+ and MS-70CDR+ across devices. Download everything or delete the account at any time. Without an account everything stays in your browser. |
 | 📰 **Change log and messages** | A public change log of what's new, and in-app messages from the administrators. |
-| ✉️ **Contact us and Report a problem** | A short form on every page; the message goes to the site's own Telegram bot and nothing is stored on the server. |
+| ✉️ **Contact us for bugs or anything** | A short form on every page; the message goes to the site's own Telegram bot and nothing is stored on the server. |
 | 📖 **Guide and Resources** | A how-to Guide for every pedal, and the official ZOOM manuals (English and Italian) and Effects Lists one tab away. |
 | 💻 **Offline** | Installable PWA for computers and tablets held sideways (windows of at least 800 × 640 px; there is no phone version). |
 
@@ -148,7 +148,7 @@ Clone it, start one Node command, and the whole studio is on `localhost`. No bui
 
 ## 🔐 Privacy
 
-No tracking cookies, no newsletter. Without an account your data never leaves the browser; with one, it lives on a server run by tongatron.org, backed up daily and kept 30 days. Messages sent with Contact us or Report a problem go to Telegram and are not stored on the server. The details: [`site/privacy.html`](site/privacy.html).
+No tracking cookies, no newsletter. Without an account your data never leaves the browser; with one, it lives on a server run by tongatron.org, backed up daily and kept 30 days. Messages sent with Contact us for bugs or anything go to Telegram and are not stored on the server. The details: [`site/privacy.html`](site/privacy.html).
 
 ## 📌 Good to know
 
