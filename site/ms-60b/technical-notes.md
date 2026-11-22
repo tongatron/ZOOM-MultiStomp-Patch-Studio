@@ -155,6 +155,10 @@ Each request gets one SysEx answer. The site sends one command at a time, waits 
 | Editor mode on / off | `50` / `51` | needed before reading the current patch |
 | Patch info | `44` | number of memories, memory size, patches per bank |
 | Read current patch | `64 13` | the patch being played or edited |
+| Live parameter | `64 20 00 <slot> <parameter> <value lo hi> …` | change a parameter in the current edit buffer |
+| Live patch controls | `64 20 00 64 01/02/03/04 …` | select effect, set tempo, choose routing or set R OUT split |
+| Screen information | `64 02 <start> <end> <short>` | request the raw display payload for diagnostics |
+| Bank/program | `64 26 00 00` | read the currently selected bank and patch |
 | Read memory | `46 00 00 <bank lo hi> <slot lo hi>` | a stored patch |
 | Write memory | `45 00 00 <bank lo hi> <slot lo hi> <length lo hi> <data> <CRC>` | overwrite a stored patch |
 

@@ -50,6 +50,26 @@ await test('live parameter updates use the current-patch editor command', async 
   assert.equal(reply[4], 0x64);
   assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x02, 0x05, 0x34, 0x24, 0x00, 0x00]);
 });
+await test('live patch-level controls use the Zoom Explorer 64 20 command family', async () => {
+  let reply = await PEDALMIDI.selectCurrentEffect(4);
+  assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x64, 0x01, 0x04, 0x00, 0x00, 0x00]);
+  reply = await PEDALMIDI.setTempo(300);
+  assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x64, 0x02, 0x2c, 0x02, 0x00, 0x00]);
+  reply = await PEDALMIDI.setRouting(2);
+  assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x64, 0x03, 0x02, 0x00, 0x00, 0x00]);
+  reply = await PEDALMIDI.setRightPosition(15);
+  assert.deepEqual(Array.from(reply.slice(5, 13)), [0x20, 0x01, 0x64, 0x04, 0x0f, 0x00, 0x00, 0x00]);
+  assert.throws(() => PEDALMIDI.setTempo(301), /between 40 and 300/);
+  assert.throws(() => PEDALMIDI.setRouting(3), /routing must be/);
+  assert.throws(() => PEDALMIDI.setRightPosition(16), /R OUT position must be/);
+});
+await test('live diagnostics read screen data and current bank/program without decoding firmware-specific bytes', async () => {
+  const screen = await PEDALMIDI.readScreenInfo(0, 3);
+  assert.deepEqual(Array.from(screen.slice(4, -1)), [0x64, 0x01, 0x00, 0x00]);
+  const current = await PEDALMIDI.currentBankProgram();
+  assert.deepEqual({ bank: current.bank, program: current.program }, { bank: 2, program: 3 });
+  await assert.rejects(() => PEDALMIDI.readScreenInfo(4, 3), /screen range/);
+});
 await test('a patch memory arrives intact (bank and slot addressing)', async () => {
   const info = await PEDALMIDI.patchInfo();
   const r = await PEDALMIDI.readMemory(13, info); // bank 1, slot 2 → patch 12 % 3 = 0

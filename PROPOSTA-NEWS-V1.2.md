@@ -17,6 +17,7 @@ Zoom MS-60B+ Studio version 1.2 makes patch organisation clearer and safer when 
 - **Pedal link visibility**: a blue indicator shows when a local patch is linked to a pedal memory; its tooltip identifies the pedal patch and the last memory position.
 - **Clearer patch saving**: the selected patch name is always visible in the right-hand panel. The name field is more compact, and SAVE is green when there are unsaved changes and grey when there is nothing to save.
 - **Safer cleanup of deleted links**: when a connected pedal contains a memory linked to a local patch that no longer exists, Pedal Manager offers to clear that memory with the name `Empty`. The action is read back, backed up, and can be undone.
+- **Experimental Live controls**: on the MS-60B+, MS-50G+ and MS-70CDR+, Live mode can select the current effect, send tempo, routing and R OUT changes to the current edit buffer, toggle the tuner and read the current bank/patch without overwriting a stored memory. These controls remain beta and are not yet verified on the MS-50G+ or MS-70CDR+.
 
 ## Ready-to-send user message
 
@@ -43,6 +44,9 @@ This release makes it easier to find your favourite sounds and keeps local patch
 
 • 🧹 Safer cleanup
   If a local patch linked to a pedal memory has been deleted, Pedal Manager offers to clear the corresponding pedal memory as `Empty`. The original memory is backed up and the operation can be undone.
+
+• ⚡ Experimental Live controls
+  Live mode can select the current effect, send tempo, routing and R OUT changes to the current edit buffer, toggle the tuner and read the current bank/patch on the MS-60B+, MS-50G+ and MS-70CDR+. These controls do not overwrite a stored memory and remain beta on the unverified pedals.
 
 Thanks for using ZOOM MultiStomp Studio! 🎸
 ```

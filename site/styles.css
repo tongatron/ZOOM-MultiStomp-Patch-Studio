@@ -564,6 +564,11 @@ select.form-control { appearance: none; padding-right: 26px; background: var(--b
 .live-mode-actions { display: flex; flex-wrap: wrap; margin: 10px 0 0; }
 .live-mode-actions [hidden] { display: none; }
 .live-mode-actions .usb-status { margin-left: auto; }
+.live-patch-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 10px 0 4px; }
+.live-patch-controls .field { margin: 0; }
+.live-patch-controls .field-label { display: block; }
+.live-tuner-label { align-self: center; margin-left: 4px; }
+.live-pedal-position { align-self: center; margin: 0 0 2px 4px; }
 .library { gap: 12px; }
 .library-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .library-head .Counter { margin-left: 4px; }

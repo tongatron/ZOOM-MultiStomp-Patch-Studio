@@ -145,6 +145,19 @@
             <section class="live-mode" id="live-mode" aria-labelledby="live-mode-title" hidden>
               <div class="field-label field-label--row"><span id="live-mode-title">Live mode <span class="Label Label--success" title="Tested live on a real MS-60B+">tested</span> <span class="Label Label--attention">beta</span></span></div>
               <p class="field-hint">When enabled, parameter and ON/OFF changes are sent immediately to the patch currently loaded in the pedal's edit buffer, not to a stored memory. Effect order, replacements and the patch name still use the normal Send action.</p>
+              <p class="field-hint">Experimental patch controls: these commands are sent to the edit buffer only and have not been verified on every pedal or firmware.</p>
+              <div class="live-patch-controls" aria-label="Experimental live patch controls">
+                <label class="field"><span class="field-label">Tempo (BPM)</span><input class="form-control form-control--sm" id="live-tempo" type="number" min="40" max="300" step="1" value="120" /></label>
+                <button class="btn btn-sm" id="live-tempo-send" type="button">Send tempo</button>
+                <label class="field"><span class="field-label">Routing</span><select class="form-control form-control--sm" id="live-routing"><option value="0">Series</option><option value="1">Parallel</option><option value="2">Alternate</option></select></label>
+                <button class="btn btn-sm" id="live-routing-send" type="button">Send routing</button>
+                <label class="field"><span class="field-label">R OUT position</span><select class="form-control form-control--sm" id="live-r-out"><option value="0">End</option><option value="1">Before effect 1</option><option value="2">Between effects 1–2</option><option value="3">Between effects 2–3</option><option value="4">Between effects 3–4</option><option value="5">Between effects 4–5</option><option value="6">Between effects 5–6</option></select></label>
+                <button class="btn btn-sm" id="live-r-out-send" type="button">Send R OUT</button>
+                <label class="field"><span class="field-label">Current effect</span><select class="form-control form-control--sm" id="live-effect-slot"></select></label>
+                <button class="btn btn-sm" id="live-effect-send" type="button">Select effect</button>
+                <span class="field-label live-tuner-label">Tuner</span><button class="btn btn-sm" id="live-tuner-on" type="button">On</button><button class="btn btn-sm" id="live-tuner-off" type="button">Off</button>
+                <button class="btn btn-sm" id="live-refresh-status" type="button">Refresh pedal status</button><span class="field-hint live-pedal-position" id="live-pedal-position" role="status"></span>
+              </div>
               <div class="save-row live-mode-actions">
                 <button class="btn btn-sm btn-primary" id="live-connect" type="button">Connect pedal</button>
                 <button class="btn btn-sm" id="live-load" type="button" hidden>Load current patch</button>
@@ -218,7 +231,7 @@
       <a class="fs-b3" href="https://tongatron.org" target="_blank" rel="noreferrer" title="tongatron.org"><span class="fs-b3-dot" aria-hidden="true"></span>tongatron.org</a>
       <a href="https://github.com/tongatron/ZOOM-MultiStomp-Patch-Studio" target="_blank" rel="noreferrer">Source on GitHub</a>
       <a href="../privacy.html">Privacy</a>
-      <time class="gh-updated" datetime="2026-11-22T16:03Z">Last update 22 November 2026 17:03 CET</time>
+      <time class="gh-updated" datetime="2026-11-22T22:34Z">Last update 22 November 2026 23:34 CET</time>
     </footer>
 
     <dialog class="Overlay" id="picker" aria-labelledby="picker-title">

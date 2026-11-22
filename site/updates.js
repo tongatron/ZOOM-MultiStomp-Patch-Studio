@@ -3,6 +3,12 @@
 (() => {
   const entries = [
     {
+      date: '2026-11-22',
+      kind: 'Beta',
+      title: 'Experimental live patch controls',
+      objects: 'Live mode now exposes experimental effect selection, tempo, routing, R OUT, tuner and pedal-status controls for the MS-60B+, MS-50G+ and MS-70CDR+. They affect the pedal or edit buffer only; support is still unverified on beta pedals and firmware versions.'
+    },
+    {
       date: '2026-11-12',
       kind: 'Beta',
       title: 'Pedal audition and Live mode',
@@ -24,7 +30,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T16:03Z',
+    pushedAt: '2026-11-22T22:34Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]

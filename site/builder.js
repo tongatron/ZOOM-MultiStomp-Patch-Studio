@@ -117,6 +117,14 @@ function renderLiveControls() {
   $('#live-connect')?.toggleAttribute('hidden', live.connected);
   $('#live-disconnect')?.toggleAttribute('hidden', !live.connected);
   if (!live.connected) $('#live-load')?.setAttribute('hidden', '');
+  const selector = $('#live-effect-slot');
+  if (selector) {
+    const previous = selector.value;
+    selector.innerHTML = state.effects.map((slot, index) => `<option value="${liveEffectSlot(index)}">${index + 1}. ${escapeHtml(catalog[slot.index].lcd || catalog[slot.index].name)}</option>`).join('');
+    if (previous && [...selector.options].some(option => option.value === previous)) selector.value = previous;
+  }
+  ['#live-tempo', '#live-tempo-send', '#live-routing', '#live-routing-send', '#live-r-out', '#live-r-out-send', '#live-effect-slot', '#live-effect-send', '#live-tuner-on', '#live-tuner-off', '#live-refresh-status']
+    .forEach(selector => { const control = $(selector); if (control) control.disabled = !live.connected; });
 }
 function renderLiveSave() {
   const button = $('#live-save');
@@ -212,6 +220,7 @@ async function connectLive() {
     const current = await PEDALMIDI.readCurrent();
     if (!current?.crcOk) throw new Error('The pedal returned the current patch with a checksum mismatch.');
     live.current = { memory: current, decoded: ZPTC.decode(current.data) };
+    if (Number.isInteger(live.current.decoded.rightPositionRaw)) $('#live-r-out').value = String(live.current.decoded.rightPositionRaw);
     live.connected = true;
     live.enabled = true;
     renderLiveControls();
@@ -221,6 +230,16 @@ async function connectLive() {
     setLiveStatus(error.message, 'danger');
   } finally {
     if (connect) connect.disabled = false;
+  }
+}
+
+async function sendLiveCommand(command, success) {
+  if (!live.connected || !live.enabled) return;
+  try {
+    await command();
+    setLiveStatus(success, 'ok');
+  } catch (error) {
+    setLiveStatus(`Live error: ${error.message}`, 'danger');
   }
 }
 
@@ -967,6 +986,22 @@ function saveCurrent(asNew = false) {
 $('#save-patch').addEventListener('click', () => saveCurrent());
 $('#save-as-new').addEventListener('click', () => saveCurrent(true));
 $('#live-save')?.addEventListener('click', () => saveCurrent());
+$('#live-tempo-send')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.setTempo(Number($('#live-tempo').value)), 'Live: tempo sent'));
+$('#live-routing-send')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.setRouting(Number($('#live-routing').value)), 'Live: routing sent'));
+$('#live-r-out-send')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.setRightPosition(Number($('#live-r-out').value)), 'Live: R OUT sent'));
+$('#live-effect-send')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.selectCurrentEffect(Number($('#live-effect-slot').value)), 'Live: effect selected'));
+$('#live-tuner-on')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.tunerOn(), 'Live: tuner on'));
+$('#live-tuner-off')?.addEventListener('click', () => sendLiveCommand(
+  () => PEDALMIDI.tunerOff(), 'Live: tuner off'));
+$('#live-refresh-status')?.addEventListener('click', () => sendLiveCommand(async () => {
+  const current = await PEDALMIDI.currentBankProgram();
+  $('#live-pedal-position').textContent = `Bank ${current.bank + 1} · Patch ${current.program + 1}`;
+}, 'Live: pedal status refreshed'));
 $('#undo').addEventListener('click', undo);
 $('#redo').addEventListener('click', redo);
 document.addEventListener('keydown', event => {

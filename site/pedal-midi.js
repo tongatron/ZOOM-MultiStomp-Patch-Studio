@@ -115,6 +115,46 @@ const PEDALMIDI = (() => {
   const editorOn = () => zoom(0x50);
   const editorOff = () => zoom(0x51);
 
+  // The 64 20 00 command family edits the current edit buffer. These helpers
+  // are deliberately separate from writeMemory(): they do not overwrite a
+  // stored memory, but let a future live editor control the patch-level fields
+  // documented by zoom-explorer (current slot, tempo and routing).
+  const writeCurrentValue = (parameter, value, { max = 0x7f, label = 'value' } = {}) => {
+    if (!Number.isInteger(value) || value < 0 || value > max) throw new Error(`The live ${label} must be between 0 and ${max}`);
+    return request([0x52, 0x00, device, 0x64, 0x20, 0x00, 0x64, parameter, value, 0x00, 0x00, 0x00, 0x00], zoomReply(0x64));
+  };
+  const selectCurrentEffect = slot => {
+    if (!Number.isInteger(slot) || slot < 0 || slot > 8) throw new Error('The live effect slot must be between 0 and 8');
+    return writeCurrentValue(0x01, slot, { label: 'effect slot' });
+  };
+  const setTempo = bpm => {
+    if (!Number.isInteger(bpm) || bpm < 40 || bpm > 300) throw new Error('The live tempo must be between 40 and 300 BPM');
+    return request([0x52, 0x00, device, 0x64, 0x20, 0x00, 0x64, 0x02, bpm & 0x7f, bpm >> 7, 0x00, 0x00, 0x00], zoomReply(0x64));
+  };
+  const setRouting = routing => {
+    if (!Number.isInteger(routing) || routing < 0 || routing > 2) throw new Error('The live routing must be 0 (series), 1 (parallel) or 2 (alternate)');
+    return writeCurrentValue(0x03, routing, { max: 2, label: 'routing' });
+  };
+  const setRightPosition = position => {
+    if (!Number.isInteger(position) || position < 0 || position > 15) throw new Error('The live R OUT position must be between 0 and 15');
+    return writeCurrentValue(0x04, position, { max: 15, label: 'R OUT position' });
+  };
+  const tunerOn = () => zoom(0x64, 0x0b);
+  const tunerOff = () => zoom(0x64, 0x0c);
+  // Diagnostics described by zoom-explorer. The screen payload is returned
+  // raw on purpose: its fields vary by firmware and are not yet all decoded.
+  const readScreenInfo = async (start = 0, end = 0, compact = false) => {
+    if (!Number.isInteger(start) || start < 0 || start > 0x7f || !Number.isInteger(end) || end < start || end > 0x7f) {
+      throw new Error('The screen range must be two MIDI values with end at or after start');
+    }
+    return request([0x52, 0x00, device, 0x64, 0x02, start, end, compact ? 0x01 : 0x00], zoomReply(0x64));
+  };
+  const currentBankProgram = async () => {
+    const r = await request([0x52, 0x00, device, 0x64, 0x26, 0x00, 0x00], zoomReply(0x64));
+    if (r.length < 13 || r[5] !== 0x26) throw new Error(`Unexpected bank/program reply: ${hex(r)}`);
+    return { bank: r[8] | r[9] << 7, program: r[10] | r[11] << 7, raw: r };
+  };
+
   // Number of patch memories, size of one patch and patches per bank
   async function patchInfo() {
     const r = await zoom(0x44);
@@ -163,7 +203,8 @@ const PEDALMIDI = (() => {
   }
 
   return {
-    supported, ports, connect, disconnect, identify, editorOn, editorOff, patchInfo, readCurrent, writeCurrentParameter, readMemory, writeMemory,
+    supported, ports, connect, disconnect, identify, editorOn, editorOff, selectCurrentEffect, setTempo, setRouting, setRightPosition,
+    tunerOn, tunerOff, readScreenInfo, currentBankProgram, patchInfo, readCurrent, writeCurrentParameter, readMemory, writeMemory,
     hex, pack, unpack, crc32, onLog: fn => { log = fn; }, get device() { return device; }
   };
 })();
