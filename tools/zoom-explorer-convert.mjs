@@ -4,6 +4,7 @@
 // The report is written next to the output unless a third path is supplied.
 import { readFileSync, writeFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { decodeMSOG } from './msog-decode.mjs';
 
 const ctx = vm.createContext({ console });
 for (const file of ['pedal.js', 'effects-data.js', 'firmware-data.js', 'zptc.js', 'patch-converter-map.js', 'patch-converter.js']) {
@@ -16,7 +17,18 @@ if (!inputPath || !outputPath) {
   console.error('Usage: node tools/zoom-explorer-convert.mjs <legacy.json> <out.zptc> [report.json]');
   process.exit(2);
 }
-const result = LEGACY_PATCH_CONVERTER.convert(JSON.parse(readFileSync(inputPath, 'utf8')));
+const inputBytes = readFileSync(inputPath);
+let legacy;
+let inputFormat;
+if (inputBytes[0] === 0x7b || inputBytes[0] === 0x5b) {
+  legacy = JSON.parse(inputBytes.toString('utf8'));
+  inputFormat = 'decoded-json';
+} else {
+  legacy = decodeMSOG(inputBytes);
+  inputFormat = 'original-ms-binary';
+}
+const result = LEGACY_PATCH_CONVERTER.convert(legacy);
+result.report.input = { path: inputPath, format: inputFormat };
 if (!result.encoded) throw new Error('No effect could be converted; no .zptc was written.');
 writeFileSync(outputPath, Buffer.from(result.encoded));
 writeFileSync(reportPath, JSON.stringify(result.report, null, 2) + '\n');
