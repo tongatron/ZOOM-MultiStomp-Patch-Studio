@@ -11,12 +11,12 @@ for (const file of ['pedal.js', 'effects-data.js', 'firmware-data.js', 'zptc.js'
 }
 const { LEGACY_PATCH_CONVERTER, ZPTC } = vm.runInContext('({ LEGACY_PATCH_CONVERTER, ZPTC })', ctx);
 const result = LEGACY_PATCH_CONVERTER.convert({ name: 'Legacy test', effects: [
-  { id: '0x06000070', effect: 'Chorus', on: true, raw: [10, 20, 30, 40, 50] },
+  { id: '0x06000070', effect: 'Chorus', on: true, params: { DEPTH: 10, RATE: 20, TONE: 5, MIX: 40, VOL: 50 }, raw: [10, 20, 30, 40, 50] },
   { id: '0xdeadbeef', effect: 'Unknown', on: true, raw: [1, 2, 3] }
 ] });
 assert.ok(result.encoded && result.encoded.length > 0);
 assert.equal(result.report.converted.length, 1);
 assert.equal(result.report.unmapped.length, 1);
-assert.match(result.report.warnings[0], /Raw parameter values/);
+assert.equal(result.report.converted[0].parameterMode, 'names');
 assert.equal(ZPTC.decode(result.encoded).effects.length, 1);
 console.log('✓ experimental converter maps known IDs, preserves raw values and reports unknown effects');
