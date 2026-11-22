@@ -4,7 +4,7 @@
 // gets the files of its own version and never mixes a new page with old scripts. Older versions of a file are dropped
 // when a newer one is stored.
 
-const CACHE = 'ms60b-v46';
+const CACHE = 'ms60b-v47';
 const CORE = [
   // No './' and no old-address pages here: they only send the visitor on to /ms-60b/
   'ms-60b/index.html', 'ms-60b/builder.html', 'ms-60b/tones.html', 'ms-60b/pedal-manager.html', 'ms-60b/resources.html', 'ms-60b/technical-notes.html', 'ms-60b/technical-notes.md', 'ms-60b/guide.html', 'audition.js', 'audition.css', 'updates.js', 'privacy.html', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest', 'assets/audition/bass-guitar-groove-loop.mp3', 'assets/audition/electric-bass-groove-110.mp3', 'assets/audition/electric-bass-groove-2-110.mp3', 'assets/audition/slap-bass-hit.mp3',
