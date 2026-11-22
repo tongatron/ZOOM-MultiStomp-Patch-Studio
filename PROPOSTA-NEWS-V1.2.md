@@ -20,6 +20,7 @@ Zoom MS-60B+ Studio version 1.2 makes patch organisation clearer and safer when 
 - **Experimental Live controls**: on the MS-60B+, MS-50G+ and MS-70CDR+, Live mode can select the current effect, send tempo, routing and R OUT changes to the current edit buffer, toggle the tuner and read the current bank/patch without overwriting a stored memory. These controls remain beta and are not yet verified on the MS-50G+ or MS-70CDR+.
 - **Experimental MS-70CDR conversion**: an isolated converter can map known original MS-70CDR effect IDs to MS-70CDR+, translate compatible parameter names when available and preserve raw values as fallback, while reporting unmapped effects and warning that parameter scales still need verification.
   The development CLI accepts decoded legacy JSON and writes an experimental `.zptc` plus a conversion report.
+  An experimental decoder now reads the original fixed-size patch payload and preserves its raw effect blocks and metadata for that workflow.
 
 ## Ready-to-send user message
 

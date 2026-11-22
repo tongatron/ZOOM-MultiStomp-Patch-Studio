@@ -91,6 +91,8 @@ MultiStomp Studio puts the whole pedal on your desk:
 | 🔁 **Patch conversion research** *(MS-70CDR+)* | Includes an audited effect-ID map and an isolated experimental converter for original MS-70CDR patches. Compatible parameter names are translated when possible, with raw values as fallback; every converted patch must be verified on the pedal. |
 
 The experimental converter can be run on a decoded legacy patch JSON with `npm run convert:legacy -- legacy.json converted.zptc`. It also writes a verification report; an unmapped effect makes the command exit with a warning status.
+
+Original MS patch payloads can be inspected with `npm run decode:legacy -- patch.bin`; the decoder preserves the raw effect blocks and metadata for verification before conversion.
 | ☁️ **Free account** *(optional)* | Sync patches, settings, rule packs and pedal backups of the MS-60B+, MS-50G+ and MS-70CDR+ across devices. Download everything or delete the account at any time. Without an account everything stays in your browser. |
 | 📰 **Change log and messages** | A public change log of what's new, and in-app messages from the administrators. |
 | ✉️ **Contact us and Report a problem** | A short form on every page; the message goes to the site's own Telegram bot and nothing is stored on the server. |
