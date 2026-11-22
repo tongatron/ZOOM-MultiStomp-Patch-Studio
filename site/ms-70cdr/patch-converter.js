@@ -23,6 +23,7 @@ const LEGACY_PATCH_CONVERTER = (() => {
     const sourceEntries = Object.entries(source.params);
     const sourceByKey = new Map(sourceEntries.map(([name, value]) => [key(name), value]));
     const params = {};
+    const matched = new Set();
     let mapped = 0;
     for (const [name] of target.params || []) {
       const candidates = [key(name), ...(aliases[key(name)] || [])];
@@ -34,9 +35,11 @@ const LEGACY_PATCH_CONVERTER = (() => {
         try { if (codec && typeof value !== 'object') codec.encode(value); }
         catch { continue; } // Different scale: keep the whole effect on raw fallback.
         params[name] = value; mapped++;
+        matched.add(found);
       }
     }
-    return mapped ? { params, mapped, total: (target.params || []).length } : null;
+    const unmapped = sourceEntries.filter(([name]) => !matched.has(key(name))).map(([name]) => name);
+    return mapped ? { params, mapped, total: (target.params || []).length, unmapped } : null;
   }
   function convert(input) {
     const report = { converted: [], unmapped: [], warnings: ['Converted patches are experimental. Verify every effect and parameter on the pedal.'] };
@@ -59,7 +62,7 @@ const LEGACY_PATCH_CONVERTER = (() => {
       const translated = translatedParams(source, target);
       if (translated) {
         effects.push({ id: hexId(targetId), on: source.on !== false, params: translated.params });
-        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(targetId), target: target.name, ...(pingPong ? { variant: 'ping-pong' } : {}), parameterMode: 'names', mappedParameters: translated.mapped, targetParameters: translated.total });
+        report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(targetId), target: target.name, ...(pingPong ? { variant: 'ping-pong' } : {}), parameterMode: 'names', mappedParameters: translated.mapped, targetParameters: translated.total, ...(translated.unmapped.length ? { unmappedParameters: translated.unmapped } : {}) });
       } else {
         const raw = Array.from(source.raw || []).slice(0, 12);
         while (raw.length < 12) raw.push(0);
@@ -67,6 +70,14 @@ const LEGACY_PATCH_CONVERTER = (() => {
         report.converted.push({ slot: slot + 1, sourceId: hexId(sourceId), source: mapping.msogName, targetId: hexId(targetId), target: target.name, ...(pingPong ? { variant: 'ping-pong' } : {}), parameterMode: 'raw' });
       }
     }
+    report.summary = {
+      inputEffects: (input.effects || []).length,
+      convertedEffects: report.converted.length,
+      unmappedEffects: report.unmapped.length,
+      namedParameterEffects: report.converted.filter(effect => effect.parameterMode === 'names').length,
+      rawFallbackEffects: report.converted.filter(effect => effect.parameterMode === 'raw').length,
+      effectsWithUnmappedParameters: report.converted.filter(effect => effect.unmappedParameters?.length).length
+    };
     const encoded = effects.length ? ZPTC.encode({ name: input.name || 'Converted patch', description: `Experimental conversion from MS-70CDR: ${input.name || ''}`.trim(), effects }).file : null;
     return { encoded, report };
   }
