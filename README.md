@@ -92,7 +92,7 @@ MultiStomp Studio puts the whole pedal on your desk:
 
 The experimental converter accepts either a decoded legacy patch JSON or the original binary payload: `npm run convert:legacy -- legacy.json converted.zptc` or `npm run convert:legacy -- patch.bin converted.zptc`. It also writes a verification report; an unmapped effect makes the command exit with a warning status. The end-to-end binary path is covered by `npm run test:legacy-convert`.
 
-Original MS patch payloads can be inspected with `npm run decode:legacy -- patch.bin`; the decoder preserves the raw effect blocks and metadata for verification before conversion.
+Original MS patch payloads can be inspected with `npm run decode:legacy -- patch.bin`; the decoder shows known legacy effect names when available and preserves the raw effect blocks and metadata for verification before conversion.
 | ☁️ **Free account** *(optional)* | Sync patches, settings, rule packs and pedal backups of the MS-60B+, MS-50G+ and MS-70CDR+ across devices. Download everything or delete the account at any time. Without an account everything stays in your browser. |
 | 📰 **Change log and messages** | A public change log of what's new, and in-app messages from the administrators. |
 | ✉️ **Contact us and Report a problem** | A short form on every page; the message goes to the site's own Telegram bot and nothing is stored on the server. |

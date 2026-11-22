@@ -688,3 +688,4 @@ const PATCH_CONVERTER_MAP = new Map(Object.entries({
   ...value,
   msplusID: parseInt(value.msplusID, 16)
 }]));
+globalThis.PATCH_CONVERTER_MAP = PATCH_CONVERTER_MAP;

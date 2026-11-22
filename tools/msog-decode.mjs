@@ -3,6 +3,7 @@
 // MS pedals (MS-50G/MS-60B/MS-70CDR). Layout and bit fields are derived from
 // thammer/zoom-explorer (MIT); the decoder preserves raw blocks for audit.
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 
 const SLOT_BYTES = 18;
 const SLOT_COUNT = 6;
@@ -70,7 +71,9 @@ export function decodeMSOG(input, { map = new Map() } = {}) {
 if (process.argv[1] && process.argv[1].endsWith('msog-decode.mjs')) {
   const [path] = process.argv.slice(2);
   if (!path) { console.error('Usage: node tools/msog-decode.mjs <original-ms-patch>'); process.exit(2); }
-  // The browser map is a script rather than an ESM module; the converter
-  // enriches these IDs with names in its own VM context.
-  console.log(JSON.stringify(decodeMSOG(readFileSync(path)), null, 2));
+  // The browser map is a script rather than an ESM module; load it only for
+  // display names, while decodeMSOG still preserves the original raw bytes.
+  const mapContext = vm.createContext({});
+  vm.runInContext(readFileSync('site/ms-70cdr/patch-converter-map.js', 'utf8'), mapContext);
+  console.log(JSON.stringify(decodeMSOG(readFileSync(path), { map: mapContext.PATCH_CONVERTER_MAP }), null, 2));
 }
