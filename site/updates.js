@@ -48,7 +48,7 @@
 
   window.SITE_UPDATES = Object.freeze({
     version: '1.1',
-    pushedAt: '2026-11-22T23:36Z',
+    pushedAt: '2026-11-23T15:59Z',
     released: '2026-11-14',
     entries: Object.freeze(entries.map(entry => Object.freeze(entry))),
     latest: entries[0]

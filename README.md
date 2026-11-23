@@ -162,6 +162,8 @@ No tracking cookies, no newsletter. Without an account your data never leaves th
 
 Effects data and manual text © ZOOM CORPORATION. Manufacturer names are used only to describe sonic character. This is an independent fan project, not affiliated with or endorsed by ZOOM. Effect tables and the USB protocol thanks to [zoom-zt2](https://github.com/mungewell/zoom-zt2).
 
+Special thanks to Keiichiro Araihara for his help with the Zoom MS-70CDR+ pedal.
+
 <div align="center">
 
 ---
